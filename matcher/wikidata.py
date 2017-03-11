@@ -1,6 +1,6 @@
 from flask import render_template_string
 from urllib.parse import unquote
-from .utils import chunk, cache_filename, load_from_cache
+from .utils import chunk, cache_filename
 import requests
 import os.path
 import json
@@ -27,7 +27,7 @@ SELECT ?place ?placeLabel ?lat ?lon ?article ?end WHERE {
     }
 }'''
 
-def run_wikidata_query(south, north, west, east):
+def run_query(south, north, west, east):
 
     query = render_template_string(wikidata_query,
                                    south=south,
@@ -40,23 +40,11 @@ def run_wikidata_query(south, north, west, east):
     assert r.status_code == 200
     return r
 
-def wikidata_from_osm_id(osm_id):
-    osm_id = str(osm_id)
-    filename = cache_filename('{}.json'.format(osm_id))
-    if os.path.exists(filename):
-        return json.load(open(filename))['results']['bindings']
-
-    item = load_from_cache('{}_nominatim.json'.format(osm_id))
-    bbox = item['boundingbox']
-    r = run_wikidata_query(*bbox)
-    open(filename, 'wb').write(r.content)
-    return r.json()['results']['bindings']
-
-def wikidata_items(osm_id):
+def parse_query(query):
     wd_start = 'http://www.wikidata.org/entity/'
     enwp_start = 'https://en.wikipedia.org/wiki/'
     items = {}
-    for i in wikidata_from_osm_id(osm_id):
+    for i in query:
         wd_uri = i['place']['value']
         enwp_uri = i['article']['value']
         assert wd_uri.startswith(wd_start)
@@ -73,11 +61,7 @@ def wikidata_items(osm_id):
         items[enwp] = item
     return items
 
-def wbgetentities(osm_id, items):
-    filename = cache_filename('{}_wbgetentities.json'.format(osm_id))
-    if os.path.exists(filename):
-        return json.load(open(filename))
-
+def wbgetentities(items):
     wikidata_url = 'https://www.wikidata.org/w/api.php'
     params = {
         'format': 'json',
@@ -109,8 +93,3 @@ def wbgetentities(osm_id, items):
             if labels:
                 items[enwp]['labels'] = labels
             items[enwp]['sitelinks'] = sitelinks
-
-    json.dump(items, open(filename, 'w'), indent=2)
-    return items
-
-
