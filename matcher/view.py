@@ -45,6 +45,14 @@ def candidates(osm_id):
     relation = Relation(osm_id)
     wikidata_item = relation.item_detail()
 
+    if relation.overpass_error:
+        error = open(relation.overpass_filename).read()
+        return render_template('candidates.html',
+                               overpass_error=error,
+                               hit=wikidata_item,
+                               oql='',
+                               candidates=[])
+
     for i in 'summary', 'candidates':
         if not os.path.exists(cache_filename('{}_{}.json'.format(osm_id, i))):
             return redirect(url_for('get_wikidata', osm_id=osm_id))

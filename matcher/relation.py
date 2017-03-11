@@ -86,6 +86,11 @@ out qt;'''.format(bbox, area_id, ''.join(union))
     def overpass_done(self):
         return os.path.exists(self.overpass_filename)
 
+    @property
+    def overpass_error(self):
+        start = open(self.overpass_filename).read(1000)
+        return 'runtime error' in start or 'Gateway Timeout' in start
+
     def save_overpass(self, content):
         with open(self.overpass_filename, 'wb') as out:
             out.write(content)

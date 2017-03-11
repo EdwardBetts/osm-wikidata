@@ -34,7 +34,13 @@
       {% endif %}
     </div>
 
+  {% if overpass_error %}
+    <div>&nbsp;</div>
+    <h4>Overpass API error</h4>
+    <pre>{{ overpass_error }}</pre>
+  {% else %}
     <p>{{ '{:,d}'.format(candidates | count) }} candidates found</p>
+  {% endif %}
 
   {% for i in candidates %}
     {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
