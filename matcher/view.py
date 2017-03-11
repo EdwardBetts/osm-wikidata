@@ -6,7 +6,7 @@ from .match import check_for_match, get_wikidata_names
 from .utils import cache_filename, load_from_cache, cache_dir
 from .wikipedia import get_items_with_cats
 from .wikidata import wbgetentities
-from .overpass import generate_oql, overpass_done, get_from_overpass, overpass_filename
+from .overpass import generate_oql, overpass_done, overpass_filename
 
 import psycopg2
 import psycopg2.extras
@@ -18,9 +18,6 @@ import json
 import re
 
 app = Flask(__name__)
-
-bad_name_fields = {'tiger:name_base', 'old_name', 'gnis:county_name',
-                   'openGeoDB:name'}
 
 def simplify_tags(tags):
     key_only = sorted(t for t in tags if '=' not in t)
@@ -101,7 +98,7 @@ def load_into_pgsql(osm_id):
             '--username', current_app.config['DB_USER'],
             '--database', get_db_name(osm_id),
             overpass_filename(osm_id)]
-        
+
     p = subprocess.run(cmd,
                        stderr=subprocess.PIPE,
                        env={'PGPASSWORD': current_app.config['DB_PASS']})
@@ -148,10 +145,7 @@ def create_database(dbname):
         conn.rollback()
     conn.commit()
 
-    cur.execute("""
-select table_name from information_schema.tables
-where table_schema = 'public'
-""")
+    cur.execute("select table_name from information_schema.tables where table_schema = 'public'")
     tables = {t[0] for t in cur.fetchall()}
 
     cur.close()
@@ -174,6 +168,9 @@ def get_osm_id_and_type(source_type, source_id):
     return ('relation', -source_id)
 
 def find_matches(items, conn):
+    bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
+                       'gnis:county_name', 'openGeoDB:name'}
+
     cur = conn.cursor()
     seen_wikidata = set()
     assert isinstance(items, list)
@@ -208,7 +205,7 @@ def find_matches(items, conn):
         cur.execute(sql)
         rows = cur.fetchall()
         seen = set()
-        match_found = False
+
         for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
             (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
             if (obj_type, osm_id) in seen:
@@ -224,12 +221,9 @@ def find_matches(items, conn):
                 continue
             if not names:
                 continue
-            display_name = osm_tags.get('name:en', osm_name) or osm_tags.get('addr:housename', repr(names))
 
             match = check_for_match(osm_tags, item)
-            if match:
-                match_found = True
-            else:
+            if not match:
                 continue
             candidate = {
                 'type': osm_type,
