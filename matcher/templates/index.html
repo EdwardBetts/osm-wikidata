@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OSM ◀ ▶ Wikidata</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
+  <style>
+    .box {
+      border: 1px solid black;
+      margin: 4px;
+      padding: 4px;
+    }
+  </style>
+</head>
+{% set detail = 0 %}
+
+<body>
+  <div class="container-fluid">
+  <div class="row">
+  <div class="col">
+  <h1>OSM ◀ ▶ Wikidata</h1>
+
+  {% include "form.html" %}
+  {% if not q %}
+    <table class="table table-hover table-sm" style="width: auto">
+      {% for item in existing %}
+        <tr>
+          <td>
+            <a href="{{ url_for('candidates', osm_id=item.osm_id) }}">
+              {{ item.display_name }}</a>
+            {% if item.address.country and item.address.country not in item.display_name %}
+              &mdash; {{ item.address.country }}
+            {% endif %}
+          </td>
+          <td>
+            {{ item.category }}: {{ item.type }}
+          </td>
+          <td align="right">{{ item.candidate_count }}</td>
+        </tr>
+        {# <tr>
+          <td colspan="2"><pre>{{ item | pprint }}</pre></td>
+        </tr> #}
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% if q %}
+  {% if results | count == 0 %}
+    <p>no matches found</p>
+  {% endif %}
+  {% for hit in results %}
+    <div class="box">
+      {# {% set name = hit.namedetails["name:en"] or hit.namedetails["name"] %} #}
+      {% if hit.icon %}<img src="{{ hit.icon }}">{% endif %}
+      {% if hit.osm_type == 'relation' %}
+        <b>
+          {% if name %}
+            <a href="{{ url_for('get_wikidata', osm_id=hit.osm_id) }}">{{ name }}</a>,
+            {% if hit.address.state %}{{ hit.address.state }}, {% endif %}
+            {{ hit.address.country }}
+          {% else %}
+            <a href="{{ url_for('get_wikidata', osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
+          {% endif %}
+        </b><br>
+      {% else %}
+        <b>
+        {% if name %}
+          {{ name }}, {{ hit.address.state }}, {{ hit.address.country }}
+        {% else %}
+          {{ hit.display_name }}
+        {% endif %}
+        </b><br>
+        [matcher only works with OSM relations]<br>
+      {% endif %}
+      category: {{ hit.category }}
+      &mdash;
+      type: {{ hit.type }}<br>
+      bounding box: {{ ', '.join(hit.boundingbox) }}<br>
+      OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
+      {% if detail %}
+        importance: {{ hit.importance }}<br>
+        <pre>{{ hit.address | pprint }}</pre>
+        <pre>{{ hit.extratags | pprint }}</pre>
+        <pre>{{ hit | pprint }}</pre>
+      {% endif %}
+    </div>
+  {% endfor %}
+  {% endif %}
+
+</div>
+</div>
+</div>
+</body>
+</html>

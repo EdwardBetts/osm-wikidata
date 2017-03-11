@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ hit.display_name }}: OSM ◀ ▶ Wikidata</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
+  <style>
+    .box {
+      border: 1px solid black;
+      margin: 4px;
+      padding: 4px;
+    }
+    .loading {
+      font-family: courier;
+      background: black;
+      color: white;
+      margin: 4px;
+      padding: 4px;
+    }
+    .active { color: white; }
+    .done { color: white; }
+    .pending { color: gray; }
+    #candidates-link { font-size: 200%; }
+
+    .done-label {
+      background: darkgreen;
+      padding: 2px;
+    }
+
+    #overpass_error_message {
+      background: darkred;
+      padding: 2px;
+    }
+
+    #osm2pgsql_error_message {
+      background: darkred;
+      color: white;
+      padding: 2px;
+    }
+
+  </style>
+  <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
+</head>
+
+<body>
+  <div class="container-fluid">
+  <div class="row">
+  <div class="col">
+  {% set name = hit.namedetails['name:en'] or hit.namedetails.name %}
+  <h1>{{ name }}: OSM ◀ ▶ Wikidata</h1>
+  {% set q = hit.display_name %}
+  {% include "form.html" %}
+
+  <div class="box">
+    <b>{{ hit.display_name }}</b><br>
+    category: {{ hit.category }}
+    &mdash;
+    type: {{ hit.type }}
+    &mdash;
+    OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
+    {% if detail %}
+      <pre>{{ hit | pprint }}</pre>
+    {% endif %}
+  </div>
+
+  <div class="loading">
+    <span id="load_wikidata" class="pending">loading names from wikidata</span><br>
+    <span id="load_overpass" class="pending">retrieving OSM data from Overpass</span>
+    <span id="overpass_slow" class="pending">&nbsp;(this may take a few minutes)</span>
+    <br>
+    <span id="overpass_error">&nbsp;Overpass error:
+      <span id="overpass_error_message"></span><br>
+    </span>
+    <span id="load_postgis" class="pending">creating PostGIS database</span><br>
+    <span id="load_osm2pgsql" class="pending">loading OSM data with osm2pgsql</span>
+    <br>
+    <span id="osm2pgsql_error">&nbsp;osm2pgsql error:
+      <pre id="osm2pgsql_error_message"></pre>
+    </span>
+
+    <span id="load_match" class="pending">checking data for matches</span></br>
+  </div>
+
+  <p><a href="{{ url_for('candidates', osm_id=osm_id) }}" id="candidates-link">view match candidates</a></p>
+
+  <p>{{ '{:,d}'.format(items | count) }} items found</p>
+
+  {% for enwp, i in items.items() %}
+    {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
+    <p>
+      <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
+      &mdash; {{ i.label }}
+      &mdash; <a href="{{ osm_url }}">Wikidata location on OSM</a>
+      <br>
+      <ul>
+        <li>Wikipedia categories: {{ ', '.join(i.cats) }}</li>
+        {% if i.tags %}
+          <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
+        {% endif %}
+      </ul>
+    </p>
+  {% endfor %}
+</div>
+</div>
+</div>
+
+  <script>
+  var oql = {{ oql | tojson }};
+  var overpass_url = 'http://overpass-api.de/api/interpreter';
+  var load_wikidata_url = {{ url_for('load_wikidata', osm_id=osm_id) | tojson }};
+  var check_overpass_url = {{ url_for('check_overpass', osm_id=osm_id) | tojson }};
+  var post_overpass_url = {{ url_for('post_overpass', osm_id=osm_id) | tojson }};
+  var load_postgis_url = {{ url_for('load_postgis', osm_id=osm_id) | tojson }};
+  var load_osm2pgsql_url = {{ url_for('load_osm2pgsql', osm_id=osm_id) | tojson }};
+  var load_match_url = {{ url_for('load_match', osm_id=osm_id) | tojson }};
+
+  window.setInterval(fade, 1100);
+
+  function fade() {
+     $('.active').fadeOut(500).fadeIn(500);
+  }
+
+  function mark_active(e) {
+    // console.log('active:', e.attr('id'));
+    e.removeClass('pending').addClass('active');
+  }
+
+  function mark_done(e) {
+    // console.log('done:', e.attr('id'));
+    e.removeClass('active').addClass('done');
+    e.append('<span>&nbsp;<span class="done-label">done</span></span>')
+  }
+
+  function load_wikidata() {
+    mark_active($('#load_wikidata'));
+    $.post(load_wikidata_url).done (function() {
+      mark_done($('#load_wikidata'));
+      check_overpass();
+    });
+  }
+
+  function check_overpass() {
+    mark_active($('#load_overpass'));
+    $.post(check_overpass_url, function(data) {
+      if(data == 'get') {
+        trigger_overpass();
+      } else {
+        mark_done($('#load_overpass'));
+        load_postgis();
+      }
+    }, 'text');
+  }
+
+  function load_postgis() {
+    mark_active($('#load_postgis'));
+    $.post(load_postgis_url, function(data) {
+      mark_done($('#load_postgis'));
+      if(data == 'need osm2pgsql') {
+        load_osm2pgsql();
+      } else {
+        mark_active($('#load_osm2pgsql'));
+        mark_done($('#load_osm2pgsql'));
+        load_match();
+      }
+    });
+  }
+
+  function load_osm2pgsql() {
+    mark_active($('#load_osm2pgsql'));
+    $.post(load_osm2pgsql_url).done (function(data) {
+      if(data == 'done') {
+        mark_done($('#load_osm2pgsql'));
+        load_match();
+      } else { // error
+        $('#load_osm2pgsql').removeClass('active');
+        $('#osm2pgsql_error_message').text(data);
+        $('#osm2pgsql_error').show();
+      }
+    });
+  }
+
+  function load_match() {
+    mark_active($('#load_match'));
+    $.post(load_match_url).done (function() {
+      mark_done($('#load_match'));
+      $('#candidates-link').show();
+    });
+  }
+
+  $('#candidates-link').hide();
+  $('#overpass_error').hide();
+  $('#osm2pgsql_error').hide();
+  $('#overpass_slow').hide();
+  load_wikidata();
+
+  function trigger_overpass() {
+    $('#overpass_slow').show();
+    $.ajax({
+      type: "POST",
+      dataType: "text",
+      contentType: "text/plain; charset=utf-8",
+      url: overpass_url,
+      cache: false,
+      data: oql,
+    })
+    .done(function(data) {
+      $.ajax({
+         type: "POST",
+         dataType: "text",
+         contentType: "text/xml; charset=utf-8",
+         url: post_overpass_url,
+         cache: false,
+         data: data,
+      })
+      .done(function(reply) {
+         // console.log('overpass:', reply);
+         mark_done($('#load_overpass'));
+         load_postgis();
+      });
+      $('#overpass_slow').hide();
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      $('#overpass_slow').hide();
+      $('#load_overpass').removeClass('active');
+      if (errorThrown) {
+        $('#overpass_error_message').text(errorThrown);
+      } else {
+        if(textStatus == 'error') {
+          $('#overpass_error_message').text('requested area too large');
+        } else {
+          $('#overpass_error_message').text(textStatus);
+        }
+      }
+      $('#overpass_error').show();
+    });
+  }
+  </script>
+
+</body>
+</html>
