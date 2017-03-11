@@ -35,7 +35,7 @@ class Relation(object):
                     relation_only = True
                 tag = '"{}"="{}"'.format(k, v)
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
-                union.append('\n    {}(area.a)[{}][~".*name.*"~".",i];'.format(t, tag))
+                union.append('\n    {}(area.a)[{}][~"^(addr:housenumber|.*name.*)$"~".",i];'.format(t, tag))
         area_id = 3600000000 + int(self.osm_id)
         oql = '''[timeout:600][out:xml][bbox:{}];
 area({})->.a;
@@ -65,7 +65,7 @@ out qt;'''.format(bbox, area_id, ''.join(union))
                 '--host', current_app.config['DB_HOST'],
                 '--username', current_app.config['DB_USER'],
                 '--database', self.dbname,
-                self.overpass_filename()]
+                self.overpass_filename]
 
         p = subprocess.run(cmd,
                            stderr=subprocess.PIPE,

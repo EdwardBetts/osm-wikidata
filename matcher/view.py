@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, current_app
+from flask import Flask, render_template, request, Response, current_app, redirect, url_for
 from .utils import cache_filename, load_from_cache, cache_dir
 from .relation import Relation
 from . import db
@@ -45,8 +45,12 @@ def candidates(osm_id):
     relation = Relation(osm_id)
     wikidata_item = relation.item_detail()
 
+    for i in 'summary', 'candidates':
+        if not os.path.exists(cache_filename('{}_{}.json'.format(osm_id, i))):
+            return redirect(url_for('get_wikidata', osm_id=osm_id))
+
     relation.wbgetentities()
-    oql = relation.generate_oql(relation.all_tags)
+    oql = relation.oql(relation.all_tags)
     tables = db.create_database(relation.dbname)
 
     expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
@@ -78,7 +82,7 @@ def check_overpass(osm_id):
 @app.route('/load/<int:osm_id>/postgis', methods=['POST'])
 def load_postgis(osm_id):
     relation = Relation(osm_id)
-    tables = create_database(relation.dbname)
+    tables = db.create_database(relation.dbname)
 
     expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
               'raster_overviews', 'planet_osm_roads', 'raster_columns',
@@ -112,7 +116,7 @@ def get_wikidata(osm_id):
     items = relation.items_with_cats()
     all_tags = matcher.find_tags(items)
 
-    oql = relation.generate_oql(all_tags)
+    oql = relation.oql(all_tags)
 
     return render_template('wikidata_items.html',
                            items=items,
