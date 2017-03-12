@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  {% set hit = relation.item_detail() %}
   <meta charset="utf-8">
   <title>{{ hit.display_name }}: OSM ◀ ▶ Wikidata</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
@@ -83,6 +84,7 @@
 
   <p><a href="{{ url_for('candidates', osm_id=osm_id) }}" id="candidates-link">view match candidates</a></p>
 
+  {% set items = relation.get_items_with_tags() %}
   <p>{{ '{:,d}'.format(items | count) }} items found</p>
 
   {% for enwp, i in items.items() %}
@@ -105,7 +107,7 @@
 </div>
 
   <script>
-  var oql = {{ oql | tojson }};
+  var oql = {{ relation.get_oql() | tojson }};
   var overpass_url = 'http://overpass-api.de/api/interpreter';
   var load_wikidata_url = {{ url_for('load_wikidata', osm_id=osm_id) | tojson }};
   var check_overpass_url = {{ url_for('check_overpass', osm_id=osm_id) | tojson }};

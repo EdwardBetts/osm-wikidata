@@ -1,41 +1,18 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, current_app
+from flask import Flask, render_template, request, Response, redirect, url_for
 from .utils import cache_filename, load_from_cache, cache_dir
 from lxml import etree
-from .relation import Relation
+from .relation import Relation, nominatim_lookup
 from . import db
-from . import matcher
 from .matcher import filter_candidates_more
 # from pprint import pformat
 
-import os.path
 import requests
+import os.path
 import json
 
 app = Flask(__name__)
-
-def nominatim_lookup(q):
-    url = 'http://nominatim.openstreetmap.org/search'
-
-    params = {
-        'q': q,
-        'format': 'jsonv2',
-        'addressdetails': 1,
-        'email': current_app.config['ADMIN_EMAIL'],
-        'extratags': 1,
-        'limit': 20,
-        'namedetails': 1,
-        'accept-language': 'en',
-    }
-    r = requests.get(url, params=params)
-    results = []
-    for hit in r.json():
-        results.append(hit)
-        if hit.get('osm_type') == 'relation':
-            relation = Relation(hit['osm_id'])
-            relation.save_nominatim(hit)
-    return results
 
 @app.route("/overpass/<int:osm_id>", methods=["POST"])
 def post_overpass(osm_id):
@@ -94,7 +71,7 @@ def export_osm(osm_id, name):
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     relation = Relation(osm_id)
-    wikidata_item = detail(relation)
+    wikidata_item = relation.item_detail()
 
     if relation.overpass_error:
         error = open(relation.overpass_filename).read()
@@ -109,7 +86,6 @@ def candidates(osm_id):
             return redirect(url_for('matcher_progress', osm_id=osm_id))
 
     relation.wbgetentities()
-    oql = relation.oql(relation.all_tags)
     tables = db.create_database(relation.dbname)
 
     expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
@@ -122,10 +98,15 @@ def candidates(osm_id):
 
     candidate_list = relation.run_matcher()
 
+    multiple_only = bool(request.args.get('multiple'))
+    if multiple_only:
+        candidate_list = [i for i in candidate_list
+                          if len(i['candidates']) > 1]
+
     return render_template('candidates.html',
                            hit=wikidata_item,
                            relation=relation,
-                           oql=oql,
+                           multiple_only=multiple_only,
                            candidates=candidate_list)
 
 @app.route('/load/<int:osm_id>/wbgetentities', methods=['POST'])
@@ -168,32 +149,11 @@ def load_match(osm_id):
     out.close()
     return Response('done', mimetype='text/plain')
 
-def detail(relation):
-    item = relation.item_detail()
-    if 'namedetails' in item:
-        return item
-
-    nominatim_lookup(relation.display_name)  # refresh
-    return relation.get_detail()
-
 @app.route('/matcher/<int:osm_id>')
 def matcher_progress(osm_id):
-    relation = Relation(osm_id)
-    wikidata_item = detail(relation)
-
-    items = relation.items_with_cats()
-    all_tags = matcher.find_tags(items)
-
-    oql = relation.oql(all_tags)
-
     return render_template('wikidata_items.html',
-                           items=items,
-                           hit=wikidata_item,
-                           osm_id=osm_id,
-                           overpass_done=relation.overpass_done,
-                           oql=oql,
-                           candidates=candidates,
-                           all_tags=all_tags)
+                           relation=Relation(osm_id),
+                           osm_id=osm_id)
 
 def get_existing():
     existing = [load_from_cache(f)
@@ -206,11 +166,9 @@ def get_existing():
 def index():
     q = request.args.get('q')
     if not q:
-        existing = get_existing()
-        return render_template('index.html', existing=existing)
-
-    results = nominatim_lookup(q)
-    return render_template('index.html', results=results, q=q)
+        return render_template('index.html', existing=get_existing())
+    else:
+        return render_template('index.html', results=nominatim_lookup(q), q=q)
 
 @app.route("/documentation")
 def documentation():

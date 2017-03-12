@@ -5,22 +5,52 @@ from . import wikidata
 from .utils import cache_filename, load_from_cache
 from .matcher import find_matches, find_tags, filter_candidates
 from .db import db_connect
+from . import matcher
 
+import requests
 import os.path
 import subprocess
 import json
 import psycopg2.extras
 
+def nominatim_lookup(q):
+    url = 'http://nominatim.openstreetmap.org/search'
+
+    params = {
+        'q': q,
+        'format': 'jsonv2',
+        'addressdetails': 1,
+        'email': current_app.config['ADMIN_EMAIL'],
+        'extratags': 1,
+        'limit': 20,
+        'namedetails': 1,
+        'accept-language': 'en',
+    }
+    r = requests.get(url, params=params)
+    results = []
+    for hit in r.json():
+        results.append(hit)
+        if hit.get('osm_type') == 'relation':
+            relation = Relation(hit['osm_id'])
+            relation.save_nominatim(hit)
+    return results
+
 class Relation(object):
     def __init__(self, osm_id):
         self.osm_id = osm_id
         self.detail = None
+        self.all_tags = None
+        self.oql = None
+        self.items_with_tags = None
 
     def item_detail(self):
         return self.detail if self.detail else self.get_detail()
 
     def get_detail(self):
         self.detail = load_from_cache('{}_nominatim.json'.format(self.osm_id))
+        if 'namedetails' not in self.detail:
+            nominatim_lookup(self.display_name)  # refresh
+            self.detail = load_from_cache('{}_nominatim.json'.format(self.osm_id))
         return self.detail
 
     @property
@@ -44,12 +74,26 @@ class Relation(object):
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
 
-    def oql(self, tags):
+    def get_items_with_tags(self):
+        if self.items_with_tags:
+            return self.items_with_tags
+
+        items = self.items_with_cats()
+        self.all_tags = matcher.find_tags(items)
+        self.items_with_tags = items
+        return items
+
+    def get_oql(self):
+        if self.oql:
+            return self.oql
+        if not self.all_tags:
+            self.get_items_with_tags()
+
         (south, north, west, east) = self.bbox
         bbox = ','.join('{}'.format(i) for i in (south, west, north, east))
         union = []
         # optimisation: we only expect route, type or site on relations
-        for tag in tags:
+        for tag in self.all_tags:
             relation_only = tag == 'site'
             if '=' in tag:
                 k, _, v = tag.partition('=')
@@ -59,12 +103,12 @@ class Relation(object):
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
                 union.append('\n    {}(area.a)[{}][~"^(addr:housenumber|.*name.*)$"~".",i];'.format(t, tag))
         area_id = 3600000000 + int(self.osm_id)
-        oql = '''[timeout:600][out:xml][bbox:{}];
+        self.oql = '''[timeout:600][out:xml][bbox:{}];
 area({})->.a;
 ({});
 (._;>;);
 out qt;'''.format(bbox, area_id, ''.join(union))
-        return oql
+        return self.oql
 
     def wikidata_query(self):
         filename = cache_filename('{}_wikidata.json'.format(self.osm_id))
