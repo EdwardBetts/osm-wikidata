@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, current_app, redirect, url_for
+from flask import Flask, render_template, request, Response, redirect, url_for, current_app
 from .utils import cache_filename, load_from_cache, cache_dir
+from lxml import etree
 from .relation import Relation
 from . import db
 from . import matcher
+from .matcher import filter_candidates_more
+# from pprint import pformat
 
 import os.path
 import requests
@@ -40,10 +43,80 @@ def post_overpass(osm_id):
     relation.save_overpass(request.data)
     return Response('done', mimetype='text/plain')
 
+@app.route('/export/wikidata_<int:osm_id>_<name>.osm')
+def export_osm(osm_id, name):
+    relation = Relation(osm_id)
+    items = relation.get_candidates()
+
+    items = filter_candidates_more(items)
+
+    lookup = {(i['osm']['type'], i['osm']['id']): i for i in items}
+
+    filename = cache_filename('{}_overpass_export.xml'.format(osm_id))
+    if os.path.exists(filename):
+        overpass_xml = open(filename, 'rb').read()
+    else:
+        seen = set()
+        union = ''
+        for item in items:
+            osm = item['osm']
+            assert (osm['id'], osm['type']) not in seen
+            seen.add((osm['id'], osm['type']))
+            assert 'wikidata' not in osm['tags']
+            union += '{}({});\n'.format(osm['type'], osm['id'])
+
+        oql = '({});(._;>);out meta;'.format(union)
+
+        overpass_url = 'http://overpass-api.de/api/interpreter'
+        r = requests.post(overpass_url, data=oql)
+        overpass_xml = r.content
+        with open(filename, 'wb') as f:
+            f.write(overpass_xml)
+    root = etree.fromstring(overpass_xml)
+
+    for e in root:
+        if e.tag not in {'way', 'node', 'relation'}:
+            continue
+        for f in 'uid', 'user', 'timestamp', 'changeset':
+            del e.attrib[f]
+        pair = (e.tag, int(e.attrib['id']))
+        item = lookup.get(pair)
+        if not item:
+            continue
+        e.attrib['version'] = str(int(e.attrib['version']) + 1)
+        e.attrib['action'] = 'modify'
+        tag = etree.Element('tag', k='wikidata', v=item['qid'])
+        e.append(tag)
+
+    xml = etree.tostring(root, pretty_print=True)
+    return Response(xml, mimetype='text/xml')
+
+def unused():
+    root = etree.Element('osm', version='0.6', upload='true')
+
+    for item in items:
+        osm = item['osm']
+        assert (osm['id'], osm['type']) not in seen
+        seen.add((osm['id'], osm['type']))
+        assert 'wikidata' not in osm['tags']
+        e = get_osm_object(osm)
+        if e is None:
+            continue
+        for f in 'uid', 'user', 'timestamp', 'visible', 'changeset':
+            del e.attrib[f]
+        e.attrib['version'] = str(int(e.attrib['version']) + 1)
+        e.attrib['action'] = 'modify'
+        tag = etree.Element('tag', k='wikidata', v=item['qid'])
+        e.append(tag)
+        root.append(e)
+
+    xml = etree.tostring(root, pretty_print=True)
+    return Response(xml, mimetype='text/xml')
+
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     relation = Relation(osm_id)
-    wikidata_item = relation.item_detail()
+    wikidata_item = detail(relation)
 
     if relation.overpass_error:
         error = open(relation.overpass_filename).read()
@@ -69,12 +142,13 @@ def candidates(osm_id):
         if error:
             return 'osm2pgsql error: ' + error
 
-    candidates = relation.run_matcher()
+    candidate_list = relation.run_matcher()
 
     return render_template('candidates.html',
                            hit=wikidata_item,
+                           relation=relation,
                            oql=oql,
-                           candidates=candidates)
+                           candidates=candidate_list)
 
 @app.route('/load/<int:osm_id>/wbgetentities', methods=['POST'])
 def load_wikidata(osm_id):
@@ -116,10 +190,18 @@ def load_match(osm_id):
     out.close()
     return Response('done', mimetype='text/plain')
 
+def detail(relation):
+    item = relation.item_detail()
+    if 'namedetails' in item:
+        return item
+
+    nominatim_lookup(relation.display_name)  # refresh
+    return relation.get_detail()
+
 @app.route('/get_wikidata/<int:osm_id>')
 def get_wikidata(osm_id):
     relation = Relation(osm_id)
-    wikidata_item = relation.item_detail()
+    wikidata_item = detail(relation)
 
     items = relation.items_with_cats()
     all_tags = matcher.find_tags(items)

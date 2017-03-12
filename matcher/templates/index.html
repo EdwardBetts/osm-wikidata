@@ -26,7 +26,8 @@
       {% for item in existing %}
         <tr>
           <td>
-            <a href="{{ url_for('candidates', osm_id=item.osm_id) }}">
+            {% set endpoint = 'candidates' if item.namedetails else 'get_wikidata' %}
+            <a href="{{ url_for(endpoint, osm_id=item.osm_id) }}">
               {{ item.display_name }}</a>
             {% if item.address.country and item.address.country not in item.display_name %}
               &mdash; {{ item.address.country }}

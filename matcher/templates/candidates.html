@@ -40,6 +40,8 @@
     <pre>{{ overpass_error }}</pre>
   {% else %}
     <p>{{ '{:,d}'.format(candidates | count) }} candidates found</p>
+    {% set url = url_for('export_osm', osm_id=hit.osm_id, name=relation.export_name) %}
+    <p><a href="{{ url }}">Download as OSM XML file</a></p>
   {% endif %}
 
   {% for i in candidates %}

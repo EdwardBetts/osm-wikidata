@@ -14,24 +14,46 @@ import psycopg2.extras
 class Relation(object):
     def __init__(self, osm_id):
         self.osm_id = osm_id
+        self.detail = None
 
     def item_detail(self):
-        return load_from_cache('{}_nominatim.json'.format(self.osm_id))
+        return self.detail if self.detail else self.get_detail()
+
+    def get_detail(self):
+        self.detail = load_from_cache('{}_nominatim.json'.format(self.osm_id))
+        return self.detail
 
     @property
     def bbox(self):
         return self.item_detail()['boundingbox']
 
+    @property
+    def display_name(self):
+        return self.item_detail()['display_name']
+
+    @property
+    def namedetails(self):
+        return self.item_detail()['namedetails']
+
+    @property
+    def name(self):
+        nd = self.namedetails
+        return nd.get('name:en') or nd['name']
+
+    @property
+    def export_name(self):
+        return self.name.replace(':', '').replace(' ', '_')
+
     def oql(self, tags):
         (south, north, west, east) = self.bbox
         bbox = ','.join('{}'.format(i) for i in (south, west, north, east))
         union = []
-        # optimisation: we only expect type=site or site=<something> on relations
+        # optimisation: we only expect route=*, type=site or site=<something> on relations
         for tag in tags:
             relation_only = tag == 'site'
             if '=' in tag:
                 k, _, v = tag.partition('=')
-                if k == 'site' or tag == 'type=site':
+                if k == 'site' or tag == 'type=site' or k == 'route':
                     relation_only = True
                 tag = '"{}"="{}"'.format(k, v)
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
@@ -100,6 +122,10 @@ out qt;'''.format(bbox, area_id, ''.join(union))
         with open(name, 'w') as f:
             json.dump(hit, f, indent=2)
 
+    def get_candidates(self):
+        filename = cache_filename('{}_candidates.json'.format(self.osm_id))
+        return json.load(open(filename))
+
     def run_matcher(self):
         filename = cache_filename('{}_candidates.json'.format(self.osm_id))
         if os.path.exists(filename):
@@ -142,5 +168,3 @@ out qt;'''.format(bbox, area_id, ''.join(union))
 
         json.dump(items, open(filename, 'w'), indent=2)
         return items
-
-
