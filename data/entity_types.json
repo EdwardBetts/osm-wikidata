@@ -491,7 +491,7 @@
 },
 {
     "cats": ["Piers by country"],
-    "tags": ["man_made=pier"],
+    "tags": ["man_made=pier", "landuse=retail"],
     "trim": ["pier"],
     "dist": 5
 },
