@@ -48,12 +48,12 @@ class Relation(object):
         (south, north, west, east) = self.bbox
         bbox = ','.join('{}'.format(i) for i in (south, west, north, east))
         union = []
-        # optimisation: we only expect route=*, type=site or site=<something> on relations
+        # optimisation: we only expect route, type or site on relations
         for tag in tags:
             relation_only = tag == 'site'
             if '=' in tag:
                 k, _, v = tag.partition('=')
-                if k == 'site' or tag == 'type=site' or k == 'route':
+                if k in {'site', 'type', 'route'}:
                     relation_only = True
                 tag = '"{}"="{}"'.format(k, v)
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
