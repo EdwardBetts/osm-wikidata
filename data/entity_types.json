@@ -1,0 +1,1137 @@
+[
+{
+    "cats": ["Canals by country"],
+    "tags": ["waterway=canal"],
+    "trim": [],
+    "dist": 30
+},
+{
+    "cats": ["Forts by country"],
+    "tags": ["historic=fort", "castle_type=fortress"],
+    "trim": ["fort"],
+    "wikidata": "Q57821",
+    "dist": 2
+},
+{
+    "cats": ["Libraries by country"],
+    "tags": ["amenity=library"],
+    "trim": ["library"],
+    "check_housename": true,
+    "wikidata": "Q7075",
+    "dist": 2
+},
+{
+    "cats": ["Docks (maritime)"],
+    "tags": ["waterway=dock"],
+    "trim": ["dock"],
+    "dist": 2
+},
+{
+    "cats": ["Bridges by country"],
+    "tags": ["bridge", "man_made=bridge", "building=bridge", "type=bridge"],
+    "trim": ["bridge", "aqueduct"],
+    "wikidata": "Q12280",
+    "dist": 2
+},
+{
+    "cats": ["Towers by country"],
+    "tags": ["man_made=tower", "man_made=water_tower", "building=tower"],
+    "trim": ["tower"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Water towers"],
+    "tags": ["man_made=water_tower"],
+    "trim": ["water tower", "tower"],
+    "wikidata": "Q274153",
+    "dist": 2
+},
+{
+    "cats": ["Bell towers"],
+    "tags": ["building=bell_tower", "tower:type=bell_tower", "tower=bell", "tower:type=bell"],
+    "trim": ["bell tower", "tower"],
+    "check_housename": true,
+    "wikidata": "Q200334",
+    "dist": 2
+},
+{
+    "cats": ["Cemeteries by country"],
+    "tags": ["landuse=cemetery", "amenity=grave_yard"],
+    "trim": ["cemetery", "grave yard", "burial ground", "burying ground"],
+    "wikidata": "Q39614",
+    "dist": 2
+},
+{
+    "cats": ["Museums by country"],
+    "tags": ["tourism=museum", "historic=museum", "building=museum", "tourism=gallery", "tourism=attraction"],
+    "trim": ["museum"],
+    "dist": 2
+},
+{
+    "cats": ["Hospitals by country"],
+    "tags": ["amenity=hospital", "building=hospital"],
+    "trim": ["hospital"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Astronomical observatories by country"],
+    "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory"],
+    "trim": ["telescope", "observatory", "astronomical observatory"],
+    "check_housename": true,
+    "dist": 3
+},
+{
+    "cats": ["Shopping malls by country", "Shopping centres"],
+    "tags": ["shop=mall", "site=mall", "type=site", "building", "landuse=commercial", "retail=retail_park"],
+    "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Castles by country"],
+    "tags": ["historic=castle", "building=castle", "tourism=attraction",
+             "historic=ruins", "historic=tower_house", "building=ruins",
+             "historic=archaeological_site"],
+    "trim": ["castle", "castell"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Places of worship by country"],
+    "tags": ["amenity=place_of_worship", "building=church"],
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center"],
+    "check_housename": true,
+    "dist": 1.5
+},
+{
+    "cats": ["Churches"],
+    "tags": ["building=church"],
+    "trim": ["church", "church centre", "church center"],
+    "check_housename": true,
+    "dist": 1.5
+},
+{
+    "cats": ["Chapels by country"],
+    "tags": ["building=chapel"],
+    "trim": ["chapel"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Mosques by country"],
+    "tags": ["building=mosque"],
+    "trim": ["mosque"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Synagogues by country"],
+    "tags": ["building=synagogue"],
+    "trim": ["temple", "synagogue"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Restaurants by country"],
+    "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli"],
+    "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge"],
+    "check_housename": true,
+    "dist": 6
+},
+{
+    "cats": ["Hotels by country", "Motels"],
+    "tags": ["tourism=hotel", "building=hotel", "tourism=motel"],
+    "trim": ["hotel", "resort", "motel"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures"],
+    "tags": ["historic=monument", "tourism=artwork"],
+    "trim": ["monument", "Statue of"],
+    "dist": 3
+},
+{
+    "cats": ["Dams by country"],
+    "tags": ["waterway=dam", "natural=water", "water=reservoir"],
+    "trim": ["dam"],
+    "dist": 10
+},
+{
+    "cats": ["Houses by country"],
+    "tags": ["building=house", "building=terrace", "building=detached", "building=semidetached_house", "building=heritage"],
+    "trim": ["house", "hall"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Palaces by country"],
+    "tags": ["historic=palace", "building=palace", "historic=castle"],
+    "trim": ["palace"],
+    "check_housename": true,
+    "dist": 3
+},
+{
+    "cats": ["Commercial buildings by country", "Office buildings by country"],
+    "tags": ["building", "landuse=commercial", "retail=retail_park"],
+    "trim": ["building", "tower", "shopping centre", "shopping center"],
+    "check_housename": true,
+    "dist": 0.5
+},
+{
+    "cats": ["Government buildings by country"],
+    "tags": ["office=government", "amenity=public_building", "building=public"],
+    "skip_cats": ["Ambassadors by country of origin", "Military installations", "Fire stations by country", "Police stations by country", "Publicly funded schools in the United States", "Prisons in the United States", "Lighthouses in the United States", "Fire stations in the United States", "Police stations in the United States", "Post office buildings in the United States", "Ambassadors by mission country", "Public schools"],
+    "trim": [],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Residential buildings by country"],
+    "skip_cats": ["Prisons in"],
+    "tags": ["building=residential", "building=detached", "building=house", "building=terrace", "building=semidetached_house", "landuse=residential"],
+    "trim": ["house", "estate"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Fountains by country"],
+    "tags": ["amenity=fountain"],
+    "trim": ["fountain"],
+    "dist": 2
+},
+{
+    "cats": ["Industrial buildings by country"],
+    "tags": ["building=industrial", "man_made=works", "building=manufacture"],
+    "trim": ["factory", "works"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Department store buildings"],
+    "tags": ["shop=department_store"],
+    "trim": ["department store", "store"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Agricultural buildings by country"],
+    "tags": ["building=farm", "building=barn", "building=farm_auxiliary"],
+    "trim": ["farm", "barn"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Pubs by country", "Drinking establishments by country"],
+    "tags": ["amenity=pub", "amenity=bar", "amenity=restaurant", "amenity=nightclub"],
+    "trim": ["pub", "house", "public house", "inn", "lounge", "bar and grill"],
+    "dist": 1
+},
+{
+    "cats": ["Retail markets by country", "Bazaars"],
+    "tags": ["amenity=marketplace"],
+    "trim": ["market", "market place", "bazaars"],
+    "dist": 4
+},
+{
+    "cats": ["Studios by country"],
+    "tags": ["amenity=studio"],
+    "trim": ["studio"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Convention centers by country"],
+    "tags": ["amenity=conference_centre"],
+    "trim": ["conference center", "conference centre", "convention center"],
+    "dist": 4
+},
+{
+    "cats": ["Airports by country"],
+    "tags": ["aeroway=aerodrome", "type=site", "site=aerodome", "site=airport"],
+    "trim": ["airport", "international airport", "aerodome"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Theatres by country"],
+    "tags": ["amenity=theatre"],
+    "trim": ["theatre", "theater", "playhouse", "opera house", "theatre company", "theater company"],
+    "check_housename": true,
+    "dist": 3
+},
+{
+    "cats": ["Cathedrals by country"],
+    "tags": ["building=cathedral"],
+    "trim": ["cathedral"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Diplomatic missions by receiving country"],
+    "tags": ["amenity=embassy"],
+    "trim": ["embassy", "diplomatic mission"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Lighthouses by country"],
+    "tags": ["man_made=lighthouse"],
+    "trim": ["light house", "light"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Cinemas and movie theaters by country", "Cinemas", "Movie theaters"],
+    "tags": ["amenity=cinema"],
+    "trim": ["cinema", "picture house", "theater", "theatre"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Arts centres"],
+    "tags": ["amenity=arts_centre"],
+    "trim": ["arts centre", "arts centre", "art center", "art centre", "center for the arts", "centre for the arts", "gallery"],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Music venues by country", "Nightclubs by country"],
+    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall"],
+    "trim": ["music venue", "club", "night club", "lounge"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Windmills by country"],
+    "tags": ["man_made=windmill"],
+    "trim": ["mill", "wind mill"],
+    "dist": 2
+},
+{
+    "cats": ["Casinos by country"],
+    "tags": ["amenity=casino"],
+    "trim": ["resort", "casino", "lounge", "casino resort"],
+    "dist": 5
+},
+{
+    "cats": ["Museum ships by country"],
+    "tags": ["historic=ship"],
+    "trim": ["museum"],
+    "dist": 5
+},
+{
+    "cats": ["Bus stations"],
+    "tags": ["amenity=bus_station"],
+    "trim": ["bus station", "bus terminal", "transit center", "transit centre"],
+    "dist": 4
+},
+{
+    "cats": ["Aquaria by country"],
+    "tags": ["tourism=aquarium"],
+    "trim": ["aquarium"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Stadiums"],
+    "tags": ["leisure=stadium"],
+    "trim": ["stadium"],
+    "dist": 4
+},
+{
+    "cats": ["Basins by country"],
+    "tags": ["landuse=basin"],
+    "area": true,
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Beaches by country"],
+    "tags": ["natural=beach"],
+    "trim": ["beach"],
+    "dist": 10
+},
+{
+    "cats": ["Caves by country"],
+    "tags": ["natural=cave_entrance"],
+    "trim": ["cave"],
+    "dist": 10
+},
+{
+    "cats": ["Cliffs by country"],
+    "tags": ["natural=cliff"],
+    "trim": ["cliff", "rock", "bluff", "point"],
+    "dist": 40
+},
+{
+    "cats": ["Depressions by country"],
+    "tags": ["natural=gully"],
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Glaciers by country"],
+    "tags": ["natural=glacier"],
+    "area": true,
+    "trim": ["glacier"],
+    "dist": 20
+},
+{
+    "name": "Peaks",
+    "cats": ["Hills by country", "Mountains by country"],
+    "tags": ["natural=peak"],
+    "trim": ["hill", "mountain", "peak"],
+    "dist": 3
+},
+{
+    "cats": ["Lakes by country"],
+    "tags": ["water=lake", "natural=lake"],
+    "trim": ["lake", "water"],
+    "area": true,
+    "dist": 15
+},
+{
+    "cats": ["Volcanoes by country"],
+    "tags": ["natural=volcano"],
+    "trim": ["volcano"],
+    "area": true,
+    "dist": 4
+},
+{
+    "cats": ["Waterfalls by country"],
+    "tags": ["waterway=waterfall"],
+    "trim": ["waterfall"],
+    "dist": 3
+},
+{
+    "cats": ["Rivers by country"],
+    "tags": ["type=waterway"],
+    "trim": ["river", "waterway", "stream"],
+    "skip_cats": ["Bridges in ", "Bridges over "],
+    "dist": 30
+},
+{
+    "cats": ["Wetlands by country"],
+    "tags": ["natural=wetland", "natural=water"],
+    "trim": ["wetland", "swamp", "bog", "lake", "water", "lagoon", "fen", "nature reserve", "marsh"],
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Archaeological sites by country"],
+    "tags": ["historic=archaeological_site"],
+    "trim": [],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Railway stations by country", "Railroad stations", "Train stations"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station"],
+    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
+    "check_housename": false,
+    "dist": 2
+},
+{
+    "cats": ["Rapid transit stations"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
+    "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
+    "check_housename": false,
+    "dist": 1
+},
+{
+    "cats": ["Barracks by country"],
+    "tags": ["military=barracks"],
+    "trim": ["barracks"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Post office buildings"],
+    "tags": ["amenity=post_office"],
+    "trim": ["post office"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Power stations by country"],
+    "tags": ["power=station", "power=plant"],
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Reservoirs by country"],
+    "tags": ["landuse=reservoir", "man_made=reservoir_covered", "water=reservoir"],
+    "trim": ["reservoir"],
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Parks by country"],
+    "tags": ["leisure=park", "landuse=recreation_ground", "leisure=common", "boundary=national_park"],
+    "trim": ["park", "gardens", "common", "estate"],
+    "area": true,
+    "dist": 5
+},
+{
+    "cats": ["National parks by country"],
+    "tags": ["leisure=nature_reserve", "boundary=national_park"],
+    "trim": [],
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Nature reserves"],
+    "tags": ["leisure=nature_reserve"],
+    "trim": [],
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Piers by country"],
+    "tags": ["man_made=pier"],
+    "trim": ["pier"],
+    "dist": 5
+},
+{
+    "cats": ["Quarries"],
+    "tags": ["landuse=quarry"],
+    "trim": ["quarry"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Mines by country"],
+    "tags": ["man_made=mineshaft", "man_made=mine"],
+    "trim": ["mine"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Schools by country"],
+    "tags": ["amenity=school", "building=school", "type=site", "site=school"],
+    "trim": ["school", "house"],
+    "check_housename": true,
+    "dist": 1.5
+},
+{
+    "cats": ["Universities by country", "University"],
+    "tags": ["amenity=university", "type=site", "site=university"],
+    "trim": ["university", "school", "college"],
+    "area": true,
+    "dist": 3
+},
+{
+    "cats": ["Campuses"],
+    "tags": ["amenity=university", "building"],
+    "trim": ["university", "school", "college"],
+    "area": true,
+    "dist": 5 
+},
+{
+    "cats": ["Colleges by country"],
+    "tags": ["amenity=college", "type=site", "site=college", "building=college"],
+    "trim": ["college"],
+    "check_housename": true,
+    "area": true,
+    "dist": 5
+},
+{
+    "cats": ["Radio masts and towers"],
+    "tags": ["man_made=mast", "tower:type=communication", "radio_transponder=yes"],
+    "trim": ["tower", "mast"],
+    "dist": 5
+},
+{
+    "cats": ["Communication towers"],
+    "tags": ["man_made=communications_tower"],
+    "trim": ["tower"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Zoos by country"],
+    "tags": ["tourism=zoo"],
+    "trim": ["zoo"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Swimming venues"],
+    "tags": ["amenity=swimming_pool", "leisure=swimming_pool", "leisure=water_park", "leisure=aquatics_centre"],
+    "trim": [],
+    "check_housename": true,
+    "dist": 2
+},
+{
+    "cats": ["Water parks by country"],
+    "tags": ["leisure=water_park"],
+    "trim": ["water park"],
+    "area": true,
+    "dist": 5
+},
+{
+    "cats": ["Seats of local government"],
+    "tags": ["amenity=townhall", "amenity=village_hall"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Tram stops in the United Kingdom"],
+    "tags": ["railway=tram_stop"],
+    "trim": ["tram stop", "stop"],
+    "dist": 4
+},
+{
+    "cats": ["Forests by country"],
+    "tags": ["landuse=forest", "natural=wood"],
+    "trim": ["wood", "forset"],
+    "area": true,
+    "dist": 60
+},
+{
+    "cats": ["Apartment buildings"],
+    "tags": ["building=apartments", "building=mixed_use", "building=house", "building=residential", "landuse=residential"],
+    "trim": ["house", "apartments", "estate", "tower"],
+    "skip_cats": ["Christian communities"],
+    "check_housename": true,
+    "dist": 0.5
+},
+{
+    "cats": ["Tunnels by country"],
+    "tags": ["tunnel", "type=tunnel"],
+    "trim": ["tunnel"],
+    "dist": 10
+},
+{
+    "cats": ["Roundabouts and traffic circles", "Roundabouts"],
+    "tags": ["junction=roundabout"],
+    "trim": ["roundabout", "traffic circle"],
+    "dist": 1
+},
+{
+    "cats": ["Road junctions"],
+    "tags": ["junction"],
+    "trim": ["interchange"],
+    "dist": 1
+},
+
+
+{
+    "cats": ["Playgrounds"],
+    "tags": ["leisure=playground"],
+    "trim": ["playground"],
+    "dist": 4
+},
+{
+    "cats": ["Filling stations"],
+    "tags": ["amenity=fuel"],
+    "trim": ["petrol station", "filling station", "gas station"],
+    "dist": 5
+},
+{
+    "cats": ["Garden centres"],
+    "tags": ["shop=garden_centre"],
+    "trim": [],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Orchards"],
+    "tags": ["landuse=orchard"],
+    "trim": ["orchard"],
+    "area": true,
+    "dist": 4
+},
+{
+    "cats": ["Gardens by country"],
+    "tags": ["leisure=garden", "natural=wood"],
+    "trim": ["garden"],
+    "dist": 5
+},
+{
+    "cats": ["Supermarkets by country"],
+    "tags": ["shop=supermarket"],
+    "trim": ["market", "supermarket"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Convenience stores"],
+    "tags": ["shop=convenience"],
+    "trim": ["convience store", "corner shop"],
+    "check_housename": true,
+    "dist": 4
+},
+{
+    "cats": ["Pharmacies by country"],
+    "tags": ["amenity=pharmacy"],
+    "trim": ["chemist", "pharmacy", "drug store"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Islands by country"],
+    "skip_cats": ["Environment of the United States by state or territory", "Insular areas of the United States"],
+    "tags": ["place=island", "place=islet", "boundary=administrative", "admin_level"],
+    "trim": ["island", "atoll"],
+    "depth": 3,
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Archipelagoes by country"],
+    "tags": ["place=archipelago", "boundary=administrative", "admin_level"],
+    "trim": ["chain"],
+    "area": true,
+    "dist": 20
+},
+{
+    "cats": ["Villages by country"],
+    "tags": ["place", "landuse=residential"],
+    "trim": ["CP", "village", "town"],
+    "area": true,
+    "dist": 5,
+    "max_area": 30
+},
+{
+    "cats": ["Hamlets"],
+    "tags": ["place", "landuse=residential"],
+    "trim": ["CP"],
+    "dist": 10
+},
+{
+    "cats": ["Swamps"],
+    "tags": ["wetland=swamp"],
+    "trim": ["swamp"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Shops"],
+    "tags": ["shop", "building=retail", "building=shop"],
+    "skip_cats": ["Hardlines", "Toys", "Market towns", "Food retailers", "Retail markets", "Retailers"],
+    "trim": ["shop"],
+    "dist": 5
+},
+{
+    "cats": ["Warehouses"],
+    "tags": ["building=warehouse"],
+    "trim": ["warehouse"],
+    "dist": 5
+},
+{
+    "cats": ["Rapids"],
+    "tags": ["waterway=rapids"],
+    "trim": ["rapids"],
+    "dist": 5
+},
+{
+    "cats": ["Aircraft hangars"],
+    "tags": ["building=hangar"],
+    "trim": [],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Mountain huts"],
+    "tags": ["tourism=alpine_hut", "tourism=wilderness_hut", "building=hut"],
+    "trim": ["hut"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Oil platforms", "Oil wells"],
+    "tags": ["man_made=pumping_rig", "man_made=petroleum_well"],
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Sewage treatment plants"],
+    "tags": ["man_made=wastewater_plant"],
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Tourist attractions by country"],
+    "tags": ["tourism=attraction"],
+    "skip_cats": ["Universities and colleges", "Places of worship in ", "Theatres in ", "Zoos in ", "Restaurants in ", "Museums in ", "Mountains of ", "Libraries in ", "Houses in", "Skyscrapers in ", "Historic sites in", "Buildings and structures ", "American architecture", "Entertainment events "],
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Campsites"],
+    "tags": ["tourism=camp_site", "site=camp_site"],
+    "trim": ["camp site"],
+    "dist": 10
+},
+{
+    "cats": ["Hostels"],
+    "tags": ["tourism=hostel"],
+    "trim": ["hostel"],
+    "check_housename": true,
+    "dist": 1
+},
+{
+    "cats": ["Golf clubs and courses by country"],
+    "tags": ["leisure=golf_course"],
+    "trim": ["golf course", "golf club"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Marinas by country"],
+    "tags": ["leisure=marina"],
+    "trim": ["marina", "club"],
+    "dist": 10
+},
+{
+    "cats": ["Seaside resorts"],
+    "tags": ["leisure=beach_resort"],
+    "trim": ["beach resort", "seaside resort"],
+    "dist": 10
+},
+{
+    "cats": ["Hackerspaces"],
+    "tags": ["leisure=hackerspace", "amenity=hackerspace"],
+    "trim": ["hackerspace", "hacklab", "makerspace", "hackspace", "space"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Art museums and galleries by country"],
+    "tags": ["tourism=gallery", "tourism=museum", "amenity=arts_centre"],
+    "trim": ["gallery", "space", "museum"],
+    "dist": 2
+},
+{
+    "cats": ["City walls"],
+    "tags": ["historic=citywalls"],
+    "trim": ["city walls", "walls"],
+    "dist": 1
+},
+{
+    "cats": ["Battlefields"],
+    "tags": ["historic=battlefield"],
+    "trim": ["battle field", "Battle of"],
+    "dist": 20
+},
+{
+    "cats": ["Towns by country"],
+    "tags": ["place=town", "place=village", "place=suburb"],
+    "skip_cats": ["Categories by town", "Wikipedia categories named after towns", "Lists by towns", "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford", "Barrow-in-Furness", "Cambridge", "city or town", "Visitor attractions in", "Categories by city"],
+    "trim": ["city", "town", "town of", "CP"],
+    "area": true,
+    "dist": 15
+},
+{
+    "cats": ["Suburbs"],
+    "tags": ["place=suburb", "admin_level", "boundary=administrative", "landuse=residential"],
+    "trim": [],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Areas", "Districts", "Populated places"],
+    "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
+    "trim": [],
+    "dist": 8
+},
+{
+    "cats": ["Neighbourhoods by country", "Ethnic enclaves"],
+    "skip_cats": ["Airports", "Airfields", "Aerodromes", "Military installations", "Campuses", "Christian monasteries", "Christian communities", "Parliamentary constituencies"],
+    "tags": ["place", "admin_level", "boundary", "landuse", "political_division=ward", "type=boundary"],
+    "trim": ["city", "town of", "town", "ward"],
+    "area": true,
+    "dist": 8
+},
+{
+    "cats": ["Slums"],
+    "tags": ["place"],
+    "trim": [],
+    "area": true,
+    "dist": 8
+},
+{
+    "cats": ["Cities by country"],
+    "tags": ["place=city"],
+    "skip_cats": ["Geography of", "Categories by city", "Wikipedia categories named after cities", "Lists by city", "Birmingham, West Midlands", "Leamington Spa", "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford", "Education in", "Economies by city", "Histories of cities", "National Register of Historic Places", "People by city", "Transportation in", "Tourist attractions", "Buildings and structures in", "city templates", "Images of cities", "Works about cities", "Urban decay in", "Urban politics in", "Mayors of", "Companies based in", "Media in"],
+    "trim": ["city"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Farms by country"],
+    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm"],
+    "trim": ["farm"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Horse racing venues by country"],
+    "tags": ["sport=horse_racing"],
+    "trim": ["track"],
+    "area": true,
+    "dist": 10
+},
+{
+    "name": "Sport venues",
+    "cats": ["Sports venues by country"],
+    "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
+    "trim": ["sports centre", "sport center", "track", "stadium"],
+    "dist": 2
+},
+{
+    "cats": ["Springs by country"],
+    "tags": ["natural=spring"],
+    "trim": ["spring"],
+    "dist": 10
+},
+{
+    "cats": ["Reefs"],
+    "tags": ["natural=reef", "boundary=administrative"],
+    "trim": [],
+    "dist": 15
+},
+{
+    "cats": ["Squares and plazas by country"],
+    "tags": ["area=yes"],
+    "trim": [],
+    "dist": 1
+},
+{
+    "cats": ["Housing estates"],
+    "tags": ["landuse=residential", "place=neighbourhood"],
+    "trim": ["estate"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Skyscrapers by country"],
+    "tags": ["building", "height"],
+    "trim": ["tower"],
+    "dist": 1
+},
+{
+    "cats": ["Heritage registers by country", "Historic sites by country"],
+    "tags": ["boundary=protected_area", "historic"],
+    "skip_cats": ["Churches in"],
+    "trim": [],
+    "area": true,
+    "dist": 2
+},
+{
+    "cats": ["Folly buildings"],
+    "tags": ["historic", "castle=folly"],
+    "trim": [],
+    "area": true,
+    "dist": 2
+},
+{
+    "cats": ["Runestones"],
+    "tags": ["historic"],
+    "trim": [],
+    "area": false,
+    "dist": 1
+},
+{
+    "cats": ["Business schools by country"],
+    "tags": ["amenity=college", "amenity=university"],
+    "trim": ["school", "business school"],
+    "dist": 2
+},
+{
+    "cats": ["Prisons by country"],
+    "tags": ["amenity=prison", "landuse=prison", "building=prison"],
+    "trim": [],
+    "dist": 5
+},
+{
+    "cats": ["Courthouses", "Court buildings"],
+    "tags": ["amenity=courthouse"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Comedy venues"],
+    "tags": ["comedy=yes"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Yacht clubs"],
+    "tags": ["sport=sailing"],
+    "trim": ["club"],
+    "dist": 2
+},
+{
+    "cats": ["Country houses", "Manor houses"],
+    "tags": ["historic=manor"],
+    "trim": ["house", "hall", "manor"],
+    "dist": 5
+},
+{
+    "cats": ["Hardware stores"],
+    "tags": ["shop=hardware", "shop=doityourself"],
+    "trim": [],
+    "dist": 1
+},
+{
+    "cats": ["Clubs and societies by country"],
+    "tags": ["club", "leisure=social_club", "sport", "amenity=bar"],
+    "trim": ["club", "lounge"],
+    "dist": 5
+},
+{
+    "name": "Football clubs",
+    "cats": ["Association football clubs by country", "Football clubs"],
+    "tags": ["sport=soccer"],
+    "trim": ["club", "f.c.", "football club", "afc"],
+    "dist": 5
+},
+{
+    "cats": ["Gaelic games by country"],
+    "tags": ["sport=gaelic_games"],
+    "trim": ["club", "GAA"],
+    "dist": 5
+},
+{
+    "cats": ["Community centres"],
+    "tags": ["amenity=community_centre"],
+    "trim": [],
+    "dist": 5
+},
+{
+    "cats": ["Restaurant districts and streets"],
+    "tags": ["highway", "landuse=commercial", "place"],
+    "trim": [],
+    "dist": 5
+},
+{
+    "cats": ["Monasteries by country"],
+    "tags": ["amenity=monastery", "building=monastery", "historic=monastery"],
+    "trim": ["monastery"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Business districts"],
+    "tags": ["landuse=commercial"],
+    "area": true,
+    "trim": [],
+    "dist": 5
+},
+{
+    "cats": ["Rock formations by country"],
+    "tags": ["natural", "landmark"],
+    "area": true,
+    "trim": [],
+    "dist": 20
+},
+{
+    "cats": ["Ruins by country"],
+    "tags": ["ruins", "building=ruins", "historic=ruins"],
+    "trim": [],
+    "dist": 20
+},
+{
+    "cats": ["Quarters"],
+    "tags": ["place=quarter"],
+    "area": true,
+    "trim": [],
+    "dist": 5
+},
+{
+    "cats": ["Buildings and structures under construction"],
+    "tags": ["landuse=construction"],
+    "area": true,
+    "trim": ["development"],
+    "dist": 5
+},
+{
+    "cats": ["Roller coasters by country"],
+    "tags": ["attraction=roller_coaster", "tourism=attraction"],
+    "area": true,
+    "trim": [],
+    "dist": 1
+},
+{
+    "cats": ["Ski areas and resorts by country"],
+    "tags": ["landuse=winter_sports", "site=piste"],
+    "area": true,
+    "trim": [],
+    "dist": 1
+},
+{
+    "cats": ["Food markets"],
+    "tags": ["building", "landuse=industrial", "amenity=marketplace"],
+    "trim": [],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Military installations by country"],
+    "tags": ["military", "type=site", "site=military", "landuse=military"],
+    "area": true,
+    "trim": [],
+    "dist": 10
+},
+{
+    "cats": ["Skateparks"],
+    "tags": ["sport=skateboard"],
+    "trim": [],
+    "dist": 2
+},
+{
+    "cats": ["Wind farms by country"],
+    "tags": ["generator:source=wind"],
+    "trim": [],
+    "area": true,
+    "dist": 6
+},
+{
+    "cats": ["Individual trees by country"],
+    "tags": ["natural=tree"],
+    "trim": [],
+    "area": true,
+    "dist": 2
+},
+{
+    "cats": ["Water supply and sanitation by country"],
+    "tags": ["landuse=industrial"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Category:Orphanages"],
+    "tags": ["social_facility:for=orphan"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Railway lines"],
+    "tags": ["route=train"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Rest areas", "motorway service"],
+    "tags": ["highway=services"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Greyhound racing venues"],
+    "tags": ["sport=dog_racing"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Long-distance footpaths"],
+    "tags": ["route=hiking"],
+    "trim": [],
+    "dist": 4
+}
+]
