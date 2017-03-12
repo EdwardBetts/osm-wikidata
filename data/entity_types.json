@@ -717,6 +717,12 @@
     "dist": 5
 },
 {
+    "cats": ["Bookshops"],
+    "tags": ["shop=books"],
+    "trim": [],
+    "dist": 5
+},
+{
     "cats": ["Warehouses"],
     "tags": ["building=warehouse"],
     "trim": ["warehouse"],
