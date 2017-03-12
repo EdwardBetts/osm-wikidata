@@ -1058,6 +1058,18 @@
     "dist": 1
 },
 {
+    "cats": ["World Heritage Sites"],
+    "tags": ["tourism=attraction"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Mountain passes"],
+    "tags": ["mountain_pass=yes"],
+    "trim": [],
+    "dist": 4
+},
+{
     "cats": ["Ski areas and resorts by country"],
     "tags": ["landuse=winter_sports", "site=piste"],
     "area": true,
