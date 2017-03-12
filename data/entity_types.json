@@ -1123,6 +1123,18 @@
     "dist": 4
 },
 {
+    "cats": ["Category:Non-metropolitan districts"],
+    "tags": ["designation=non_metropolitan_district"],
+    "trim": ["District"],
+    "dist": 4
+},
+{
+    "cats": ["Category:Unitary authority districts"],
+    "tags": ["designation=unitary_authority"],
+    "trim": ["District"],
+    "dist": 4
+},
+{
     "cats": ["Railway lines"],
     "tags": ["route=train"],
     "trim": [],
