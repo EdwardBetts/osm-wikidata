@@ -110,8 +110,9 @@ out qt;'''.format(bbox, area_id, ''.join(union))
 
     @property
     def overpass_error(self):
-        start = open(self.overpass_filename).read(1000)
-        return 'runtime error' in start or 'Gateway Timeout' in start
+        # read as bytes to avoid UnicodeDecodeError
+        start = open(self.overpass_filename, 'rb').read(1000)
+        return b'runtime error' in start or b'Gateway Timeout' in start
 
     def save_overpass(self, content):
         with open(self.overpass_filename, 'wb') as out:
