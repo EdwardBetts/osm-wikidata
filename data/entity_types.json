@@ -387,9 +387,9 @@
     "dist": 3
 },
 {
-    "cats": ["Lakes by country"],
-    "tags": ["water=lake", "natural=lake"],
-    "trim": ["lake", "water"],
+    "cats": ["Lakes by country", "Ponds"],
+    "tags": ["water=lake", "natural=lake", "water=pond"],
+    "trim": ["lake", "water", "pond"],
     "area": true,
     "dist": 15
 },
