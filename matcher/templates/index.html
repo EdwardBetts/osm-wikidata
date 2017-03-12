@@ -26,7 +26,7 @@
       {% for item in existing %}
         <tr>
           <td>
-            {% set endpoint = 'candidates' if item.namedetails else 'get_wikidata' %}
+            {% set endpoint = 'candidates' if item.namedetails else 'matcher_progress' %}
             <a href="{{ url_for(endpoint, osm_id=item.osm_id) }}">
               {{ item.display_name }}</a>
             {% if item.address.country and item.address.country not in item.display_name %}
@@ -56,11 +56,11 @@
       {% if hit.osm_type == 'relation' %}
         <b>
           {% if name %}
-            <a href="{{ url_for('get_wikidata', osm_id=hit.osm_id) }}">{{ name }}</a>,
+            <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ name }}</a>,
             {% if hit.address.state %}{{ hit.address.state }}, {% endif %}
             {{ hit.address.country }}
           {% else %}
-            <a href="{{ url_for('get_wikidata', osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
+            <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
           {% endif %}
         </b><br>
       {% else %}

@@ -106,7 +106,7 @@ def candidates(osm_id):
 
     for i in 'summary', 'candidates':
         if not os.path.exists(cache_filename('{}_{}.json'.format(osm_id, i))):
-            return redirect(url_for('get_wikidata', osm_id=osm_id))
+            return redirect(url_for('matcher_progress', osm_id=osm_id))
 
     relation.wbgetentities()
     oql = relation.oql(relation.all_tags)
@@ -176,8 +176,8 @@ def detail(relation):
     nominatim_lookup(relation.display_name)  # refresh
     return relation.get_detail()
 
-@app.route('/get_wikidata/<int:osm_id>')
-def get_wikidata(osm_id):
+@app.route('/matcher/<int:osm_id>')
+def matcher_progress(osm_id):
     relation = Relation(osm_id)
     wikidata_item = detail(relation)
 
