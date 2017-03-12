@@ -2,20 +2,18 @@
 from collections import defaultdict
 from unidecode import unidecode
 
-import os
-import os.path
 import re
-import json
 
 from enum import Enum
 
 entity_endings = defaultdict(dict)
 re_strip_non_chars = re.compile(r'[^@\w]', re.U)
-bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
-                   'gnis:county_name', 'openGeoDB:name'}
 
+MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
-Match = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
+class Match(object):
+    def __init__(self, match_type):
+        self.match_type = match_type
 
 def tidy_name(n):
     n = n.replace('saint ', 'st ')
@@ -34,10 +32,10 @@ def initials_match(n1, n2, endings=None):
     if len(initals) < 3 or len(n1) < 3:
         return
     if initals == n1:
-        return Match.initials
+        return Match(MatchType.initials)
     if any(initals == trim for trim in [n1[:-len(end)].strip()
            for end in endings or [] if n1_lc.endswith(end.lower())]):
-        return Match.initials_trim
+        return Match(MatchType.initials_trim)
 
 def name_match_main(osm, wd, endings=None):
     wd_lc = wd.lower()
@@ -50,41 +48,41 @@ def name_match_main(osm, wd, endings=None):
         return m
 
     if re_strip_non_chars.sub('', wd_lc) == re_strip_non_chars.sub('', osm_lc):
-        return Match.good
+        return Match(MatchType.good)
     wd_lc = tidy_name(wd_lc)
     osm_lc = tidy_name(osm_lc)
     if not wd_lc or not osm_lc:
         return
     if wd_lc == osm_lc:
         # print ('{} == {} was: {}'.format(wd_lc, osm_lc, osm))
-        return Match.good
+        return Match(MatchType.good)
     if 'washington, d' in wd_lc:  # special case for Washington, D.C.
         wd_lc = wd_lc.replace('washington, d', 'washington d')
     comma = wd_lc.rfind(', ')
     if comma != -1 and wd_lc[:comma] == osm_lc:
-        return Match.good
+        return Match(MatchType.good)
     if wd_lc.split() == list(reversed(osm_lc.split())):
-        return Match.good
+        return Match(MatchType.good)
     wd_lc = re_strip_non_chars.sub('', wd_lc)
     osm_lc = re_strip_non_chars.sub('', osm_lc)
     if wd_lc == osm_lc:
-        return Match.good
+        return Match(MatchType.good)
     if wd_lc.startswith('the'):
         wd_lc = wd_lc[3:]
     if osm_lc.startswith('the'):
         osm_lc = osm_lc[3:]
     if wd_lc == osm_lc:
-        return Match.good
+        return Match(MatchType.good)
 
     for end in ['building'] + list(endings or []):
         if wd_lc.endswith(end) and wd_lc[:-len(end)] == osm_lc:
-            return Match.trim
+            return Match(MatchType.trim)
         if wd_lc.startswith(end) and wd_lc[len(end):] == osm_lc:
-            return Match.trim
+            return Match(MatchType.trim)
         if osm_lc.endswith(end) and osm_lc[:-len(end)] == wd_lc:
-            return Match.trim
+            return Match(MatchType.trim)
         if osm_lc.startswith(end) and osm_lc[len(end):] == wd_lc:
-            return Match.trim
+            return Match(MatchType.trim)
     return
 
 def name_match(osm, wd, endings=None):
@@ -93,7 +91,7 @@ def name_match(osm, wd, endings=None):
     if match:
         return match
     if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
-        return Match.trim
+        return Match(MatchType.trim)
 
 def normalize_name(name):
     return re_strip_non_chars.sub('', name.lower())
@@ -111,16 +109,14 @@ def check_name_matches_address(osm_tags, wikidata):
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:housenumber'] + osm_tags['addr:street'])
         if any(name == osm_address for name in number_start):
-            return Match.address
+            return Match(MatchType.address)
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
         if any(name in osm_address for name in number_start):
-            return Match.address
-
-
-skip_lang = {'ar', 'arc', 'pl'}
+            return Match(MatchType.address)
 
 def get_wikidata_names(item):
+    skip_lang = {'ar', 'arc', 'pl'}
     # print(len(item['sitelinks']), len(item['labels']))
     names = defaultdict(list)
     # only include aliases if there are less than 10 other names
@@ -143,6 +139,9 @@ def get_wikidata_names(item):
     return names
 
 def check_for_match(osm_tags, wikidata):
+    bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
+                       'name:left', 'gnis:county_name', 'openGeoDB:name'}
+
     endings = set()
     names = {k: v for k, v in osm_tags.items()
              if 'name' in k and k not in bad_name_fields}
@@ -156,38 +155,14 @@ def check_for_match(osm_tags, wikidata):
     for w, source in wikidata['names'].items():
         for o in names.values():
             m = name_match(o, w, endings)
-            if m == Match.good:
+            if m.match_type == MatchType.good:
                 # print(source, '  match: {} == {}'.format(o, w))
                 return m
-            elif m == Match.trim:
-                best = Match.trim
+            elif m.match_type == MatchType.trim:
+                best = Match(MatchType.trim)
 
     address_match = check_name_matches_address(osm_tags, wikidata)
     return address_match or best
-
-def flatten(l):
-    return [item for sublist in l for item in sublist]
-
-def get_wikidata_items():
-    all_items = {}
-    d = os.path.join(data_dir, 'found')
-    for f in os.listdir(d):
-        full = os.path.join(d, f)
-        cat = f[:-5].replace('_', ' ')
-        for item in json.load(open(full)):
-            item_id = item['id']
-            # if item_id != 3100:
-            #     continue
-            cat_paths = {tuple(path) for path in item['cat_paths']}
-            if item_id in all_items:
-                all_items[item_id]['cats'].add(cat)
-                all_items[item_id]['cat_paths'].update(cat_paths)
-            else:
-                item['cats'] = {cat}
-                item['cat_paths'] = cat_paths
-                all_items[item_id] = item
-
-    return all_items
 
 def get_osm_id_and_type(source_type, source_id):
     if source_type == 'point':
