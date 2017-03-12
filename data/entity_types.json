@@ -236,7 +236,7 @@
     "dist": 4
 },
 {
-    "cats": ["Studios by country"],
+    "cats": ["Studios by country", "Radio stations"],
     "tags": ["amenity=studio"],
     "trim": ["studio"],
     "check_housename": true,
@@ -469,9 +469,9 @@
     "dist": 20
 },
 {
-    "cats": ["Parks by country"],
+    "cats": ["Parks by country", "National Natural Landmarks"],
     "tags": ["leisure=park", "landuse=recreation_ground", "leisure=common", "boundary=national_park"],
-    "trim": ["park", "gardens", "common", "estate"],
+    "trim": ["park", "gardens", "common", "estate", "national natural landmark"],
     "area": true,
     "dist": 5
 },
@@ -921,7 +921,7 @@
     "dist": 1
 },
 {
-    "cats": ["Heritage registers by country", "Historic sites by country"],
+    "cats": ["Heritage registers by country", "Historic sites by country", "National Register of Historic Places"],
     "tags": ["boundary=protected_area", "historic"],
     "skip_cats": ["Churches in"],
     "trim": [],
