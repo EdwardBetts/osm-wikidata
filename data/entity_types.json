@@ -429,7 +429,7 @@
 },
 {
     "cats": ["Railway stations by country", "Railroad stations", "Train stations"],
-    "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
     "dist": 2
@@ -896,7 +896,7 @@
     "dist": 15
 },
 {
-    "cats": ["Squares and plazas by country"],
+    "cats": ["Squares and plazas by country", "Squares", "Plazas"],
     "tags": ["area=yes"],
     "trim": [],
     "dist": 1
