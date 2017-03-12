@@ -91,28 +91,6 @@ def export_osm(osm_id, name):
     xml = etree.tostring(root, pretty_print=True)
     return Response(xml, mimetype='text/xml')
 
-def unused():
-    root = etree.Element('osm', version='0.6', upload='true')
-
-    for item in items:
-        osm = item['osm']
-        assert (osm['id'], osm['type']) not in seen
-        seen.add((osm['id'], osm['type']))
-        assert 'wikidata' not in osm['tags']
-        e = get_osm_object(osm)
-        if e is None:
-            continue
-        for f in 'uid', 'user', 'timestamp', 'visible', 'changeset':
-            del e.attrib[f]
-        e.attrib['version'] = str(int(e.attrib['version']) + 1)
-        e.attrib['action'] = 'modify'
-        tag = etree.Element('tag', k='wikidata', v=item['qid'])
-        e.append(tag)
-        root.append(e)
-
-    xml = etree.tostring(root, pretty_print=True)
-    return Response(xml, mimetype='text/xml')
-
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     relation = Relation(osm_id)
