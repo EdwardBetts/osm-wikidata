@@ -298,7 +298,7 @@
     "dist": 2
 },
 {
-    "cats": ["Music venues by country", "Nightclubs by country"],
+    "cats": ["Music venues by country", "Nightclubs by country", "Jazz clubs", "Concert halls", "Opera houses"],
     "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall"],
     "trim": ["music venue", "club", "night club", "lounge"],
     "check_housename": true,
