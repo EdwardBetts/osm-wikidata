@@ -1142,7 +1142,7 @@
 },
 {
     "cats": ["Railway lines"],
-    "tags": ["route=train"],
+    "tags": ["route=train", "route=subway", "type=route"],
     "trim": [],
     "dist": 4
 },
