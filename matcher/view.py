@@ -77,8 +77,8 @@ def candidates(osm_id):
         error = open(relation.overpass_filename).read()
         return render_template('candidates.html',
                                overpass_error=error,
+                               relation=relation,
                                hit=wikidata_item,
-                               oql='',
                                candidates=[])
 
     for i in 'summary', 'candidates':
