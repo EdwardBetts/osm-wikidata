@@ -1159,6 +1159,13 @@
     "dist": 4
 },
 {
+    "cats": ["Chalk pits", "Quarries"],
+    "tags": ["landuse=quarry"],
+    "area": true,
+    "trim": [],
+    "dist": 4
+},
+{
     "cats": ["Long-distance footpaths"],
     "tags": ["route=hiking"],
     "trim": [],
