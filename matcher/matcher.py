@@ -109,7 +109,7 @@ def find_matches(items, conn, debug=False):
                 'name': osm_name,
                 'tags': osm_tags,
                 'dist': dist,
-                'match': match.name,
+                'match': match.match_type.name,
                 'planet_table': src_type,
                 'src_id': src_id,
             }

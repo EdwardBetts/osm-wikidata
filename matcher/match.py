@@ -155,10 +155,10 @@ def check_for_match(osm_tags, wikidata):
     for w, source in wikidata['names'].items():
         for o in names.values():
             m = name_match(o, w, endings)
-            if m.match_type == MatchType.good:
+            if m and m.match_type == MatchType.good:
                 # print(source, '  match: {} == {}'.format(o, w))
                 return m
-            elif m.match_type == MatchType.trim:
+            elif m and m.match_type == MatchType.trim:
                 best = Match(MatchType.trim)
 
     address_match = check_name_matches_address(osm_tags, wikidata)
