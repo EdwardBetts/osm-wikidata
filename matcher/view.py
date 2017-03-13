@@ -99,14 +99,18 @@ def candidates(osm_id):
     candidate_list = relation.run_matcher()
 
     multiple_only = bool(request.args.get('multiple'))
+    multiple_matches = [i for i in candidate_list
+                        if len(i['candidates']) > 1]
+    full_count = len(candidate_list)
     if multiple_only:
-        candidate_list = [i for i in candidate_list
-                          if len(i['candidates']) > 1]
+        candidate_list = multiple_matches
 
     return render_template('candidates.html',
                            hit=wikidata_item,
                            relation=relation,
                            multiple_only=multiple_only,
+                           full_count=full_count,
+                           multiple_match_count=len(multiple_matches),
                            candidates=candidate_list)
 
 @app.route('/load/<int:osm_id>/wbgetentities', methods=['POST'])
