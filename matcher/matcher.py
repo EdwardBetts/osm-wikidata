@@ -45,7 +45,7 @@ def find_tags(items):
         all_tags |= tags
     return sorted(simplify_tags(all_tags))
 
-def find_matches(items, conn):
+def find_matches(items, conn, debug=False):
     bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
                        'gnis:county_name', 'openGeoDB:name'}
 
