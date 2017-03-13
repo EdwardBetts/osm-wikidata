@@ -144,6 +144,7 @@ def load_match(osm_id):
 
     item = load_from_cache('{}_nominatim.json'.format(osm_id))
     out = open(cache_filename('{}_summary.json'.format(osm_id)), 'w')
+    item['item_count'] = len(relation.items_with_tags)
     item['candidate_count'] = len(candidates)
     json.dump(item, out, indent=2)
     out.close()
