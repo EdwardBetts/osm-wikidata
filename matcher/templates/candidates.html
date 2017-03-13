@@ -47,10 +47,12 @@
     <p><a href="{{ url }}">Download as OSM XML file</a></p>
   {% endif %}
 
-  {% if multiple_only %}
-    <p>[Filter: <b>only multiple</b> <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id) }}">(remove)</a>]
-  {% else %}
-    <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id, multiple=1) }}">only multiple matches</a>]
+  {% if not overpass_error and candidates %}
+    {% if multiple_only %}
+      <p>[Filter: <b>only multiple</b> <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id) }}">(remove)</a>]
+    {% else %}
+      <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id, multiple=1) }}">only multiple matches</a>]
+    {% endif %}
   {% endif %}
 
   {% for i in candidates %}
