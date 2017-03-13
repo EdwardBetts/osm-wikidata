@@ -68,10 +68,14 @@ def export_osm(osm_id, name):
     xml = etree.tostring(root, pretty_print=True)
     return Response(xml, mimetype='text/xml')
 
+def redirect_to_matcher(osm_id):
+    return redirect(url_for('matcher_progress', osm_id=osm_id))
+
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     relation = Relation(osm_id)
     wikidata_item = relation.item_detail()
+    relation.clip_items_to_polygon()
 
     if relation.overpass_error:
         error = open(relation.overpass_filename).read()
@@ -83,7 +87,7 @@ def candidates(osm_id):
 
     for i in 'summary', 'candidates':
         if not os.path.exists(cache_filename('{}_{}.json'.format(osm_id, i))):
-            return redirect(url_for('matcher_progress', osm_id=osm_id))
+            return redirect_to_matcher(osm_id)
 
     relation.wbgetentities()
     tables = db.create_database(relation.dbname)
@@ -92,11 +96,10 @@ def candidates(osm_id):
               'raster_overviews', 'planet_osm_roads', 'raster_columns',
               'planet_osm_line', 'planet_osm_point', 'planet_osm_polygon'}
     if tables != expect:
-        error = relation.load_into_pgsql(osm_id)
-        if error:
-            return 'osm2pgsql error: ' + error
+        return redirect_to_matcher(osm_id)
 
     candidate_list = relation.run_matcher()
+    qid_with_match_candidate = {i['qid'] for i in candidate_list}
 
     multiple_only = bool(request.args.get('multiple'))
     multiple_matches = [i for i in candidate_list
@@ -105,9 +108,15 @@ def candidates(osm_id):
     if multiple_only:
         candidate_list = multiple_matches
 
+    items_without_matches = {}
+    for enwp, item in relation.clip_items_to_polygon().items():
+        if item['within_area'] and item['qid'] not in qid_with_match_candidate:
+            items_without_matches[enwp] = item
+
     return render_template('candidates.html',
                            hit=wikidata_item,
                            relation=relation,
+                           items_without_matches=items_without_matches,
                            multiple_only=multiple_only,
                            full_count=full_count,
                            multiple_match_count=len(multiple_matches),
@@ -148,7 +157,7 @@ def load_match(osm_id):
 
     item = load_from_cache('{}_nominatim.json'.format(osm_id))
     out = open(cache_filename('{}_summary.json'.format(osm_id)), 'w')
-    item['item_count'] = len(relation.items_with_tags)
+    item['item_count'] = len(relation.get_items_with_tags())
     item['candidate_count'] = len(candidates)
     json.dump(item, out, indent=2)
     out.close()

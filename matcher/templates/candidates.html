@@ -72,6 +72,26 @@
     </ul>
     </p>
   {% endfor %}
+
+  <h4>Items with no match found in OSM</h4>
+
+  <p>{{ '{:,d}'.format(items_without_matches.items() | count) }} items</p>
+
+  {% for enwp, i in items_without_matches.items() %}
+    {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
+    <p>
+      <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
+      &mdash; {{ i.label }}
+      &mdash; <a href="{{ osm_url }}">Wikidata location on OSM</a>
+      <br>
+      <ul>
+        <li>Wikipedia categories: {{ ', '.join(i.cats) }}</li>
+        {% if i.tags %}
+          <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
+        {% endif %}
+      </ul>
+    </p>
+  {% endfor %}
 </div>
 </div>
 </div>
