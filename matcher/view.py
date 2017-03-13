@@ -156,10 +156,17 @@ def matcher_progress(osm_id):
                            osm_id=osm_id)
 
 def get_existing():
+    sort = request.args.get('sort') or 'candidate_count'
     existing = [load_from_cache(f)
                 for f in os.listdir(cache_dir())
                 if f.endswith('_summary.json')]
-    existing.sort(key=lambda i: i['candidate_count'], reverse=True)
+    if sort == 'match_percent':
+        def get_match_percent(i):
+            if i.get('item_count') and i.get('candidate_count'):
+                return i['candidate_count'] / i['item_count']
+        existing.sort(key=lambda i: (get_match_percent(i) or 0, i['candidate_count']), reverse=True)
+    else:
+        existing.sort(key=lambda i: i[sort], reverse=True)
     return existing
 
 @app.route("/")

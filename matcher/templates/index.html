@@ -23,6 +23,15 @@
   {% include "form.html" %}
   {% if not q %}
     <table class="table table-hover table-sm" style="width: auto">
+      <thead>
+        <tr>
+        <th>name</th>
+        <th>type</th>
+        <th align="right">item<br>count</th>
+        <th align="right">match<br>count</th>
+        <th align="right">match<br>percent</th>
+        </tr>
+      <tbody>
       {% for item in existing %}
         <tr>
           <td>
@@ -34,12 +43,17 @@
             {% endif %}
           </td>
           <td>{{ item.type }}</td>
+          <td align="right">{{ item.item_count }}</td>
           <td align="right">{{ item.candidate_count }}</td>
+          {% if item.item_count and item.candidate_count %}
+            <td align="right">{{ '{:.1%}'.format(item.candidate_count / item.item_count) }}</td>
+          {% endif %}
         </tr>
         {# <tr>
           <td colspan="2"><pre>{{ item | pprint }}</pre></td>
         </tr> #}
       {% endfor %}
+      </tbody>
     </table>
   {% endif %}
 
