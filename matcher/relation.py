@@ -25,6 +25,7 @@ def nominatim_lookup(q):
         'limit': 20,
         'namedetails': 1,
         'accept-language': 'en',
+        'polygon_text': 1,
     }
     r = requests.get(url, params=params)
     results = []
@@ -83,6 +84,19 @@ class Relation(object):
         self.items_with_tags = items
         return items
 
+    def clip_items_to_polygon(self):
+        items = self.get_items_with_tags()
+        # assumes that this relation was returned by overpass
+        conn = db_connect(self.dbname)
+        cur = conn.cursor()
+        for enwiki, item in items.items():
+            point = "ST_TRANSFORM(ST_SETSRID(ST_MAKEPOINT({}, {}),4326), 3857)".format(item['lon'], item['lat'])
+            sql = 'select ST_Within({}, way) from planet_osm_polygon where osm_id={}'.format(point, -self.osm_id)
+            cur.execute(sql)
+            item['within_area'] = cur.fetchone()[0]
+        conn.close()
+        return items
+
     def get_oql(self):
         if self.oql:
             return self.oql
@@ -91,7 +105,7 @@ class Relation(object):
 
         (south, north, west, east) = self.bbox
         bbox = ','.join('{}'.format(i) for i in (south, west, north, east))
-        union = []
+        union = ['rel({});'.format(self.osm_id)]
         # optimisation: we only expect route, type or site on relations
         for tag in self.all_tags:
             relation_only = tag == 'site'
@@ -108,6 +122,7 @@ area({})->.a;
 ({});
 (._;>;);
 out qt;'''.format(bbox, area_id, ''.join(union))
+        print(self.oql)
         return self.oql
 
     def wikidata_query(self):
