@@ -134,6 +134,9 @@ out qt;'''.format(bbox, area_id, ''.join(union))
         open(filename, 'wb').write(r.content)
         return r.json()['results']['bindings']
 
+    def get_wikidata_query(self):
+        return wikidata.get_query(*self.bbox)
+
     @property
     def dbname(self):
         return '{}{}'.format(current_app.config['DB_PREFIX'], self.osm_id)
