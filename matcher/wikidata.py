@@ -27,13 +27,16 @@ SELECT ?place ?placeLabel ?lat ?lon ?article ?end WHERE {
     }
 }'''
 
-def run_query(south, north, west, east):
+def get_query(south, north, west, east):
+    return render_template_string(wikidata_query,
+                                  south=south,
+                                  north=north,
+                                  west=west,
+                                  east=east)
 
-    query = render_template_string(wikidata_query,
-                                   south=south,
-                                   north=north,
-                                   west=west,
-                                   east=east)
+
+def run_query(south, north, west, east):
+    query = get_query(south, north, west, east)
 
     url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
     r = requests.get(url, params={'query': query, 'format': 'json'})
