@@ -1,7 +1,7 @@
 from flask import current_app
 
 from .wikipedia import get_items_with_cats
-from . import wikidata
+from . import wikidata, user_agent_headers
 from .utils import cache_filename, load_from_cache
 from .matcher import find_matches, find_tags, filter_candidates
 from .db import db_connect
@@ -27,7 +27,7 @@ def nominatim_lookup(q):
         'accept-language': 'en',
         'polygon_text': 1,
     }
-    r = requests.get(url, params=params)
+    r = requests.get(url, params=params, headers=user_agent_headers())
     results = []
     for hit in r.json():
         results.append(hit)
