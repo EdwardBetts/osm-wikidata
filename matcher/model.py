@@ -19,9 +19,8 @@ class Place(Base):   # assume all places are relations
     type = Column(String, nullable=False)
     place_id = Column(BigInteger, primary_key=True)
     place_rank = Column(Integer, nullable=False)
-    # osm_type = Column(Enum('node', 'way', 'relation'), nullable=False)
     icon = Column(String)
-    location = Column(Geography('GEOMETRY'), index=True)
+    geom = Column(Geography('GEOMETRY'), index=True)
     south = Column(Float, nullable=False)
     west = Column(Float, nullable=False)
     north = Column(Float, nullable=False)
@@ -41,7 +40,7 @@ class Item(Base):
     __tablename__ = 'item'
 
     item_id = Column(Integer, primary_key=True)
-    geom = Column(Geography('POINT'), index=True, nullable=False)
+    location = Column(Geography('POINT'), index=True, nullable=False)
     enwiki = Column(String, nullable=False)
     entity = Column(JSON)
     categories = Column(postgresql.ARRAY(String))
