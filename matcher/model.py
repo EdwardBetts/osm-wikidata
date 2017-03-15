@@ -13,11 +13,11 @@ Base.query = session.query_property()
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
 
-    osm_id = Column(BigInteger, nullable=False)
+    osm_id = Column(BigInteger, primary_key=True, autoincrement=False)
     display_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     type = Column(String, nullable=False)
-    place_id = Column(BigInteger, primary_key=True)
+    place_id = Column(BigInteger, nullable=False)
     place_rank = Column(Integer, nullable=False)
     icon = Column(String)
     geom = Column(Geography('GEOMETRY'), index=True)
