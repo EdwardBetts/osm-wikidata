@@ -1,5 +1,5 @@
 from flask import current_app
-from collections import defaultdict
+from collections import defaultdict, Counter
 from .match import check_for_match, get_wikidata_names
 
 import os.path
@@ -285,23 +285,23 @@ def filter_candidates(items, conn):
             continue
     return items
 
-def filter_candidates_more(items):
-    items2 = []
-    osm_count = defaultdict(list)
+def filter_candidates_more(items, debug=False):
+    osm_count = Counter()
     for item in items:
-        if len(item['candidates']) != 1:
-            continue
-        osm = item['candidates'][0]
-        item['osm'] = osm
-        if 'wikidata' in item['osm']['tags']:
-            continue
-        items2.append(item)
-        osm_count[(osm['type'], osm['id'])].append(item)
-    for k, v in osm_count.items():
-        if len(v) > 1:
-            # print (k, len(v))
-            for item in v:
-                items2.remove(item)
-    return items2
+        for c in item.candidates:
+            osm_count[(c.osm_type, c.osm_id)] += 1
 
-
+    for item in items:
+        if item.candidates.count() != 1:
+            if debug:
+                print('too many candidates', item.enwiki)
+            continue
+        if any(osm_count[(c.osm_type, c.osm_id)] > 1 for c in item.candidates):
+            if debug:
+                print('multiple matches', item.enwiki)
+            continue
+        if 'wikidata' in item.candidates.first().tags:
+            if debug:
+                print('already has wikidata', item.enwiki)
+            continue
+        yield item
