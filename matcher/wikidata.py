@@ -98,6 +98,7 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
         return
 
     ret = defaultdict(list)
+    cat_start = 'Category:'
 
     for k, v in entity['labels'].items():
         if k in skip_lang:
@@ -107,7 +108,11 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
     for k, v in entity['sitelinks'].items():
         if k + 'wiki' in skip_lang:
             continue
-        ret[v['title']].append(('sitelink', k))
+        title = v['title']
+        if title.startswith(cat_start):
+            title = title[len(cat_start):]
+
+        ret[title].append(('sitelink', k))
 
     if len(entity['sitelinks']) < 6 and len(entity['labels']) < 6:
         for lang, value_list in entity.get('aliases', {}).items():
