@@ -19,6 +19,15 @@ def get_cats(titles):
     json_reply = r.json()
     return json_reply['query']['pages']
 
+def page_category_iter(titles):
+    for cur in chunk(titles, page_size):
+        for page in get_cats(cur):
+            if 'categories' not in page:  # redirects
+                continue
+            cats = [drop_start(cat['title'], 'Category:')
+                    for cat in page['categories']]
+            yield (page['title'], cats)
+
 def get_items_with_cats(items):
     assert isinstance(items, dict)
     for cur in chunk(items.keys(), page_size):

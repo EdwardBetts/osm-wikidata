@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>{{ hit.display_name }}: OSM ◀ ▶ Wikidata</title>
+  <title>{{ place.display_name }}: OSM ◀ ▶ Wikidata</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
   <style>
     .box {
@@ -17,21 +17,17 @@
   <div class="container-fluid">
   <div class="row">
   <div class="col">
-  {% set name = hit.namedetails['name:en'] or hit.namedetails.name %}
-  <h1>{{ name }}: OSM ◀ ▶ Wikidata</h1>
-  {% set q = hit.display_name %}
+  <h1>{{ place.name }}: OSM ◀ ▶ Wikidata</h1>
+  {% set q = place.display_name %}
   {% include "form.html" %}
 
     <div class="box">
-      <b>{{ hit.display_name }}</b><br>
-      category: {{ hit.category }}
+      <b>{{ place.display_name }}</b><br>
+      category: {{ place.category }}
       &mdash;
-      type: {{ hit.type }}
+      type: {{ place.type }}
       &mdash;
-      OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
-      {% if detail %}
-        <pre>{{ hit | pprint }}</pre>
-      {% endif %}
+      OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
     </div>
 
   {% if overpass_error %}
@@ -43,31 +39,30 @@
     {{ '{:,d}'.format(full_count) }} candidates found
     ({{ '{:,d}'.format(multiple_match_count) }} with multiple matches)
     </p>
-    {% set url = url_for('export_osm', osm_id=hit.osm_id, name=relation.export_name) %}
+    {% set url = url_for('export_osm', osm_id=place.osm_id, name=place.export_name) %}
     <p><a href="{{ url }}">Download as OSM XML file</a></p>
   {% endif %}
 
   {% if not overpass_error and candidates %}
     {% if multiple_only %}
-      <p>[Filter: <b>only multiple</b> <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id) }}">(remove)</a>]
+      <p>[Filter: <b>only multiple</b> <a href="{{ url_for(request.endpoint, osm_id=place.osm_id) }}">(remove)</a>]
     {% else %}
-      <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=relation.osm_id, multiple=1) }}">only multiple matches</a>]
+      <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=place.osm_id, multiple=1) }}">only multiple matches</a>]
     {% endif %}
   {% endif %}
 
   {% for i in candidates %}
-    {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
     <p>
     <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-    &mdash; {{ i.label }}
-    &mdash; <a href="{{ osm_url }}">Wikidata location on OSM</a>
+    &mdash; {{ i.enwiki }}
+    &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
     <br>
     <ul>
-      <li>Categories: {{ ', '.join(i.cats) }}</li>
+      <li>Categories: {{ ', '.join(i.categories) }}</li>
       <li>tags considered: {{ ', '.join(i.tags) }}</li>
       <li>possible matches:
     {% for c in i.candidates %}
-      <a href="https://www.openstreetmap.org/{{ c.type }}/{{ c.id }}">{{ c.name }}</a> ({{ c.type}}, {{ c.dist | int }} m){% if not loop.last %},{% endif %}
+      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">{{ c.name }}</a> ({{ c.osm_type}}, {{ c.dist | int }} m){% if not loop.last %},{% endif %}
     {% endfor %}
     </ul>
     </p>
@@ -75,17 +70,16 @@
 
   <h4>Items with no match found in OSM</h4>
 
-  <p>{{ '{:,d}'.format(items_without_matches.items() | count) }} items</p>
+  <p>{{ '{:,d}'.format(items_without_matches.count()) }} items</p>
 
-  {% for enwp, i in items_without_matches.items() %}
-    {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
+  {% for i in items_without_matches %}
     <p>
       <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-      &mdash; {{ i.label }}
-      &mdash; <a href="{{ osm_url }}">Wikidata location on OSM</a>
+      &mdash; {{ i.enwiki }}
+      &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
       <br>
       <ul>
-        <li>Wikipedia categories: {{ ', '.join(i.cats) }}</li>
+        <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
         {% if i.tags %}
           <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
         {% endif %}
@@ -93,7 +87,7 @@
     </p>
   {% endfor %}
   <h4>Wikidata SPARQL query</h4>
-  <pre>{{ relation.get_wikidata_query() }}</pre>
+  <pre>{{ place.get_wikidata_query() }}</pre>
 
 </div>
 </div>

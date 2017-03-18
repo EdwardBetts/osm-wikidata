@@ -96,12 +96,12 @@ def name_match(osm, wd, endings=None):
 def normalize_name(name):
     return re_strip_non_chars.sub('', name.lower())
 
-def check_name_matches_address(osm_tags, wikidata):
+def check_name_matches_address(osm_tags, wikidata_names):
     if not any('addr' + part in osm_tags for part in ('housenumber', 'full')):
         return
     # if 'addr:housenumber' not in osm_tags or 'addr:street' not in osm_tags:
     #     return
-    number_start = {name for name in wikidata['names'] if name[0].isdigit()}
+    number_start = {name for name in wikidata_names if name[0].isdigit()}
     if not number_start:
         return
     number_start.update(name[:name.rfind(',')] for name in set(number_start) if ',' in name)
@@ -146,13 +146,15 @@ def check_for_match(osm_tags, wikidata):
     names = {k: v for k, v in osm_tags.items()
              if 'name' in k and k not in bad_name_fields}
     for tag in osm_tags.items():
-        for cat in wikidata['cats']:
+        for cat in wikidata.categories:
             for t in tag, (tag[0], None):
                 if t in entity_endings[cat]:
                     endings.update(entity_endings[cat][t])
 
+    wikidata_names = wikidata.names()
+
     best = None
-    for w, source in wikidata['names'].items():
+    for w, source in wikidata_names.items():
         for o in names.values():
             m = name_match(o, w, endings)
             if m and m.match_type == MatchType.good:
@@ -161,7 +163,7 @@ def check_for_match(osm_tags, wikidata):
             elif m and m.match_type == MatchType.trim:
                 best = Match(MatchType.trim)
 
-    address_match = check_name_matches_address(osm_tags, wikidata)
+    address_match = check_name_matches_address(osm_tags, wikidata_names)
     return address_match or best
 
 def get_osm_id_and_type(source_type, source_id):

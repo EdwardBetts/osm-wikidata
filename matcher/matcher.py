@@ -6,6 +6,10 @@ import os.path
 import json
 import re
 
+bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
+                   'gnis:county_name', 'openGeoDB:name'}
+
+
 def simplify_tags(tags):
     key_only = sorted(t for t in tags if '=' not in t)
     for k in key_only:
@@ -45,10 +49,71 @@ def find_tags(items):
         all_tags |= tags
     return sorted(simplify_tags(all_tags))
 
-def find_matches(items, conn, debug=False):
-    bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
-                       'gnis:county_name', 'openGeoDB:name'}
+def find_item_matches(cur, item, debug=False):
+    if not item.entity:
+        return []
+    cats = item.categories
 
+    # point = "ST_GeomFromEWKT('{}')".format(item.ewkt)
+    point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
+
+    # item_max_dist = max(max_dist[cat] for cat in item['cats'])
+    item_max_dist = 4  # FIXME
+
+    sql_list = []
+    for obj_type in 'point', 'line', 'polygon':
+        obj_sql = ('select \'{}\', osm_id, name, tags, '
+                   'ST_Distance({}, way) as dist '
+                   'from planet_osm_{} '
+                   'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, obj_type, point, item_max_dist)
+        sql_list.append(obj_sql)
+    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist'.format(item.hstore_query)
+
+    if debug:
+        print(sql)
+
+    cur.execute(sql)
+    rows = cur.fetchall()
+    seen = set()
+
+    candidates = []
+    for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
+        (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
+        if (obj_type, osm_id) in seen:
+            continue
+        if debug:
+            print((osm_type, osm_id, osm_name, osm_tags, dist))
+        seen.add((obj_type, osm_id))
+
+        try:
+            admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
+        except Exception:
+            admin_level = None
+        names = {k: v for k, v in osm_tags.items()
+                 if 'name' in k and k not in bad_name_fields}
+
+        if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
+            continue
+        if not names:
+            continue
+
+        match = check_for_match(osm_tags, item)
+        if not match:
+            continue
+        candidate = {
+            'osm_type': osm_type,
+            'osm_id': osm_id,
+            'name': osm_name,
+            'tags': osm_tags,
+            'dist': dist,
+            # 'match': match.match_type.name,
+            'planet_table': src_type,
+            'src_id': src_id,
+        }
+        candidates.append(candidate)
+    return candidates
+
+def find_matches(items, conn, debug=False):
     cur = conn.cursor()
     seen_wikidata = set()
     assert isinstance(items, list)

@@ -1,31 +1,26 @@
 from flask import render_template_string
 from urllib.parse import unquote
-from .utils import chunk, cache_filename
+from collections import defaultdict
+from .utils import chunk, drop_start
 import requests
-import os.path
-import json
+
+page_size = 50
 
 wikidata_query = '''
-SELECT ?place ?placeLabel ?lat ?lon ?article ?end WHERE {
+SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
     SERVICE wikibase:box {
         ?place wdt:P625 ?location .
         bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
-    ?place p:P625 ?statement .
-    ?statement psv:P625 ?coordinate_node .
-    ?coordinate_node wikibase:geoLatitude ?lat .
-    ?coordinate_node wikibase:geoLongitude ?lon .
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    OPTIONAL {
-        ?place wdt:P582 ?end .
-    }
-    SERVICE wikibase:label {
-        bd:serviceParam wikibase:language "en"
-    }
-}'''
+    OPTIONAL { ?place wdt:P582 ?end . }
+    OPTIONAL { ?place wdt:P585 ?point_in_time . }
+}
+GROUP BY ?place ?article ?end ?point_in_time
+'''
 
 def get_query(south, north, west, east):
     return render_template_string(wikidata_query,
@@ -44,25 +39,26 @@ def run_query(south, north, west, east):
     return r
 
 def parse_query(query):
-    wd_start = 'http://www.wikidata.org/entity/'
-    enwp_start = 'https://en.wikipedia.org/wiki/'
-    items = {}
-    for i in query:
-        wd_uri = i['place']['value']
-        enwp_uri = i['article']['value']
-        assert wd_uri.startswith(wd_start)
-        assert enwp_uri.startswith(enwp_start)
-        qid = wd_uri[len(wd_start):]
-        enwp = unquote(enwp_uri[len(enwp_start):])
-        item = {
-            'wikidata_uri': wd_uri,
-            'lat': i['lat']['value'],
-            'lon': i['lon']['value'],
-            'qid': qid,
-            'label': i['placeLabel']['value'],
-        }
-        items[enwp] = item
-    return items
+    wd = 'http://www.wikidata.org/entity/Q'
+    enwiki = 'https://en.wikipedia.org/wiki/'
+    return [{
+        'location': i['location']['value'],
+        'id': int(drop_start(i['place']['value'], wd)),
+        'enwiki': unquote(drop_start(i['article']['value'], enwiki)),
+    } for i in query]
+
+def entity_iter(ids):
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
+    params = {
+        'format': 'json',
+        'formatversion': 2,
+        'action': 'wbgetentities',
+    }
+    for cur in chunk(ids, page_size):
+        params['ids'] = '|'.join(cur)
+        json_data = requests.get(wikidata_url, params=params).json()
+        for qid, entity in json_data['entities'].items():
+            yield qid, entity
 
 def wbgetentities(items):
     wikidata_url = 'https://www.wikidata.org/w/api.php'
@@ -73,7 +69,7 @@ def wbgetentities(items):
     }
     # only items with tags
     with_tags = (item for item in items.values() if item.get('tags'))
-    for cur in chunk(with_tags, 50):
+    for cur in chunk(with_tags, page_size):
         params['ids'] = '|'.join(item['qid'] for item in cur)
         r = requests.get(wikidata_url, params=params, timeout=90)
         # print(cur[0]['qid'], cur[0]['label'])
@@ -96,3 +92,30 @@ def wbgetentities(items):
             if labels:
                 items[enwp]['labels'] = labels
             items[enwp]['sitelinks'] = sitelinks
+
+def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
+    if not entity:
+        return
+
+    ret = defaultdict(list)
+
+    for k, v in entity['labels'].items():
+        if k in skip_lang:
+            continue
+        ret[v['value']].append(('label', k))
+
+    for k, v in entity['sitelinks'].items():
+        if k + 'wiki' in skip_lang:
+            continue
+        ret[v['title']].append(('sitelink', k))
+
+    if len(entity['sitelinks']) < 6 and len(entity['labels']) < 6:
+        for lang, value_list in entity.get('aliases', {}).items():
+            if lang in skip_lang:
+                continue
+            if len(value_list) > 3:
+                continue
+            for name in value_list:
+                ret[name['value']].append(('alias', lang))
+
+    return ret

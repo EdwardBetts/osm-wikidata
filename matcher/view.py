@@ -3,11 +3,13 @@
 from flask import Flask, render_template, request, Response, redirect, url_for
 from .utils import cache_filename, load_from_cache, cache_dir
 from lxml import etree
-from .relation import Relation, nominatim_lookup
-from . import db
+from .relation import Relation
+from . import db, database, nominatim, wikidata, matcher
 from .matcher import filter_candidates_more
-# from pprint import pformat
+from .model import Place, Item, PlaceItem, ItemCandidate
+from .wikipedia import page_category_iter
 
+import psycopg2.extras
 import requests
 import os.path
 import json
@@ -16,8 +18,10 @@ app = Flask(__name__)
 
 @app.route("/overpass/<int:osm_id>", methods=["POST"])
 def post_overpass(osm_id):
-    relation = Relation(osm_id)
-    relation.save_overpass(request.data)
+    place = Place.query.get(osm_id)
+    place.save_overpass(request.data)
+    place.state = 'postgis'
+    database.session.commit()
     return Response('done', mimetype='text/plain')
 
 @app.route('/export/wikidata_<int:osm_id>_<name>.osm')
@@ -73,85 +77,113 @@ def redirect_to_matcher(osm_id):
 
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
-    relation = Relation(osm_id)
-    wikidata_item = relation.item_detail()
-    relation.clip_items_to_polygon()
+    place = Place.query.get(osm_id)
+    multiple_only = bool(request.args.get('multiple'))
 
-    if relation.overpass_error:
-        error = open(relation.overpass_filename).read()
-        return render_template('candidates.html',
-                               overpass_error=error,
-                               relation=relation,
-                               hit=wikidata_item,
-                               candidates=[])
-
-    for i in 'summary', 'candidates':
-        if not os.path.exists(cache_filename('{}_{}.json'.format(osm_id, i))):
-            return redirect_to_matcher(osm_id)
-
-    relation.wbgetentities()
-    tables = db.create_database(relation.dbname)
-
-    expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
-              'raster_overviews', 'planet_osm_roads', 'raster_columns',
-              'planet_osm_line', 'planet_osm_point', 'planet_osm_polygon'}
-    if tables != expect:
+    if place.state != 'ready':
         return redirect_to_matcher(osm_id)
 
-    candidate_list = relation.run_matcher()
-    qid_with_match_candidate = {i['qid'] for i in candidate_list}
+    if place.state == 'overpass_error':
+        error = open(place.overpass_filename).read()
+        return render_template('candidates.html',
+                               overpass_error=error,
+                               place=place)
 
-    multiple_only = bool(request.args.get('multiple'))
-    multiple_matches = [i for i in candidate_list
-                        if len(i['candidates']) > 1]
-    full_count = len(candidate_list)
+    full_count = place.items_with_candidates().count()
+    multiple_match_count = place.items_with_multiple_candidates().count()
+
     if multiple_only:
-        candidate_list = multiple_matches
+        item_ids = [i[0] for i in place.items_with_multiple_candidates()]
+        items = Item.query.filter(Item.item_id.in_(item_ids))
+    else:
+        items = place.items_with_candidates()
 
-    items_without_matches = {}
-    for enwp, item in relation.clip_items_to_polygon().items():
-        if item['within_area'] and item['qid'] not in qid_with_match_candidate:
-            items_without_matches[enwp] = item
+    items_without_matches = place.items_with_candidates()
 
     return render_template('candidates.html',
-                           hit=wikidata_item,
-                           relation=relation,
+                           place=place,
+                           osm_id=osm_id,
                            items_without_matches=items_without_matches,
                            multiple_only=multiple_only,
                            full_count=full_count,
-                           multiple_match_count=len(multiple_matches),
-                           candidates=candidate_list)
+                           multiple_match_count=multiple_match_count,
+                           candidates=items)
+
+def wbgetentities(p):
+    q = p.items.filter(Item.tags != '{}')
+    items = {i.qid: i for i in q}
+
+    for qid, entity in wikidata.entity_iter(items.keys()):
+        item = items[qid]
+        item.entity = entity
+        database.session.add(item)
+    database.session.commit()
 
 @app.route('/load/<int:osm_id>/wbgetentities', methods=['POST'])
 def load_wikidata(osm_id):
-    Relation(osm_id).wbgetentities()
+    place = Place.query.get(osm_id)
+    if place.state != 'tags':
+        return 'done'
+    wbgetentities(place)
+    place.state = 'wbgetentities'
+    database.session.commit()
     return 'done'
 
 @app.route('/load/<int:osm_id>/checkover_pass', methods=['POST'])
 def check_overpass(osm_id):
-    relation = Relation(osm_id)
-    reply = 'got' if relation.overpass_done else 'get'
+    place = Place.query.get(osm_id)
+    reply = 'got' if place.overpass_done else 'get'
     return Response(reply, mimetype='text/plain')
 
 @app.route('/load/<int:osm_id>/postgis', methods=['POST'])
 def load_postgis(osm_id):
-    relation = Relation(osm_id)
-    tables = db.create_database(relation.dbname)
+    place = Place.query.get(osm_id)
+    tables = db.create_database(place.dbname)
 
     expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
               'raster_overviews', 'planet_osm_roads', 'raster_columns',
               'planet_osm_line', 'planet_osm_point', 'planet_osm_polygon'}
-    reply = 'need osm2pgsql' if tables != expect else 'skip osm2pgsql'
+    if tables == expect:
+        place.state = 'osm2pgsql'
+        reply = 'skip osm2pgsql'
+    else:
+        place.state = 'postgis'
+        reply = 'need osm2pgsql'
+    database.session.commit()
+
     return Response(reply, mimetype='text/plain')
 
 @app.route('/load/<int:osm_id>/osm2pgsql', methods=['POST'])
 def load_osm2pgsql(osm_id):
-    relation = Relation(osm_id)
-    error = relation.load_into_pgsql()
+    place = Place.query.get(osm_id)
+    error = place.load_into_pgsql()
+    if not error:
+        place.state = 'osm2pgsql'
+        database.session.commit()
     return Response(error or 'done', mimetype='text/plain')
+
 
 @app.route('/load/<int:osm_id>/match', methods=['POST'])
 def load_match(osm_id):
+    place = Place.query.get(osm_id)
+
+    conn = db.db_connect(place.dbname)
+    psycopg2.extras.register_hstore(conn)
+    cur = conn.cursor()
+
+    q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
+    for item in q:
+        candidates = matcher.find_item_matches(cur, item)
+        for i in (candidates or []):
+            c = ItemCandidate(**i, item=item)
+            database.session.merge(c)
+    place.state = 'ready'
+    database.session.commit()
+
+    conn.close()
+    return Response('done', mimetype='text/plain')
+
+def old_load_match(osm_id):
     relation = Relation(osm_id)
     candidates = relation.run_matcher()
 
@@ -165,11 +197,35 @@ def load_match(osm_id):
 
 @app.route('/matcher/<int:osm_id>')
 def matcher_progress(osm_id):
-    return render_template('wikidata_items.html',
-                           relation=Relation(osm_id),
-                           osm_id=osm_id)
+    place = Place.query.get(osm_id)
+
+    if not place.state:
+        items = {i['enwiki']: i for i in place.items_from_wikidata()}
+
+        for title, cats in page_category_iter(items.keys()):
+            items[title]['categories'] = cats
+
+        for enwiki, i in items.items():
+            item = Item.query.get(i['id'])
+            if not item:
+                item = Item(item_id=i['id'],
+                            enwiki=enwiki,
+                            location=i['location'],
+                            categories=i.get('categories'))
+                database.session.add(item)
+            place_item = PlaceItem.query.get((item.item_id, place.osm_id))
+            if not place_item:
+                database.session.add(PlaceItem(item=item, place=place))
+        place.state = 'wikipedia'
+        database.session.commit()
+    if place.state == 'wikipedia':
+        place.add_tags_to_items()
+
+    return render_template('wikidata_items.html', place=place)
 
 def get_existing():
+    return Place.query.all()
+
     sort = request.args.get('sort') or 'candidate_count'
     existing = [load_from_cache(f)
                 for f in os.listdir(cache_dir())
@@ -188,8 +244,19 @@ def index():
     q = request.args.get('q')
     if not q:
         return render_template('index.html', existing=get_existing())
-    else:
-        return render_template('index.html', results=nominatim_lookup(q), q=q)
+
+    results = nominatim.lookup(q)
+    for hit in results:
+        p = Place.from_nominatim(hit)
+        if p:
+            database.session.merge(p)
+    database.session.commit()
+
+    for hit in results:
+        if hit['osm_type'] == 'relation':
+            hit['place'] = Place.query.get(hit['osm_id'])
+
+    return render_template('index.html', results=results, q=q)
 
 @app.route("/documentation")
 def documentation():

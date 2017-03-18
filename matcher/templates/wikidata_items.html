@@ -1,9 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-  {% set hit = relation.item_detail() %}
   <meta charset="utf-8">
-  <title>{{ hit.display_name }}: OSM ◀ ▶ Wikidata</title>
+  <title>{{ place.display_name }}: OSM ◀ ▶ Wikidata</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
   <style>
     .box {
@@ -43,25 +42,23 @@
   <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
 </head>
 
+{% set osm_id = place.osm_id %}
+
 <body>
   <div class="container-fluid">
   <div class="row">
   <div class="col">
-  {% set name = hit.namedetails['name:en'] or hit.namedetails.name %}
-  <h1>{{ name }}: OSM ◀ ▶ Wikidata</h1>
-  {% set q = hit.display_name %}
+  <h1>{{ place.name }}: OSM ◀ ▶ Wikidata</h1>
+  {% set q = place.display_name %}
   {% include "form.html" %}
 
   <div class="box">
-    <b>{{ hit.display_name }}</b><br>
-    category: {{ hit.category }}
+    <b>{{ place.display_name }}</b><br>
+    category: {{ place.category }}
     &mdash;
-    type: {{ hit.type }}
+    type: {{ place.type }}
     &mdash;
-    OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
-    {% if detail %}
-      <pre>{{ hit | pprint }}</pre>
-    {% endif %}
+    OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
   </div>
 
   <div class="loading">
@@ -84,30 +81,31 @@
 
   <p><a href="{{ url_for('candidates', osm_id=osm_id) }}" id="candidates-link">view match candidates</a></p>
 
-  {% set items = relation.get_items_with_tags() %}
-  <p>{{ '{:,d}'.format(items | count) }} items found</p>
+  <p>{{ '{:,d}'.format(place.items.count()) }} items found</p>
 
-  {% for enwp, i in items.items() %}
-    {% set osm_url = 'https://www.openstreetmap.org/#map=18/' + i.lat + '/' + i.lon %}
+  {% for i in place.items %}
     <p>
       <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-      &mdash; {{ i.label }}
-      &mdash; <a href="{{ osm_url }}">Wikidata location on OSM</a>
+      &mdash; {{ i.enwiki }}
+      &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
       <br>
       <ul>
-        <li>Wikipedia categories: {{ ', '.join(i.cats) }}</li>
+        {% if i.categories %}
+          <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
+        {% endif %}
         {% if i.tags %}
           <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
         {% endif %}
       </ul>
     </p>
   {% endfor %}
+
 </div>
 </div>
 </div>
 
   <script>
-  var oql = {{ relation.get_oql() | tojson }};
+  var oql = {{ place.get_oql() | tojson }};
   var overpass_url = 'http://overpass-api.de/api/interpreter';
   var load_wikidata_url = {{ url_for('load_wikidata', osm_id=osm_id) | tojson }};
   var check_overpass_url = {{ url_for('check_overpass', osm_id=osm_id) | tojson }};
@@ -237,6 +235,8 @@
     });
   }
   </script>
+
+#}
 
 </body>
 </html>
