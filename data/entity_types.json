@@ -435,7 +435,7 @@
     "dist": 2
 },
 {
-    "cats": ["Rapid transit stations"],
+    "cats": ["Rapid transit stations", "stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
@@ -908,7 +908,7 @@
     "dist": 1
 },
 {
-    "cats": ["Housing estates"],
+    "cats": ["Housing estates", "neighbourhoods", "neighborhoods"],
     "tags": ["landuse=residential", "place=neighbourhood"],
     "trim": ["estate"],
     "area": true,
