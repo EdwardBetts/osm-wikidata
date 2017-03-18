@@ -94,41 +94,34 @@
     "tags": ["historic=castle", "building=castle", "tourism=attraction",
              "historic=ruins", "historic=tower_house", "building=ruins",
              "historic=archaeological_site"],
-    "trim": ["castle", "castell"],
+    "trim": ["castle", "castell", "museum"],
     "check_housename": true,
     "dist": 2
 },
 {
-    "cats": ["Places of worship by country"],
-    "tags": ["amenity=place_of_worship", "building=church"],
+    "cats": ["Places of worship by country", "Churches"],
+    "tags": ["amenity=place_of_worship", "building=church", "man_made=tower"],
     "trim": ["church", "temple", "church centre", "church center", "centre", "center"],
     "check_housename": true,
     "dist": 1.5
 },
 {
-    "cats": ["Churches"],
-    "tags": ["building=church"],
-    "trim": ["church", "church centre", "church center"],
-    "check_housename": true,
-    "dist": 1.5
-},
-{
     "cats": ["Chapels by country"],
-    "tags": ["building=chapel"],
+    "tags": ["building=chapel", "amenity=place_of_worship"],
     "trim": ["chapel"],
     "check_housename": true,
     "dist": 2
 },
 {
     "cats": ["Mosques by country"],
-    "tags": ["building=mosque"],
+    "tags": ["building=mosque", "amenity=place_of_worship"],
     "trim": ["mosque"],
     "check_housename": true,
     "dist": 2
 },
 {
     "cats": ["Synagogues by country"],
-    "tags": ["building=synagogue"],
+    "tags": ["building=synagogue", "amenity=place_of_worship"],
     "trim": ["temple", "synagogue"],
     "check_housename": true,
     "dist": 2
@@ -421,9 +414,9 @@
     "dist": 20
 },
 {
-    "cats": ["Archaeological sites by country"],
+    "cats": ["Archaeological sites by country", "Prehistoric sites", "Stone circles"],
     "tags": ["historic=archaeological_site"],
-    "trim": [],
+    "trim": ["stone circle"],
     "area": true,
     "dist": 10
 },
@@ -512,7 +505,7 @@
 {
     "cats": ["Schools by country"],
     "tags": ["amenity=school", "building=school", "type=site", "site=school"],
-    "trim": ["school", "house"],
+    "trim": ["school", "house", "preparatory school"],
     "check_housename": true,
     "dist": 1.5
 },
@@ -573,7 +566,7 @@
     "dist": 5
 },
 {
-    "cats": ["Seats of local government"],
+    "cats": ["Seats of local government", "City and town halls"],
     "tags": ["amenity=townhall", "amenity=village_hall"],
     "trim": [],
     "dist": 4
@@ -840,7 +833,14 @@
     "dist": 10
 },
 {
-    "cats": ["Areas", "Districts", "Populated places"],
+    "cats": ["Civil parishes"],
+    "tags": ["designation=civil_parish"],
+    "trim": [],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Areas", "Districts", "Populated places", "Populated coastal places"],
     "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
     "trim": [],
     "dist": 8
