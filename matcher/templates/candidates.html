@@ -79,7 +79,9 @@
       &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
       <br>
       <ul>
-        <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
+        {% if i.categories %}
+          <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
+        {% endif %}
         {% if i.tags %}
           <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
         {% endif %}
