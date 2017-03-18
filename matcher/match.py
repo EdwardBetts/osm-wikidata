@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from collections import defaultdict
 from unidecode import unidecode
+from .utils import remove_start
 
 import re
 
@@ -8,6 +9,7 @@ from enum import Enum
 
 entity_endings = defaultdict(dict)
 re_strip_non_chars = re.compile(r'[^@\w]', re.U)
+re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
@@ -63,10 +65,22 @@ def name_match_main(osm, wd, endings=None):
         return Match(MatchType.good)
     if wd_lc.split() == list(reversed(osm_lc.split())):
         return Match(MatchType.good)
+
+    wd_lc = re_keep_commas.sub('', wd_lc)
+    osm_lc = re_keep_commas.sub('', osm_lc)
+
+    comma = wd_lc.rfind(', ')
+    if comma != -1:
+        if wd_lc[:comma] == osm_lc:
+            return Match(MatchType.good)
+        if remove_start(wd_lc[:comma], 'the ') == remove_start(osm_lc, 'the '):
+            return Match(MatchType.good)
+
     wd_lc = re_strip_non_chars.sub('', wd_lc)
     osm_lc = re_strip_non_chars.sub('', osm_lc)
     if wd_lc == osm_lc:
         return Match(MatchType.good)
+
     if wd_lc.startswith('the'):
         wd_lc = wd_lc[3:]
     if osm_lc.startswith('the'):
@@ -86,10 +100,11 @@ def name_match_main(osm, wd, endings=None):
     return
 
 def name_match(osm, wd, endings=None):
-    start = 'Statue of '
     match = name_match_main(osm, wd, endings)
     if match:
         return match
+
+    start = 'Statue of '
     if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
         return Match(MatchType.trim)
 
