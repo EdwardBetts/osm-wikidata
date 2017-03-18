@@ -34,24 +34,25 @@
         </tr>
       <tbody>
       {% for place in existing %}
+        {% set with_candidates_count = place.items_with_candidates().count() %}
         <tr>
           <td>
-            <a href="{{ url_for('candidates', osm_id=place.osm_id) }}">
-              {{ place.display_name }}</a>
-            {% if place.address.country and place.address.country not in place.display_name %}
-              &mdash; {{ place.address.country }}
+            {% if place.state == 'overpass_timeout' %}
+              {{ place.display_name }} <span class="badge badge-danger">area too large</span>
+            {% else %}
+              <a href="{{ url_for('candidates', osm_id=place.osm_id) }}">{{ place.display_name }}</a>
             {% endif %}
           </td>
           <td>{{ place.type }}</td>
           <td class="text-right">{{ place.items.count() }}</td>
-          <td class="text-right">{{ place.items_with_candidates().count() }}</td>
+          <td class="text-right">{{ with_candidates_count or '' }}</td>
           <td class="text-right">
-          {% if place.items.count() %}
+          {% if place.items.count() and with_candidates_count %}
             {{ '{:.1%}'.format(place.match_ratio) }}
-          {% else %}
-            n/a
           {% endif %}
-          <td class="text-right">{{ '{:.1f}'.format(place.area_in_sq_km) }}</td>
+          <td class="text-right">
+            {{ '{:.1f}'.format(place.area_in_sq_km) }}
+          </td>
           </td>
         </tr>
         {# <tr>
