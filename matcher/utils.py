@@ -14,6 +14,9 @@ def drop_start(s, start):
     assert s.startswith(start)
     return s[len(start):]
 
+def remove_start(s, start):
+    return s[len(start):] if s.startswith(start) else s
+
 def cache_dir():
     return current_app.config['CACHE_DIR']
 
