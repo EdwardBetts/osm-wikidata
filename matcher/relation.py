@@ -1,35 +1,19 @@
 from flask import current_app
 
+from . import matcher, nominatim, wikidata
 from .wikipedia import get_items_with_cats
-from . import wikidata, user_agent_headers
 from .utils import cache_filename, load_from_cache
 from .matcher import find_matches, find_tags, filter_candidates
 from .db import db_connect
-from . import matcher
 
-import requests
 import os.path
 import subprocess
 import json
 import psycopg2.extras
 
 def nominatim_lookup(q):
-    url = 'http://nominatim.openstreetmap.org/search'
-
-    params = {
-        'q': q,
-        'format': 'jsonv2',
-        'addressdetails': 1,
-        'email': current_app.config['ADMIN_EMAIL'],
-        'extratags': 1,
-        'limit': 20,
-        'namedetails': 1,
-        'accept-language': 'en',
-        'polygon_text': 1,
-    }
-    r = requests.get(url, params=params, headers=user_agent_headers())
     results = []
-    for hit in r.json():
+    for hit in nominatim.lookup(q):
         results.append(hit)
         if hit.get('osm_type') == 'relation':
             relation = Relation(hit['osm_id'])
