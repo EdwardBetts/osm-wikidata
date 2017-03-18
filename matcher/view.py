@@ -5,14 +5,12 @@ from .utils import cache_filename, load_from_cache, cache_dir
 from lxml import etree
 from .relation import Relation
 from . import db, database, nominatim, wikidata, matcher
-from .matcher import filter_candidates_more
 from .model import Place, Item, PlaceItem, ItemCandidate
 from .wikipedia import page_category_iter
 
 import psycopg2.extras
 import requests
 import os.path
-import json
 
 app = Flask(__name__)
 
@@ -26,25 +24,24 @@ def post_overpass(osm_id):
 
 @app.route('/export/wikidata_<int:osm_id>_<name>.osm')
 def export_osm(osm_id, name):
-    relation = Relation(osm_id)
-    items = relation.get_candidates()
+    place = Place.query.get(osm_id)
+    items = place.items_with_candidates()
 
-    items = filter_candidates_more(items)
+    items = list(matcher.filter_candidates_more(items))
 
-    lookup = {(i['osm']['type'], i['osm']['id']): i for i in items}
+    lookup = {}
+    for item in items:
+        osm = item.candidates.one()
+        lookup[(osm.osm_type, osm.osm_id)] = item
 
     filename = cache_filename('{}_overpass_export.xml'.format(osm_id))
     if os.path.exists(filename):
         overpass_xml = open(filename, 'rb').read()
     else:
-        seen = set()
         union = ''
         for item in items:
-            osm = item['osm']
-            assert (osm['id'], osm['type']) not in seen
-            seen.add((osm['id'], osm['type']))
-            assert 'wikidata' not in osm['tags']
-            union += '{}({});\n'.format(osm['type'], osm['id'])
+            osm = item.candidates.one()
+            union += '{}({});\n'.format(osm.osm_type, osm.osm_id)
 
         oql = '({});(._;>);out meta;'.format(union)
 
@@ -66,7 +63,7 @@ def export_osm(osm_id, name):
             continue
         e.attrib['version'] = str(int(e.attrib['version']) + 1)
         e.attrib['action'] = 'modify'
-        tag = etree.Element('tag', k='wikidata', v=item['qid'])
+        tag = etree.Element('tag', k='wikidata', v=item.qid)
         e.append(tag)
 
     xml = etree.tostring(root, pretty_print=True)
@@ -98,7 +95,7 @@ def candidates(osm_id):
     else:
         items = place.items_with_candidates()
 
-    items_without_matches = place.items_with_candidates()
+    items_without_matches = place.items_without_candidates()
 
     return render_template('candidates.html',
                            place=place,
@@ -175,24 +172,14 @@ def load_match(osm_id):
     for item in q:
         candidates = matcher.find_item_matches(cur, item)
         for i in (candidates or []):
-            c = ItemCandidate(**i, item=item)
-            database.session.merge(c)
+            c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
+            if not c:
+                c = ItemCandidate(**i, item=item)
+                database.session.add(c)
     place.state = 'ready'
     database.session.commit()
 
     conn.close()
-    return Response('done', mimetype='text/plain')
-
-def old_load_match(osm_id):
-    relation = Relation(osm_id)
-    candidates = relation.run_matcher()
-
-    item = load_from_cache('{}_nominatim.json'.format(osm_id))
-    out = open(cache_filename('{}_summary.json'.format(osm_id)), 'w')
-    item['item_count'] = len(relation.get_items_with_tags())
-    item['candidate_count'] = len(candidates)
-    json.dump(item, out, indent=2)
-    out.close()
     return Response('done', mimetype='text/plain')
 
 @app.route('/matcher/<int:osm_id>')
@@ -203,6 +190,7 @@ def matcher_progress(osm_id):
         items = {i['enwiki']: i for i in place.items_from_wikidata()}
 
         for title, cats in page_category_iter(items.keys()):
+            print(title, cats)
             items[title]['categories'] = cats
 
         for enwiki, i in items.items():
@@ -224,7 +212,7 @@ def matcher_progress(osm_id):
     return render_template('wikidata_items.html', place=place)
 
 def get_existing():
-    return Place.query.all()
+    return Place.query.filter(Place.state.isnot(None))
 
     sort = request.args.get('sort') or 'candidate_count'
     existing = [load_from_cache(f)
