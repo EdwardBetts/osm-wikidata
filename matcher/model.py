@@ -111,9 +111,6 @@ class Place(Base):   # assume all places are relations
         self.state = 'tags'
         session.commit()
 
-    def wbgetentities(self):
-        return
-
     @property
     def dbname(self):
         return '{}{}'.format(current_app.config['DB_PREFIX'], self.osm_id)

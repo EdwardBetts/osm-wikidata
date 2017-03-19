@@ -1,5 +1,6 @@
 import requests
 from .utils import chunk, drop_start
+from . import user_agent_headers
 
 page_size = 50
 
@@ -15,7 +16,7 @@ def get_cats(titles):
         'cllimit': 'max',
         'clshow': '!hidden',
     }
-    r = requests.get(query_url, params=params)
+    r = requests.get(query_url, params=params, headers=user_agent_headers())
     json_reply = r.json()
     return json_reply['query']['pages']
 

@@ -3,8 +3,7 @@
 from flask import Flask, render_template, request, Response, redirect, url_for
 from .utils import cache_filename, load_from_cache, cache_dir
 from lxml import etree
-from .relation import Relation
-from . import db, database, nominatim, wikidata, matcher
+from . import db, database, nominatim, wikidata, matcher, user_agent_headers
 from .model import Place, Item, PlaceItem, ItemCandidate
 from .wikipedia import page_category_iter
 
@@ -46,7 +45,7 @@ def export_osm(osm_id, name):
         oql = '({});(._;>);out meta;'.format(union)
 
         overpass_url = 'http://overpass-api.de/api/interpreter'
-        r = requests.post(overpass_url, data=oql)
+        r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
         overpass_xml = r.content
         with open(filename, 'wb') as f:
             f.write(overpass_xml)

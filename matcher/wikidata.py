@@ -3,6 +3,7 @@ from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start
 import requests
+from . import user_agent_headers
 
 page_size = 50
 
@@ -34,7 +35,9 @@ def run_query(south, north, west, east):
     query = get_query(south, north, west, east)
 
     url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
-    r = requests.get(url, params={'query': query, 'format': 'json'})
+    r = requests.get(url,
+                     params={'query': query, 'format': 'json'},
+                     headers=user_agent_headers())
     assert r.status_code == 200
     return r
 
@@ -56,42 +59,11 @@ def entity_iter(ids):
     }
     for cur in chunk(ids, page_size):
         params['ids'] = '|'.join(cur)
-        json_data = requests.get(wikidata_url, params=params).json()
+        json_data = requests.get(wikidata_url,
+                                 params=params,
+                                 headers=user_agent_headers).json()
         for qid, entity in json_data['entities'].items():
             yield qid, entity
-
-def wbgetentities(items):
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-    params = {
-        'format': 'json',
-        'formatversion': 2,
-        'action': 'wbgetentities',
-    }
-    # only items with tags
-    with_tags = (item for item in items.values() if item.get('tags'))
-    for cur in chunk(with_tags, page_size):
-        params['ids'] = '|'.join(item['qid'] for item in cur)
-        r = requests.get(wikidata_url, params=params, timeout=90)
-        # print(cur[0]['qid'], cur[0]['label'])
-        json_data = r.json()
-        for qid, entity in json_data['entities'].items():
-            claims = entity['claims']
-            instanceof = [i['mainsnak']['datavalue']['value']['numeric-id']
-                          for i in claims.get('P31', [])]
-            aliases = {lang: [i['value'] for i in value_list]
-                       for lang, value_list in entity.get('aliases', {}).items()}
-            labels = {lang: v['value']
-                      for lang, v in entity['labels'].items()}
-            sitelinks = {site: v['title']
-                         for site, v in entity['sitelinks'].items()}
-            enwp = sitelinks['enwiki']
-            if instanceof:
-                items[enwp]['instanceof'] = instanceof
-            if aliases:
-                items[enwp]['aliases'] = aliases
-            if labels:
-                items[enwp]['labels'] = labels
-            items[enwp]['sitelinks'] = sitelinks
 
 def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
     if not entity:
