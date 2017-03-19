@@ -85,7 +85,7 @@ def candidates(osm_id):
                                overpass_error=error,
                                place=place)
 
-    full_count = place.items_with_candidates().count()
+    full_count = place.items_with_candidates_count()
     multiple_match_count = place.items_with_multiple_candidates().count()
 
     if multiple_only:
