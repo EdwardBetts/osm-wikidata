@@ -72,7 +72,7 @@ class Place(Base):   # assume all places are relations
 
     @property
     def match_ratio(self):
-        matches = self.items_with_candidates().count()
+        matches = self.items_with_candidates_count()
         if self.items.count():
             return matches / self.items.count()
 
@@ -129,6 +129,15 @@ class Place(Base):   # assume all places are relations
 
     def items_with_candidates(self):
         return self.items.join(ItemCandidate)
+
+    def items_with_candidates_count(self):
+        return (session.query(Item.item_id)
+                       .join(PlaceItem)
+                       .join(Place)
+                       .join(ItemCandidate)
+                       .filter(Place.osm_id == self.osm_id)
+                       .group_by(Item.item_id)
+                       .count())
 
     def items_without_candidates(self):
         return self.items.outerjoin(ItemCandidate).filter(ItemCandidate.osm_id.is_(None))
@@ -200,7 +209,6 @@ area({})->.a;
 (._;>;);
 out qt;'''.format(bbox, area_id, ''.join(union))
         return self.oql
-
 
 
 class Item(Base):

@@ -18,7 +18,7 @@
   <div class="container-fluid">
   <div class="row">
   <div class="col">
-  <h1>OSM ◀ ▶ Wikidata</h1>
+    <h1>OSM ◀ ▶ Wikidata</h1>
 
   {% include "form.html" %}
   {% if not q and existing %}
@@ -34,7 +34,7 @@
         </tr>
       <tbody>
       {% for place in existing %}
-        {% set with_candidates_count = place.items_with_candidates().count() %}
+        {% set with_candidates_count = place.items_with_candidates_count() %}
         <tr>
           <td>
             {% if place.state == 'overpass_timeout' %}
