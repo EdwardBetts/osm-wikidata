@@ -101,7 +101,7 @@
 {
     "cats": ["Places of worship by country", "Churches"],
     "tags": ["amenity=place_of_worship", "building=church", "man_made=tower"],
-    "trim": ["church", "temple", "church centre", "church center", "centre", "center"],
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church"],
     "check_housename": true,
     "dist": 1.5
 },
@@ -476,11 +476,11 @@
     "dist": 20
 },
 {
-    "cats": ["Nature reserves"],
+    "cats": ["Nature reserves", "reserves"],
     "tags": ["leisure=nature_reserve"],
-    "trim": [],
+    "trim": ["local"],
     "area": true,
-    "dist": 20
+    "dist": 10
 },
 {
     "cats": ["Piers by country"],
@@ -511,7 +511,7 @@
 },
 {
     "cats": ["Universities by country", "University"],
-    "tags": ["amenity=university", "type=site", "site=university"],
+    "tags": ["amenity=university", "type=site", "site=university", "building=university"],
     "trim": ["university", "school", "college"],
     "area": true,
     "dist": 3
@@ -521,7 +521,7 @@
     "tags": ["amenity=university", "building"],
     "trim": ["university", "school", "college"],
     "area": true,
-    "dist": 5 
+    "dist": 5
 },
 {
     "cats": ["Colleges by country"],
@@ -833,6 +833,13 @@
     "dist": 10
 },
 {
+    "cats": ["Wards of"],
+    "tags": ["political_division=ward", "place=suburb"],
+    "trim": ["ward"],
+    "area": true,
+    "dist": 4
+},
+{
     "cats": ["Civil parishes"],
     "tags": ["designation=civil_parish"],
     "trim": [],
@@ -1023,7 +1030,7 @@
     "dist": 5
 },
 {
-    "cats": ["Business districts"],
+    "cats": ["Business districts", "Business parks"],
     "tags": ["landuse=commercial"],
     "area": true,
     "trim": [],
@@ -1155,6 +1162,12 @@
 {
     "cats": ["Greyhound racing venues"],
     "tags": ["sport=dog_racing"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Street lighting"],
+    "tags": ["highway=street_lamp"],
     "trim": [],
     "dist": 4
 },
