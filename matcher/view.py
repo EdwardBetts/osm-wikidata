@@ -191,7 +191,6 @@ def matcher_progress(osm_id):
         items = {i['enwiki']: i for i in place.items_from_wikidata()}
 
         for title, cats in page_category_iter(items.keys()):
-            print(title, cats)
             items[title]['categories'] = cats
 
         for enwiki, i in items.items():
