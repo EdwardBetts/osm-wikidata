@@ -1,5 +1,5 @@
 from flask import current_app
-from collections import defaultdict, Counter
+from collections import Counter
 from .match import check_for_match, get_wikidata_names
 
 import os.path
@@ -30,6 +30,19 @@ def build_cat_map():
             cat_to_entity[lc_cat] = i
     return cat_to_entity
 
+def build_cat_to_ending():
+    cat_to_ending = {}
+    data_dir = current_app.config['DATA_DIR']
+    filename = os.path.join(data_dir, 'entity_types.json')
+    for i in json.load(open(filename)):
+        trim = {x.replace(' ', '').lower() for x in i['trim']}
+        for c in i['cats']:
+            lc_cat = c.lower()
+            if ' by ' in lc_cat:
+                lc_cat = lc_cat[:lc_cat.find(' by ')]
+            cat_to_ending[lc_cat] = trim
+    return cat_to_ending
+
 def find_tags(items):
     all_tags = set()
 
@@ -49,7 +62,7 @@ def find_tags(items):
         all_tags |= tags
     return sorted(simplify_tags(all_tags))
 
-def find_item_matches(cur, item, debug=False):
+def find_item_matches(cur, item, cat_to_ending, debug=False):
     if not item.entity:
         return []
     cats = item.categories
@@ -76,6 +89,16 @@ def find_item_matches(cur, item, debug=False):
     rows = cur.fetchall()
     seen = set()
 
+    endings = set()
+    for cat in item.categories:
+        lc_cat = cat.lower()
+        for key, value in cat_to_ending.items():
+            pattern = re.compile(r'\b' + re.escape(key) + r'\b')
+            if pattern.search(lc_cat):
+                endings |= value
+
+    wikidata_names = item.names()
+
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
@@ -97,7 +120,7 @@ def find_item_matches(cur, item, debug=False):
         if not names:
             continue
 
-        match = check_for_match(osm_tags, item)
+        match = check_for_match(osm_tags, item, endings, wikidata_names)
         if not match:
             continue
         candidate = {

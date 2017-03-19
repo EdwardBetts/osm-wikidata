@@ -168,9 +168,11 @@ def load_match(osm_id):
     psycopg2.extras.register_hstore(conn)
     cur = conn.cursor()
 
+    cat_to_ending = matcher.build_cat_to_ending()
+
     q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
     for item in q:
-        candidates = matcher.find_item_matches(cur, item)
+        candidates = matcher.find_item_matches(cur, item, cat_to_ending)
         for i in (candidates or []):
             c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
             if not c:

@@ -7,7 +7,6 @@ import re
 
 from enum import Enum
 
-entity_endings = defaultdict(dict)
 re_strip_non_chars = re.compile(r'[^@\w]', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 
@@ -39,6 +38,12 @@ def initials_match(n1, n2, endings=None):
            for end in endings or [] if n1_lc.endswith(end.lower())]):
         return Match(MatchType.initials_trim)
 
+def match_with_words_removed(osm, wd, words):
+    x_wd = re_strip_non_chars.sub('', wd)
+    x_osm = re_strip_non_chars.sub('', osm)
+    return any(x_wd.replace(word, '') == x_osm.replace(word, '')
+               for word in words)
+
 def name_match_main(osm, wd, endings=None):
     wd_lc = wd.lower()
     osm_lc = osm.lower()
@@ -53,8 +58,15 @@ def name_match_main(osm, wd, endings=None):
         return Match(MatchType.good)
     wd_lc = tidy_name(wd_lc)
     osm_lc = tidy_name(osm_lc)
+
+    if endings and match_with_words_removed(osm_lc, wd_lc, endings):
+        return Match(MatchType.good)
+
     if not wd_lc or not osm_lc:
         return
+
+    # print((wd_lc, osm_lc, endings))
+
     if wd_lc == osm_lc:
         # print ('{} == {} was: {}'.format(wd_lc, osm_lc, osm))
         return Match(MatchType.good)
@@ -153,20 +165,15 @@ def get_wikidata_names(item):
         names[v].append(('sitelink', k))
     return names
 
-def check_for_match(osm_tags, wikidata):
+def check_for_match(osm_tags, wikidata, endings, wikidata_names):
     bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
                        'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
-    endings = set()
+    # if not entity_endings:
+    #     build_entity_endings()
+
     names = {k: v for k, v in osm_tags.items()
              if 'name' in k and k not in bad_name_fields}
-    for tag in osm_tags.items():
-        for cat in wikidata.categories:
-            for t in tag, (tag[0], None):
-                if t in entity_endings[cat]:
-                    endings.update(entity_endings[cat][t])
-
-    wikidata_names = wikidata.names()
 
     best = None
     for w, source in wikidata_names.items():
