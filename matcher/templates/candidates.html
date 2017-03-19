@@ -17,7 +17,7 @@
   <div class="container-fluid">
   <div class="row">
   <div class="col">
-  <h1>{{ place.name }}: OSM ◀ ▶ Wikidata</h1>
+    <h1>{{ place.name }}: OSM ◀ ▶ Wikidata</h1>
   {% set q = place.display_name %}
   {% include "form.html" %}
 
@@ -90,6 +90,10 @@
   {% endfor %}
   <h4>Wikidata SPARQL query</h4>
   <pre>{{ place.get_wikidata_query() }}</pre>
+
+  <h4>Overpass</h4>
+
+  <pre>{{ place.get_oql() }}</pre>
 
 </div>
 </div>
