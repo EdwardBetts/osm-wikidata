@@ -61,7 +61,7 @@ def entity_iter(ids):
         params['ids'] = '|'.join(cur)
         json_data = requests.get(wikidata_url,
                                  params=params,
-                                 headers=user_agent_headers).json()
+                                 headers=user_agent_headers()).json()
         for qid, entity in json_data['entities'].items():
             yield qid, entity
 
