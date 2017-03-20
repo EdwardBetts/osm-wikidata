@@ -212,20 +212,23 @@ def matcher_progress(osm_id):
     return render_template('wikidata_items.html', place=place)
 
 def get_existing():
-    return Place.query.filter(Place.state.isnot(None))
+    sort = request.args.get('sort') or 'name'
 
-    sort = request.args.get('sort') or 'candidate_count'
-    existing = [load_from_cache(f)
-                for f in os.listdir(cache_dir())
-                if f.endswith('_summary.json')]
-    if sort == 'match_percent':
-        def get_match_percent(i):
-            if i.get('item_count') and i.get('candidate_count'):
-                return i['candidate_count'] / i['item_count']
-        existing.sort(key=lambda i: (get_match_percent(i) or 0, i['candidate_count']), reverse=True)
-    else:
-        existing.sort(key=lambda i: i[sort], reverse=True)
-    return existing
+    q = Place.query.filter(Place.state.isnot(None))
+    if sort == 'name':
+        return q.order_by(Place.display_name)
+    if sort == 'area':
+        return q.order_by(Place.area)
+
+    existing = q.all()
+    if sort == 'match':
+        return sorted(existing, key=lambda p: p.items_with_candidates_count())
+    if sort == 'ratio':
+        return sorted(existing, key=lambda p: p.match_ratio)
+    if sort == 'item':
+        return sorted(existing, key=lambda p: p.items.count())
+
+    return q
 
 @app.route("/")
 def index():
