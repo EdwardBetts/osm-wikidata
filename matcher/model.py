@@ -60,7 +60,7 @@ class Place(Base):   # assume all places are relations
 
     @classmethod
     def from_nominatim(cls, hit):
-        if hit['osm_type'] != 'relation':
+        if hit.get('osm_type') != 'relation':
             return
         keys = ('osm_id', 'display_name', 'category', 'type', 'place_id', 'place_rank',
                 'icon', 'extratags', 'address', 'namedetails')
@@ -72,6 +72,8 @@ class Place(Base):   # assume all places are relations
 
     @property
     def match_ratio(self):
+        if self.state != 'ready':
+            return
         matches = self.items_with_candidates_count()
         if self.items.count():
             return matches / self.items.count()
@@ -128,6 +130,8 @@ class Place(Base):   # assume all places are relations
         return self.items.join(ItemCandidate)
 
     def items_with_candidates_count(self):
+        if self.state != 'ready':
+            return
         return (session.query(Item.item_id)
                        .join(PlaceItem)
                        .join(Place)
