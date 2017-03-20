@@ -183,6 +183,11 @@ def load_match(osm_id):
     conn.close()
     return Response('done', mimetype='text/plain')
 
+@app.route('/overpass/<int:osm_id>')
+def overpass_query(osm_id):
+    place = Place.query.get(osm_id)
+    return render_template('overpass_query.html', place=place)
+
 @app.route('/matcher/<int:osm_id>')
 def matcher_progress(osm_id):
     place = Place.query.get(osm_id)
