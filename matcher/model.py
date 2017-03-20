@@ -184,20 +184,25 @@ class Place(Base):   # assume all places are relations
         tags = set()
         for item in self.items.filter(Item.tags != '{}'):
             tags |= set(item.tags)
-        return tags
+        return matcher.simplify_tags(tags)
 
     def get_oql(self):
         union = ['rel({});'.format(self.osm_id)]
         # optimisation: we only expect route, type or site on relations
         for tag in self.all_tags:
             relation_only = tag == 'site'
+            name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+            if (tag in {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden', 'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub', 'amenity=cinema', 'ruins', 'retail=retail_park', 'amenity=concert_hall', 'amenity=theatre'} or
+                    any(tag.startswith(k) for k in ('place', 'landuse', 'admin_level', 'water', 'man_made', 'railway', 'aeroway', 'bridge', 'natural'))):
+                name_filter = '[name]'
             if '=' in tag:
                 k, _, v = tag.partition('=')
                 if k in {'site', 'type', 'route'}:
                     relation_only = True
-                tag = '"{}"="{}"'.format(k, v)
+                if ':' in tag or ' ' in tag:
+                    tag = '"{}"="{}"'.format(k, v)
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
-                union.append('\n    {}(area.a)[{}][~"^(addr:housenumber|.*name.*)$"~".",i];'.format(t, tag))
+                union.append('\n    {}(area.a)[{}]{};'.format(t, tag, name_filter))
         area_id = 3600000000 + int(self.osm_id)
         bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
         self.oql = '''[timeout:600][out:xml][bbox:{}];
