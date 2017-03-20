@@ -218,8 +218,11 @@ def matcher_progress(osm_id):
 
 def get_existing():
     sort = request.args.get('sort') or 'name'
+    name_filter = request.args.get('filter')
 
     q = Place.query.filter(Place.state.isnot(None))
+    if name_filter:
+        q = q.filter(Place.display_name.ilike('%' + name_filter + '%'))
     if sort == 'name':
         return q.order_by(Place.display_name)
     if sort == 'area':
@@ -227,19 +230,24 @@ def get_existing():
 
     existing = q.all()
     if sort == 'match':
-        return sorted(existing, key=lambda p: p.items_with_candidates_count())
+        return sorted(existing, key=lambda p: (p.items_with_candidates_count() or 0))
     if sort == 'ratio':
-        return sorted(existing, key=lambda p: p.match_ratio)
+        return sorted(existing, key=lambda p: (p.match_ratio or 0))
     if sort == 'item':
         return sorted(existing, key=lambda p: p.items.count())
 
     return q
 
+def sort_link(order):
+    args = request.args.copy()
+    args['sort'] = order
+    return url_for(request.endpoint, **args)
+
 @app.route("/")
 def index():
     q = request.args.get('q')
     if not q:
-        return render_template('index.html', existing=get_existing())
+        return render_template('index.html', existing=get_existing(), sort_link=sort_link)
 
     results = nominatim.lookup(q)
     for hit in results:
@@ -249,7 +257,7 @@ def index():
     database.session.commit()
 
     for hit in results:
-        if hit['osm_type'] == 'relation':
+        if hit.get('osm_type') == 'relation':
             hit['place'] = Place.query.get(hit['osm_id'])
 
     return render_template('index.html', results=results, q=q)
