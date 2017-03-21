@@ -690,7 +690,7 @@
     "max_area": 30
 },
 {
-    "cats": ["Hamlets"],
+    "cats": ["Hamlets", "Unincorporated communities"],
     "tags": ["place", "landuse=residential"],
     "trim": ["CP"],
     "dist": 10
