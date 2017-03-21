@@ -428,7 +428,7 @@
     "dist": 2
 },
 {
-    "cats": ["Rapid transit stations", "stations"],
+    "cats": ["Rapid transit stations", "stations", "rapid transit"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
@@ -572,7 +572,7 @@
     "dist": 4
 },
 {
-    "cats": ["Tram stops in the United Kingdom"],
+    "cats": ["Tram stops in the United Kingdom", "stops"],
     "tags": ["railway=tram_stop"],
     "trim": ["tram stop", "stop"],
     "dist": 4
@@ -1018,7 +1018,7 @@
 },
 {
     "cats": ["Restaurant districts and streets"],
-    "tags": ["highway", "landuse=commercial", "place"],
+    "tags": ["landuse=commercial", "place"],
     "trim": [],
     "dist": 5
 },

@@ -125,11 +125,18 @@ def load_wikidata(osm_id):
     database.session.commit()
     return 'done'
 
-@app.route('/load/<int:osm_id>/checkover_pass', methods=['POST'])
+@app.route('/load/<int:osm_id>/check_overpass', methods=['POST'])
 def check_overpass(osm_id):
     place = Place.query.get(osm_id)
     reply = 'got' if place.overpass_done else 'get'
     return Response(reply, mimetype='text/plain')
+
+@app.route('/load/<int:osm_id>/overpass_timeout', methods=['POST'])
+def overpass_timeout(osm_id):
+    place = Place.query.get(osm_id)
+    place.state = 'overpass_timeout'
+    database.session.commit(place)
+    return Response('timeout noted', mimetype='text/plain')
 
 @app.route('/load/<int:osm_id>/postgis', methods=['POST'])
 def load_postgis(osm_id):
