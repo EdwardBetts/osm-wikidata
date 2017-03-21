@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from flask import Flask, render_template, request, Response, redirect, url_for
-from .utils import cache_filename, load_from_cache, cache_dir
+from .utils import cache_filename
 from lxml import etree
 from . import db, database, nominatim, wikidata, matcher, user_agent_headers
 from .model import Place, Item, PlaceItem, ItemCandidate
@@ -271,4 +271,4 @@ def index():
 
 @app.route("/documentation")
 def documentation():
-    return render_template('documentation.html')
+    return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
