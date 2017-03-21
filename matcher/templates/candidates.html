@@ -50,22 +50,31 @@
       <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=place.osm_id, multiple=1) }}">only multiple matches</a>]
     {% endif %}
   {% endif %}
+  </div>
+  </div>
 
   {% for i in candidates %}
+  <div class="row">
+  <div class="col-md-8">
     <p>
     <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
     &mdash; {{ i.enwiki }}
     &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
     <br>
     <ul>
-      <li>Categories: {{ ', '.join(i.categories) }}</li>
+      <li>Categories: {% for cat in i.categories %}
+          <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+      {% endfor %}</li>
       <li>tags considered: {{ ', '.join(i.tags) }}</li>
-      <li>possible matches:
-    {% for c in i.candidates %}
-      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">{{ c.name }}</a> ({{ c.osm_type}}, {{ c.dist | int }} m){% if not loop.last %},{% endif %}
-    {% endfor %}
     </ul>
-    </p>
+  </div>
+  <div class="col-md-4">
+    {% for c in i.candidates %}
+      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">{{ c.name }}</a>
+      ({{ c.osm_type}}{% if c.dist %}, {{ c.dist | int }} m{% endif %}){% if not loop.last %}<br>{% endif %}
+    {% endfor %}
+  </div>
+  </div>
   {% endfor %}
 
   <h4>Items with no match found in OSM</h4>
