@@ -159,7 +159,7 @@ class Place(Base):   # assume all places are relations
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
 
-    def load_into_pgsql(self):
+    def load_into_pgsql(self, capture_stderr=True):
         cmd = ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--cache', '1000',
@@ -169,6 +169,10 @@ class Place(Base):   # assume all places are relations
                 '--database', self.dbname,
                 self.overpass_filename]
 
+        if not capture_stderr:
+            p = subprocess.run(cmd,
+                               env={'PGPASSWORD': current_app.config['DB_PASS']})
+            return
         p = subprocess.run(cmd,
                            stderr=subprocess.PIPE,
                            env={'PGPASSWORD': current_app.config['DB_PASS']})
@@ -177,7 +181,6 @@ class Place(Base):   # assume all places are relations
                 return 'out of memory'
             else:
                 return p.stderr
-        return
 
     def save_overpass(self, content):
         with open(self.overpass_filename, 'wb') as out:
@@ -194,6 +197,8 @@ class Place(Base):   # assume all places are relations
         union = ['rel({});'.format(self.osm_id)]
         # optimisation: we only expect route, type or site on relations
         for tag in self.all_tags:
+            if tag == 'highway':
+                continue
             relation_only = tag == 'site'
             name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
             if (tag in {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden', 'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub', 'amenity=cinema', 'ruins', 'retail=retail_park', 'amenity=concert_hall', 'amenity=theatre'} or
