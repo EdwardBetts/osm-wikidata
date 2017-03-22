@@ -21,6 +21,7 @@ def do_reindex(place):
     print(place.display_name)
 
     existing = {item.item_id: item.tags for item in place.items}
+    all_tags = place.all_tags
 
     place.add_tags_to_items()
     print('tags updated')
@@ -35,7 +36,7 @@ def do_reindex(place):
         print('  old:', old)
         print('  new:', item.tags)
 
-    if not tag_change:
+    if tag_change:
         print('no change')
         place.state = 'ready'
         database.session.commit()
@@ -44,23 +45,26 @@ def do_reindex(place):
     wbgetentities(place)
     database.session.commit()
 
+    print(place.all_tags)
+    print(all_tags)
     sleep(10)
 
-    oql = place.get_oql()
-    overpass_url = 'http://overpass-api.de/api/interpreter'
+    if place.all_tags != all_tags:
+        oql = place.get_oql()
+        overpass_url = 'http://overpass-api.de/api/interpreter'
 
-    print('running overpass query')
-    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-    print('overpass done')
+        print('running overpass query')
+        r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+        print('overpass done')
 
-    place.save_overpass(r.content)
-    place.state = 'postgis'
-    database.session.commit()
+        place.save_overpass(r.content)
+        place.state = 'postgis'
+        database.session.commit()
 
-    print('running osm2pgsql')
-    place.load_into_pgsql(capture_stderr=False)
-    place.state = 'osm2pgsql'
-    database.session.commit()
+        print('running osm2pgsql')
+        place.load_into_pgsql(capture_stderr=False)
+        place.state = 'osm2pgsql'
+        database.session.commit()
 
     conn = db.db_connect(place.dbname)
     psycopg2.extras.register_hstore(conn)
