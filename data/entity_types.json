@@ -154,7 +154,7 @@
 },
 {
     "cats": ["Houses by country"],
-    "tags": ["building=house", "building=terrace", "building=detached", "building=semidetached_house", "building=heritage"],
+    "tags": ["building"],
     "trim": ["house", "hall"],
     "check_housename": true,
     "dist": 2
@@ -184,7 +184,7 @@
 {
     "cats": ["Residential buildings by country"],
     "skip_cats": ["Prisons in"],
-    "tags": ["building=residential", "building=detached", "building=house", "building=terrace", "building=semidetached_house", "landuse=residential"],
+    "tags": ["building", "landuse=residential"],
     "trim": ["house", "estate"],
     "check_housename": true,
     "dist": 5
@@ -567,7 +567,7 @@
 },
 {
     "cats": ["Seats of local government", "City and town halls"],
-    "tags": ["amenity=townhall", "amenity=village_hall"],
+    "tags": ["amenity=townhall", "amenity=village_hall", "building", "amenity=public_building"],
     "trim": [],
     "dist": 4
 },
@@ -894,6 +894,13 @@
     "cats": ["Sports venues by country"],
     "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
     "trim": ["sports centre", "sport center", "track", "stadium"],
+    "dist": 2
+},
+{
+    "name": "Rowing clubs",
+    "cats": ["Rowing clubs"],
+    "tags": ["sport=rowing"],
+    "trim": [],
     "dist": 2
 },
 {
