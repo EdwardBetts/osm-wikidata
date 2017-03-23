@@ -36,7 +36,7 @@ def do_reindex(place):
         print('  old:', old)
         print('  new:', item.tags)
 
-    if tag_change:
+    if not tag_change:
         print('no change')
         place.state = 'ready'
         database.session.commit()
@@ -45,8 +45,8 @@ def do_reindex(place):
     wbgetentities(place)
     database.session.commit()
 
-    print(place.all_tags)
-    print(all_tags)
+    print(sorted(place.all_tags))
+    print(sorted(all_tags))
     sleep(10)
 
     if place.all_tags != all_tags:
@@ -90,9 +90,7 @@ def reindex_all(skip_places=None):
     q = Place.query.filter(Place.state == 'ready')
     if skip_places:
         q = q.filter(~Place.osm_id.in_(skip_places))
-    for place in Place.query.filter(Place.state == 'ready', ~Place.display_name.like('San Fran%')):
-        if place.display_name.startswith('San Fran'):
-            continue
+    for place in Place.query.filter(Place.state == 'ready'):
         do_reindex(place)
 
 
