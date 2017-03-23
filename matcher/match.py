@@ -194,7 +194,3 @@ def get_osm_id_and_type(source_type, source_id):
     if source_id > 0:
         return ('way', source_id)
     return ('relation', -source_id)
-
-def build_hstore_query(tags):
-    tags = [tuple(tag.split('=')) if ('=' in tag) else (tag, None) for tag in tags]
-    return ' or '.join("((tags->'{}') = '{}')".format(k, v) if v else "(tags ? '{}')".format(k) for k, v in tags)
