@@ -39,9 +39,7 @@ class Place(Base):   # assume all places are relations
     extratags = Column(JSON)
     address = Column(JSON)
     namedetails = Column(JSON)
-    item_count = Column(Integer)
-    candidate_count = Column(Integer)
-    state = Column(String)
+    state = Column(String, index=True)
 
     area = column_property(func.ST_Area(geom))
 
@@ -105,9 +103,15 @@ class Place(Base):   # assume all places are relations
             for cat in item.categories:
                 lc_cat = cat.lower()
                 for key, value in cat_to_entity.items():
-                    pattern = re.compile(r'\b' + re.escape(key) + r'\b')
-                    if pattern.search(lc_cat):
-                        tags |= set(value['tags'])
+                    pattern = re.compile(r'\b' + re.escape(key) + r'\b', re.I)
+                    if not pattern.search(lc_cat):
+                        continue
+                    exclude = value.get('exclude_cats')
+                    if exclude:
+                        pattern = re.compile(r'\b(' + '|'.join(re.escape(e) for e in exclude) + r')\b', re.I)
+                        if pattern.search(lc_cat):
+                            continue
+                    tags |= set(value['tags'])
             item.tags = sorted(tags)
             session.add(item)
         self.state = 'tags'
