@@ -154,7 +154,7 @@
 },
 {
     "cats": ["Houses by country"],
-    "tags": ["building"],
+    "tags": ["building", "historic=manor"],
     "trim": ["house", "hall"],
     "check_housename": true,
     "dist": 2
@@ -236,7 +236,7 @@
     "dist": 4
 },
 {
-    "cats": ["Convention centers by country"],
+    "cats": ["Convention centers by country", "conference centres"],
     "tags": ["amenity=conference_centre"],
     "trim": ["conference center", "conference centre", "convention center"],
     "dist": 4
@@ -421,14 +421,15 @@
     "dist": 10
 },
 {
-    "cats": ["Railway stations by country", "Railroad stations", "Train stations"],
+    "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
     "dist": 2
 },
 {
-    "cats": ["Rapid transit stations", "stations", "rapid transit"],
+    "cats": ["stations", "rapid transit"],
+    "exclude_cats": ["power stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
@@ -812,7 +813,7 @@
     "dist": 1
 },
 {
-    "cats": ["Battlefields"],
+    "cats": ["Battlefields", "Battles"],
     "tags": ["historic=battlefield"],
     "trim": ["battle field", "Battle of"],
     "dist": 20
@@ -1020,7 +1021,7 @@
 {
     "cats": ["Community centres"],
     "tags": ["amenity=community_centre"],
-    "trim": [],
+    "trim": ["centre", "center"],
     "dist": 5
 },
 {
