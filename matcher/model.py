@@ -1,5 +1,5 @@
 # coding: utf-8
-from flask import current_app
+from flask import current_app, url_for, g
 from sqlalchemy import ForeignKey, Column, func, select
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum
 from sqlalchemy.ext.declarative import declarative_base
@@ -225,6 +225,21 @@ area({})->.a;
 out qt;'''.format(bbox, area_id, ''.join(union))
         return self.oql
 
+    def candidates_url(self, **kwargs):
+        if g.get('filter'):
+            return url_for('candidates_with_filter',
+                           name_filter=g.filter,
+                           osm_id=self.osm_id, **kwargs)
+        else:
+            return url_for('candidates', osm_id=self.osm_id, **kwargs)
+
+    def matcher_progress_url(self):
+        if g.get('filter'):
+            return url_for('matcher_progress_with_filter',
+                           name_filter=g.filter,
+                           osm_id=self.osm_id)
+        else:
+            return url_for('matcher_progress', osm_id=self.osm_id)
 
 class Item(Base):
     __tablename__ = 'item'

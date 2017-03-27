@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for
+from flask import Flask, render_template, request, Response, redirect, url_for, g
 from .utils import cache_filename
 from lxml import etree
 from . import db, database, nominatim, wikidata, matcher, user_agent_headers
@@ -12,6 +12,15 @@ import requests
 import os.path
 
 app = Flask(__name__)
+
+@app.context_processor
+def inject_user():
+    name_filter = g.get('filter')
+    if name_filter:
+        url = url_for('index_with_filter', name_filter=name_filter)
+    else:
+        url = url_for('index')
+    return dict(url_for_index=url)
 
 @app.route("/overpass/<int:osm_id>", methods=["POST"])
 def post_overpass(osm_id):
@@ -70,6 +79,11 @@ def export_osm(osm_id, name):
 
 def redirect_to_matcher(osm_id):
     return redirect(url_for('matcher_progress', osm_id=osm_id))
+
+@app.route('/filtered/<name_filter>/candidates/<int:osm_id>')
+def candidates_with_filter(name_filter, osm_id):
+    g.filter = name_filter
+    return candidates(osm_id)
 
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
@@ -225,7 +239,7 @@ def matcher_progress(osm_id):
 
 def get_existing():
     sort = request.args.get('sort') or 'name'
-    name_filter = request.args.get('filter')
+    name_filter = g.get('filter')
 
     q = Place.query.filter(Place.state.isnot(None))
     if name_filter:
@@ -246,15 +260,26 @@ def get_existing():
     return q
 
 def sort_link(order):
-    args = request.args.copy()
+    args = request.view_args.copy()
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
+@app.route('/filtered/<name_filter>')
+def index_with_filter(name_filter):
+    g.filter = name_filter
+    return index()
+
 @app.route("/")
 def index():
+    arg_filter = request.args.get('filter')
+    if arg_filter:
+        return redirect(url_for('index_with_filter', name_filter=arg_filter))
+
     q = request.args.get('q')
     if not q:
-        return render_template('index.html', existing=get_existing(), sort_link=sort_link)
+        return render_template('index.html',
+                               existing=get_existing(),
+                               sort_link=sort_link)
 
     results = nominatim.lookup(q)
     for hit in results:

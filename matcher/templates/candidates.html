@@ -45,9 +45,9 @@
 
   {% if not overpass_error and candidates %}
     {% if multiple_only %}
-      <p>[Filter: <b>only multiple</b> <a href="{{ url_for(request.endpoint, osm_id=place.osm_id) }}">(remove)</a>]
+      <p>[Filter: <b>only multiple</b> <a href="{{ place.candidates_url() }}">(remove)</a>]
     {% else %}
-      <p>[Filter: <a href="{{ url_for(request.endpoint, osm_id=place.osm_id, multiple=1) }}">only multiple matches</a>]
+      <p>[Filter: <a href="{{ place.candidates_url(multiple=1) }}">only multiple matches</a>]
     {% endif %}
   {% endif %}
   </div>

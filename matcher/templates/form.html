@@ -1,8 +1,8 @@
 <div>
-  <form action="{{ url_for('index') }}">
+  <form action="{{ url_for_index }}">
     <input name="q" size="65" value="{{ q }}">
     <input type="submit" value="find">
-    <a href="{{ url_for('index') }}">back to index</a>
+    <a href="{{ url_for_index }}">back to index</a>
     |
     <a href="{{ url_for('documentation') }}">documentation</a>
   </form>

@@ -25,11 +25,11 @@
     <table class="table table-hover table-sm" style="width: auto">
       <thead>
         <tr>
-          <th><a href="{{ url_for(request.endpoint, sort='name') }}">name</a></th>
-          <th class="text-right"><a href="{{ url_for(request.endpoint, sort='item') }}">item<br>count</a></th>
-          <th class="text-right"><a href="{{ url_for(request.endpoint, sort='match') }}">match<br>count</a></th>
-          <th class="text-right"><a href="{{ url_for(request.endpoint, sort='ratio') }}">match<br>ratio</a></th>
-          <th class="text-right"><a href="{{ url_for(request.endpoint, sort='area') }}">area<br>(km&sup2;)</a></th>
+          <th><a href="{{ sort_link('name') }}">name</a></th>
+          <th class="text-right"><a href="{{ sort_link('item') }}">item<br>count</a></th>
+          <th class="text-right"><a href="{{ sort_link('match') }}">match<br>count</a></th>
+          <th class="text-right"><a href="{{ sort_link('ratio') }}">match<br>ratio</a></th>
+          <th class="text-right"><a href="{{ sort_link('area') }}">area<br>(km&sup2;)</a></th>
         </tr>
       <tbody>
       {% for place in existing %}
@@ -39,7 +39,7 @@
             {% if place.state == 'overpass_timeout' %}
               {{ place.display_name }} <span class="badge badge-danger">area too large</span>
             {% else %}
-              <a href="{{ url_for('candidates', osm_id=place.osm_id) }}">{{ place.display_name }}</a>
+              <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
             {% endif %}
           </td>
           <td class="text-right">{{ place.items.count() }}</td>
