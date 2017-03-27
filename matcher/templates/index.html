@@ -25,7 +25,13 @@
     <table class="table table-hover table-sm" style="width: auto">
       <thead>
         <tr>
-          <th><a href="{{ sort_link('name') }}">name</a></th>
+          <th><a href="{{ sort_link('name') }}">name</a>
+    <form action="{{ url_for('index') }}">
+            <a href="{{ url_for(request.endpoint, sort='name') }}">name</a>
+      <input name="filter" size="20" value="{{ request.args['filter'] }}">
+      <input type="submit" value="filter">
+    </form>
+          </th>
           <th class="text-right"><a href="{{ sort_link('item') }}">item<br>count</a></th>
           <th class="text-right"><a href="{{ sort_link('match') }}">match<br>count</a></th>
           <th class="text-right"><a href="{{ sort_link('ratio') }}">match<br>ratio</a></th>
@@ -37,15 +43,16 @@
         <tr>
           <td>
             {% if place.state == 'overpass_timeout' %}
-              {{ place.display_name }} <span class="badge badge-danger">area too large</span>
+              {{ place.display_name }} <span class="badge badge-danger">Overpass timeout</span>
             {% else %}
               <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
             {% endif %}
           </td>
-          <td class="text-right">{{ place.items.count() }}</td>
+          {% set item_count = place.items.count() %}
+          <td class="text-right">{{ '{:,d}'.format(item_count) if item_count is number }}</td>
           <td class="text-right">{{ with_candidates_count or '' }}</td>
           <td class="text-right">
-          {% if place.items.count() and with_candidates_count %}
+          {% if place.state == 'ready' and place.items.count() and with_candidates_count %}
             {{ '{:.1%}'.format(place.match_ratio) }}
           {% endif %}
           <td class="text-right">
@@ -59,6 +66,7 @@
       {% endfor %}
       </tbody>
     </table>
+
   {% endif %}
 
   {% if q %}
@@ -96,7 +104,9 @@
       {% if hit.place %}
         area: {{ '{:.2f}'.format(hit.place.area_in_sq_km) }} km&sup2; <br>
       {% endif %}
-      OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
+      {% if hit.osm_type and hit.osm_id %}
+        OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
+      {% endif %}
       {% if detail %}
         importance: {{ hit.importance }}<br>
         <pre>{{ hit.address | pprint }}</pre>
