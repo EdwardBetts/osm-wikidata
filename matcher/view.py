@@ -69,7 +69,6 @@ def export_osm(osm_id, name):
         item = lookup.get(pair)
         if not item:
             continue
-        e.attrib['version'] = str(int(e.attrib['version']) + 1)
         e.attrib['action'] = 'modify'
         tag = etree.Element('tag', k='wikidata', v=item.qid)
         e.append(tag)
