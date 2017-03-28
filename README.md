@@ -20,12 +20,28 @@ fail.
 Once the matching process is complete a 'view match candidates' link will
 appear. The matching is based on names and English Wikipedia categories.
 
+### One-to-one between OSM and Wikidata
+
+With this system the aim is for a single OSM entity to link to one Wikidata
+item. Many geographical entities are represented by multiple objects in OSM with
+the same name, for example dual carriageway bridges are mapped as two roadways,
+or buildings within a large site like a hospital.
+
+For bridges with two roadways the system will look for the outline of the bridge
+tagged with man\_made=bridge and for a hospital or other campus the aim is to
+tag the way or relation that represents the entire site.
+
+Some Wikidata items represent geographical entities in multiple locations, for
+example Space Mountain (Q2306380) represents roller coasters in five different
+Disney theme parks. If each instance of the roller coaster on OSM had the same
+Wikidata tag there it would not be a one-to-one mapping.
+
 ### English language Wikipedia categories are used for matching
 
-The matching system makes use of categories on Wikipedia because the
-information on Wikidata is incomplete. Wikidata includes an import of all
-Wikipedia including the coordinates, but for a lot of items the 'instance of'
-property is not set.
+The matching system makes use of categories on Wikipedia because the information
+on Wikidata is incomplete. Wikidata includes an import of all Wikipedia
+including the coordinates, but for a lot of items the 'instance of' property is
+not set.
 
 Only Wikidata items with a page on English language Wikipedia are included in
 the match. In the future I'll add support for matching items without a linked
@@ -43,6 +59,11 @@ the OSM side are considered, old\_name and a few others are ignored.
 
 The name comparison includes some normalisation, punctuation is removed.
 
+### Existing OSM tags for Wikidata and Wikipedia
+
+Existing Wikipedia tags are ignored. If an OSM entity already has a Wikidata tag
+it will be left alone.
+
 ### Items that are unlikely to match
 
 - Radio stations: not mapped on OpenStreetMap
@@ -57,3 +78,5 @@ The name comparison includes some normalisation, punctuation is removed.
 
 * Code: <https://github.com/EdwardBetts/osm-wikidata>
 * Tasks: <https://github.com/EdwardBetts/osm-wikidata/issues>
+
+vim: syntax=markdown tw=80 spell
