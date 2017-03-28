@@ -17,7 +17,7 @@ app = Flask(__name__)
 def inject_user():
     name_filter = g.get('filter')
     if name_filter:
-        url = url_for('index_with_filter', name_filter=name_filter)
+        url = url_for('index_with_filter', name_filter=name_filter.replace(' ', '_'))
     else:
         url = url_for('index')
     return dict(url_for_index=url)
@@ -82,7 +82,7 @@ def redirect_to_matcher(osm_id):
 
 @app.route('/filtered/<name_filter>/candidates/<int:osm_id>')
 def candidates_with_filter(name_filter, osm_id):
-    g.filter = name_filter
+    g.filter = name_filter.replace('_', ' ')
     return candidates(osm_id)
 
 @app.route('/candidates/<int:osm_id>')
@@ -104,7 +104,10 @@ def candidates(osm_id):
 
     if multiple_only:
         item_ids = [i[0] for i in place.items_with_multiple_candidates()]
-        items = Item.query.filter(Item.item_id.in_(item_ids))
+        if not item_ids:
+            items = Item.query.filter(0 == 1)
+        else:
+            items = Item.query.filter(Item.item_id.in_(item_ids))
     else:
         items = place.items_with_candidates()
 
@@ -266,14 +269,17 @@ def sort_link(order):
 
 @app.route('/filtered/<name_filter>')
 def index_with_filter(name_filter):
-    g.filter = name_filter
+    g.filter = name_filter.replace('_', ' ')
     return index()
 
 @app.route("/")
 def index():
-    arg_filter = request.args.get('filter')
-    if arg_filter:
-        return redirect(url_for('index_with_filter', name_filter=arg_filter))
+    if 'filter' in request.args:
+        arg_filter = request.args['filter'].strip().replace(' ', '_')
+        if arg_filter:
+            return redirect(url_for('index_with_filter', name_filter=arg_filter))
+        else:
+            return redirect(url_for('index'))
 
     q = request.args.get('q')
     if not q:

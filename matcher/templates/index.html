@@ -25,11 +25,12 @@
     <table class="table table-hover table-sm" style="width: auto">
       <thead>
         <tr>
-          <th><a href="{{ sort_link('name') }}">name</a>
+          <th>
     <form action="{{ url_for('index') }}">
-            <a href="{{ url_for(request.endpoint, sort='name') }}">name</a>
-      <input name="filter" size="20" value="{{ request.args['filter'] }}">
+            <a href="{{ sort_link('name') }}">name</a>
+      <input name="filter" size="20" value="{{ g.get('filter', '') }}">
       <input type="submit" value="filter">
+      {% if g.get('filter') %}<a style="font-weight: normal" href="{{ url_for('index') }}">clear filter</a>{% endif %}
     </form>
           </th>
           <th class="text-right"><a href="{{ sort_link('item') }}">item<br>count</a></th>
