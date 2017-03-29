@@ -43,6 +43,7 @@
 </head>
 
 {% set osm_id = place.osm_id %}
+{% set item_list = place.item_list() %}
 
 <body>
   <div class="container-fluid">
@@ -69,14 +70,20 @@
     <span id="overpass_error">&nbsp;Overpass error:
       <span id="overpass_error_message"></span><br>
     </span>
-    <span id="load_postgis" class="pending">creating PostGIS database</span><br>
     <span id="load_osm2pgsql" class="pending">loading OSM data with osm2pgsql</span>
     <br>
     <span id="osm2pgsql_error">&nbsp;osm2pgsql error:
       <pre id="osm2pgsql_error_message"></pre>
     </span>
 
-    <span id="load_match" class="pending">checking data for matches</span></br>
+    <span id="load_match" class="pending">checking data for matches</span><br>
+    <span id="current_item">&nbsp;Current item:
+      <span id="item_num"></span> of
+      <span id="item_list_count">{{ item_list | count }}</span> &ndash;
+      <span id="item_id"></span> &ndash;
+      <span id="item_name"></span><br>
+    </span>
+
   </div>
 
   <p><a href="{{ url_for('candidates', osm_id=osm_id) }}" id="candidates-link">view match candidates</a></p>
@@ -106,14 +113,20 @@
 
   <script>
   var oql = {{ place.get_oql() | tojson }};
-  var overpass_url = 'http://overpass-api.de/api/interpreter';
+  var overpass_url = 'https://overpass-api.de/api/interpreter';
   var load_wikidata_url = {{ url_for('load_wikidata', osm_id=osm_id) | tojson }};
   var check_overpass_url = {{ url_for('check_overpass', osm_id=osm_id) | tojson }};
   var overpass_timeout_url = {{ url_for('overpass_timeout', osm_id=osm_id) | tojson }};
   var post_overpass_url = {{ url_for('post_overpass', osm_id=osm_id) | tojson }};
-  var load_postgis_url = {{ url_for('load_postgis', osm_id=osm_id) | tojson }};
   var load_osm2pgsql_url = {{ url_for('load_osm2pgsql', osm_id=osm_id) | tojson }};
   var load_match_url = {{ url_for('load_match', osm_id=osm_id) | tojson }};
+  var load_individual_match_url = {{ url_for('load_individual_match', osm_id=osm_id, item_id=0) | tojson }};
+  var load_ready = {{ url_for('load_ready', osm_id=osm_id) | tojson }};
+  // var items = {{ item_list | tojson }};
+  var items = [];
+  var current_item = 0;
+
+  load_individual_match_url = load_individual_match_url.slice(0, -1);
 
   window.setInterval(fade, 1100);
 
@@ -134,7 +147,9 @@
 
   function load_wikidata() {
     mark_active($('#load_wikidata'));
-    $.post(load_wikidata_url).done (function() {
+    $.post(load_wikidata_url).done (function(data) {
+      items = data.item_list;
+      $('#item_list_count').text(items.length);
       mark_done($('#load_wikidata'));
       check_overpass();
     });
@@ -147,23 +162,9 @@
         trigger_overpass();
       } else {
         mark_done($('#load_overpass'));
-        load_postgis();
+        load_osm2pgsql();
       }
     }, 'text');
-  }
-
-  function load_postgis() {
-    mark_active($('#load_postgis'));
-    $.post(load_postgis_url, function(data) {
-      mark_done($('#load_postgis'));
-      if(data == 'need osm2pgsql') {
-        load_osm2pgsql();
-      } else {
-        mark_active($('#load_osm2pgsql'));
-        mark_done($('#load_osm2pgsql'));
-        load_match();
-      }
-    });
   }
 
   function load_osm2pgsql() {
@@ -182,16 +183,35 @@
 
   function load_match() {
     mark_active($('#load_match'));
-    $.post(load_match_url).done (function() {
+    $('#current_item').show();
+    load_individual_match();
+  }
+
+  function load_done() {
+    $('#current_item').hide();
+    $.post(load_ready).done (function() {
       mark_done($('#load_match'));
       $('#candidates-link').show();
     });
+  }
+
+  function load_individual_match() {
+    if(current_item >= items.length) {
+      load_done();
+      return;
+    }
+    item = items[current_item++];
+    $('#item_num').text(current_item);
+    $('#item_id').text('Q' + item.id);
+    $('#item_name').text(item.name);
+    $.post(load_individual_match_url + item.id).done(load_individual_match);
   }
 
   $('#candidates-link').hide();
   $('#overpass_error').hide();
   $('#osm2pgsql_error').hide();
   $('#overpass_slow').hide();
+  $('#current_item').hide();
   load_wikidata();
 
   function trigger_overpass() {
@@ -214,9 +234,8 @@
          data: data,
       })
       .done(function(reply) {
-         // console.log('overpass:', reply);
          mark_done($('#load_overpass'));
-         load_postgis();
+         load_osm2pgsql();
       });
       $('#overpass_slow').hide();
     })

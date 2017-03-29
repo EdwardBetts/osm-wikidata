@@ -43,7 +43,7 @@ def build_cat_to_ending():
             cat_to_ending[lc_cat] = trim
     return cat_to_ending
 
-def find_item_matches(cur, item, cat_to_ending, debug=False):
+def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     if not item.entity:
         return []
     cats = item.categories
@@ -58,8 +58,8 @@ def find_item_matches(cur, item, cat_to_ending, debug=False):
     for obj_type in 'point', 'line', 'polygon':
         obj_sql = ('select \'{}\', osm_id, name, tags, '
                    'ST_Distance({}, way) as dist '
-                   'from planet_osm_{} '
-                   'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, obj_type, point, item_max_dist)
+                   'from {}_{} '
+                   'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, prefix, obj_type, point, item_max_dist)
         sql_list.append(obj_sql)
     sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist'.format(item.hstore_query)
 
@@ -145,7 +145,7 @@ def get_biggest_polygon(item):
 
     return -osm['id'] if osm['type'] == 'relation' else osm['id']
 
-def all_in_one(item, conn):
+def all_in_one(item, conn, prefix):
     cur = conn.cursor()
     biggest = get_biggest_polygon(item)
     if not biggest:
@@ -159,18 +159,18 @@ def all_in_one(item, conn):
         if not id_list:
             continue
         obj_sql = ('select \'{}\' as t, osm_id, way '
-                   'from planet_osm_{} '
-                   'where osm_id in ({})').format(table, table, id_list)
+                   'from {}_{} '
+                   'where osm_id in ({})').format(table, table, prefix, id_list)
         sql_list.append(obj_sql)
 
     if not sql_list:
         return
-    sql = 'select ST_Within(a.way, b.way) from (' + ' union '.join(sql_list) + ') a, planet_osm_polygon b where b.osm_id={}'.format(biggest)
+    sql = 'select ST_Within(a.way, b.way) from (' + ' union '.join(sql_list) + ') a, {}_polygon b where b.osm_id={}'.format(prefix, biggest)
     cur.execute(sql)
     if all(row[0] for row in cur.fetchall()):
         return biggest
 
-def filter_candidates(items, conn):
+def filter_candidates(items, conn):  # unused?
     assert isinstance(items, list)
     for item in items[:]:
         candidates = item['candidates']

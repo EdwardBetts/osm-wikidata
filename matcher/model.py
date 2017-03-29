@@ -118,8 +118,8 @@ class Place(Base):   # assume all places are relations
         session.commit()
 
     @property
-    def dbname(self):
-        return '{}{}'.format(current_app.config['DB_PREFIX'], self.osm_id)
+    def prefix(self):
+        return 'osm_{}'.format(self.osm_id)
 
     @property
     def overpass_filename(self):
@@ -166,11 +166,12 @@ class Place(Base):   # assume all places are relations
     def load_into_pgsql(self, capture_stderr=True):
         cmd = ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
+                '--prefix', self.prefix,
                 '--cache', '1000',
                 '--multi-geometry',
                 '--host', current_app.config['DB_HOST'],
                 '--username', current_app.config['DB_USER'],
-                '--database', self.dbname,
+                '--database', current_app.config['DB_NAME'],
                 self.overpass_filename]
 
         if not capture_stderr:
@@ -210,10 +211,13 @@ class Place(Base):   # assume all places are relations
                 name_filter = '[name]'
             if '=' in tag:
                 k, _, v = tag.partition('=')
+                if k == 'route' or tag == 'type=route':  # ignore because osm2pgsql only does multipolygons
+                    continue
                 if k in {'site', 'type', 'route'}:
                     relation_only = True
                 if ':' in tag or ' ' in tag:
                     tag = '"{}"="{}"'.format(k, v)
+
             for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
                 union.append('\n    {}(area.a)[{}]{};'.format(t, tag, name_filter))
         area_id = 3600000000 + int(self.osm_id)
@@ -240,6 +244,10 @@ out qt;'''.format(bbox, area_id, ''.join(union))
                            osm_id=self.osm_id)
         else:
             return url_for('matcher_progress', osm_id=self.osm_id)
+
+    def item_list(self):
+        q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
+        return [{'id': i.item_id, 'name': i.enwiki} for i in q]
 
 class Item(Base):
     __tablename__ = 'item'

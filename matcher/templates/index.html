@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>OSM ◀ ▶ Wikidata</title>
+  <title>
+    {{ g.filter ~ ' - ' if g.get('filter') }} OSM ◀ ▶ Wikidata
+  </title>
   <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
   <style>
     .box {
@@ -18,7 +20,7 @@
   <div class="container-fluid">
   <div class="row">
   <div class="col">
-    <h1>OSM ◀ ▶ Wikidata</h1>
+    <h1>OSM ◀ ▶ Wikidata {% if g.get('filter') %}<small class="text-muted">({{ g.filter }})</small>{% endif %}</h1>
 
   {% include "form.html" %}
   {% if not q and existing %}
@@ -77,7 +79,7 @@
   {% for hit in results %}
     <div class="box">
       {# {% set name = hit.namedetails["name:en"] or hit.namedetails["name"] %} #}
-      {% if hit.icon %}<img src="{{ hit.icon }}">{% endif %}
+      {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
       {% if hit.osm_type == 'relation' %}
         <b>
           {% if name %}

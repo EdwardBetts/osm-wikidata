@@ -1,17 +1,17 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify
 from .utils import cache_filename
 from lxml import etree
-from . import db, database, nominatim, wikidata, matcher, user_agent_headers
+from . import database, nominatim, wikidata, matcher, user_agent_headers
 from .model import Place, Item, PlaceItem, ItemCandidate
 from .wikipedia import page_category_iter
 
-import psycopg2.extras
 import requests
 import os.path
 
 app = Flask(__name__)
+cat_to_ending = None
 
 @app.context_processor
 def inject_user():
@@ -26,7 +26,7 @@ def inject_user():
 def post_overpass(osm_id):
     place = Place.query.get(osm_id)
     place.save_overpass(request.data)
-    place.state = 'postgis'
+    place.state = 'overpass'
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
@@ -135,11 +135,11 @@ def wbgetentities(p):
 def load_wikidata(osm_id):
     place = Place.query.get(osm_id)
     if place.state != 'tags':
-        return 'done'
+        return jsonify(item_list=place.item_list())
     wbgetentities(place)
     place.state = 'wbgetentities'
     database.session.commit()
-    return 'done'
+    return jsonify(item_list=place.item_list())
 
 @app.route('/load/<int:osm_id>/check_overpass', methods=['POST'])
 def check_overpass(osm_id):
@@ -151,50 +151,65 @@ def check_overpass(osm_id):
 def overpass_timeout(osm_id):
     place = Place.query.get(osm_id)
     place.state = 'overpass_timeout'
-    database.session.commit(place)
+    database.session.commit()
     return Response('timeout noted', mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/postgis', methods=['POST'])
-def load_postgis(osm_id):
-    place = Place.query.get(osm_id)
-    tables = db.create_database(place.dbname)
-
-    expect = {'spatial_ref_sys', 'geography_columns', 'geometry_columns',
-              'raster_overviews', 'planet_osm_roads', 'raster_columns',
-              'planet_osm_line', 'planet_osm_point', 'planet_osm_polygon'}
-    if tables == expect:
-        place.state = 'osm2pgsql'
-        reply = 'skip osm2pgsql'
-    else:
-        place.state = 'postgis'
-        reply = 'need osm2pgsql'
-    database.session.commit()
-
-    return Response(reply, mimetype='text/plain')
-
-@app.route('/load/<int:osm_id>/osm2pgsql', methods=['POST'])
+@app.route('/load/<int:osm_id>/osm2pgsql', methods=['POST', 'GET'])
 def load_osm2pgsql(osm_id):
     place = Place.query.get(osm_id)
-    error = place.load_into_pgsql()
-    if not error:
-        place.state = 'osm2pgsql'
-        database.session.commit()
-    return Response(error or 'done', mimetype='text/plain')
+    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
+    tables = database.get_tables()
+    if not all(t in tables for t in expect):
+        error = place.load_into_pgsql()
+        if error:
+            return Response(error, mimetype='text/plain')
+    place.state = 'osm2pgsql'
+    database.session.commit()
+    return Response('done', mimetype='text/plain')
 
+@app.route('/load/<int:osm_id>/match/Q<int:item_id>', methods=['POST', 'GET'])
+def load_individual_match(osm_id, item_id):
+    global cat_to_ending
 
-@app.route('/load/<int:osm_id>/match', methods=['POST'])
+    place = Place.query.get(osm_id)
+
+    conn = database.session.bind.raw_connection()
+    cur = conn.cursor()
+
+    if cat_to_ending is None:
+        cat_to_ending = matcher.build_cat_to_ending()
+
+    item = Item.query.get(item_id)
+    candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
+    for i in (candidates or []):
+        c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
+        if not c:
+            c = ItemCandidate(**i, item=item)
+            database.session.add(c)
+    database.session.commit()
+
+    conn.close()
+    return Response('done', mimetype='text/plain')
+
+@app.route('/load/<int:osm_id>/ready', methods=['POST', 'GET'])
+def load_ready(osm_id):
+    place = Place.query.get(osm_id)
+    place.state = 'ready'
+    database.session.commit()
+    return Response('done', mimetype='text/plain')
+
+@app.route('/load/<int:osm_id>/match', methods=['POST', 'GET'])
 def load_match(osm_id):
     place = Place.query.get(osm_id)
 
-    conn = db.db_connect(place.dbname)
-    psycopg2.extras.register_hstore(conn)
+    conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
     cat_to_ending = matcher.build_cat_to_ending()
 
     q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
     for item in q:
-        candidates = matcher.find_item_matches(cur, item, cat_to_ending)
+        candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
         for i in (candidates or []):
             c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
             if not c:
