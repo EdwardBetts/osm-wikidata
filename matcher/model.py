@@ -21,6 +21,37 @@ Base.query = session.query_property()
 # states: wikipedia, tags, wbgetentities, overpass, postgis, osm2pgsql, ready
 # bad state: overpass_fail
 
+name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
+        'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
+        'amenity=cinema', 'ruins', 'retail=retail_park',
+        'amenity=concert_hall', 'amenity=theatre'}
+
+name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
+        'railway', 'aeroway', 'bridge', 'natural']
+
+def oql_from_tag(tag, large_area, filters='area.a'):
+    # optimisation: we only expect route, type or site on relations
+    if tag == 'highway':
+        return
+    relation_only = tag == 'site'
+    if large_area or tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
+        name_filter = '[name]'
+    else:
+        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+    if '=' in tag:
+        k, _, v = tag.partition('=')
+        if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
+            return  # ignore because osm2pgsql only does multipolygons
+        if k in {'site', 'type', 'route'}:
+            relation_only = True
+        if ':' in tag or ' ' in tag:
+            tag = '"{}"="{}"'.format(k, v)
+
+    return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
+            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
+
+    # return ['\n    {}(area.a)[{}]{};'.format(t, tag, name_filter) for ('node', 'way', 'rel')]
+
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
 
@@ -39,9 +70,12 @@ class Place(Base):   # assume all places are relations
     extratags = Column(JSON)
     address = Column(JSON)
     namedetails = Column(JSON)
+    item_count = Column(Integer)
+    candidate_count = Column(Integer)
     state = Column(String, index=True)
 
     area = column_property(func.ST_Area(geom))
+    # match_ratio = column_property(candidate_count / item_count)
 
     items = relationship('Item',
                          secondary='place_item',
@@ -70,11 +104,8 @@ class Place(Base):   # assume all places are relations
 
     @property
     def match_ratio(self):
-        if self.state != 'ready':
-            return
-        matches = self.items_with_candidates_count()
-        if self.items.count():
-            return matches / self.items.count()
+        if self.state == 'ready' and self.item_count:
+            return self.candidate_count / self.item_count
 
     @property
     def bbox(self):
@@ -199,35 +230,32 @@ class Place(Base):   # assume all places are relations
         return matcher.simplify_tags(tags)
 
     def get_oql(self):
-        union = ['rel({});'.format(self.osm_id)]
-        # optimisation: we only expect route, type or site on relations
-        for tag in self.all_tags:
-            if tag == 'highway':
-                continue
-            relation_only = tag == 'site'
-            name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
-            if (tag in {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden', 'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub', 'amenity=cinema', 'ruins', 'retail=retail_park', 'amenity=concert_hall', 'amenity=theatre'} or
-                    any(tag.startswith(k) for k in ('place', 'landuse', 'admin_level', 'water', 'man_made', 'railway', 'aeroway', 'bridge', 'natural'))):
-                name_filter = '[name]'
-            if '=' in tag:
-                k, _, v = tag.partition('=')
-                if k == 'route' or tag == 'type=route':  # ignore because osm2pgsql only does multipolygons
-                    continue
-                if k in {'site', 'type', 'route'}:
-                    relation_only = True
-                if ':' in tag or ' ' in tag:
-                    tag = '"{}"="{}"'.format(k, v)
+        large_area = self.area > 3000 * 1000 * 1000
 
-            for t in ('rel',) if relation_only else ('node', 'way', 'rel'):
-                union.append('\n    {}(area.a)[{}]{};'.format(t, tag, name_filter))
-        area_id = 3600000000 + int(self.osm_id)
-        bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
-        self.oql = '''[timeout:600][out:xml][bbox:{}];
-area({})->.a;
-({});
-(._;>;);
-out qt;'''.format(bbox, area_id, ''.join(union))
-        return self.oql
+        q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
+
+        if False and large_area and q.count() < 200:
+            union = []
+            for item in q:
+                union += item.get_oql()
+
+            oql = ('[timeout:300][out:xml];\n' +
+                   '({});\n' +
+                   '(._;>;);\n' +
+                   'out qt;').format(''.join(union))
+        else:
+            bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
+            union = ['rel({});'.format(self.osm_id)]
+            for tag in self.all_tags:
+                union += oql_from_tag(tag, large_area)
+
+            area_id = 3600000000 + int(self.osm_id)
+            oql = ('[timeout:300][out:xml][bbox:{}];\n' +
+                   'area({})->.a;\n' +
+                   '({});\n' +
+                   '(._;>;);\n' +
+                   'out qt;').format(bbox, area_id, ''.join(union))
+        return oql
 
     def candidates_url(self, **kwargs):
         if g.get('filter'):
@@ -287,6 +315,14 @@ class Item(Base):
     def names(self):
         if self.entity:
             return wikidata.names_from_entity(self.entity)
+
+    def get_oql(self):
+        lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
+        union = []
+        for tag in self.tags:
+            osm_filter = 'around:1000,{:f},{:f}'.format(lat, lon)
+            union += oql_from_tag(tag, False, osm_filter)
+        return union
 
 class PlaceItem(Base):
     __tablename__ = 'place_item'

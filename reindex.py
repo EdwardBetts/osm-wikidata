@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 from matcher.model import Place, Item, ItemCandidate
-from matcher import database, user_agent_headers, db, matcher, wikidata
+from matcher import database, user_agent_headers, matcher, wikidata
 from matcher.view import app
+from matcher.overpass import wait_for_slot, get_status  # noqa: F401
 from time import sleep
 import requests
-import psycopg2.extras
 import sys
 
 def wbgetentities(p):
@@ -49,10 +49,13 @@ def do_reindex(place):
     print(sorted(all_tags))
     sleep(10)
 
-    if place.all_tags != all_tags:
+    tables = database.get_tables()
+    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
+    if not all(t in tables for t in expect) or place.all_tags != all_tags:
         oql = place.get_oql()
-        overpass_url = 'http://overpass-api.de/api/interpreter'
+        overpass_url = 'https://overpass-api.de/api/interpreter'
 
+        wait_for_slot()
         print('running overpass query')
         r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
         print('overpass done')
@@ -66,15 +69,14 @@ def do_reindex(place):
         place.state = 'osm2pgsql'
         database.session.commit()
 
-    conn = db.db_connect(place.dbname)
-    psycopg2.extras.register_hstore(conn)
+    conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
     cat_to_ending = matcher.build_cat_to_ending()
 
     q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
     for item in q:
-        candidates = matcher.find_item_matches(cur, item, cat_to_ending)
+        candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
         for i in (candidates or []):
             c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
             if not c:

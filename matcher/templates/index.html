@@ -42,7 +42,7 @@
         </tr>
       <tbody>
       {% for place in existing %}
-        {% set with_candidates_count = place.items_with_candidates_count() %}
+        {% set with_candidates_count = place.candidate_count %}
         <tr>
           <td>
             {% if place.state == 'overpass_timeout' %}
@@ -51,21 +51,18 @@
               <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
             {% endif %}
           </td>
-          {% set item_count = place.items.count() %}
+          {% set item_count = place.item_count %}
           <td class="text-right">{{ '{:,d}'.format(item_count) if item_count is number }}</td>
-          <td class="text-right">{{ with_candidates_count or '' }}</td>
+          <td class="text-right">{{ with_candidates_count if with_candidates_count is number }}</td>
           <td class="text-right">
-          {% if place.state == 'ready' and place.items.count() and with_candidates_count %}
-            {{ '{:.1%}'.format(place.match_ratio) }}
+          {% if place.state == 'ready' %}
+            {{ '{:.1%}'.format(place.match_ratio) if place.match_ratio is number }}
           {% endif %}
           <td class="text-right">
             {{ '{:,.1f}'.format(place.area_in_sq_km) }}
           </td>
           </td>
         </tr>
-        {# <tr>
-          <td colspan="2"><pre>{{ item | pprint }}</pre></td>
-        </tr> #}
       {% endfor %}
       </tbody>
     </table>

@@ -195,6 +195,8 @@ def load_individual_match(osm_id, item_id):
 def load_ready(osm_id):
     place = Place.query.get(osm_id)
     place.state = 'ready'
+    place.item_count = place.items.count()
+    place.candidate_count = place.items_with_candidates_count()
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
