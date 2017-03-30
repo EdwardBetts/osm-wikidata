@@ -76,6 +76,13 @@
     "dist": 2
 },
 {
+    "cats": ["Clinics"],
+    "tags": ["amenity=clinic", "building=clinic"],
+    "trim": ["clinic"],
+    "check_housename": true,
+    "dist": 2
+},
+{
     "cats": ["Astronomical observatories by country"],
     "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory"],
     "trim": ["telescope", "observatory", "astronomical observatory"],
@@ -142,7 +149,7 @@
 },
 {
     "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures"],
-    "tags": ["historic=monument", "tourism=artwork"],
+    "tags": ["historic=monument", "tourism"],
     "trim": ["monument", "Statue of"],
     "dist": 3
 },
@@ -711,7 +718,7 @@
     "dist": 5
 },
 {
-    "cats": ["Bookshops"],
+    "cats": ["Bookshops", "Bookstores"],
     "tags": ["shop=books"],
     "trim": [],
     "dist": 5
@@ -801,7 +808,7 @@
     "dist": 5
 },
 {
-    "cats": ["Art museums and galleries by country"],
+    "cats": ["Art museums and galleries by country", "Art galleries", "Art museums"],
     "tags": ["tourism=gallery", "tourism=museum", "amenity=arts_centre"],
     "trim": ["gallery", "space", "museum"],
     "dist": 2
@@ -892,7 +899,7 @@
 },
 {
     "name": "Sport venues",
-    "cats": ["Sports venues by country"],
+    "cats": ["Sports venues by country", "Baseball venues"],
     "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
     "trim": ["sports centre", "sport center", "track", "stadium"],
     "dist": 2
@@ -1019,9 +1026,9 @@
     "dist": 5
 },
 {
-    "cats": ["Community centres"],
+    "cats": ["Community centres", "Community centers"],
     "tags": ["amenity=community_centre"],
-    "trim": ["centre", "center"],
+    "trim": ["centre", "center", "community center", "community centre"],
     "dist": 5
 },
 {
@@ -1038,7 +1045,7 @@
     "dist": 5
 },
 {
-    "cats": ["Business districts", "Business parks"],
+    "cats": ["Business districts", "Business parks", "Shopping districts"],
     "tags": ["landuse=commercial"],
     "area": true,
     "trim": [],
