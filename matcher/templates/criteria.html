@@ -12,6 +12,7 @@
       <h5 class="card-header">
         {{ i.name | capitalize }}
         <span class="text-muted small font-weight-normal">({{i.dist}}km)</span>
+        {% if i.check_housename %}<span class="badge small badge-info font-weight-normal">house name</span>{% endif %}
         {% if i.area %}<span class="badge small badge-info font-weight-normal">area</span>{% endif %}
       </h5>
       <div class="card-block">
