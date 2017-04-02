@@ -1111,7 +1111,7 @@
     "dist": 1
 },
 {
-    "cats": ["Food markets"],
+    "cats": ["Food markets", "Wholesale markets"],
     "tags": ["building", "landuse=industrial", "amenity=marketplace"],
     "trim": [],
     "check_housename": true,
