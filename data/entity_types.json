@@ -236,6 +236,7 @@
     "dist": 4
 },
 {
+    "name": "Studios & radio stations",
     "cats": ["Studios by country", "Radio stations"],
     "tags": ["amenity=studio"],
     "trim": ["studio"],
@@ -387,6 +388,7 @@
     "dist": 3
 },
 {
+    "name": "Lakes & ponds",
     "cats": ["Lakes by country", "Ponds"],
     "tags": ["water=lake", "natural=lake", "water=pond"],
     "trim": ["lake", "water", "pond"],
@@ -435,6 +437,7 @@
     "dist": 2
 },
 {
+    "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
     "exclude_cats": ["power stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
@@ -495,13 +498,6 @@
     "tags": ["man_made=pier", "landuse=retail"],
     "trim": ["pier"],
     "dist": 5
-},
-{
-    "cats": ["Quarries"],
-    "tags": ["landuse=quarry"],
-    "trim": ["quarry"],
-    "area": true,
-    "dist": 10
 },
 {
     "cats": ["Mines by country"],
@@ -574,13 +570,14 @@
     "dist": 5
 },
 {
-    "cats": ["Seats of local government", "City and town halls"],
+    "cats": ["Seats of local government", "City and town halls", "City halls", "Town halls"],
     "tags": ["amenity=townhall", "amenity=village_hall", "building", "amenity=public_building"],
     "trim": [],
     "dist": 4
 },
 {
-    "cats": ["Tram stops in the United Kingdom", "stops"],
+    "cats": "Tram stops",
+    "cats": ["Tram stops", "stops"],
     "tags": ["railway=tram_stop"],
     "trim": ["tram stop", "stop"],
     "dist": 4
@@ -607,7 +604,8 @@
     "dist": 10
 },
 {
-    "cats": ["Roundabouts and traffic circles", "Roundabouts"],
+    "name": "Roundabouts",
+    "cats": ["Roundabouts and traffic circles", "Roundabouts", "Traffic circles"],
     "tags": ["junction=roundabout"],
     "trim": ["roundabout", "traffic circle"],
     "dist": 1
@@ -820,7 +818,7 @@
     "dist": 1
 },
 {
-    "cats": ["Battlefields", "Battles"],
+    "cats": ["Battlefields", "Battles", "Battle of"],
     "tags": ["historic=battlefield"],
     "trim": ["battle field", "Battle of"],
     "dist": 20
@@ -848,24 +846,17 @@
     "dist": 4
 },
 {
-    "cats": ["Civil parishes"],
+    "cats": ["Civil parishes by country"],
     "tags": ["designation=civil_parish"],
     "trim": [],
     "area": true,
     "dist": 10
 },
 {
+    "name": "Districts",
     "cats": ["Areas", "Districts", "Populated places", "Populated coastal places"],
     "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
     "trim": [],
-    "dist": 8
-},
-{
-    "cats": ["Neighbourhoods by country", "Ethnic enclaves"],
-    "skip_cats": ["Airports", "Airfields", "Aerodromes", "Military installations", "Campuses", "Christian monasteries", "Christian communities", "Parliamentary constituencies"],
-    "tags": ["place", "admin_level", "boundary", "landuse", "political_division=ward", "type=boundary"],
-    "trim": ["city", "town of", "town", "ward"],
-    "area": true,
     "dist": 8
 },
 {
@@ -899,9 +890,15 @@
 },
 {
     "name": "Sport venues",
-    "cats": ["Sports venues by country", "Baseball venues"],
+    "cats": ["Sports venues by country", "Baseball", "Bullrings", "Stadiums", "Indoor arenas"],
     "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
     "trim": ["sports centre", "sport center", "track", "stadium"],
+    "dist": 2
+},
+{
+    "cats": ["Ice rinks"],
+    "tags": ["leisure=ice_rink", "sport"],
+    "trim": ["centre", "center", "ice rink"],
     "dist": 2
 },
 {
@@ -937,12 +934,21 @@
     "dist": 10
 },
 {
+    "cats": ["Neighbourhoods by country", "Ethnic enclaves"],
+    "skip_cats": ["Airports", "Airfields", "Aerodromes", "Military installations", "Campuses", "Christian monasteries", "Christian communities", "Parliamentary constituencies"],
+    "tags": ["place", "admin_level", "boundary", "landuse", "political_division=ward", "type=boundary"],
+    "trim": ["city", "town of", "town", "ward"],
+    "area": true,
+    "dist": 8
+},
+{
     "cats": ["Skyscrapers by country"],
     "tags": ["building", "height"],
     "trim": ["tower"],
     "dist": 1
 },
 {
+    "name": "Historic sites",
     "cats": ["Heritage registers by country", "Historic sites by country", "National Register of Historic Places"],
     "tags": ["boundary=protected_area", "historic"],
     "skip_cats": ["Churches in"],
@@ -1098,7 +1104,7 @@
     "dist": 4
 },
 {
-    "cats": ["Ski areas and resorts by country"],
+    "cats": ["Ski areas and resorts by country", "Ski areas", "Ski resorts"],
     "tags": ["landuse=winter_sports", "site=piste"],
     "area": true,
     "trim": [],
@@ -1145,19 +1151,19 @@
     "dist": 4
 },
 {
-    "cats": ["Category:Orphanages"],
+    "cats": ["Orphanages"],
     "tags": ["social_facility:for=orphan"],
     "trim": [],
     "dist": 4
 },
 {
-    "cats": ["Category:Non-metropolitan districts"],
+    "cats": ["Non-metropolitan districts"],
     "tags": ["designation=non_metropolitan_district"],
     "trim": ["District"],
     "dist": 4
 },
 {
-    "cats": ["Category:Unitary authority districts"],
+    "cats": ["Unitary authority districts"],
     "tags": ["designation=unitary_authority"],
     "trim": ["District"],
     "dist": 4
@@ -1169,7 +1175,7 @@
     "dist": 4
 },
 {
-    "cats": ["Rest areas", "motorway service"],
+    "cats": ["Rest areas", "Motorway service"],
     "tags": ["highway=services"],
     "trim": [],
     "dist": 4
@@ -1187,11 +1193,12 @@
     "dist": 4
 },
 {
-    "cats": ["Chalk pits", "Quarries"],
+    "name": "Quarries",
+    "cats": ["Quarries", "Chalk pits"],
     "tags": ["landuse=quarry"],
+    "trim": ["quarry"],
     "area": true,
-    "trim": [],
-    "dist": 4
+    "dist": 10
 },
 {
     "cats": ["Research institutes"],
