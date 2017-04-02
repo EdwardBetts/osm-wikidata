@@ -191,6 +191,15 @@ class Place(Base):   # assume all places are relations
         return self.namedetails.get('name:en') or self.namedetails['name']
 
     @property
+    def name_extra_detail(self):
+        for n in 'name:en', 'name':
+            if n not in self.namedetails:
+                continue
+            start = self.namedetails[n] + ', '
+            if self.display_name.startswith(start):
+                return self.display_name[len(start):]
+
+    @property
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
 
@@ -247,7 +256,9 @@ class Place(Base):   # assume all places are relations
             bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
             union = ['rel({});'.format(self.osm_id)]
             for tag in self.all_tags:
-                union += oql_from_tag(tag, large_area)
+                u = oql_from_tag(tag, large_area)
+                if u:
+                    union += u
 
             area_id = 3600000000 + int(self.osm_id)
             oql = ('[timeout:300][out:xml][bbox:{}];\n' +
