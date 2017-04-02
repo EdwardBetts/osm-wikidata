@@ -1,10 +1,8 @@
 <div>
-  <form action="{{ url_for_index }}">
-    search: <input name="q" size="60" value="{{ q }}">
-    <input type="submit" value="find">
-    <a href="{{ url_for_index }}">back to index</a>
-    |
-    <a href="{{ url_for('documentation') }}">documentation</a>
+  <form action="{{ url_for_index }}"  class="form-inline">
+    <label for="q">search:</label>
+    <input class="form-control mb-2 mr-sm-2 mb-sm-0" id="q" name="q" size="60" value="{{ q }}">
+    <input type="submit" class="btn btn-primary" value="find">
   </form>
 </div>
 

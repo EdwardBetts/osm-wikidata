@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container">
+
+  <form action="{{ url_for_index }}"  class="form-inline m-2">
+    <label for="q" class="sr-only">search:</label>
+    <input class="form-control m-2" id="q" name="q" size="60" value="{{ q }}" placeholder="place name">
+    <input type="submit" class="btn btn-success" value="search">
+  </form>
+
+  {% if q %}
+  {% if results | count == 0 %}
+    <p>no matches found</p>
+  {% endif %}
+  {% include "search_results.html" with context %}
+  {% endif %}
+
+</div>
+{% endblock %}

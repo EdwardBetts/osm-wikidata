@@ -1,6 +1,6 @@
 from flask import current_app
 from collections import Counter
-from .match import check_for_match, get_wikidata_names
+from . import match
 
 import os.path
 import json
@@ -9,6 +9,10 @@ import re
 bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
                    'gnis:county_name', 'openGeoDB:name'}
 
+def load_entity_types():
+    data_dir = current_app.config['DATA_DIR']
+    filename = os.path.join(data_dir, 'entity_types.json')
+    return json.load(open(filename))
 
 def simplify_tags(tags):
     key_only = sorted(t for t in tags if '=' not in t)
@@ -20,9 +24,7 @@ def simplify_tags(tags):
 
 def build_cat_map():
     cat_to_entity = {}
-    data_dir = current_app.config['DATA_DIR']
-    filename = os.path.join(data_dir, 'entity_types.json')
-    for i in json.load(open(filename)):
+    for i in load_entity_types():
         for c in i['cats']:
             lc_cat = c.lower()
             if ' by ' in lc_cat:
@@ -32,9 +34,7 @@ def build_cat_map():
 
 def build_cat_to_ending():
     cat_to_ending = {}
-    data_dir = current_app.config['DATA_DIR']
-    filename = os.path.join(data_dir, 'entity_types.json')
-    for i in json.load(open(filename)):
+    for i in load_entity_types():
         trim = {x.replace(' ', '').lower() for x in i['trim']}
         for c in i['cats']:
             lc_cat = c.lower()
@@ -101,8 +101,8 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
         if not names:
             continue
 
-        match = check_for_match(osm_tags, item, endings, wikidata_names)
-        if not match:
+        m = match.check_for_match(osm_tags, item, endings, wikidata_names)
+        if not m:
             continue
         candidate = {
             'osm_type': osm_type,

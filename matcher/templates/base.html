@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>
+    {% block title %}{% endblock %} OSM ↔ Wikidata
+  </title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  {% include 'navbar.html' %}
+  {% block content %}{% endblock %}
+</body>
+</html>

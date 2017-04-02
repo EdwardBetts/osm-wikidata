@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Matching criteria: {% endblock %}
+
+{% block content %}
+  <div class="m-2">
+  <div class="container">
+    <h1>Matching criteria</h1>
+    <div class="card-columns">
+  {% for i in entity_types %}
+    <div class="card">
+      <h5 class="card-header">
+        {{ i.name | capitalize }}
+        <span class="text-muted small font-weight-normal">({{i.dist}}km)</span>
+        {% if i.area %}<span class="badge small badge-info font-weight-normal">area</span>{% endif %}
+      </h5>
+      <div class="card-block">
+        <ul class="card-text list-unstyled">
+            <li>categories:
+          {% for cat in i.cats %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}" class="text-nowrap">{{ cat.replace(' by country', '') }}</a>{% if not loop.last %},{% endif %}
+          {% endfor %}
+            </li>
+            {% if i.exclude_cats %}
+            <li>exclude categories:
+          {% for cat in i.exclude_cats %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}" class="text-nowrap">{{ cat.replace(' by country', '') }}</a>{% if not loop.last %},{% endif %}
+          {% endfor %}
+            </li>
+          {% endif %}
+
+            <li>tags:
+          {% for tag in i.tags %}
+            {% if '=' in tag %}
+              <a href="https://taginfo.openstreetmap.org/tags/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% if not loop.last %},{% endif %}
+            {% else %}
+              <a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% if not loop.last %},{% endif %}
+            {% endif %}
+          {% endfor %}
+            </li>
+            {% if i.trim %}
+              <li>trim: {{ ', '.join(i.trim) }}</li>
+            {% endif %}
+          </ul>
+        {% if i.wikidata %}
+          <a href="https://wikidata.org/wiki/{{ i.wikidata }}" class="card-link">Wikidata: {{ i.wikidata }}</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+    </div>
+  </div>
+  </div>
+{% endblock %}

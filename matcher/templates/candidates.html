@@ -1,25 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>{{ place.display_name }}: OSM ◀ ▶ Wikidata</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
-  <style>
-    .box {
-      border: 1px solid black;
-      margin: 4px;
-      padding: 4px;
-    }
-  </style>
-</head>
+{% extends "base.html" %}
 
-<body>
-  <div class="container-fluid">
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
   <div class="row">
   <div class="col">
-    <h1>{{ place.name }}: OSM ◀ ▶ Wikidata</h1>
+    <h1>{{ place.name }}</h1>
   {% set q = place.display_name %}
-  {% include "form.html" %}
 
     <div class="box">
       <b>{{ place.display_name }}</b><br>
@@ -107,5 +95,4 @@
 </div>
 </div>
 </div>
-</body>
-</html>
+{% endblock %}

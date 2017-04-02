@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ g.filter ~ ' - ' if g.get('filter') }}
+{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
+<h1>{% if g.get('filter') %}{{ g.filter }}{% else %}Saved places{% endif %}</h1>
+
+<table class="table table-responsive table-hover m-2">
+  <thead>
+    <tr>
+      <th>
+<form action="{{ url_for('saved_places') }}" class="form-inline">
+        <a href="{{ sort_link('name') }}">name</a>
+  <input name="filter" class="form-control ml-2" size="20" value="{{ g.get('filter', '') }}">
+  <input type="submit" class="btn-secondary btn mx-2" value="filter">
+  {% if g.get('filter') %}<a style="font-weight: normal" href="{{ url_for('saved_places') }}">clear filter</a>{% endif %}
+</form>
+      </th>
+      <th class="text-right"><a href="{{ sort_link('item') }}">item<br>count</a></th>
+      <th class="text-right"><a href="{{ sort_link('match') }}">match<br>count</a></th>
+      <th class="text-right"><a href="{{ sort_link('ratio') }}">match<br>ratio</a></th>
+      <th class="text-right"><a href="{{ sort_link('area') }}">area<br>(km&sup2;)</a></th>
+    </tr>
+  <tbody>
+  {% for place in existing %}
+    {% set with_candidates_count = place.candidate_count %}
+    <tr>
+      <td>
+        {% if place.state == 'overpass_timeout' %}
+          {{ place.display_name }} <span class="badge badge-danger">Overpass timeout</span>
+        {% else %}
+          <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
+        {% endif %}
+      </td>
+      {% set item_count = place.item_count %}
+      <td class="text-right">{{ '{:,d}'.format(item_count) if item_count is number }}</td>
+      <td class="text-right">{{ with_candidates_count if with_candidates_count is number }}</td>
+      <td class="text-right">
+      {% if place.state == 'ready' %}
+        {{ '{:.1%}'.format(place.match_ratio) if place.match_ratio is number }}
+      {% endif %}
+      <td class="text-right">
+        {{ '{:,.1f}'.format(place.area_in_sq_km) }}
+      </td>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

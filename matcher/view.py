@@ -13,14 +13,24 @@ import os.path
 app = Flask(__name__)
 cat_to_ending = None
 
+navbar_pages = [
+    {'name': 'criteria_page', 'label': 'Criteria'},
+    {'name': 'saved_places', 'label': 'Saved'},
+    {'name': 'documentation', 'label': 'Documentation'},
+]
+
 @app.context_processor
 def inject_user():
     name_filter = g.get('filter')
     if name_filter:
-        url = url_for('index_with_filter', name_filter=name_filter.replace(' ', '_'))
+        url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
     else:
-        url = url_for('index')
-    return dict(url_for_index=url)
+        url = url_for('saved_places')
+    return dict(url_for_saved=url)
+
+@app.context_processor
+def navbar():
+    return dict(navbar_pages=navbar_pages, active=request.endpoint)
 
 @app.route("/overpass/<int:osm_id>", methods=["POST"])
 def post_overpass(osm_id):
@@ -283,26 +293,9 @@ def sort_link(order):
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
-@app.route('/filtered/<name_filter>')
-def index_with_filter(name_filter):
-    g.filter = name_filter.replace('_', ' ')
-    return index()
-
-@app.route("/")
-def index():
-    if 'filter' in request.args:
-        arg_filter = request.args['filter'].strip().replace(' ', '_')
-        if arg_filter:
-            return redirect(url_for('index_with_filter', name_filter=arg_filter))
-        else:
-            return redirect(url_for('index'))
-
+@app.route("/search")
+def search_results():
     q = request.args.get('q')
-    if not q:
-        return render_template('index.html',
-                               existing=get_existing(),
-                               sort_link=sort_link)
-
     results = nominatim.lookup(q)
     for hit in results:
         p = Place.from_nominatim(hit)
@@ -314,7 +307,50 @@ def index():
         if hit.get('osm_type') == 'relation':
             hit['place'] = Place.query.get(hit['osm_id'])
 
-    return render_template('index.html', results=results, q=q)
+    return render_template('results_page.html', results=results, q=q)
+
+@app.route("/")
+def index():
+    q = request.args.get('q')
+    if q:
+        return redirect(url_for('search_results', q=q))
+
+    if 'filter' in request.args:
+        arg_filter = request.args['filter'].strip().replace(' ', '_')
+        if arg_filter:
+            return redirect(url_for('saved_with_filter', name_filter=arg_filter))
+        else:
+            return redirect(url_for('saved_places'))
+
+    return render_template('index.html')
+
+@app.route('/criteria')
+def criteria_page():
+    entity_types = matcher.load_entity_types()
+    for i in entity_types:
+        if not i.get('name'):
+            i['name'] = i['cats'][0].replace(' by country', '')
+    entity_types.sort(key=lambda i:i['name'].lower())
+    return render_template('criteria.html',
+                           entity_types=entity_types)
+
+@app.route('/filtered/<name_filter>')
+def saved_with_filter(name_filter):
+    g.filter = name_filter.replace('_', ' ')
+    return saved_places()
+
+@app.route('/saved')
+def saved_places():
+    if 'filter' in request.args:
+        arg_filter = request.args['filter'].strip().replace(' ', '_')
+        if arg_filter:
+            return redirect(url_for('saved_with_filter', name_filter=arg_filter))
+        else:
+            return redirect(url_for('saved_places'))
+
+    return render_template('saved.html',
+                           existing=get_existing(),
+                           sort_link=sort_link)
 
 @app.route("/documentation")
 def documentation():

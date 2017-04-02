@@ -1,124 +1,26 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>
-    {{ g.filter ~ ' - ' if g.get('filter') }} OSM ◀ ▶ Wikidata
-  </title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
-  <style>
-    .box {
-      border: 1px solid black;
-      margin: 4px;
-      padding: 4px;
-    }
-  </style>
-</head>
-{% set detail = 0 %}
+{% extends "base.html" %}
 
-<body>
-  <div class="container-fluid">
-  <div class="row">
-  <div class="col">
-    <h1>OSM ◀ ▶ Wikidata {% if g.get('filter') %}<small class="text-muted">({{ g.filter }})</small>{% endif %}</h1>
-
-  {% include "form.html" %}
-  {% if not q and existing %}
-    <table class="table table-hover table-sm" style="width: auto">
-      <thead>
-        <tr>
-          <th>
-    <form action="{{ url_for('index') }}">
-            <a href="{{ sort_link('name') }}">name</a>
-      <input name="filter" size="20" value="{{ g.get('filter', '') }}">
-      <input type="submit" value="filter">
-      {% if g.get('filter') %}<a style="font-weight: normal" href="{{ url_for('index') }}">clear filter</a>{% endif %}
-    </form>
-          </th>
-          <th class="text-right"><a href="{{ sort_link('item') }}">item<br>count</a></th>
-          <th class="text-right"><a href="{{ sort_link('match') }}">match<br>count</a></th>
-          <th class="text-right"><a href="{{ sort_link('ratio') }}">match<br>ratio</a></th>
-          <th class="text-right"><a href="{{ sort_link('area') }}">area<br>(km&sup2;)</a></th>
-        </tr>
-      <tbody>
-      {% for place in existing %}
-        {% set with_candidates_count = place.candidate_count %}
-        <tr>
-          <td>
-            {% if place.state == 'overpass_timeout' %}
-              {{ place.display_name }} <span class="badge badge-danger">Overpass timeout</span>
-            {% else %}
-              <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
-            {% endif %}
-          </td>
-          {% set item_count = place.item_count %}
-          <td class="text-right">{{ '{:,d}'.format(item_count) if item_count is number }}</td>
-          <td class="text-right">{{ with_candidates_count if with_candidates_count is number }}</td>
-          <td class="text-right">
-          {% if place.state == 'ready' %}
-            {{ '{:.1%}'.format(place.match_ratio) if place.match_ratio is number }}
-          {% endif %}
-          <td class="text-right">
-            {{ '{:,.1f}'.format(place.area_in_sq_km) }}
-          </td>
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-
-  {% endif %}
-
-  {% if q %}
-  {% if results | count == 0 %}
-    <p>no matches found</p>
-  {% endif %}
-  {% for hit in results %}
-    <div class="box">
-      {# {% set name = hit.namedetails["name:en"] or hit.namedetails["name"] %} #}
-      {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
-      {% if hit.osm_type == 'relation' %}
-        <b>
-          {% if name %}
-            <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ name }}</a>,
-            {% if hit.address.state %}{{ hit.address.state }}, {% endif %}
-            {{ hit.address.country }}
-          {% else %}
-            <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
-          {% endif %}
-        </b><br>
-      {% else %}
-        <b>
-        {% if name %}
-          {{ name }}, {{ hit.address.state }}, {{ hit.address.country }}
-        {% else %}
-          {{ hit.display_name }}
-        {% endif %}
-        </b><br>
-        [matcher only works with OSM relations]<br>
-      {% endif %}
-      category: {{ hit.category }}
-      &mdash;
-      type: {{ hit.type }}<br>
-      bounding box: {{ ', '.join(hit.boundingbox) }}<br>
-      {% if hit.place %}
-        area: {{ '{:.2f}'.format(hit.place.area_in_sq_km) }} km&sup2; <br>
-      {% endif %}
-      {% if hit.osm_type and hit.osm_id %}
-        OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
-      {% endif %}
-      {% if detail %}
-        importance: {{ hit.importance }}<br>
-        <pre>{{ hit.address | pprint }}</pre>
-        <pre>{{ hit.extratags | pprint }}</pre>
-        <pre>{{ hit | pprint }}</pre>
-      {% endif %}
-    </div>
-  {% endfor %}
-  {% endif %}
+{% block content %}
+<div class="jumbotron jumbotron-fluid">
+  <div class="container">
+  <h1 class="display-3">OSM ↔ Wikidata matcher</h1>
+  <p class="lead">Two great projects cataloguing the world, even more powerful when linked together.</p>
+  <hr class="my-4">
+  <p>Search for a place, pick one and leave the matcher to run for a few minutes. Then check out the list of matches.</p>
+<form action="{{ url_for('search_results') }}" class="form-inline">
+  <label for="q" class="sr-only">search:</label>
+  <input class="form-control form-control-lg m-2" id="q" name="q" size="40" value="{{ q }}" placeholder="place name">
+  <input type="submit" class="btn btn-success btn-lg" value="search">
+</form>
 
 </div>
 </div>
+
+<div class="container">
+  <p>The aim is for a single OSM entity to link to one Wikidata item. Many geographical entities are represented by multiple objects in OSM with the same name, for example dual carriageway bridges are mapped as two roadways, or buildings within a large site like a hospital.</p>
+  <p>The matching system makes use of categories on Wikipedia because the information on Wikidata is incomplete. Wikidata includes an import of all Wikipedia including the coordinates, but for a lot of items the 'instance of' property is not set.</p>
+  <p>Only Wikidata items with a page on English language Wikipedia are included in the match. In the future I'll add support for matching items without a linked Wikipedia article.</p>
 </div>
-</body>
-</html>
+
+
+{% endblock %}

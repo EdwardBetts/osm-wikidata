@@ -1,0 +1,22 @@
+<nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
+<div class="container">
+  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <a class="navbar-brand" href="{{ url_for('.index') }}">OSM ↔ Wikidata</a>
+
+  <form class="form-inline" action="{{ url_for('.index') }}">
+    <input class="form-control mr-sm-2" name="q" type="text" placeholder="Search">
+  </form>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav">
+      {% for p in navbar_pages %}
+        <li class="nav-item{% if p.name == active %} active{% endif %}">
+          <a class="nav-link" href="{{ url_for('.' + p.name) }}">{{ p.label }}{% if p.name == active %} <span class="sr-only">(current)</span>{% endif %}</a>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+</div>
+</nav>
