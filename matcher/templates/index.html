@@ -17,9 +17,39 @@
 </div>
 
 <div class="container">
+    <div class="card-columns">
+  {% for place in existing %}
+    <div class="card">
+      <h4 class="card-header">
+        {% if place.state == 'overpass_timeout' %}
+          {{ place.name }}
+        {% else %}
+          <a href="{{ place.candidates_url() }}">{{ place.name }}</a>
+        {% endif %}
+        <span class="text-muted small font-weight-normal">
+          ({{ '{:,.0f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
+      </h4>
+      <div class="card-block">
+        <p class="card-text">{{ place.name_extra_detail }}</p>
+        <ul class="card-text list-unstyled">
+        {% if place.item_count is number %}
+          <li>{{ '{:,d}'.format(place.item_count) }} Wikidata items</li>
+        {% endif %}
+        {% if place.candidate_count is number %}
+          <li>{{ '{:,d}'.format(place.candidate_count) }} matches
+            ({{ '{:.1%}'.format(place.match_ratio) }})
+          </li>
+        {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+  {#
   <p>The aim is for a single OSM entity to link to one Wikidata item. Many geographical entities are represented by multiple objects in OSM with the same name, for example dual carriageway bridges are mapped as two roadways, or buildings within a large site like a hospital.</p>
   <p>The matching system makes use of categories on Wikipedia because the information on Wikidata is incomplete. Wikidata includes an import of all Wikipedia including the coordinates, but for a lot of items the 'instance of' property is not set.</p>
   <p>Only Wikidata items with a page on English language Wikipedia are included in the match. In the future I'll add support for matching items without a linked Wikipedia article.</p>
+  #}
 </div>
 
 
