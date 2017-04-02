@@ -288,6 +288,10 @@ def get_existing():
 
     return q
 
+def get_top_existing():
+    q = Place.query.filter(Place.state.isnot(None)).order_by((Place.item_count / Place.area).desc())[:10]
+    return q
+
 def sort_link(order):
     args = request.view_args.copy()
     args['sort'] = order
@@ -322,7 +326,8 @@ def index():
         else:
             return redirect(url_for('saved_places'))
 
-    return render_template('index.html')
+    return render_template('index.html', existing=get_top_existing())
+
 
 @app.route('/criteria')
 def criteria_page():
