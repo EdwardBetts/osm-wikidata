@@ -289,7 +289,8 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = Place.query.filter(Place.state.isnot(None)).order_by((Place.item_count / Place.area).desc())[:10]
+    q = (Place.query.filter(Place.state == 'ready')
+                    .order_by((Place.item_count / Place.area).desc()))
     return q
 
 def sort_link(order):
