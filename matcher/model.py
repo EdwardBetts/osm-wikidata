@@ -358,3 +358,9 @@ class ItemCandidate(Base):
     src_id = Column(BigInteger)
 
     item = relationship('Item', backref=backref('candidates', lazy='dynamic'))
+
+class TagOrKey(Base):
+    __tablename__ = 'tag_or_key'
+
+    name = Column(String, primary_key=True)
+    count_all = Column(Integer)
