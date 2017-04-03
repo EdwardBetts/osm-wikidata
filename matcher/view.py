@@ -1,17 +1,23 @@
 #!/usr/bin/python3
 
 from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify
+from flask_login import login_user, current_user, logout_user, LoginManager
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers
-from .model import Place, Item, PlaceItem, ItemCandidate
+from .model import Place, Item, PlaceItem, ItemCandidate, User
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
+from social.apps.flask_app.routes import social_auth
 
 import requests
 import os.path
 
 app = Flask(__name__)
+app.register_blueprint(social_auth)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
 cat_to_ending = None
 
 navbar_pages = [
@@ -21,13 +27,21 @@ navbar_pages = [
 ]
 
 @app.context_processor
-def inject_user():
+def filter_urls():
     name_filter = g.get('filter')
     if name_filter:
         url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
     else:
         url = url_for('saved_places')
     return dict(url_for_saved=url)
+
+@app.before_request
+def global_user():
+    g.user = current_user
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
 
 @app.context_processor
 def navbar():

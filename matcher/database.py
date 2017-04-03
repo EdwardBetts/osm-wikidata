@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.engine import reflection
+from social.apps.flask_app.default.models import init_social
 
 session = scoped_session(sessionmaker())
 
@@ -16,6 +17,7 @@ def get_tables():
 def init_app(app, echo=False):
     db_url = app.config['DB_URL']
     session.configure(bind=get_engine(db_url, echo=echo))
+    init_social(app, session)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

@@ -17,6 +17,10 @@
 </div>
 
 <div class="container">
+   <a href="{{ url_for('social.auth', backend='openstreetmap') }}">login with OSM</a>
+</div>
+
+<div class="container">
     <div class="card-columns">
   {% for place in existing[:24] %}
     <div class="card">
