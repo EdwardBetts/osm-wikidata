@@ -251,7 +251,7 @@
 },
 {
     "cats": ["Airports by country"],
-    "tags": ["aeroway=aerodrome", "type=site", "site=aerodome", "site=airport"],
+    "tags": ["aeroway=aerodrome", "type=site", "site=airport"],
     "trim": ["airport", "international airport", "aerodome"],
     "area": true,
     "dist": 10
