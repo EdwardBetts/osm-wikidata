@@ -18,19 +18,26 @@
 
 <div class="container">
     <div class="card-columns">
-  {% for place in existing %}
+  {% for place in existing[:24] %}
     <div class="card">
-      <h4 class="card-header">
-        {% if place.state == 'overpass_timeout' %}
-          {{ place.name }}
+      <h5 class="card-header">
+        {% if place.address.country_code == 'us' %}
+            {% set name = place.name ~ ', ' ~ place.address.state %}
         {% else %}
-          <a href="{{ place.candidates_url() }}">{{ place.name }}</a>
+            {% set name = place.name %}
+        {% endif %}
+        {% if place.state == 'overpass_timeout' %}
+          {{ name }}
+        {% else %}
+          <a href="{{ place.candidates_url() }}">{{ name }}</a>
         {% endif %}
         <span class="text-muted small font-weight-normal">
-          ({{ '{:,.0f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
-      </h4>
+          ({{ '{:,.1f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
+      </h5>
       <div class="card-block">
-        <p class="card-text">{{ place.name_extra_detail }}</p>
+        {% if place.address.country_code != 'us' and place.address.country != place.name %}
+            <p class="card-text">{{ place.address.country }}</p>
+        {% endif %}
         <ul class="card-text list-unstyled">
         {% if place.item_count is number %}
           <li>{{ '{:,d}'.format(place.item_count) }} Wikidata items</li>

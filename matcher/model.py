@@ -73,6 +73,7 @@ class Place(Base):   # assume all places are relations
     item_count = Column(Integer)
     candidate_count = Column(Integer)
     state = Column(String, index=True)
+    override_name = Column(String)
 
     area = column_property(func.ST_Area(geom))
     # match_ratio = column_property(candidate_count / item_count)
@@ -188,7 +189,7 @@ class Place(Base):   # assume all places are relations
 
     @property
     def name(self):
-        return self.namedetails.get('name:en') or self.namedetails['name']
+        return self.override_name or self.namedetails.get('name:en') or self.namedetails['name']
 
     @property
     def name_extra_detail(self):
