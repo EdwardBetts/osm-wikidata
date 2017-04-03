@@ -1,0 +1,33 @@
+.box {
+  border: 1px solid black;
+  margin: 4px;
+  padding: 4px;
+}
+
+.loading {
+  font-family: courier;
+  background: black;
+  color: white;
+  margin: 4px;
+  padding: 4px;
+}
+.active { color: white; }
+.done { color: white; }
+.pending { color: gray; }
+#candidates-link { font-size: 200%; }
+
+.done-label {
+  background: darkgreen;
+  padding: 2px;
+}
+
+#overpass_error_message {
+  background: darkred;
+  padding: 2px;
+}
+
+#osm2pgsql_error_message {
+  background: darkred;
+  color: white;
+  padding: 2px;
+}
