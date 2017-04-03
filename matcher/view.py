@@ -6,6 +6,7 @@ from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers
 from .model import Place, Item, PlaceItem, ItemCandidate
 from .wikipedia import page_category_iter
+from .taginfo import get_taginfo
 
 import requests
 import os.path
@@ -332,12 +333,24 @@ def index():
 @app.route('/criteria')
 def criteria_page():
     entity_types = matcher.load_entity_types()
-    for i in entity_types:
-        if not i.get('name'):
-            i['name'] = i['cats'][0].replace(' by country', '')
-    entity_types.sort(key=lambda i:i['name'].lower())
+
+    taginfo = get_taginfo(entity_types)
+
+    for t in entity_types:
+        t.setdefault('name', t['cats'][0].replace(' by country', ''))
+        for tag in t['tags']:
+            if '=' not in tag:
+                continue
+            image = taginfo.get(tag, {}).get('image')
+            if image:
+                t['image'] = image
+                break
+
+    entity_types.sort(key=lambda t: t['name'].lower())
+
     return render_template('criteria.html',
-                           entity_types=entity_types)
+                           entity_types=entity_types,
+                           taginfo=taginfo)
 
 @app.route('/filtered/<name_filter>')
 def saved_with_filter(name_filter):

@@ -2,6 +2,7 @@
 
 {% block title %}Matching criteria: {% endblock %}
 
+{% set image_size = 400 %}
 {% block content %}
   <div class="m-2">
   <div class="container">
@@ -9,6 +10,10 @@
     <div class="card-columns">
   {% for i in entity_types %}
     <div class="card">
+      {% if 0 and i.image %}
+        {% set src=i.image.thumb_url_prefix ~ image_size ~ i.image.thumb_url_suffix %}
+        <img class="card-img-top" src="{{ src }}" alt="{{ src }}"/>
+      {% endif %}
       <h5 class="card-header">
         {{ i.name | capitalize }}
         <span class="text-muted small font-weight-normal">({{i.dist}}km)</span>
@@ -29,20 +34,23 @@
           {% endfor %}
             </li>
           {% endif %}
-
-            <li>tags:
-          {% for tag in i.tags %}
-            {% if '=' in tag %}
-              <a href="https://taginfo.openstreetmap.org/tags/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% if not loop.last %},{% endif %}
-            {% else %}
-              <a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% if not loop.last %},{% endif %}
-            {% endif %}
-          {% endfor %}
-            </li>
             {% if i.trim %}
               <li>trim: {{ ', '.join(i.trim) }}</li>
             {% endif %}
           </ul>
+
+        <ul class="card-text">
+          {% for tag in i.tags %}
+            <li>
+            {% if '=' in tag %}
+              <a href="https://taginfo.openstreetmap.org/tags/{{ tag }}">{{ tag }}</a>
+            {% else %}
+              <a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>
+            {% endif %}
+              {% if tag in taginfo %}({{ '{:,d}'.format(taginfo[tag].count_all) }}){% endif -%}
+            </li>
+          {% endfor %}
+        </ul>
         {% if i.wikidata %}
           <a href="https://wikidata.org/wiki/{{ i.wikidata }}" class="card-link">Wikidata: {{ i.wikidata }}</a>
         {% endif %}
