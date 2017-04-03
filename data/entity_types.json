@@ -142,7 +142,7 @@
 },
 {
     "cats": ["Hotels by country", "Motels"],
-    "tags": ["tourism=hotel", "building=hotel", "tourism=motel"],
+    "tags": ["tourism=hotel", "building=hotel", "tourism=motel", "building=motel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
     "dist": 5
@@ -251,8 +251,15 @@
 },
 {
     "cats": ["Airports by country"],
-    "tags": ["aeroway=aerodrome", "type=site", "site=airport"],
+    "tags": ["aeroway=aerodrome", "site=airport"],
     "trim": ["airport", "international airport", "aerodome"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Heliports"],
+    "tags": ["aeroway=heliport"],
+    "trim": ["airport", "heliport"],
     "area": true,
     "dist": 10
 },
