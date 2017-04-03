@@ -32,7 +32,7 @@ name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
 def oql_from_tag(tag, large_area, filters='area.a'):
     # optimisation: we only expect route, type or site on relations
     if tag == 'highway':
-        return
+        return []
     relation_only = tag == 'site'
     if large_area or tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
         name_filter = '[name]'
@@ -41,7 +41,7 @@ def oql_from_tag(tag, large_area, filters='area.a'):
     if '=' in tag:
         k, _, v = tag.partition('=')
         if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
-            return  # ignore because osm2pgsql only does multipolygons
+            return [] # ignore because osm2pgsql only does multipolygons
         if k in {'site', 'type', 'route'}:
             relation_only = True
         if ':' in tag or ' ' in tag:
