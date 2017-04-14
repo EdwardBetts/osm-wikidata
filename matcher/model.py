@@ -41,7 +41,7 @@ def oql_from_tag(tag, large_area, filters='area.a'):
     if '=' in tag:
         k, _, v = tag.partition('=')
         if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
-            return [] # ignore because osm2pgsql only does multipolygons
+            return []  # ignore because osm2pgsql only does multipolygons
         if k in {'site', 'type', 'route'}:
             relation_only = True
         if ':' in tag or ' ' in tag:
@@ -135,8 +135,7 @@ class Place(Base):   # assume all places are relations
             for cat in item.categories:
                 lc_cat = cat.lower()
                 for key, value in cat_to_entity.items():
-                    pattern = re.compile(r'\b' + re.escape(key) + r'\b', re.I)
-                    if not pattern.search(lc_cat):
+                    if not matcher.get_pattern(key).search(lc_cat):
                         continue
                     exclude = value.get('exclude_cats')
                     if exclude:
@@ -369,8 +368,21 @@ class ItemCandidate(Base):
                     endings |= value
 
         wikidata_names = self.item.names()
-        m = match.check_for_match(self.tags, self.item, endings, wikidata_names)
-        return m
+        return match.check_for_match(self.tags, self.item, endings, wikidata_names)
+
+    def matching_tags(self):
+        tags = []
+
+        for tag_or_key in self.item.tags:
+            if '=' not in tag_or_key and tag_or_key in self.tags:
+                tags.append(tag_or_key)
+                continue
+            key, _, value = tag_or_key.partition('=')
+            if self.tags.get(key) == value:
+                tags.append(tag_or_key)
+                continue
+
+        return tags
 
 class TagOrKey(Base):
     __tablename__ = 'tag_or_key'
