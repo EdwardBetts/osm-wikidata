@@ -10,6 +10,12 @@ bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
                    'gnis:county_name', 'openGeoDB:name'}
 
 cat_to_ending = {}
+patterns = {}
+
+def get_pattern(key):
+    if key in patterns:
+        return patterns[key]
+    return patterns.setdefault(key, re.compile(r'\b' + re.escape(key) + r'\b', re.I))
 
 def load_entity_types():
     data_dir = current_app.config['DATA_DIR']
@@ -81,8 +87,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     for cat in item.categories:
         lc_cat = cat.lower()
         for key, value in cat_to_ending.items():
-            pattern = re.compile(r'\b' + re.escape(key) + r'\b')
-            if pattern.search(lc_cat):
+            if get_pattern(key).search(lc_cat):
                 endings |= value
 
     wikidata_names = item.names()
