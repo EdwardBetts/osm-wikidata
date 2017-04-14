@@ -141,7 +141,14 @@
     "dist": 6
 },
 {
-    "cats": ["Hotels by country", "Motels"],
+    "cats": ["Hotels by country"],
+    "tags": ["tourism=hotel", "building=hotel"],
+    "trim": ["hotel", "resort", "motel"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Motels"],
     "tags": ["tourism=hotel", "building=hotel", "tourism=motel", "building=motel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
