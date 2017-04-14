@@ -9,6 +9,8 @@ import re
 bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
                    'gnis:county_name', 'openGeoDB:name'}
 
+cat_to_ending = {}
+
 def load_entity_types():
     data_dir = current_app.config['DATA_DIR']
     filename = os.path.join(data_dir, 'entity_types.json')
@@ -33,7 +35,11 @@ def build_cat_map():
     return cat_to_entity
 
 def build_cat_to_ending():
-    cat_to_ending = {}
+    global cat_to_ending
+
+    if cat_to_ending:
+        return cat_to_ending
+
     for i in load_entity_types():
         trim = {x.replace(' ', '').lower() for x in i['trim']}
         for c in i['cats']:
@@ -41,6 +47,7 @@ def build_cat_to_ending():
             if ' by ' in lc_cat:
                 lc_cat = lc_cat[:lc_cat.find(' by ')]
             cat_to_ending[lc_cat] = trim
+
     return cat_to_ending
 
 def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):

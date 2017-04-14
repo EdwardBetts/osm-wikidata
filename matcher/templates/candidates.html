@@ -58,7 +58,10 @@
   </div>
   <div class="col-md-4">
     {% for c in i.candidates %}
-      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">{{ c.name }}</a>
+    {% set m = c.get_match() %}
+      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+        {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+      </a>
       ({{ c.osm_type}}{% if c.dist %}, {{ c.dist | int }} m{% endif %}){% if not loop.last %}<br>{% endif %}
     {% endfor %}
   </div>

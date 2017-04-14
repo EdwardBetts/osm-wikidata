@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship, backref, column_property, object_sessio
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from .database import session
-from . import wikidata, matcher
+from . import wikidata, matcher, match
 
 import subprocess
 import os.path
@@ -358,6 +358,19 @@ class ItemCandidate(Base):
     src_id = Column(BigInteger)
 
     item = relationship('Item', backref=backref('candidates', lazy='dynamic'))
+
+    def get_match(self):
+        endings = set()
+        for cat in self.item.categories:
+            lc_cat = cat.lower()
+            for key, value in matcher.build_cat_to_ending().items():
+                pattern = re.compile(r'\b' + re.escape(key) + r'\b')
+                if pattern.search(lc_cat):
+                    endings |= value
+
+        wikidata_names = self.item.names()
+        m = match.check_for_match(self.tags, self.item, endings, wikidata_names)
+        return m
 
 class TagOrKey(Base):
     __tablename__ = 'tag_or_key'
