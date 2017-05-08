@@ -444,6 +444,13 @@
     "dist": 10
 },
 {
+    "cats": ["Railway depots"],
+    "tags": ["landuse=railway"],
+    "trim": ["tmd"],
+    "check_housename": false,
+    "dist": 2
+},
+{
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
@@ -557,7 +564,7 @@
 },
 {
     "cats": ["Communication towers"],
-    "tags": ["man_made=communications_tower"],
+    "tags": ["man_made=communications_tower", "tower:type=communication", "man_made=mast", "man_made=tower"],
     "trim": ["tower"],
     "check_housename": true,
     "dist": 5
