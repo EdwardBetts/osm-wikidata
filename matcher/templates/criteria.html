@@ -2,6 +2,19 @@
 
 {% block title %}Matching criteria: {% endblock %}
 
+{% block style %}
+<style>
+@media (min-width: 576px) {
+  .card-columns {
+    -webkit-column-count: 2;
+       -moz-column-count: 2;
+            column-count: 2;
+  }
+}
+</style>
+
+{% endblock %}
+
 {% set image_size = 400 %}
 {% block content %}
   <div class="m-2">
@@ -24,7 +37,11 @@
         <ul class="card-text list-unstyled">
             <li>categories:
           {% for cat in i.cats %}
-            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}" class="text-nowrap">{{ cat.replace(' by country', '') }}</a>{% if not loop.last %},{% endif %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}" class="text-nowrap">{{ cat.replace(' by country', '') }}</a>
+            {% if cat in cat_counts -%}
+              ({{ cat_counts[cat] }})
+            {%- endif -%}
+            {%- if not loop.last -%},{% endif %}
           {% endfor %}
             </li>
             {% if i.exclude_cats %}
