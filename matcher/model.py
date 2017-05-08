@@ -389,3 +389,9 @@ class TagOrKey(Base):
 
     name = Column(String, primary_key=True)
     count_all = Column(Integer)
+
+class Category(Base):
+    __tablename__ = 'category'
+
+    name = Column(String, primary_key=True)
+    page_count = Column(Integer)
