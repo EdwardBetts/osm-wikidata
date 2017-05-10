@@ -36,6 +36,27 @@ def oql_from_tag(tag, large_area, filters='area.a'):
 
     # return ['\n    {}(area.a)[{}]{};'.format(t, tag, name_filter) for ('node', 'way', 'rel')]
 
+def oql_from_wikidata_tag_or_key(tag_or_key, filters):
+    osm_type, _, tag = tag_or_key.partition(':')
+    osm_type = osm_type.lower()
+    assert {'key': False, 'tag': True}[osm_type] == ('=' in tag)
+
+    relation_only = tag == 'site'
+
+    if tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
+        name_filter = '[name]'
+    else:
+        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+    if osm_type == 'tag':
+        k, _, v = tag.partition('=')
+        if k in {'site', 'type', 'route'}:
+            relation_only = True
+        if ':' in tag or ' ' in tag:
+            tag = '"{}"="{}"'.format(k, v)
+
+    return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
+            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
+
 def parse_status(status):
     lines = status.splitlines()
     limit = 'Rate limit: '
