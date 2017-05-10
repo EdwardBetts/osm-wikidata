@@ -8,6 +8,7 @@ from time import sleep
 from . import user_agent_headers
 
 re_slot_available = re.compile('^Slot available after: ([^,]+), in (\d+) seconds?\.$')
+re_available_now = re.compile('^\d+ slots available now.$')
 
 name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
         'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
