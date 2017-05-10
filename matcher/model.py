@@ -10,6 +10,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from .database import session
 from . import wikidata, matcher, match
+from .overpass import oql_from_tag
 
 import subprocess
 import os.path
@@ -20,37 +21,6 @@ Base.query = session.query_property()
 
 # states: wikipedia, tags, wbgetentities, overpass, postgis, osm2pgsql, ready
 # bad state: overpass_fail
-
-name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
-        'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
-        'amenity=cinema', 'ruins', 'retail=retail_park',
-        'amenity=concert_hall', 'amenity=theatre'}
-
-name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
-        'railway', 'aeroway', 'bridge', 'natural']
-
-def oql_from_tag(tag, large_area, filters='area.a'):
-    # optimisation: we only expect route, type or site on relations
-    if tag == 'highway':
-        return []
-    relation_only = tag == 'site'
-    if large_area or tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
-        name_filter = '[name]'
-    else:
-        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
-    if '=' in tag:
-        k, _, v = tag.partition('=')
-        if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
-            return []  # ignore because osm2pgsql only does multipolygons
-        if k in {'site', 'type', 'route'}:
-            relation_only = True
-        if ':' in tag or ' ' in tag:
-            tag = '"{}"="{}"'.format(k, v)
-
-    return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
-            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
-
-    # return ['\n    {}(area.a)[{}]{};'.format(t, tag, name_filter) for ('node', 'way', 'rel')]
 
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
