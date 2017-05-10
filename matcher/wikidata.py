@@ -23,6 +23,18 @@ SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHER
 GROUP BY ?place ?article ?end ?point_in_time
 '''
 
+wikidata_subclass_osm_tags = '''
+SELECT ?item ?label ?tag
+WHERE
+{
+  wd:{{qid}} wdt:P31/wdt:P279* ?item .
+  ?item wdt:P1282 ?tag
+  OPTIONAL {
+     ?item rdfs:label ?label filter (lang(?label) = "en").
+   }
+ }'''
+
+
 def get_query(south, north, west, east):
     return render_template_string(wikidata_query,
                                   south=south,
@@ -65,6 +77,19 @@ def entity_iter(ids):
         for qid, entity in json_data['entities'].items():
             yield qid, entity
 
+def get_entity(qid):
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
+    params = {
+        'format': 'json',
+        'formatversion': 2,
+        'action': 'wbgetentities',
+        'ids': qid,
+    }
+    json_data = requests.get(wikidata_url,
+                             params=params,
+                             headers=user_agent_headers()).json()
+    return list(json_data['entities'].values())[0]
+
 def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
     if not entity:
         return
@@ -96,3 +121,12 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
                 ret[name['value']].append(('alias', lang))
 
     return ret
+
+def get_osm_keys(qid):
+    query = render_template_string(wikidata_subclass_osm_tags, qid=qid)
+    url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
+    r = requests.get(url,
+                     params={'query': query, 'format': 'json'},
+                     headers=user_agent_headers())
+    assert r.status_code == 200
+    return r

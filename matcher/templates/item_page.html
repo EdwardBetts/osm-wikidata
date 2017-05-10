@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="m-3">
+  <div class="container">
+
+    <h1>{{ qid }}: {{ label }}</h1>
+    <h3>coords</h3>
+    <pre>{{ coords | pprint }}</pre>
+    <h3>labels</h3>
+    <pre>{{ entity['labels'] | pprint }}</pre>
+    <h3>aliases</h3>
+    <pre>{{ entity['aliases'] | pprint }}</pre>
+    <h3>site links</h3>
+    <pre>{{ entity['sitelinks'] | pprint }}</pre>
+
+
+    <h3>osm_keys</h3>
+    <table class="table">
+    {% for row in osm_keys %}
+      <tr>
+        <td>{{ row['item']['value'] }}</td>
+        <td>{{ row['label']['value'] }}</td>
+        <td>{{ row['tag']['value'] }}</td>
+    {% endfor %}
+    </table>
+
+  </div>
+</div>
+{% endblock %}

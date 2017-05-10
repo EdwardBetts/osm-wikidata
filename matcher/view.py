@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify
+from flask import (Flask, render_template, request, Response, redirect,
+                   url_for, g, jsonify, render_template_string)
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers
-from .model import Place, Item, PlaceItem, ItemCandidate
+from .model import Place, Item, PlaceItem, ItemCandidate, Category
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 
@@ -18,6 +19,13 @@ navbar_pages = [
     {'name': 'criteria_page', 'label': 'Criteria'},
     {'name': 'saved_places', 'label': 'Saved'},
     {'name': 'documentation', 'label': 'Documentation'},
+]
+
+tab_pages = [
+    {'route': 'candidates', 'label': 'Match candidates'},
+    {'route': 'no_match', 'label': 'No match'},
+    {'route': 'wikidata_page', 'label': 'Wikidata query'},
+    {'route': 'overpass_query', 'label': 'Overpass query'},
 ]
 
 @app.context_processor
@@ -95,6 +103,30 @@ def candidates_with_filter(name_filter, osm_id):
     g.filter = name_filter.replace('_', ' ')
     return candidates(osm_id)
 
+@app.route('/wikidata/<int:osm_id>')
+def wikidata_page(osm_id):
+    place = Place.query.get(osm_id)
+
+    full_count = place.items_with_candidates_count()
+
+    return render_template('wikidata_query.html',
+                           place=place,
+                           tab_pages=tab_pages,
+                           osm_id=osm_id,
+                           full_count=full_count)
+
+@app.route('/overpass/<int:osm_id>')
+def overpass_query(osm_id):
+    place = Place.query.get(osm_id)
+
+    full_count = place.items_with_candidates_count()
+
+    return render_template('overpass.html',
+                           place=place,
+                           tab_pages=tab_pages,
+                           osm_id=osm_id,
+                           full_count=full_count)
+
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     place = Place.query.get(osm_id)
@@ -126,11 +158,36 @@ def candidates(osm_id):
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
+                           tab_pages=tab_pages,
                            items_without_matches=items_without_matches,
                            multiple_only=multiple_only,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
                            candidates=items)
+
+@app.route('/no_match/<int:osm_id>')
+def no_match(osm_id):
+    place = Place.query.get(osm_id)
+
+    if place.state != 'ready':
+        return redirect_to_matcher(osm_id)
+
+    if place.state == 'overpass_error':
+        error = open(place.overpass_filename).read()
+        return render_template('candidates.html',
+                               overpass_error=error,
+                               place=place)
+
+    full_count = place.items_with_candidates_count()
+
+    items_without_matches = place.items_without_candidates()
+
+    return render_template('no_match.html',
+                           place=place,
+                           osm_id=osm_id,
+                           tab_pages=tab_pages,
+                           items_without_matches=items_without_matches,
+                           full_count=full_count)
 
 def wbgetentities(p):
     q = p.items.filter(Item.tags != '{}')
@@ -233,11 +290,6 @@ def load_match(osm_id):
 
     conn.close()
     return Response('done', mimetype='text/plain')
-
-@app.route('/overpass/<int:osm_id>')
-def overpass_query(osm_id):
-    place = Place.query.get(osm_id)
-    return render_template('overpass_query.html', place=place)
 
 @app.route('/matcher/<int:osm_id>')
 def matcher_progress(osm_id):
@@ -349,8 +401,11 @@ def criteria_page():
 
     entity_types.sort(key=lambda t: t['name'].lower())
 
+    cat_counts = {cat.name: cat.page_count for cat in Category.query}
+
     return render_template('criteria.html',
                            entity_types=entity_types,
+                           cat_counts=cat_counts,
                            taginfo=taginfo)
 
 @app.route('/filtered/<name_filter>')
@@ -374,3 +429,30 @@ def saved_places():
 @app.route("/documentation")
 def documentation():
     return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
+
+@app.route('/Q<int:wikidata_id>')
+def item_page(wikidata_id):
+    qid = 'Q' + str(wikidata_id)
+    entity = wikidata.get_entity(qid)
+    labels = entity['labels']
+    if 'en' in labels:
+        label = labels['en']['value']
+    else:
+        label = list(labels.values())[0]['value']
+    coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
+    lat = coords['latitude']
+    lon = coords['longitude']
+
+    osm_keys = wikidata.get_osm_keys(qid).json()['results']['bindings']
+
+    del entity['claims']
+
+    return render_template('item_page.html',
+                           entity=entity,
+                           coords=coords,
+                           qid=qid,
+                           lat=lat,
+                           lon=lon,
+                           osm_keys=osm_keys,
+                           label=label,
+                           labels=labels)
