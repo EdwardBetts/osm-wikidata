@@ -1,7 +1,11 @@
 #!/usr/bin/python3
 import re
 import requests
+import os.path
+import json
+from flask import current_app
 from time import sleep
+from . import user_agent_headers
 
 re_slot_available = re.compile('^Slot available after: ([^,]+), in (\d+) seconds?\.$')
 
@@ -94,3 +98,16 @@ def wait_for_slot(status=None):
     if slots:
         print('waiting {} seconds'.format(slots[0]))
         sleep(slots[0] + 1)
+
+def item_query(oql, wikidata_id, radius=1000):
+    overpass_dir = current_app.config['OVERPASS_DIR']
+    filename = os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
+
+    if os.path.exists(filename):
+        return json.load(open(filename))
+
+    overpass_url = 'https://overpass-api.de/api/interpreter'
+    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+
+    open(filename, 'wb').write(r.content)
+    return r.json()
