@@ -4,7 +4,7 @@ from flask import (Flask, render_template, request, Response, redirect,
                    url_for, g, jsonify, render_template_string)
 from .utils import cache_filename
 from lxml import etree
-from . import database, nominatim, wikidata, matcher, user_agent_headers
+from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
 from .model import Place, Item, PlaceItem, ItemCandidate, Category
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
@@ -440,16 +440,32 @@ def item_page(wikidata_id):
     else:
         label = list(labels.values())[0]['value']
     coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
-    lat = coords['latitude']
-    lon = coords['longitude']
+    lat, lon = coords['latitude'], coords['longitude']
 
     osm_keys = wikidata.get_osm_keys(qid).json()['results']['bindings']
+
+    radius = 1000
+    osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
+
+    union = []
+    for row in osm_keys:
+        tag_or_key = row['tag']['value']
+        union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+
+    oql = ('[timeout:300][out:json];\n' +
+           '({}\n);\n' +
+           'out qt center;').format(''.join(union))
+
+    overpass_reply = overpass.item_query(oql, qid, radius)
+    print(overpass_reply)
 
     del entity['claims']
 
     return render_template('item_page.html',
                            entity=entity,
                            coords=coords,
+                           overpass_reply=overpass_reply,
+                           oql=oql,
                            qid=qid,
                            lat=lat,
                            lon=lon,
