@@ -52,7 +52,9 @@ def parse_status(status):
         m = re_slot_available.match(line)
         slots.append(int(m.group(2)))
 
-    assert lines[i] == 'Currently running queries (pid, space limit, time limit, start time):'
+    next_line = lines[i]
+    assert (re_available_now.match(next_line) or
+            next_line == 'Currently running queries (pid, space limit, time limit, start time):')
 
     return {
         'rate_limit': int(lines[2][len(limit):]),
@@ -69,4 +71,5 @@ def wait_for_slot(status=None):
         status = get_status()
     slots = status['slots']
     if slots:
-        sleep(slots[0])
+        print('waiting {} seconds'.format(slots[0]))
+        sleep(slots[0] + 1)
