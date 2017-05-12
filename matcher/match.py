@@ -169,7 +169,7 @@ def get_wikidata_names(item):
         names[v].append(('sitelink', k))
     return names
 
-def check_for_match(osm_tags, wikidata, endings, wikidata_names):
+def check_for_match(osm_tags, wikidata_names, endings=None):
     bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
                        'name:left', 'gnis:county_name', 'openGeoDB:name'}
 

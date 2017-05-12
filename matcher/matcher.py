@@ -113,7 +113,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
         if not names:
             continue
 
-        m = match.check_for_match(osm_tags, item, endings, wikidata_names)
+        m = match.check_for_match(osm_tags, wikidata_names, endings)
         if not m:
             continue
         candidate = {
