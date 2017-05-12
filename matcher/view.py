@@ -8,6 +8,7 @@ from . import database, nominatim, wikidata, matcher, user_agent_headers, overpa
 from .model import Place, Item, PlaceItem, ItemCandidate, Category
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
+from .match import check_for_match
 
 import requests
 import os.path
@@ -435,6 +436,7 @@ def item_page(wikidata_id):
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.get_entity(qid)
     labels = entity['labels']
+    wikidata_names = dict(wikidata.names_from_entity(entity))
     if 'en' in labels:
         label = labels['en']['value']
     else:
@@ -444,7 +446,8 @@ def item_page(wikidata_id):
 
     osm_keys = wikidata.get_osm_keys(qid).json()['results']['bindings']
 
-    radius = 1000
+    arg_radius = request.args.get('radius')
+    radius = int(arg_radius) if arg_radius and arg_radius.isdigit() else 1000
     osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
 
     union = []
@@ -454,21 +457,36 @@ def item_page(wikidata_id):
 
     oql = ('[timeout:300][out:json];\n' +
            '({}\n);\n' +
-           'out qt center;').format(''.join(union))
+           'out qt tags;').format(''.join(union))
+
+    # FIXME extend oql to also check is_in
+    # like this:
+    #
+    # is_in(48.856089,2.29789);
+    # area._[admin_level];
+    # out tags;
 
     overpass_reply = overpass.item_query(oql, qid, radius)
     print(overpass_reply)
 
     del entity['claims']
 
+    found = []
+    for element in overpass_reply['elements']:
+        m = check_for_match(element['tags'], wikidata_names)
+        if m:
+            found.append((element, m))
+
     return render_template('item_page.html',
                            entity=entity,
                            coords=coords,
+                           wikidata_names=wikidata_names,
                            overpass_reply=overpass_reply,
                            oql=oql,
                            qid=qid,
                            lat=lat,
                            lon=lon,
+                           found=found,
                            osm_keys=osm_keys,
                            label=label,
                            labels=labels)
