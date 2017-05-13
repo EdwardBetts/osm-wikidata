@@ -338,7 +338,7 @@ class ItemCandidate(Base):
                     endings |= value
 
         wikidata_names = self.item.names()
-        return match.check_for_match(self.tags, self.item, endings, wikidata_names)
+        return match.check_for_match(self.tags, wikidata_names, endings)
 
     def matching_tags(self):
         tags = []
