@@ -48,15 +48,15 @@
     <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
     &mdash; {{ i.enwiki }}
     &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
-    <br>
+    {# <br>
     <ul>
       <li>Categories:
       {% for cat in i.categories %}
           <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
       {% endfor %}
       </li>
-      {# <li>tags considered: {{ ', '.join(i.tags) }}</li> #}
-    </ul>
+      <li>tags considered: {{ ', '.join(i.tags) }}</li>
+    </ul> #}
   </div>
   <div class="col-md-5">
     <ul>
