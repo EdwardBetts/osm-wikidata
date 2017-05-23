@@ -223,6 +223,28 @@ def filter_candidates(items, conn):  # unused?
             continue
     return items
 
+def filter_place(candidates):
+    # FIXME: some places are more complex, Cambridge for example
+    types = {c.osm_type for c in candidates}
+    place_node = None
+    admin_area = None
+    if len(candidates) != 2 or 'node' not in types:
+        return
+    if len(types) != 2:
+        return
+
+    for c in candidates:
+        if c.osm_type == 'node':
+            if 'place' in c.tags:
+                place_node = c
+        else:
+            if 'admin_level' in c.tags:
+                admin_area = c
+
+    if admin_area and place_node:
+        return place_node
+
+
 def filter_candidates_more(items, debug=False):
     osm_count = Counter()
     for item in items:
@@ -230,16 +252,29 @@ def filter_candidates_more(items, debug=False):
             osm_count[(c.osm_type, c.osm_id)] += 1
 
     for item in items:
-        if item.candidates.count() != 1:
+        candidates = item.candidates.all()
+
+        place = filter_place(candidates)
+        if place:
+            candidates = [place]
+
+        if len(candidates) != 1:
             if debug:
-                print('too many candidates', item.enwiki)
+                print('too many candidates', item.enwiki, item.candidates.count())
+                for c in item.candidates:
+                    print('  ', c.osm_type, c.tags)
             continue
-        if any(osm_count[(c.osm_type, c.osm_id)] > 1 for c in item.candidates):
+
+        candidate = candidates[0]
+
+        if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
             if debug:
                 print('multiple matches', item.enwiki)
             continue
-        if 'wikidata' in item.candidates.first().tags:
+
+        if 'wikidata' in candidate.tags:
             if debug:
                 print('already has wikidata', item.enwiki)
             continue
-        yield item
+
+        yield (item, candidate)
