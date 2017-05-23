@@ -3,6 +3,7 @@
 {% block content %}
 <div class="jumbotron jumbotron-fluid">
   <div class="container">
+  {% include "flash_msg.html" %}
   <h1 class="display-3">OSM ↔ Wikidata matcher</h1>
   <p class="lead">Two great projects cataloguing the world, even more powerful when linked together.</p>
   <hr class="my-4">
@@ -14,10 +15,6 @@
 </form>
 
 </div>
-</div>
-
-<div class="container">
-   <a href="{{ url_for('social.auth', backend='openstreetmap') }}">login with OSM</a>
 </div>
 
 <div class="container">
@@ -62,6 +59,5 @@
   <p>Only Wikidata items with a page on English language Wikipedia are included in the match. In the future I'll add support for matching items without a linked Wikipedia article.</p>
   #}
 </div>
-
 
 {% endblock %}

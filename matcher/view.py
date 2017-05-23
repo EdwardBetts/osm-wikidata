@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify
-from flask_login import login_user, current_user, logout_user, LoginManager
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash
+from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
@@ -55,7 +55,27 @@ def load_user(user_id):
 def navbar():
     return dict(navbar_pages=navbar_pages, active=request.endpoint)
 
-@app.route("/overpass/<int:osm_id>", methods=["POST"])
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('you are logged out')
+    return redirect(url_for('index'))
+
+@app.route('/done/')
+def done():
+    flash('login successful')
+    return redirect(url_for('index'))
+
+@app.route('/add_wikidata_tag', methods=['POST'])
+def add_wikidata_tag():
+    wikidata_id = request.form['wikidata']
+    flash('wikidata tag saved in OpenStreetMap')
+    osm_id = request.form['osm_id']
+    osm_type = request.form['osm_type']
+    return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
+
+@app.route('/overpass/<int:osm_id>', methods=['POST'])
 def post_overpass(osm_id):
     place = Place.query.get(osm_id)
     place.save_overpass(request.data)
