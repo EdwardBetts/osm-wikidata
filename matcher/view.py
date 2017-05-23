@@ -467,7 +467,6 @@ def item_page(wikidata_id):
     # out tags;
 
     overpass_reply = overpass.item_query(oql, qid, radius)
-    print(overpass_reply)
 
     del entity['claims']
 
