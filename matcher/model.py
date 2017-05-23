@@ -10,7 +10,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from .database import session
 from flask_login import UserMixin
-from . import wikidata, matcher
+from . import wikidata, matcher, match
+from .overpass import oql_from_tag
 
 import subprocess
 import os.path
@@ -19,39 +20,20 @@ import re
 Base = declarative_base()
 Base.query = session.query_property()
 
+class User(Base, UserMixin):
+    __tablename__ = 'user'
+    id = Column(Integer, primary_key=True)
+    username = Column(String)
+    password = Column(String)
+    name = Column(String)
+    email = Column(String)
+    active = Column(Boolean, default=True)
+
+    def is_active(self):
+        return self.active
+
 # states: wikipedia, tags, wbgetentities, overpass, postgis, osm2pgsql, ready
 # bad state: overpass_fail
-
-name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
-        'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
-        'amenity=cinema', 'ruins', 'retail=retail_park',
-        'amenity=concert_hall', 'amenity=theatre'}
-
-name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
-        'railway', 'aeroway', 'bridge', 'natural']
-
-def oql_from_tag(tag, large_area, filters='area.a'):
-    # optimisation: we only expect route, type or site on relations
-    if tag == 'highway':
-        return []
-    relation_only = tag == 'site'
-    if large_area or tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
-        name_filter = '[name]'
-    else:
-        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
-    if '=' in tag:
-        k, _, v = tag.partition('=')
-        if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
-            return []  # ignore because osm2pgsql only does multipolygons
-        if k in {'site', 'type', 'route'}:
-            relation_only = True
-        if ':' in tag or ' ' in tag:
-            tag = '"{}"="{}"'.format(k, v)
-
-    return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
-            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
-
-    # return ['\n    {}(area.a)[{}]{};'.format(t, tag, name_filter) for ('node', 'way', 'rel')]
 
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
@@ -136,8 +118,7 @@ class Place(Base):   # assume all places are relations
             for cat in item.categories:
                 lc_cat = cat.lower()
                 for key, value in cat_to_entity.items():
-                    pattern = re.compile(r'\b' + re.escape(key) + r'\b', re.I)
-                    if not pattern.search(lc_cat):
+                    if not matcher.get_pattern(key).search(lc_cat):
                         continue
                     exclude = value.get('exclude_cats')
                     if exclude:
@@ -360,14 +341,40 @@ class ItemCandidate(Base):
 
     item = relationship('Item', backref=backref('candidates', lazy='dynamic'))
 
-class User(Base, UserMixin):
-    __tablename__ = 'user'
-    id = Column(Integer, primary_key=True)
-    username = Column(String)
-    password = Column(String)
-    name = Column(String)
-    email = Column(String)
-    active = Column(Boolean, default=True)
+    def get_match(self):
+        endings = set()
+        for cat in self.item.categories:
+            lc_cat = cat.lower()
+            for key, value in matcher.build_cat_to_ending().items():
+                pattern = re.compile(r'\b' + re.escape(key) + r'\b')
+                if pattern.search(lc_cat):
+                    endings |= value
 
-    def is_active(self):
-        return self.active
+        wikidata_names = self.item.names()
+        return match.check_for_match(self.tags, wikidata_names, endings)
+
+    def matching_tags(self):
+        tags = []
+
+        for tag_or_key in self.item.tags:
+            if '=' not in tag_or_key and tag_or_key in self.tags:
+                tags.append(tag_or_key)
+                continue
+            key, _, value = tag_or_key.partition('=')
+            if self.tags.get(key) == value:
+                tags.append(tag_or_key)
+                continue
+
+        return tags
+
+class TagOrKey(Base):
+    __tablename__ = 'tag_or_key'
+
+    name = Column(String, primary_key=True)
+    count_all = Column(Integer)
+
+class Category(Base):
+    __tablename__ = 'category'
+
+    name = Column(String, primary_key=True)
+    page_count = Column(Integer)

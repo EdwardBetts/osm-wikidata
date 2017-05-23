@@ -15,6 +15,10 @@ MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim
 class Match(object):
     def __init__(self, match_type):
         self.match_type = match_type
+        self.wikidata_name = None
+        self.wikidata_source = None
+        self.osm_name = None
+        self.osm_key = None
 
 def tidy_name(n):
     n = n.replace('saint ', 'st ')
@@ -165,7 +169,7 @@ def get_wikidata_names(item):
         names[v].append(('sitelink', k))
     return names
 
-def check_for_match(osm_tags, wikidata, endings, wikidata_names):
+def check_for_match(osm_tags, wikidata_names, endings=None):
     bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
                        'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
@@ -177,15 +181,26 @@ def check_for_match(osm_tags, wikidata, endings, wikidata_names):
 
     best = None
     for w, source in wikidata_names.items():
-        for o in names.values():
+        for osm_key, o in names.items():
             m = name_match(o, w, endings)
+            if m:
+                m.wikidata_name = w
+                m.wikidata_source = source
+                m.osm_name = o
+                m.osm_key = osm_key
             if m and m.match_type == MatchType.good:
                 # print(source, '  match: {} == {}'.format(o, w))
                 return m
             elif m and m.match_type == MatchType.trim:
-                best = Match(MatchType.trim)
+                best = m
 
     address_match = check_name_matches_address(osm_tags, wikidata_names)
+    if address_match:
+        m = address_match
+        m.wikidata_name = w
+        m.wikidata_source = source
+        m.osm_name = o
+        m.osm_key = osm_key
     return address_match or best
 
 def get_osm_id_and_type(source_type, source_id):

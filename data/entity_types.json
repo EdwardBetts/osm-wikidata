@@ -141,8 +141,15 @@
     "dist": 6
 },
 {
-    "cats": ["Hotels by country", "Motels"],
-    "tags": ["tourism=hotel", "building=hotel", "tourism=motel"],
+    "cats": ["Hotels by country"],
+    "tags": ["tourism=hotel", "building=hotel"],
+    "trim": ["hotel", "resort", "motel"],
+    "check_housename": true,
+    "dist": 5
+},
+{
+    "cats": ["Motels"],
+    "tags": ["tourism=hotel", "building=hotel", "tourism=motel", "building=motel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
     "dist": 5
@@ -251,8 +258,15 @@
 },
 {
     "cats": ["Airports by country"],
-    "tags": ["aeroway=aerodrome", "type=site", "site=airport"],
+    "tags": ["aeroway=aerodrome", "site=airport"],
     "trim": ["airport", "international airport", "aerodome"],
+    "area": true,
+    "dist": 10
+},
+{
+    "cats": ["Heliports"],
+    "tags": ["aeroway=heliport"],
+    "trim": ["airport", "heliport"],
     "area": true,
     "dist": 10
 },
@@ -430,6 +444,13 @@
     "dist": 10
 },
 {
+    "cats": ["Railway depots"],
+    "tags": ["landuse=railway"],
+    "trim": ["tmd"],
+    "check_housename": false,
+    "dist": 2
+},
+{
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
@@ -543,7 +564,7 @@
 },
 {
     "cats": ["Communication towers"],
-    "tags": ["man_made=communications_tower"],
+    "tags": ["man_made=communications_tower", "tower:type=communication", "man_made=mast", "man_made=tower"],
     "trim": ["tower"],
     "check_housename": true,
     "dist": 5
@@ -1207,9 +1228,15 @@
     "dist": 4
 },
 {
-    "cats": ["Long-distance footpaths"],
+    "cats": ["Long-distance footpaths", "Hiking trails"],
     "tags": ["route=hiking"],
     "trim": [],
     "dist": 4
+},
+{
+    "cats": ["Locks by country"],
+    "tags": ["lock=yes"],
+    "trim": [],
+    "dist": 2
 }
 ]

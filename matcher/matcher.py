@@ -9,6 +9,14 @@ import re
 bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
                    'gnis:county_name', 'openGeoDB:name'}
 
+cat_to_ending = {}
+patterns = {}
+
+def get_pattern(key):
+    if key in patterns:
+        return patterns[key]
+    return patterns.setdefault(key, re.compile(r'\b' + re.escape(key) + r'\b', re.I))
+
 def load_entity_types():
     data_dir = current_app.config['DATA_DIR']
     filename = os.path.join(data_dir, 'entity_types.json')
@@ -33,7 +41,11 @@ def build_cat_map():
     return cat_to_entity
 
 def build_cat_to_ending():
-    cat_to_ending = {}
+    global cat_to_ending
+
+    if cat_to_ending:
+        return cat_to_ending
+
     for i in load_entity_types():
         trim = {x.replace(' ', '').lower() for x in i['trim']}
         for c in i['cats']:
@@ -41,6 +53,7 @@ def build_cat_to_ending():
             if ' by ' in lc_cat:
                 lc_cat = lc_cat[:lc_cat.find(' by ')]
             cat_to_ending[lc_cat] = trim
+
     return cat_to_ending
 
 def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
@@ -74,8 +87,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     for cat in item.categories:
         lc_cat = cat.lower()
         for key, value in cat_to_ending.items():
-            pattern = re.compile(r'\b' + re.escape(key) + r'\b')
-            if pattern.search(lc_cat):
+            if get_pattern(key).search(lc_cat):
                 endings |= value
 
     wikidata_names = item.names()
@@ -101,7 +113,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
         if not names:
             continue
 
-        m = match.check_for_match(osm_tags, item, endings, wikidata_names)
+        m = match.check_for_match(osm_tags, wikidata_names, endings)
         if not m:
             continue
         candidate = {
