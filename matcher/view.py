@@ -559,10 +559,12 @@ def item_page(wikidata_id):
     entity = wikidata.get_entity(qid)
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
+
     if 'en' in labels:
         label = labels['en']['value']
     else:
         label = list(labels.values())[0]['value']
+
     coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
     lat, lon = coords['latitude'], coords['longitude']
 
@@ -573,7 +575,6 @@ def item_page(wikidata_id):
 
         return render_template('item_page.html',
                                entity=entity,
-                               coords=coords,
                                wikidata_names=wikidata_names,
                                wikidata_query=wikidata_query,
                                qid=qid,
@@ -615,7 +616,6 @@ def item_page(wikidata_id):
 
     return render_template('item_page.html',
                            entity=entity,
-                           coords=coords,
                            wikidata_names=wikidata_names,
                            wikidata_query=wikidata_query,
                            overpass_reply=overpass_reply,
