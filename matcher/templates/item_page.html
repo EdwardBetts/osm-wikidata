@@ -30,10 +30,15 @@
 
     <h3>oql</h3>
     <pre>{{ oql }}</pre>
-    {# <h3>overpass result</h3>
-    <pre>{{ overpass_reply['elements'] | pprint }}</pre> #}
+    {% if not fonud %}
+        <h3>overpass result</h3>
+        <pre>{{ overpass_reply['elements'] | pprint }}</pre>
+    {% endif %}
 
     <h3>matches</h3>
+    {% if not found %}
+        <p>no matches found</p>
+    {% endif %}
     {% for element, match in found %}
       <pre>{{ element | pprint }}</pre>
       {% if 'wikidata' not in element.tags %}
