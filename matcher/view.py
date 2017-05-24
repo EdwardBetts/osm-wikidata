@@ -530,6 +530,8 @@ def item_page(wikidata_id):
 
     union = []
     for row in osm_keys:
+        if row['item']['value'] == 'http://www.wikidata.org/entity/Q41176':
+            continue  # building
         tag_or_key = row['tag']['value']
         union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
 
