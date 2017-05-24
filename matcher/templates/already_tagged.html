@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
+  <div class="row">
+  <div class="col">
+    <h1>{{ place.name }}</h1>
+  {% set q = place.display_name %}
+
+    <div class="box">
+      <b>{{ place.display_name }}</b><br>
+      category: {{ place.category }}
+      &mdash;
+      type: {{ place.type }}
+      &mdash;
+      OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
+    </div>
+
+  {% include "tabs.html" with context %}
+
+  {% if overpass_error %}
+    <div>&nbsp;</div>
+    <h4>Overpass API error</h4>
+    <pre>{{ overpass_error }}</pre>
+  {% endif %}
+
+  {% if not overpass_error and candidates %}
+    {% if multiple_only %}
+      <p>[Filter: <b>only multiple</b> <a href="{{ place.candidates_url() }}">(remove)</a>]
+    {% else %}
+      <p>[Filter: <a href="{{ place.candidates_url(multiple=1) }}">only multiple matches</a>]
+    {% endif %}
+  {% endif %}
+  </div>
+  </div>
+
+  {% for i in items %}
+    <p><a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
+    {# <br>
+    <ul>
+      <li>Categories:
+      {% for cat in i.categories %}
+          <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+      {% endfor %}
+      </li>
+      <li>tags considered: {{ ', '.join(i.tags) }}</li>
+    </ul> #}
+    <ul>
+    {% for c in i.candidates %}
+    {% set m = c.get_match() %}
+      <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+        {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+      </a>
+      ({{ c.osm_type}}{% if c.dist %},
+       {{ c.dist | int }} m{% endif %})
+       {{ ', '.join(c.matching_tags()) }}
+       {% if 'wikidata' in c.tags %}
+         <br>
+         {% if c.tags.wikidata == i.qid %}
+           wikidata match: <span class="match">{{ c.tags.wikidata }}</span>
+         {% else %}
+           wikidata mismatch: <span class="mismatch">{{ c.tags.wikidata }}</span>
+         {% endif %}
+       {% endif %}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endfor %}
+
+</div>
+</div>
+</div>
+{% endblock %}
