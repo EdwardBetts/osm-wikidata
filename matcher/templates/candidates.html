@@ -44,12 +44,7 @@
   </div>
 
   {% for i in candidates %}
-  <div class="row">
-  <div class="col-md-7">
-    <p>
-    <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-    &mdash; {{ i.enwiki }}
-    &mdash; <a href="{{ i.get_osm_url() }}">OSM</a>
+    <p><a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
     {# <br>
     <ul>
       <li>Categories:
@@ -59,8 +54,6 @@
       </li>
       <li>tags considered: {{ ', '.join(i.tags) }}</li>
     </ul> #}
-  </div>
-  <div class="col-md-5">
     <ul>
     {% for c in i.candidates %}
     {% set m = c.get_match() %}
@@ -68,7 +61,7 @@
         {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
       </a>
       ({{ c.osm_type}}{% if c.dist %},
-       {{ c.dist | int }} m{% endif %})<br>
+       {{ c.dist | int }} m{% endif %})
        {{ ', '.join(c.matching_tags()) }}
        {% if 'wikidata' in c.tags %}
          <br>
@@ -81,8 +74,6 @@
       </li>
     {% endfor %}
     </ul>
-  </div>
-  </div>
   {% endfor %}
 
 </div>
