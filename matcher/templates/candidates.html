@@ -18,6 +18,8 @@
       OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
     </div>
 
+  {% include "tabs.html" with context %}
+
   {% if overpass_error %}
     <div>&nbsp;</div>
     <h4>Overpass API error</h4>
