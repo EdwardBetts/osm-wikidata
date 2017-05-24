@@ -1,19 +1,24 @@
 #!/usr/bin/python3
 
-from flask import (Flask, render_template, request, Response, redirect,
-                   url_for, g, jsonify, render_template_string)
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash
+from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, PlaceItem, ItemCandidate, Category
+from .model import Place, Item, PlaceItem, ItemCandidate, User, Category
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
+from social.apps.flask_app.routes import social_auth
 
 import requests
 import os.path
 
 app = Flask(__name__)
+app.register_blueprint(social_auth)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
 cat_to_ending = None
 
 navbar_pages = [
@@ -30,7 +35,7 @@ tab_pages = [
 ]
 
 @app.context_processor
-def inject_user():
+def filter_urls():
     name_filter = g.get('filter')
     if name_filter:
         url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
@@ -38,11 +43,84 @@ def inject_user():
         url = url_for('saved_places')
     return dict(url_for_saved=url)
 
+@app.before_request
+def global_user():
+    g.user = current_user
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(user_id)
+
 @app.context_processor
 def navbar():
     return dict(navbar_pages=navbar_pages, active=request.endpoint)
 
-@app.route("/overpass/<int:osm_id>", methods=["POST"])
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('you are logged out')
+    return redirect(url_for('index'))
+
+@app.route('/done/')
+def done():
+    flash('login successful')
+    return redirect(url_for('index'))
+
+@app.route('/add_wikidata_tag', methods=['POST'])
+def add_wikidata_tag():
+    wikidata_id = request.form['wikidata']
+    flash('wikidata tag saved in OpenStreetMap')
+    osm_id = request.form['osm_id']
+    osm_type = request.form['osm_type']
+
+    user = g.user._get_current_object()
+    assert user.is_authenticated
+
+    social_user = user.social_auth.one()
+    osm_backend = social_user.get_backend_instance()
+    auth = osm_backend.oauth_auth(social_user.access_token)
+
+    base = 'https://api.openstreetmap.org/api/0.6'
+
+    changeset = '''
+<osm>
+  <changeset>
+    <tag k="created_by" v="https://osm.wikidata.link/"/>
+    <tag k="comment" v="add wikidata tag"/>
+  </changeset>
+</osm>
+'''
+
+    r = osm_backend.request(base + '/changeset/create', method='PUT', data=changeset, auth=auth)
+    changeset_id = r.text.strip()
+
+    url = '{}/{}/{}'.format(base, osm_type, osm_id)
+    r = requests.get(url, params=social_user.access_token)
+
+    print(r.url)
+    print(r.text)
+    root = etree.fromstring(r.content)
+    tag = etree.Element('tag', k='wikidata', v=wikidata_id)
+    root[0].set('changeset', changeset_id)
+    root[0].append(tag)
+
+    element_data = etree.tostring(root).decode('utf-8')
+    print(element_data)
+
+    r = osm_backend.request(url, method='PUT', data=element_data, auth=auth)
+
+    print(r.text)
+
+    r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
+                            method='PUT',
+                            auth=auth)
+
+    print(repr(r.text))
+
+    return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
+
+@app.route('/overpass/<int:osm_id>', methods=['POST'])
 def post_overpass(osm_id):
     place = Place.query.get(osm_id)
     place.save_overpass(request.data)

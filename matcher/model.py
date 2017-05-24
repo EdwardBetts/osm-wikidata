@@ -1,7 +1,7 @@
 # coding: utf-8
 from flask import current_app, url_for, g
 from sqlalchemy import ForeignKey, Column, func, select
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
@@ -9,6 +9,7 @@ from sqlalchemy.orm import relationship, backref, column_property, object_sessio
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from .database import session
+from flask_login import UserMixin
 from . import wikidata, matcher, match
 from .overpass import oql_from_tag
 
@@ -18,6 +19,18 @@ import re
 
 Base = declarative_base()
 Base.query = session.query_property()
+
+class User(Base, UserMixin):
+    __tablename__ = 'user'
+    id = Column(Integer, primary_key=True)
+    username = Column(String)
+    password = Column(String)
+    name = Column(String)
+    email = Column(String)
+    active = Column(Boolean, default=True)
+
+    def is_active(self):
+        return self.active
 
 # states: wikipedia, tags, wbgetentities, overpass, postgis, osm2pgsql, ready
 # bad state: overpass_fail

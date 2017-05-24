@@ -3,6 +3,7 @@
 {% block content %}
 <div class="m-3">
   <div class="container">
+    {% include "flash_msg.html" %}
 
     <h1>{{ qid }}: {{ label }}</h1>
     <h3>coords</h3>
@@ -29,12 +30,22 @@
 
     <h3>oql</h3>
     <pre>{{ oql }}</pre>
-    <h3>overpass result</h3>
-    <pre>{{ overpass_reply['elements'] | pprint }}</pre>
+    {# <h3>overpass result</h3>
+    <pre>{{ overpass_reply['elements'] | pprint }}</pre> #}
 
     <h3>matches</h3>
     {% for element, match in found %}
       <pre>{{ element | pprint }}</pre>
+      {% if 'wikidata' not in element.tags %}
+        <form method="post" action="{{ url_for('add_wikidata_tag') }}">
+          <input type="hidden" name="osm_id" value="{{ element.id }}" />
+          <input type="hidden" name="osm_type" value="{{ element.type }}" />
+          <input type="hidden" name="wikidata" value="{{ qid }}" />
+          <button class="btn btn-primary" type="submit">add wikidata tag to OSM</button>
+        </form>
+      {% else %}
+        <p>OSM already includes wikidata tag.</p>
+      {% endif %}
     {% endfor %}
 
   </div>
