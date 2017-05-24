@@ -29,6 +29,7 @@ navbar_pages = [
 
 tab_pages = [
     {'route': 'candidates', 'label': 'Match candidates'},
+    {'route': 'already_tagged', 'label': 'Already tagged'},
     {'route': 'no_match', 'label': 'No match'},
     {'route': 'wikidata_page', 'label': 'Wikidata query'},
     {'route': 'overpass_query', 'label': 'Overpass query'},
@@ -37,10 +38,13 @@ tab_pages = [
 @app.context_processor
 def filter_urls():
     name_filter = g.get('filter')
-    if name_filter:
-        url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
-    else:
-        url = url_for('saved_places')
+    try:
+        if name_filter:
+            url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
+        else:
+            url = url_for('saved_places')
+    except RuntimeError:
+        return {}  # maybe we don't care
     return dict(url_for_saved=url)
 
 @app.before_request
@@ -53,7 +57,10 @@ def load_user(user_id):
 
 @app.context_processor
 def navbar():
-    return dict(navbar_pages=navbar_pages, active=request.endpoint)
+    try:
+        return dict(navbar_pages=navbar_pages, active=request.endpoint)
+    except RuntimeError:
+        return {}  # maybe we don't care
 
 @app.route('/logout')
 @login_required
@@ -220,7 +227,6 @@ def candidates(osm_id):
                                overpass_error=error,
                                place=place)
 
-    full_count = place.items_with_candidates_count()
     multiple_match_count = place.items_with_multiple_candidates().count()
 
     if multiple_only:
@@ -231,6 +237,12 @@ def candidates(osm_id):
             items = Item.query.filter(Item.item_id.in_(item_ids))
     else:
         items = place.items_with_candidates()
+
+    items = [item for item in items
+             if all('wikidata' not in c.tags for c in item.candidates)]
+
+    full_count = len(items)
+    multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
     items_without_matches = place.items_without_candidates()
 
@@ -267,6 +279,28 @@ def no_match(osm_id):
                            tab_pages=tab_pages,
                            items_without_matches=items_without_matches,
                            full_count=full_count)
+
+@app.route('/already_tagged/<int:osm_id>')
+def already_tagged(osm_id):
+    place = Place.query.get(osm_id)
+
+    if place.state != 'ready':
+        return redirect_to_matcher(osm_id)
+
+    if place.state == 'overpass_error':
+        error = open(place.overpass_filename).read()
+        return render_template('candidates.html',
+                               overpass_error=error,
+                               place=place)
+
+    items = [item for item in place.items_with_candidates()
+             if any('wikidata' in c.tags for c in item.candidates)]
+
+    return render_template('already_tagged.html',
+                           place=place,
+                           osm_id=osm_id,
+                           tab_pages=tab_pages,
+                           items=items)
 
 def wbgetentities(p):
     q = p.items.filter(Item.tags != '{}')
@@ -523,6 +557,19 @@ def item_page(wikidata_id):
     lat, lon = coords['latitude'], coords['longitude']
 
     osm_keys = wikidata.get_osm_keys(qid).json()['results']['bindings']
+
+    if not osm_keys:
+
+        return render_template('item_page.html',
+                               entity=entity,
+                               coords=coords,
+                               wikidata_names=wikidata_names,
+                               qid=qid,
+                               lat=lat,
+                               lon=lon,
+                               osm_keys=osm_keys,
+                               label=label,
+                               labels=labels)
 
     arg_radius = request.args.get('radius')
     radius = int(arg_radius) if arg_radius and arg_radius.isdigit() else 1000

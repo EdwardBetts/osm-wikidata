@@ -5,18 +5,24 @@
   <div class="container">
     {% include "flash_msg.html" %}
 
-    <h1>{{ qid }}: {{ label }}</h1>
+    <h1>{{ label }} ({{ qid }})</h1>
+    <p><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></p>
+
     <h3>coords</h3>
     <pre>{{ coords | pprint }}</pre>
     <h3>labels</h3>
     <pre>{{ entity['labels'] | pprint }}</pre>
-    <h3>aliases</h3>
-    <pre>{{ entity['aliases'] | pprint }}</pre>
+    {% if entity.aliases %}
+      <h3>aliases</h3>
+      <pre>{{ entity.aliases | pprint }}</pre>
+    {% endif %}
     <h3>site links</h3>
     <pre>{{ entity['sitelinks'] | pprint }}</pre>
 
     <h3>wikidata names</h3>
     <pre>{{ wikidata_names | pprint }}</pre>
+
+    {% if osm_keys %}
 
     <h3>osm_keys</h3>
     <table class="table">
@@ -52,6 +58,8 @@
         <p>OSM already includes wikidata tag.</p>
       {% endif %}
     {% endfor %}
+
+    {% endif %}
 
   </div>
 </div>
