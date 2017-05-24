@@ -24,16 +24,21 @@ GROUP BY ?place ?article ?end ?point_in_time
 '''
 
 wikidata_subclass_osm_tags = '''
-SELECT ?item ?label ?tag
+SELECT ?item ?itemLabel ?tag
 WHERE
 {
   wd:{{qid}} wdt:P31/wdt:P279* ?item .
-  ?item wdt:P1282 ?tag
-  OPTIONAL {
-     ?item rdfs:label ?label filter (lang(?label) = "en").
-   }
- }'''
-
+  {
+  ?item wdt:P1282 ?tag .
+  } UNION {
+  ?item wdt:P641 ?sport .
+  ?sport wdt:P1282 ?tag
+  } UNION {
+  ?item wdt:P140 ?religion .
+  ?religion wdt:P1282 ?tag
+  } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}'''
 
 def get_query(south, north, west, east):
     return render_template_string(wikidata_query,
@@ -119,11 +124,12 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
 
     return ret
 
-def get_osm_keys(qid):
-    query = render_template_string(wikidata_subclass_osm_tags, qid=qid)
-    url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
-    r = requests.get(url,
+def osm_key_query(qid):
+    return render_template_string(wikidata_subclass_osm_tags, qid=qid)
+
+def get_osm_keys(query):
+    r = requests.get('https://query.wikidata.org/bigdata/namespace/wdq/sparql',
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
     assert r.status_code == 200
-    return r
+    return r.json()['results']['bindings']

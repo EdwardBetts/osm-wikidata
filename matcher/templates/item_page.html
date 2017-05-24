@@ -7,6 +7,7 @@
 
     <h1>{{ label }} ({{ qid }})</h1>
     <p><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></p>
+    <p><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></p>
 
     <h3>coords</h3>
     <pre>{{ coords | pprint }}</pre>
@@ -29,7 +30,7 @@
     {% for row in osm_keys %}
       <tr>
         <td>{{ row['item']['value'] }}</td>
-        <td>{{ row['label']['value'] }}</td>
+        <td>{{ row['itemLabel']['value'] }}</td>
         <td>{{ row['tag']['value'] }}</td>
     {% endfor %}
     </table>

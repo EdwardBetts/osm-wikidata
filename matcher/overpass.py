@@ -100,11 +100,14 @@ def wait_for_slot(status=None):
         print('waiting {} seconds'.format(slots[0]))
         sleep(slots[0] + 1)
 
-def item_query(oql, wikidata_id, radius=1000):
+def item_filename(wikidata_id, radius):
     overpass_dir = current_app.config['OVERPASS_DIR']
-    filename = os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
+    return os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
 
-    if os.path.exists(filename):
+def item_query(oql, wikidata_id, radius=1000, refresh=False):
+    filename = item_filename(wikidata_id, radius)
+
+    if not refresh and os.path.exists(filename):
         return json.load(open(filename))
 
     overpass_url = 'https://overpass-api.de/api/interpreter'

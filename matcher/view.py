@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
 from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
@@ -216,6 +216,8 @@ def overpass_query(osm_id):
 @app.route('/candidates/<int:osm_id>')
 def candidates(osm_id):
     place = Place.query.get(osm_id)
+    if not place:
+        abort(404)
     multiple_only = bool(request.args.get('multiple'))
 
     if place.state != 'ready':
@@ -543,8 +545,16 @@ def saved_places():
 def documentation():
     return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
 
-@app.route('/Q<int:wikidata_id>')
+@app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
 def item_page(wikidata_id):
+    arg_radius = request.args.get('radius')
+    radius = int(arg_radius) if arg_radius and arg_radius.isdigit() else 1000
+    if request.method == 'POST':
+        filename = overpass.item_filename(wikidata_id, radius)
+        if os.path.exists(filename):
+            os.remove(filename)
+        return redirect(url_for(request.endpoint, **request.view_args, **request.args))
+
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.get_entity(qid)
     labels = entity['labels']
@@ -556,7 +566,8 @@ def item_page(wikidata_id):
     coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
     lat, lon = coords['latitude'], coords['longitude']
 
-    osm_keys = wikidata.get_osm_keys(qid).json()['results']['bindings']
+    wikidata_query = wikidata.osm_key_query(qid)
+    osm_keys = wikidata.get_osm_keys(wikidata_query)
 
     if not osm_keys:
 
@@ -564,6 +575,7 @@ def item_page(wikidata_id):
                                entity=entity,
                                coords=coords,
                                wikidata_names=wikidata_names,
+                               wikidata_query=wikidata_query,
                                qid=qid,
                                lat=lat,
                                lon=lon,
@@ -571,14 +583,12 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
-    arg_radius = request.args.get('radius')
-    radius = int(arg_radius) if arg_radius and arg_radius.isdigit() else 1000
     osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
 
     union = []
     for row in osm_keys:
-        if row['item']['value'] == 'http://www.wikidata.org/entity/Q41176':
-            continue  # building
+        # if row['item']['value'] == 'http://www.wikidata.org/entity/Q41176':
+        #     continue  # building
         tag_or_key = row['tag']['value']
         union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
 
@@ -607,6 +617,7 @@ def item_page(wikidata_id):
                            entity=entity,
                            coords=coords,
                            wikidata_names=wikidata_names,
+                           wikidata_query=wikidata_query,
                            overpass_reply=overpass_reply,
                            oql=oql,
                            qid=qid,
