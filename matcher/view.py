@@ -73,6 +73,51 @@ def add_wikidata_tag():
     flash('wikidata tag saved in OpenStreetMap')
     osm_id = request.form['osm_id']
     osm_type = request.form['osm_type']
+
+    user = g.user._get_current_object()
+    assert user.is_authenticated
+
+    social_user = user.social_auth.one()
+    osm_backend = social_user.get_backend_instance()
+    auth = osm_backend.oauth_auth(social_user.access_token)
+
+    base = 'https://api.openstreetmap.org/api/0.6'
+
+    changeset = '''
+<osm>
+  <changeset>
+    <tag k="created_by" v="https://osm.wikidata.link/"/>
+    <tag k="comment" v="add wikidata tag"/>
+  </changeset>
+</osm>
+'''
+
+    r = osm_backend.request(base + '/changeset/create', method='PUT', data=changeset, auth=auth)
+    changeset_id = r.text.strip()
+
+    url = '{}/{}/{}'.format(base, osm_type, osm_id)
+    r = requests.get(url, params=social_user.access_token)
+
+    print(r.url)
+    print(r.text)
+    root = etree.fromstring(r.content)
+    tag = etree.Element('tag', k='wikidata', v=wikidata_id)
+    root[0].set('changeset', changeset_id)
+    root[0].append(tag)
+
+    element_data = etree.tostring(root).decode('utf-8')
+    print(element_data)
+
+    r = osm_backend.request(url, method='PUT', data=element_data, auth=auth)
+
+    print(r.text)
+
+    r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
+                            method='PUT',
+                            auth=auth)
+
+    print(repr(r.text))
+
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
 @app.route('/overpass/<int:osm_id>', methods=['POST'])
