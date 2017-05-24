@@ -111,14 +111,11 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
 
         ret[title].append(('sitelink', k))
 
-    if len(entity['sitelinks']) < 6 and len(entity['labels']) < 6:
-        for lang, value_list in entity.get('aliases', {}).items():
-            if lang in skip_lang:
-                continue
-            if len(value_list) > 3:
-                continue
-            for name in value_list:
-                ret[name['value']].append(('alias', lang))
+    for lang, value_list in entity.get('aliases', {}).items():
+        if lang in skip_lang or len(value_list) > 3:
+            continue
+        for name in value_list:
+            ret[name['value']].append(('alias', lang))
 
     return ret
 
