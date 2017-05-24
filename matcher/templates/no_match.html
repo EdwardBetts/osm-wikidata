@@ -34,11 +34,7 @@
   <p>{{ '{:,d}'.format(items_without_matches.count()) }} items</p>
 
   {% for i in items_without_matches %}
-    <p>
-      <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-      &mdash; {{ i.enwiki }}
-      &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
-      <br>
+    <p><a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a><br>
       <ul>
         {% if i.categories %}
           <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
