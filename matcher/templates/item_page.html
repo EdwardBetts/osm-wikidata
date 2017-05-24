@@ -6,11 +6,14 @@
     {% include "flash_msg.html" %}
 
     <h1>{{ label }} ({{ qid }})</h1>
-    <p><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></p>
-    <p><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></p>
+    <ul>
+      <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
+      <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
+      <li>coordinates: {{ lat }}, {{ lon }}
+        <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
+      </li>
+    </ul>
 
-    <h3>coords</h3>
-    <pre>{{ coords | pprint }}</pre>
     <h3>labels</h3>
     <pre>{{ entity['labels'] | pprint }}</pre>
     {% if entity.aliases %}
