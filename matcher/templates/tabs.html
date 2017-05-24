@@ -1,7 +1,8 @@
 <ul class="nav nav-tabs my-2">
   {% for tab in tab_pages %}
   <li class="nav-item">
-    <a class="nav-link{{ ' active' if request.endpoint == tab.route }}" href="{{ url_for(tab.route, osm_id=osm_id) }}">{{ tab.label }}</a>
+    <a class="nav-link{{ ' active' if request.endpoint == tab.route }}"
+       href="{{ url_for(tab.route, osm_id=osm_id) }}">{{ tab.label }}</a>
   </li>
   {% endfor %}
 </ul>
