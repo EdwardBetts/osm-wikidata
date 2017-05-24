@@ -13,7 +13,7 @@ re_available_now = re.compile('^\d+ slots available now.$')
 name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
         'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
         'amenity=cinema', 'ruins', 'retail=retail_park',
-        'amenity=concert_hall', 'amenity=theatre'}
+        'amenity=concert_hall', 'amenity=theatre', 'designation=civil_parish'}
 
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
