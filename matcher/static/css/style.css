@@ -31,3 +31,15 @@
   color: white;
   padding: 2px;
 }
+
+.match {
+  background: green;
+  color: white;
+  padding: 3px;
+}
+
+.mismatch {
+  background: darkred;
+  color: white;
+  padding: 3px;
+}
