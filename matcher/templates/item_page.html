@@ -29,7 +29,7 @@
     {% if osm_keys %}
 
     <h3>osm_keys</h3>
-    <table class="table">
+    <table class="table table-responsive table-hover table-sm">
     {% for row in osm_keys %}
       <tr>
         <td>{{ row['item']['value'] }}</td>
@@ -40,9 +40,13 @@
 
     <h3>oql</h3>
     <pre>{{ oql }}</pre>
-    {% if not fonud %}
+    {% if not found %}
         <h3>overpass result</h3>
-        <pre>{{ overpass_reply['elements'] | pprint }}</pre>
+        {% if found | count > 10 %}
+            <p>more than 10 results</p>
+        {% else %}
+            <pre>{{ overpass_reply['elements'] | pprint }}</pre>
+        {% endif %}
     {% endif %}
 
     <h3>matches</h3>
