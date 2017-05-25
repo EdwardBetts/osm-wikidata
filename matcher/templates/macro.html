@@ -1,0 +1,10 @@
+{% macro place_box(place) %}
+<div class="box">
+  <b>{{ place.display_name }}</b><br>
+  category: {{ place.category }}
+  &mdash;
+  type: {{ place.type }}
+  &mdash;
+  OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
+</div>
+{% endmacro %}
