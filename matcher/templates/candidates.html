@@ -37,38 +37,49 @@
   </div>
   </div>
 
-  {% for i in candidates %}
-    <p><a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
-    {# <br>
-    <ul>
-      <li>Categories:
-      {% for cat in i.categories %}
-          <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
-      {% endfor %}
-      </li>
-      <li>tags considered: {{ ', '.join(i.tags) }}</li>
-    </ul> #}
-    <ul>
-    {% for c in i.candidates %}
-    {% set m = c.get_match() %}
-      <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-        {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
-      </a>
-      ({{ c.osm_type}}{% if c.dist %},
-       {{ c.dist | int }} m{% endif %})
-       {{ ', '.join(c.matching_tags()) }}
-       {% if 'wikidata' in c.tags %}
-         <br>
-         {% if c.tags.wikidata == i.qid %}
-           wikidata match: <span class="match">{{ c.tags.wikidata }}</span>
-         {% else %}
-           wikidata mismatch: <span class="mismatch">{{ c.tags.wikidata }}</span>
+  {% if candidates %}
+
+    <form method="POST">
+
+    {% for i in candidates %}
+      <p>
+      {% if g.user.is_authenticated %}
+        {% if i.item_id in filtered %}
+          <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
+        {% else %}
+          <input type="checkbox" disabled="disabled" />
+        {% endif %}
+      {% endif %}
+      <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
+      {# <br>
+      <ul>
+        <li>Categories:
+        {% for cat in i.categories %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+        {% endfor %}
+        </li>
+        <li>tags considered: {{ ', '.join(i.tags) }}</li>
+      </ul> #}
+      <ul>
+      {% for c in i.candidates %}
+      {% set m = c.get_match() %}
+        <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+          {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+        </a>
+        ({{ c.osm_type}}{% if c.dist %},
+         {{ c.dist | int }} m{% endif %})
+         {{ ', '.join(c.matching_tags()) }}
+         {% if i.item_id in filtered and c == filtered[i.item_id] %}
+           <span class="highlight">best match</span>
          {% endif %}
-       {% endif %}
-      </li>
+        </li>
+      {% endfor %}
+      </ul>
     {% endfor %}
-    </ul>
-  {% endfor %}
+
+  {% else %}
+
+  {% endif %}
 
 </div>
 </div>
