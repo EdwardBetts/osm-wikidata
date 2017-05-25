@@ -43,3 +43,8 @@
   color: white;
   padding: 3px;
 }
+
+.highlight {
+  background: yellow;
+  padding: 3px;
+}
