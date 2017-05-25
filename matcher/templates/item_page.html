@@ -9,7 +9,7 @@
     <ul>
       <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
       <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
-      <li>coordinates: {{ lat }}, {{ lon }}
+      <li>coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
       </li>
     </ul>
