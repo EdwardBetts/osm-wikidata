@@ -35,6 +35,10 @@ tab_pages = [
     {'route': 'overpass_query', 'label': 'Overpass query'},
 ]
 
+extra_keys = {
+    'Q1021290': 'Tag:amenity=college'  # music school
+}
+
 @app.context_processor
 def filter_urls():
     name_filter = g.get('filter')
@@ -545,17 +549,21 @@ def saved_places():
 def documentation():
     return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
 
+def get_isa(entity):
+    return [isa['mainsnak']['datavalue']['value']['id']
+            for isa in entity['claims'].get('P31', [])]
+
 @app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
 def item_page(wikidata_id):
     arg_radius = request.args.get('radius')
     radius = int(arg_radius) if arg_radius and arg_radius.isdigit() else 1000
+    qid = 'Q' + str(wikidata_id)
+    filename = overpass.item_filename(qid, radius)
     if request.method == 'POST':
-        filename = overpass.item_filename(wikidata_id, radius)
         if os.path.exists(filename):
             os.remove(filename)
         return redirect(url_for(request.endpoint, **request.view_args, **request.args))
 
-    qid = 'Q' + str(wikidata_id)
     entity = wikidata.get_entity(qid)
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
@@ -571,7 +579,9 @@ def item_page(wikidata_id):
     wikidata_query = wikidata.osm_key_query(qid)
     osm_keys = wikidata.get_osm_keys(wikidata_query)
 
-    if not osm_keys:
+    extra = {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
+
+    if not osm_keys and not extra:
 
         return render_template('item_page.html',
                                entity=entity,
@@ -591,6 +601,9 @@ def item_page(wikidata_id):
         # if row['item']['value'] == 'http://www.wikidata.org/entity/Q41176':
         #     continue  # building
         tag_or_key = row['tag']['value']
+        union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+
+    for tag_or_key in extra:
         union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
 
     oql = ('[timeout:300][out:json];\n' +
