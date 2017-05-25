@@ -17,7 +17,7 @@ def wbgetentities(p):
         database.session.add(item)
     database.session.commit()
 
-def do_reindex(place):
+def do_reindex(place, force=False):
     print(place.display_name)
 
     existing = {item.item_id: item.tags for item in place.items}
@@ -36,7 +36,7 @@ def do_reindex(place):
         print('  old:', old)
         print('  new:', item.tags)
 
-    if not tag_change:
+    if not force and not tag_change:
         print('no change')
         place.state = 'ready'
         database.session.commit()
@@ -102,6 +102,6 @@ with app.app_context():
     if len(sys.argv) > 1:
         osm_id = sys.argv[1]
         place = Place.query.get(osm_id)
-        do_reindex(place)
+        do_reindex(place, force=True)
     else:
         reindex_all()
