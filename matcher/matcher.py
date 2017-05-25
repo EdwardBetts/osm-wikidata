@@ -227,10 +227,10 @@ def filter_place(candidates):
     # FIXME: some places are more complex, Cambridge for example
     types = {c.osm_type for c in candidates}
     place_node = None
-    admin_area = None
-    if len(candidates) != 2 or 'node' not in types:
+    other = False
+    if len(candidates) < 2 or 'node' not in types:
         return
-    if len(types) != 2:
+    if len(types) < 2:
         return
 
     for c in candidates:
@@ -238,10 +238,10 @@ def filter_place(candidates):
             if 'place' in c.tags:
                 place_node = c
         else:
-            if 'admin_level' in c.tags:
-                admin_area = c
+            if 'admin_level' in c.tags or c.tags.get('landuse') == 'residential':
+                other = True
 
-    if admin_area and place_node:
+    if place_node and other:
         return place_node
 
 
