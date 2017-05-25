@@ -250,11 +250,15 @@ def candidates(osm_id):
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
+    filtered = {item.item_id: candidate
+                for item, candidate in matcher.filter_candidates_more(items)}
+
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,
+                           filtered=filtered,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
                            candidates=items)
