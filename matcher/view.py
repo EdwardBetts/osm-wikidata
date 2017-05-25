@@ -250,13 +250,10 @@ def candidates(osm_id):
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
-    items_without_matches = place.items_without_candidates()
-
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
                            tab_pages=tab_pages,
-                           items_without_matches=items_without_matches,
                            multiple_only=multiple_only,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
