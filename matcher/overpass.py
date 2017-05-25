@@ -101,6 +101,7 @@ def wait_for_slot(status=None):
         sleep(slots[0] + 1)
 
 def item_filename(wikidata_id, radius):
+    assert wikidata_id[0] == 'Q'
     overpass_dir = current_app.config['OVERPASS_DIR']
     return os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
 
