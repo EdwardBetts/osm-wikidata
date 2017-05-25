@@ -171,7 +171,19 @@ class Place(Base):   # assume all places are relations
 
     @property
     def name(self):
-        return self.override_name or self.namedetails.get('name:en') or self.namedetails['name']
+        if self.override_name:
+            return self.override_name
+
+        name = self.namedetails.get('name:en') or self.namedetails['name']
+        display = self.display_name
+
+        for short in ('City', '1st district'):
+            start = len(short) + 2
+            if name == short and display.startswith(short + ', ') and ', ' in display[start:]:
+                name = display[:display.find(', ', start)]
+                break
+
+        return name
 
     @property
     def name_extra_detail(self):
