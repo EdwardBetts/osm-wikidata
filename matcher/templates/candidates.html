@@ -46,15 +46,19 @@
 
     <form method="POST" action="{{ url_for('add_tags', osm_id=place.osm_id) }}">
 
+      {% if filtered %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+      {% endif %}
 
     <div class="my-3">
     {% for i in candidates %}
       <p>
-      {% if i.item_id in filtered %}
-        <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
-      {% else %}
-        <input type="checkbox" disabled="disabled" />
+      {% if filtered %}
+          {% if i.item_id in filtered %}
+            <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
+          {% else %}
+            <input type="checkbox" disabled="disabled" />
+          {% endif %}
       {% endif %}
       <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
       {# <br>
@@ -83,7 +87,9 @@
       </ul>
     {% endfor %}
     </div>
-    <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+    {% if filtered %}
+      <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+    {% endif %}
     </form>
 
   {% else %}
