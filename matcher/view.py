@@ -691,7 +691,7 @@ def item_page(wikidata_id):
     overpass_reply = overpass.item_query(oql, qid, radius)
 
     found = []
-    for element in overpass_reply['elements']:
+    for element in overpass_reply:
         m = check_for_match(element['tags'], wikidata_names)
         if m:
             found.append((element, m))
