@@ -8,6 +8,7 @@
   <p class="lead">Two great projects cataloguing the world, even more powerful when linked together.</p>
   <hr class="my-4">
   <p>Search for a place, pick one and leave the matcher to run for a few minutes. Then check out the list of matches.</p>
+
 <form action="{{ url_for('search_results') }}" class="form-inline">
   <label for="q" class="sr-only">search:</label>
   <input class="form-control form-control-lg m-2" id="q" name="q" size="40" value="{{ q }}" placeholder="place name">
