@@ -218,9 +218,48 @@ def overpass_query(osm_id):
                            full_count=full_count)
 
 def do_add_tags(place, table):
-    comment = request.form['comment']
+    user = g.user._get_current_object()
+    assert user.is_authenticated
+
+    social_user = user.social_auth.one()
+    osm_backend = social_user.get_backend_instance()
+    auth = osm_backend.oauth_auth(social_user.access_token)
+
+    base = 'https://api.openstreetmap.org/api/0.6'
+
+    changeset = '''
+<osm>
+  <changeset>
+    <tag k="created_by" v="https://osm.wikidata.link/"/>
+    <tag k="comment" v="{comment}"/>
+  </changeset>
+</osm>
+'''.format(comment=request.form['comment'])
+
+    r = osm_backend.request(base + '/changeset/create', method='PUT', data=changeset, auth=auth)
+    changeset_id = r.text.strip()
+
     for item, osm in table:
-        print(item, osm)
+        wikidata_id = 'Q{:d}'.format(item.item_id)
+        url = '{}/{}/{}'.format(base, osm['osm_type'], osm['osm_id'])
+        r = requests.get(url, params=social_user.access_token)
+        if 'wikidata' in r.text:  # done already
+            continue
+
+        root = etree.fromstring(r.content)
+        tag = etree.Element('tag', k='wikidata', v=wikidata_id)
+        root[0].set('changeset', changeset_id)
+        root[0].append(tag)
+
+        element_data = etree.tostring(root).decode('utf-8')
+        r = osm_backend.request(url, method='PUT', data=element_data, auth=auth)
+        print(r.text)
+
+    r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
+                            method='PUT',
+                            auth=auth)
+
+    print(repr(r.text))
 
 @app.route('/add_tags/<int:osm_id>', methods=['POST'])
 def add_tags(osm_id):
@@ -234,7 +273,7 @@ def add_tags(osm_id):
     table = [(item, candidate)
              for item, candidate in matcher.filter_candidates_more(items)]
 
-    if request.form.get('confirm', 'yes'):
+    if request.form.get('confirm') == 'yes':
         do_add_tags(place, table)
         return 'done'
 
