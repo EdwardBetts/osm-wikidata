@@ -130,3 +130,18 @@ out qt center tags;
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     return r.json()['elements']
+
+def get_tags(elements):
+    union = {'{}({});\n'.format({'relation': 'rel'}.get(i.osm_type, i.osm_type), i.osm_id)
+             for i in elements}
+
+    oql = '''
+[timeout:300][out:json];
+({});
+out qt tags;
+'''.format(''.join(union))
+
+    overpass_url = 'https://overpass-api.de/api/interpreter'
+    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+
+    return r.json()['elements']
