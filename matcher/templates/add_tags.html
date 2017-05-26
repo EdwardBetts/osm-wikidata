@@ -12,6 +12,7 @@
   {{ place_box(place) }}
 
     <form class="form-inline" method="POST" action="{{ url_for('add_tags', osm_id=place.osm_id) }}">
+      <input type="hidden" name="confirm" value="yes" />
 
       {% for include in request.form.getlist('include') %}
         <input type="hidden" name="include" value="{{ include }}" />
