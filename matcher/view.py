@@ -644,6 +644,17 @@ def get_entity_oql(entity, criteria, radius=None):
 
     return oql
 
+def get_ending_from_criteria(criteria):
+    entity_types = matcher.load_entity_types()
+    tags = {i.partition(':')[2] for i in criteria}
+
+    endings = set()
+    for t in entity_types:
+        if tags & set(t['tags']):
+            endings.update(t.get('trim'))
+
+    return endings
+
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
     radius = get_radius()
@@ -658,11 +669,12 @@ def api_item_match(wikidata_id):
     oql = get_entity_oql(entity, criteria, radius=radius)
 
     existing = overpass.get_existing(qid)
+    endings = get_ending_from_criteria(criteria)
 
     overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
 
     found = [element for element in overpass_reply
-             if check_for_match(element['tags'], wikidata_names)]
+             if check_for_match(element['tags'], wikidata_names, endings=endings)]
 
     lat, lon = get_entity_coords(entity)
 
@@ -702,9 +714,10 @@ def item_page(wikidata_id):
     wikidata_query = wikidata.osm_key_query(qid)
     osm_keys = wikidata.get_osm_keys(wikidata_query)
 
-    extra = {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
+    criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
+    criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
-    if not osm_keys and not extra:
+    if not criteria:
 
         return render_template('item_page.html',
                                entity=entity,
@@ -719,14 +732,10 @@ def item_page(wikidata_id):
 
     osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
 
-    union = []
-    for row in osm_keys:
-        # if row['item']['value'] == 'http://www.wikidata.org/entity/Q41176':
-        #     continue  # building
-        tag_or_key = row['tag']['value']
-        union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+    endings = get_ending_from_criteria(criteria)
 
-    for tag_or_key in extra:
+    union = []
+    for tag_or_key in criteria:
         union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
 
     oql = ('[timeout:300][out:json];\n' +
@@ -744,7 +753,7 @@ def item_page(wikidata_id):
 
     found = []
     for element in overpass_reply:
-        m = check_for_match(element['tags'], wikidata_names)
+        m = check_for_match(element['tags'], wikidata_names, endings=endings)
         if m:
             found.append((element, m))
 
