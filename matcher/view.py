@@ -336,7 +336,7 @@ def add_tags(osm_type, osm_id):
     if request.form.get('confirm') == 'yes':
         update_count = do_add_tags(place, table)
         flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
-        return redirect(url_for('candidates', osm_id=osm_id))
+        return redirect(url_for('candidates', osm_type=place.osm_type, osm_id=place.osm_id))
 
     return render_template('add_tags.html',
                            place=place,
