@@ -588,7 +588,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state == 'ready')
+    q = (Place.query.filter(Place.state == 'ready', Place.candidate_count > 0)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
