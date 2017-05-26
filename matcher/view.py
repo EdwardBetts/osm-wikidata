@@ -711,12 +711,33 @@ def get_ending_from_criteria(criteria):
 
     return endings
 
+def trim_location_from_names(entity, wikidata_names):
+    if 'P131' not in entity['claims']:
+        return
+
+    location_names = set()
+    located_in = [i['mainsnak']['datavalue']['value']['id']
+                  for i in entity['claims']['P131']]
+
+    for location in wikidata.get_entities(located_in):
+        location_names |= {v['value'] for v in location['labels'].values()}
+
+    for name_key, name_values in list(wikidata_names.items()):
+        for n in location_names:
+            if not name_key.startswith(n + ' '):
+                continue
+            new_key = name_key[len(n) + 1:]
+            if new_key not in wikidata_names:
+                wikidata_names[new_key] = name_values
+
+
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
     radius = get_radius()
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.get_entity(qid)
     wikidata_names = dict(wikidata.names_from_entity(entity))
+    trim_location_from_names(entity, wikidata_names)
     wikidata_query = wikidata.osm_key_query(qid)
 
     criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
@@ -759,6 +780,7 @@ def item_page(wikidata_id):
     entity = wikidata.get_entity(qid)
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
+    trim_location_from_names(entity, wikidata_names)
 
     if 'en' in labels:
         label = labels['en']['value']
@@ -787,22 +809,6 @@ def item_page(wikidata_id):
                                labels=labels)
 
     osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
-
-    location_names = set()
-    if 'P131' in entity['claims']:
-        located_in = [i['mainsnak']['datavalue']['value']['id']
-                      for i in entity['claims']['P131']]
-
-        for location in wikidata.get_entities(located_in):
-            location_names |= {v['value'] for v in location['labels'].values()}
-
-    for name_key, name_values in list(wikidata_names.items()):
-        for n in location_names:
-            if not name_key.startswith(n + ' '):
-                continue
-            new_key = name_key[len(n) + 1:]
-            if new_key not in wikidata_names:
-                wikidata_names[new_key] = name_values
 
     endings = get_ending_from_criteria(criteria)
 
