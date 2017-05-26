@@ -95,6 +95,21 @@ def get_entity(qid):
                              headers=user_agent_headers()).json()
     return list(json_data['entities'].values())[0]
 
+def get_entities(ids):
+    if not ids:
+        return []
+    wikidata_url = 'https://www.wikidata.org/w/api.php'
+    params = {
+        'format': 'json',
+        'formatversion': 2,
+        'action': 'wbgetentities',
+        'ids': '|'.join(ids),
+    }
+    json_data = requests.get(wikidata_url,
+                             params=params,
+                             headers=user_agent_headers()).json()
+    return list(json_data['entities'].values())
+
 def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
     if not entity:
         return
