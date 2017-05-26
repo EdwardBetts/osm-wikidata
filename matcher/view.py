@@ -11,6 +11,7 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from pprint import pprint
 
 import requests
 import os.path
@@ -786,6 +787,22 @@ def item_page(wikidata_id):
                                labels=labels)
 
     osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
+
+    location_names = set()
+    if 'P131' in entity['claims']:
+        located_in = [i['mainsnak']['datavalue']['value']['id']
+                      for i in entity['claims']['P131']]
+
+        for location in wikidata.get_entities(located_in):
+            location_names |= {v['value'] for v in location['labels'].values()}
+
+    for name_key, name_values in list(wikidata_names.items()):
+        for n in location_names:
+            if not name_key.startswith(n + ' '):
+                continue
+            new_key = name_key[len(n) + 1:]
+            if new_key not in wikidata_names:
+                wikidata_names[new_key] = name_values
 
     endings = get_ending_from_criteria(criteria)
 
