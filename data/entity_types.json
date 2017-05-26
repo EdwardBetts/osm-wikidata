@@ -549,7 +549,7 @@
     "dist": 5
 },
 {
-    "cats": ["Colleges by country", "Music schools by country", "Cooking schools by country"],
+    "cats": ["Colleges by country", "Music schools by country", "Cooking schools by country", "Film schols by country"],
     "tags": ["amenity=college", "type=site", "site=college", "building=college"],
     "trim": ["college"],
     "check_housename": true,
