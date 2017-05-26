@@ -10,7 +10,7 @@ from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
-from pprint import pprint
+from sqlalchemy.orm.attributes import flag_modified
 
 import requests
 import os.path
@@ -39,6 +39,7 @@ tab_pages = [
 extra_keys = {
     'Q1021290': 'Tag:amenity=college',  # music school
     'Q5167149': 'Tag:amenity=college',  # cooking school
+    'Q383092': 'Tag:amenity=college',  # film school
 }
 
 @app.context_processor
@@ -105,7 +106,11 @@ def add_wikidata_tag():
 </osm>
 '''
 
-    r = osm_backend.request(base + '/changeset/create', method='PUT', data=changeset, auth=auth)
+    r = osm_backend.request(base + '/changeset/create',
+                            method='PUT',
+                            data=changeset,
+                            auth=auth,
+                            headers=user_agent_headers())
     changeset_id = r.text.strip()
 
     url = '{}/{}/{}'.format(base, osm_type, osm_id)
@@ -121,13 +126,18 @@ def add_wikidata_tag():
     element_data = etree.tostring(root).decode('utf-8')
     print(element_data)
 
-    r = osm_backend.request(url, method='PUT', data=element_data, auth=auth)
+    r = osm_backend.request(url,
+                            method='PUT',
+                            data=element_data,
+                            auth=auth,
+                            headers=user_agent_headers())
 
     print(r.text)
 
     r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
-                            auth=auth)
+                            auth=auth,
+                            headers=user_agent_headers())
 
     print(repr(r.text))
 
@@ -165,7 +175,9 @@ def export_osm(osm_id, name):
         oql = '({});(._;>);out meta;'.format(union)
 
         overpass_url = 'http://overpass-api.de/api/interpreter'
-        r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+        r = requests.post(overpass_url,
+                          data=oql,
+                          headers=user_agent_headers())
         overpass_xml = r.content
         with open(filename, 'wb') as f:
             f.write(overpass_xml)
@@ -238,13 +250,18 @@ def do_add_tags(place, table):
 </osm>
 '''.format(comment=request.form['comment'])
 
-    r = osm_backend.request(base + '/changeset/create', method='PUT', data=changeset, auth=auth)
+    r = osm_backend.request(base + '/changeset/create',
+                            method='PUT',
+                            data=changeset,
+                            auth=auth,
+                            headers=user_agent_headers())
     changeset_id = r.text.strip()
+    update_count = 0
 
     for item, osm in table:
         wikidata_id = 'Q{:d}'.format(item.item_id)
         url = '{}/{}/{}'.format(base, osm.osm_type, osm.osm_id)
-        r = requests.get(url, params=social_user.access_token)
+        r = requests.get(url, headers=user_agent_headers())
         if 'wikidata' in r.text:  # done already
             print('skip:', wikidata_id)
             continue
@@ -255,14 +272,26 @@ def do_add_tags(place, table):
         root[0].append(tag)
 
         element_data = etree.tostring(root).decode('utf-8')
-        r = osm_backend.request(url, method='PUT', data=element_data, auth=auth)
-        print(r.text)
+        r = osm_backend.request(url,
+                                method='PUT',
+                                data=element_data,
+                                auth=auth,
+                                headers=user_agent_headers())
+        assert(r.text.strip().isdigit())
+
+        osm.tags['wikidata'] = wikidata_id
+        flag_modified(osm, 'tags')
+        database.session.commit()
+        database.session.expire(osm)
+        assert osm.tags['wikidata'] == wikidata_id
+        update_count += 1
 
     r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
-                            auth=auth)
+                            auth=auth,
+                            headers=user_agent_headers())
 
-    print(repr(r.text))
+    return update_count
 
 @app.route('/update_tags/<int:osm_id>', methods=['POST'])
 def update_tags(osm_id):
@@ -278,7 +307,8 @@ def update_tags(osm_id):
 
     for e in elements:
         for c in ItemCandidate.query.filter_by(osm_id=e['id'], osm_type=e['type']):
-            c.tags = e['tags']
+            if 'tags' in e:  # FIXME do something clever like delete the OSM candidate
+                c.tags = e['tags']
     database.session.commit()
 
     flash('tags updated')
@@ -298,8 +328,9 @@ def add_tags(osm_id):
              for item, candidate in matcher.filter_candidates_more(items)]
 
     if request.form.get('confirm') == 'yes':
-        do_add_tags(place, table)
-        return 'done'
+        update_count = do_add_tags(place, table)
+        flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
+        return redirect(url_for('candidates', osm_id=osm_id))
 
     return render_template('add_tags.html',
                            place=place,
