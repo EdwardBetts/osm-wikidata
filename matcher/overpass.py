@@ -117,4 +117,16 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     data = r.json()
 
     json.dump(data, open(filename, 'w'))
-    return data
+    return data['elements']
+
+def get_existing(wikidata_id):
+    oql = '''
+[timeout:300][out:json];
+(node[wikidata={qid}]; way[wikidata={qid}]; rel[wikidata={qid}];);
+out qt center tags;
+'''.format(qid=wikidata_id)
+
+    overpass_url = 'https://overpass-api.de/api/interpreter'
+    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+
+    return r.json()['elements']
