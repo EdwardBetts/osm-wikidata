@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
+  <div class="row">
+  <div class="col">
+    <h1>{{ place.name }}</h1>
+  {% set q = place.display_name %}
+
+    <div class="box">
+      <b>{{ place.display_name }}</b><br>
+      category: {{ place.category }}
+      &mdash;
+      type: {{ place.type }}
+      &mdash;
+      OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
+    </div>
+
+  {% include "tabs.html" with context %}
+
+  </div>
+  </div>
+
+  <h4>Overpass</h4>
+
+  <pre>{{ place.get_oql() }}</pre>
+
+</div>
+</div>
+</div>
+{% endblock %}
