@@ -217,6 +217,11 @@ def overpass_query(osm_id):
                            osm_id=osm_id,
                            full_count=full_count)
 
+def do_add_tags(place, table):
+    comment = request.form['comment']
+    for item, osm in table:
+        print(item, osm)
+
 @app.route('/add_tags/<int:osm_id>', methods=['POST'])
 def add_tags(osm_id):
     place = Place.query.get(osm_id)
@@ -228,6 +233,10 @@ def add_tags(osm_id):
 
     table = [(item, candidate)
              for item, candidate in matcher.filter_candidates_more(items)]
+
+    if request.form.get('confirm', 'yes'):
+        do_add_tags(place, table)
+        return 'done'
 
     return render_template('add_tags.html',
                            place=place,
