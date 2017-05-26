@@ -109,7 +109,7 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     filename = item_filename(wikidata_id, radius)
 
     if not refresh and os.path.exists(filename):
-        return json.load(open(filename))
+        return json.load(open(filename))['elements']
 
     overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
