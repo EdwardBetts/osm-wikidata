@@ -10,6 +10,7 @@ from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
+from pprint import pprint
 
 import requests
 import os.path
@@ -268,6 +269,17 @@ def update_tags(osm_id):
     place = Place.query.get(osm_id)
     if not place:
         abort(404)
+
+    candidates = []
+    for item in place.items_with_candidates():
+        candidates += item.candidates.all()
+
+    elements = overpass.get_tags(candidates)
+
+    for e in elements:
+        for c in ItemCandidate.query.filter_by(osm_id=e['id'], osm_type=e['type']):
+            c.tags = e['tags']
+    database.session.commit()
 
     flash('tags updated')
 
