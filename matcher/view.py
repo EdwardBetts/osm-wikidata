@@ -605,22 +605,26 @@ def api_item_match(wikidata_id):
     wikidata_query = wikidata.osm_key_query(qid)
 
     criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
-    extra = {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
+    criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
-    oql = get_entity_oql(entity, criteria | extra, radius=radius)
+    oql = get_entity_oql(entity, criteria, radius=radius)
 
     existing = overpass.get_existing(qid)
 
     overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
 
-    found = [element
-             for element in overpass_reply['elements']
+    found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names)]
+
+    lat, lon = get_entity_coords(entity)
 
     return jsonify({
         'item_id': qid,
         'radius': radius,
         'matches': found,
+        'lat': lat,
+        'lon': lon,
+        'criteria': sorted(criteria),
         'found_matches': bool(found),
         'existing': existing,
     })
