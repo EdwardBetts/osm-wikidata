@@ -36,7 +36,8 @@ tab_pages = [
 ]
 
 extra_keys = {
-    'Q1021290': 'Tag:amenity=college'  # music school
+    'Q1021290': 'Tag:amenity=college',  # music school
+    'Q5167149': 'Tag:amenity=college',  # cooking school
 }
 
 @app.context_processor
@@ -241,9 +242,10 @@ def do_add_tags(place, table):
 
     for item, osm in table:
         wikidata_id = 'Q{:d}'.format(item.item_id)
-        url = '{}/{}/{}'.format(base, osm['osm_type'], osm['osm_id'])
+        url = '{}/{}/{}'.format(base, osm.osm_type, osm.osm_id)
         r = requests.get(url, params=social_user.access_token)
         if 'wikidata' in r.text:  # done already
+            print('skip:', wikidata_id)
             continue
 
         root = etree.fromstring(r.content)
