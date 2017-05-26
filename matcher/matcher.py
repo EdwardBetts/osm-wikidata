@@ -244,6 +244,25 @@ def filter_place(candidates):
     if place_node and other:
         return place_node
 
+def filter_schools(candidates):
+    if len(candidates) < 2:
+        return
+    if all('amenity=school' not in c.matching_tags() for c in candidates):
+        return
+
+    # use the one thing tagged amenity=school
+    # check everything else is tagged building=school
+
+    match = None
+    for c in candidates:
+        tags = c.matching_tags()
+        if 'amenity=school' in tags:
+            if match:
+                return
+            match = c
+        elif tags != ['building=school']:
+            return
+    return match
 
 def filter_candidates_more(items, debug=False):
     osm_count = Counter()
@@ -257,6 +276,10 @@ def filter_candidates_more(items, debug=False):
         place = filter_place(candidates)
         if place:
             candidates = [place]
+        else:
+            school = filter_schools(candidates)
+            if school:
+                candidates = [school]
 
         if len(candidates) != 1:
             if debug:
