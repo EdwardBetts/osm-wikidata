@@ -263,6 +263,16 @@ def do_add_tags(place, table):
 
     print(repr(r.text))
 
+@app.route('/update_tags/<int:osm_id>', methods=['POST'])
+def update_tags(osm_id):
+    place = Place.query.get(osm_id)
+    if not place:
+        abort(404)
+
+    flash('tags updated')
+
+    return redirect(url_for('candidates', osm_id=osm_id))
+
 @app.route('/add_tags/<int:osm_id>', methods=['POST'])
 def add_tags(osm_id):
     place = Place.query.get(osm_id)

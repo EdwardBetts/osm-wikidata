@@ -12,6 +12,10 @@
 
   {{ place_box(place) }}
 
+    <form method="POST" action="{{ url_for('update_tags', osm_id=place.osm_id) }}">
+      <button class="btn btn-primary">update OSM candidate tags</button>
+    </form>
+
   {% include "tabs.html" with context %}
 
   {% if overpass_error %}
