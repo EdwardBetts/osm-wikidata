@@ -290,6 +290,9 @@ def filter_candidates_more(items, debug=False):
 
         candidate = candidates[0]
 
+        if candidate.matching_tags() == ['designation=civil_parish']:
+            continue  # skip for now
+
         if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
             if debug:
                 print('multiple matches', item.enwiki)
