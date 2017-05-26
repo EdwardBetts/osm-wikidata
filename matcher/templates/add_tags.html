@@ -1,0 +1,56 @@
+{% from "macro.html" import place_box %}
+{% extends "base.html" %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
+  <div class="row">
+  <div class="col">
+    <h1>{{ place.name }}</h1>
+
+  {{ place_box(place) }}
+
+    <form class="form-inline" method="POST" action="{{ url_for('add_tags', osm_id=place.osm_id) }}">
+
+      {% for include in request.form.getlist('include') %}
+        <input type="hidden" name="include" value="{{ include }}" />
+      {%- endfor %}
+
+      <label for="comment">change comment:</label>
+      <input class="form-control m-2"
+             id="comment"
+             name="comment"
+             size="40"
+             value="add wikidata tags within {{ place.name }}" />
+
+      <button class="btn btn-primary">save</button>
+    </form>
+
+    <div class="my-3">
+    <table class="table table-sm table-hover">
+    {% for i, c in table %}
+      <tr>
+        <td>
+          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
+        </td>
+        <td>
+          {% set m = c.get_match() %}
+          <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+            {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+          </a>
+        </td>
+        <td style="white-space:nowrap">
+          ({{ c.osm_type}}{% if c.dist %},&nbsp;{{ c.dist | int }}&nbsp;m{% endif %})
+        </td>
+        <td>
+          {{ ', '.join(c.matching_tags()) }}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+
+</div>
+</div>
+</div>
+{% endblock %}
