@@ -85,7 +85,6 @@ def done():
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
     wikidata_id = request.form['wikidata']
-    flash('wikidata tag saved in OpenStreetMap')
     osm_id = request.form['osm_id']
     osm_type = request.form['osm_type']
 
@@ -117,30 +116,36 @@ def add_wikidata_tag():
     url = '{}/{}/{}'.format(base, osm_type, osm_id)
     r = requests.get(url, params=social_user.access_token)
 
-    print(r.url)
-    print(r.text)
     root = etree.fromstring(r.content)
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
 
     element_data = etree.tostring(root).decode('utf-8')
-    print(element_data)
 
     r = osm_backend.request(url,
                             method='PUT',
                             data=element_data,
                             auth=auth,
                             headers=user_agent_headers())
+    assert(r.text.strip().isdigit())
+    for c in ItemCandidate.query.filter_by(osm_id=osm_id, osm_type=osm_type):
+        c.tags['wikidata'] = wikidata_id
+        flag_modified(c, 'tags')
+    database.session.commit()
 
-    print(r.text)
+    osm.tags['wikidata'] = wikidata_id
+    flag_modified(osm, 'tags')
+    database.session.commit()
+    database.session.expire(osm)
+    assert osm.tags['wikidata'] == wikidata_id
 
     r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
                             auth=auth,
                             headers=user_agent_headers())
 
-    print(repr(r.text))
+    flash('wikidata tag saved in OpenStreetMap')
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
