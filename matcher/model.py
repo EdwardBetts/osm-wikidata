@@ -12,6 +12,7 @@ from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match
 from .overpass import oql_from_tag
+from pprint import pprint
 
 import subprocess
 import os.path
@@ -19,6 +20,10 @@ import re
 
 Base = declarative_base()
 Base.query = session.query_property()
+
+osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
+                                name='osm_type_enum',
+                                metadata=Base.metadata)
 
 class User(Base, UserMixin):
     __tablename__ = 'user'
@@ -37,12 +42,13 @@ class User(Base, UserMixin):
 
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
-
-    osm_id = Column(BigInteger, primary_key=True, autoincrement=False)
+    place_id = Column(BigInteger, primary_key=True, autoincrement=False)
+    osm_type = Column(osm_type_enum, nullable=False)
+    osm_id = Column(BigInteger, nullable=False)
+    radius = Column(Integer)  # only for nodes
     display_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     type = Column(String, nullable=False)
-    place_id = Column(BigInteger, nullable=False)
     place_rank = Column(Integer, nullable=False)
     icon = Column(String)
     geom = Column(Geography(spatial_index=True))
@@ -66,24 +72,22 @@ class Place(Base):   # assume all places are relations
                          lazy='dynamic',
                          backref=backref('places', lazy='dynamic'))
 
-    @property
-    def osm_type(self):
-        return 'relation'
-
     @hybrid_property
     def area_in_sq_km(self):
         return self.area / (1000 * 1000)
 
     @classmethod
     def from_nominatim(cls, hit):
-        if hit.get('osm_type') != 'relation':
+        if hit.get('osm_type') not in ('way', 'relation'):
             return
-        keys = ('osm_id', 'display_name', 'category', 'type', 'place_id', 'place_rank',
-                'icon', 'extratags', 'address', 'namedetails')
+        keys = ('osm_id', 'osm_type', 'display_name', 'category', 'type',
+                'place_id', 'place_rank', 'icon', 'extratags', 'address',
+                'namedetails')
         n = {k: hit[k] for k in keys if k in hit}
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
+        pprint(n)
         return cls(**n)
 
     @property
@@ -109,7 +113,7 @@ class Place(Base):   # assume all places are relations
 
     def covers(self, item):
         return object_session(self).scalar(
-                select([func.ST_Covers(Place.geom, item['location'])]).where(Place.osm_id == self.osm_id))
+                select([func.ST_Covers(Place.geom, item['location'])]).where(Place.place_id == self.place_id))
 
     def add_tags_to_items(self):
         cat_to_entity = matcher.build_cat_map()
@@ -133,12 +137,12 @@ class Place(Base):   # assume all places are relations
 
     @property
     def prefix(self):
-        return 'osm_{}'.format(self.osm_id)
+        return 'osm_{}'.format(self.place_id)
 
     @property
     def overpass_filename(self):
         overpass_dir = current_app.config['OVERPASS_DIR']
-        return os.path.join(overpass_dir, '{}.xml'.format(self.osm_id))
+        return os.path.join(overpass_dir, '{}.xml'.format(self.place_id))
 
     @property
     def overpass_done(self):
@@ -154,12 +158,12 @@ class Place(Base):   # assume all places are relations
                        .join(PlaceItem)
                        .join(Place)
                        .join(ItemCandidate)
-                       .filter(Place.osm_id == self.osm_id)
+                       .filter(Place.place_id == self.place_id)
                        .group_by(Item.item_id)
                        .count())
 
     def items_without_candidates(self):
-        return self.items.outerjoin(ItemCandidate).filter(ItemCandidate.osm_id.is_(None))
+        return self.items.outerjoin(ItemCandidate).filter(ItemCandidate.item_id.is_(None))
 
     def items_with_multiple_candidates(self):
         # select count(*) from (select 1 from item, item_candidate where item.item_id=item_candidate.item_id) x;
@@ -255,7 +259,9 @@ class Place(Base):   # assume all places are relations
                 if u:
                     union += u
 
-            area_id = 3600000000 + int(self.osm_id)
+            offset = {'way': 2400000000, 'relation': 3600000000}
+            area_id = offset[self.osm_type] + int(self.osm_id)
+
             oql = ('[timeout:300][out:xml][bbox:{}];\n' +
                    'area({})->.a;\n' +
                    '({});\n' +
@@ -269,7 +275,7 @@ class Place(Base):   # assume all places are relations
                            name_filter=g.filter,
                            osm_id=self.osm_id, **kwargs)
         else:
-            return url_for('candidates', osm_id=self.osm_id, **kwargs)
+            return url_for('candidates', osm_type=self.osm_type, osm_id=self.osm_id, **kwargs)
 
     def matcher_progress_url(self):
         if g.get('filter'):
@@ -334,7 +340,7 @@ class PlaceItem(Base):
     __tablename__ = 'place_item'
 
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
-    osm_id = Column(BigInteger, ForeignKey('place.osm_id'), primary_key=True)
+    place_id = Column(BigInteger, ForeignKey('place.place_id'), primary_key=True)
 
     item = relationship('Item')
     place = relationship('Place')
@@ -344,7 +350,7 @@ class ItemCandidate(Base):
 
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
-    osm_type = Column(Enum('node', 'way', 'relation', name='osm_type'), primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
     name = Column(String)
     dist = Column(Float)
     tags = Column(JSON)

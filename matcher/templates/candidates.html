@@ -13,7 +13,7 @@
 
   {{ place_box(place) }}
 
-    <form method="POST" action="{{ url_for('update_tags', osm_id=place.osm_id) }}">
+    <form method="POST" action="{{ url_for('update_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
       <button class="btn btn-primary">update OSM candidate tags</button>
     </form>
 
@@ -28,7 +28,7 @@
     {{ '{:,d}'.format(full_count) }} candidates found
     ({{ '{:,d}'.format(multiple_match_count) }} with multiple matches)
     </p>
-    {% set url = url_for('export_osm', osm_id=place.osm_id, name=place.export_name) %}
+    {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
     <p><a href="{{ url }}">Download as OSM XML file</a></p>
   {% endif %}
 
@@ -44,7 +44,7 @@
 
   {% if candidates %}
 
-    <form method="POST" action="{{ url_for('add_tags', osm_id=place.osm_id) }}">
+    <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
 
       {% if filtered %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>

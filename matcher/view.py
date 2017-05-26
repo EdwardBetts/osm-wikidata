@@ -149,9 +149,9 @@ def add_wikidata_tag():
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-@app.route('/overpass/<int:osm_id>', methods=['POST'])
-def post_overpass(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/overpass/<int:place_id>', methods=['POST'])
+def post_overpass(place_id):
+    place = Place.query.get(place_id)
     place.save_overpass(request.data)
     place.state = 'overpass'
     database.session.commit()
@@ -205,17 +205,17 @@ def export_osm(osm_id, name):
     xml = etree.tostring(root, pretty_print=True)
     return Response(xml, mimetype='text/xml')
 
-def redirect_to_matcher(osm_id):
-    return redirect(url_for('matcher_progress', osm_id=osm_id))
+def redirect_to_matcher(osm_type, osm_id):
+    return redirect(url_for('matcher_progress', osm_type=osm_type, osm_id=osm_id))
 
 @app.route('/filtered/<name_filter>/candidates/<int:osm_id>')
 def candidates_with_filter(name_filter, osm_id):
     g.filter = name_filter.replace('_', ' ')
     return candidates(osm_id)
 
-@app.route('/wikidata/<int:osm_id>')
-def wikidata_page(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/wikidata/<osm_type>/<int:osm_id>')
+def wikidata_page(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     full_count = place.items_with_candidates_count()
 
@@ -225,9 +225,9 @@ def wikidata_page(osm_id):
                            osm_id=osm_id,
                            full_count=full_count)
 
-@app.route('/overpass/<int:osm_id>')
-def overpass_query(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/overpass/<osm_type>/<int:osm_id>')
+def overpass_query(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     full_count = place.items_with_candidates_count()
 
@@ -299,9 +299,9 @@ def do_add_tags(place, table):
 
     return update_count
 
-@app.route('/update_tags/<int:osm_id>', methods=['POST'])
-def update_tags(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
+def update_tags(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
 
@@ -321,9 +321,9 @@ def update_tags(osm_id):
 
     return redirect(url_for('candidates', osm_id=osm_id))
 
-@app.route('/add_tags/<int:osm_id>', methods=['POST'])
-def add_tags(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
+def add_tags(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
 
@@ -343,15 +343,15 @@ def add_tags(osm_id):
                            osm_id=osm_id,
                            table=table)
 
-@app.route('/candidates/<int:osm_id>')
-def candidates(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/candidates/<osm_type>/<int:osm_id>')
+def candidates(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
     multiple_only = bool(request.args.get('multiple'))
 
     if place.state != 'ready':
-        return redirect_to_matcher(osm_id)
+        return redirect_to_matcher(osm_type, osm_id)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
@@ -389,12 +389,12 @@ def candidates(osm_id):
                            multiple_match_count=multiple_match_count,
                            candidates=items)
 
-@app.route('/no_match/<int:osm_id>')
-def no_match(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/no_match/<osm_type>/<int:osm_id>')
+def no_match(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     if place.state != 'ready':
-        return redirect_to_matcher(osm_id)
+        return redirect_to_matcher(osm_type, osm_id)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
@@ -413,12 +413,12 @@ def no_match(osm_id):
                            items_without_matches=items_without_matches,
                            full_count=full_count)
 
-@app.route('/already_tagged/<int:osm_id>')
-def already_tagged(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/already_tagged/<osm_type>/<int:osm_id>')
+def already_tagged(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     if place.state != 'ready':
-        return redirect_to_matcher(osm_id)
+        return redirect_to_matcher(osm_type, osm_id)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
@@ -445,9 +445,9 @@ def wbgetentities(p):
         database.session.add(item)
     database.session.commit()
 
-@app.route('/load/<int:osm_id>/wbgetentities', methods=['POST'])
-def load_wikidata(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/wbgetentities', methods=['POST'])
+def load_wikidata(place_id):
+    place = Place.query.get(place_id)
     if place.state != 'tags':
         return jsonify(item_list=place.item_list())
     wbgetentities(place)
@@ -455,22 +455,22 @@ def load_wikidata(osm_id):
     database.session.commit()
     return jsonify(item_list=place.item_list())
 
-@app.route('/load/<int:osm_id>/check_overpass', methods=['POST'])
-def check_overpass(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/check_overpass', methods=['POST'])
+def check_overpass(place_id):
+    place = Place.query.get(place_id)
     reply = 'got' if place.overpass_done else 'get'
     return Response(reply, mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/overpass_timeout', methods=['POST'])
-def overpass_timeout(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/overpass_timeout', methods=['POST'])
+def overpass_timeout(place_id):
+    place = Place.query.get(place_id)
     place.state = 'overpass_timeout'
     database.session.commit()
     return Response('timeout noted', mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/osm2pgsql', methods=['POST', 'GET'])
-def load_osm2pgsql(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/osm2pgsql', methods=['POST', 'GET'])
+def load_osm2pgsql(place_id):
+    place = Place.query.get(place_id)
     expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
     tables = database.get_tables()
     if not all(t in tables for t in expect):
@@ -481,11 +481,11 @@ def load_osm2pgsql(osm_id):
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/match/Q<int:item_id>', methods=['POST', 'GET'])
-def load_individual_match(osm_id, item_id):
+@app.route('/load/<int:place_id>/match/Q<int:item_id>', methods=['POST', 'GET'])
+def load_individual_match(place_id, item_id):
     global cat_to_ending
 
-    place = Place.query.get(osm_id)
+    place = Place.query.get(place_id)
 
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
@@ -505,18 +505,18 @@ def load_individual_match(osm_id, item_id):
     conn.close()
     return Response('done', mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/ready', methods=['POST', 'GET'])
-def load_ready(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/ready', methods=['POST', 'GET'])
+def load_ready(place_id):
+    place = Place.query.get(place_id)
     place.state = 'ready'
     place.item_count = place.items.count()
     place.candidate_count = place.items_with_candidates_count()
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
-@app.route('/load/<int:osm_id>/match', methods=['POST', 'GET'])
-def load_match(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/load/<int:place_id>/match', methods=['POST', 'GET'])
+def load_match(place_id):
+    place = Place.query.get(place_id)
 
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
@@ -537,9 +537,9 @@ def load_match(osm_id):
     conn.close()
     return Response('done', mimetype='text/plain')
 
-@app.route('/matcher/<int:osm_id>')
-def matcher_progress(osm_id):
-    place = Place.query.get(osm_id)
+@app.route('/matcher/<osm_type>/<int:osm_id>')
+def matcher_progress(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     if not place.state:
         items = {i['enwiki']: i for i in place.items_from_wikidata()}

@@ -2,7 +2,7 @@
   {% for tab in tab_pages %}
   <li class="nav-item">
     <a class="nav-link{{ ' active' if request.endpoint == tab.route }}"
-       href="{{ url_for(tab.route, osm_id=osm_id) }}">{{ tab.label }}</a>
+       href="{{ url_for(tab.route, osm_type=place.osm_type, osm_id=place.osm_id) }}">{{ tab.label }}</a>
   </li>
   {% endfor %}
 </ul>
