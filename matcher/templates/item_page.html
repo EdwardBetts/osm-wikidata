@@ -7,6 +7,14 @@
 
     <h1>{{ label }} ({{ qid }})</h1>
     <ul>
+      {% if item %}
+      <li>place:
+        {% for place in item.places %}
+            <a href="{{ place.candidates_url() }}">{{ place.name }}</a>
+            {%- if not loop.last %}, {% endif %}
+        {% endfor %}
+      </li>
+      {% endif %}
       <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
       <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
       <li>coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}

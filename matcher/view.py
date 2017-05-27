@@ -983,7 +983,7 @@ def api_item_match(wikidata_id):
 
 @app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
 def item_page(wikidata_id):
-    item = Item.query.get(wikidata_id).one_or_none()
+    item = Item.query.get(wikidata_id)
 
     radius = get_radius()
     qid = 'Q' + str(wikidata_id)
