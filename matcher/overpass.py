@@ -114,7 +114,10 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
-    data = r.json()
+    try:
+        data = r.json()
+    except JSONDecodeError:
+        return []
 
     json.dump(data, open(filename, 'w'))
     return data['elements']
