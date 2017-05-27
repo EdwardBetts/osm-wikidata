@@ -112,7 +112,10 @@ def get_entity(qid):
     json_data = requests.get(wikidata_url,
                              params=params,
                              headers=user_agent_headers()).json()
-    return list(json_data['entities'].values())[0]
+    try:
+        return list(json_data['entities'].values())[0]
+    except KeyError:
+        return None
 
 def get_entities(ids):
     if not ids:
