@@ -846,7 +846,7 @@
     "dist": 1
 },
 {
-    "cats": ["Battlefields", "Battles", "Battle of"],
+    "cats": ["Battlefields", "Battles", "Battle of", "Conflicts"],
     "tags": ["historic=battlefield"],
     "trim": ["battle field", "Battle of"],
     "dist": 20
