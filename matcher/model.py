@@ -86,7 +86,7 @@ class Place(Base):   # assume all places are relations
                 'namedetails', 'lat', 'lon')
         n = {k: hit[k] for k in keys if k in hit}
         if hit['osm_type'] == 'node':
-            n['radius'] = 10000   # 10km
+            n['radius'] = 5000   # 5km
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
