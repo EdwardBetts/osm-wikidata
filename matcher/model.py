@@ -283,11 +283,15 @@ class Place(Base):   # assume all places are relations
 
     def candidates_url(self, **kwargs):
         if g.get('filter'):
-            return url_for('candidates_with_filter',
-                           name_filter=g.filter,
-                           osm_id=self.osm_id, **kwargs)
+            kwargs['name_filter'] = g.filter
+            endpoint = 'candidates_with_filter'
         else:
-            return url_for('candidates', osm_type=self.osm_type, osm_id=self.osm_id, **kwargs)
+            endpoint = 'candidates'
+
+        return url_for(endpoint,
+                       osm_type=self.osm_type,
+                       osm_id=self.osm_id,
+                       **kwargs)
 
     def matcher_progress_url(self):
         if g.get('filter'):
