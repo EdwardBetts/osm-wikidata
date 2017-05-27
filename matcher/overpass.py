@@ -4,8 +4,8 @@ import requests
 import os.path
 import json
 import simplejson
-from error_mail import send_error_mail
-from flask import current_app
+from .error_mail import send_error_mail
+from flask import current_app, request
 from time import sleep
 from . import user_agent_headers
 
@@ -120,6 +120,7 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
         send_error_mail('item overpass query error', '''
+URL: {}
 wikidata ID: {}
 status code: {}
 
@@ -128,7 +129,7 @@ oql:
 
 reply:
 {}
-        '''.format(wikidata_id, r.status_code, oql, r.text))
+        '''.format(request.url, wikidata_id, r.status_code, oql, r.text))
         return []
 
     json.dump(data, open(filename, 'w'))
