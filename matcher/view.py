@@ -1053,6 +1053,7 @@ def item_page(wikidata_id):
     for element in overpass_reply:
         m = check_for_match(element['tags'], wikidata_names, endings=endings)
         if m:
+            element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
             found.append((element, m))
 
     return render_template('item_page.html',
