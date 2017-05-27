@@ -124,19 +124,7 @@ class Place(Base):   # assume all places are relations
     def add_tags_to_items(self):
         cat_to_entity = matcher.build_cat_map()
         for item in self.items.filter(Item.categories != '{}'):
-            tags = set()
-            for cat in item.categories:
-                lc_cat = cat.lower()
-                for key, value in cat_to_entity.items():
-                    if not matcher.get_pattern(key).search(lc_cat):
-                        continue
-                    exclude = value.get('exclude_cats')
-                    if exclude:
-                        pattern = re.compile(r'\b(' + '|'.join(re.escape(e) for e in exclude) + r')\b', re.I)
-                        if pattern.search(lc_cat):
-                            continue
-                    tags |= set(value['tags'])
-            item.tags = sorted(tags)
+            item.tags = matcher.categories_to_tags(item.categories)
             session.add(item)
         self.state = 'tags'
         session.commit()
@@ -328,6 +316,7 @@ class Item(Base):
 
     @property
     def hstore_query(self):
+        '''hstore query for use with osm2pgsql database'''
         if not self.tags:
             return
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))

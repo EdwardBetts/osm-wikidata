@@ -17,6 +17,22 @@ def get_pattern(key):
         return patterns[key]
     return patterns.setdefault(key, re.compile(r'\b' + re.escape(key) + r'\b', re.I))
 
+def categories_to_tags(categories):
+    cat_to_entity = build_cat_map()
+    tags = set()
+    for cat in categories:
+        lc_cat = cat.lower()
+        for key, value in cat_to_entity.items():
+            if not get_pattern(key).search(lc_cat):
+                continue
+            exclude = value.get('exclude_cats')
+            if exclude:
+                pattern = re.compile(r'\b(' + '|'.join(re.escape(e) for e in exclude) + r')\b', re.I)
+                if pattern.search(lc_cat):
+                    continue
+            tags |= set(value['tags'])
+    return sorted(tags)
+
 def load_entity_types():
     data_dir = current_app.config['DATA_DIR']
     filename = os.path.join(data_dir, 'entity_types.json')
