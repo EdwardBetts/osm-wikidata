@@ -42,6 +42,194 @@ extra_keys = {
     'Q383092': 'Tag:amenity=college',  # film school
 }
 
+language_codes = {
+    "aa": "Afar",
+    "ab": "Abkhazian",
+    "ae": "Avestan",
+    "af": "Afrikaans",
+    "ak": "Akan",
+    "am": "Amharic",
+    "an": "Aragonese",
+    "ar": "Arabic",
+    "as": "Assamese",
+    "av": "Avaric",
+    "ay": "Aymara",
+    "az": "Azerbaijani",
+    "ba": "Bashkir",
+    "be": "Belarusian",
+    "bg": "Bulgarian",
+    "bh": "Bihari",
+    "bi": "Bislama",
+    "bm": "Bambara",
+    "bn": "Bengali",
+    "bo": "Tibetan",
+    "br": "Breton",
+    "bs": "Bosnian",
+    "ca": "Catalan",
+    "ce": "Chechen",
+    "ch": "Chamorro",
+    "co": "Corsican",
+    "cr": "Cree",
+    "cs": "Czech",
+    "cu": "Church Slavic",
+    "cv": "Chuvash",
+    "cy": "Welsh",
+    "da": "Danish",
+    "de": "German",
+    "dv": "Divehi; Dhivehi; Maldivian",
+    "dz": "Dzongkha",
+    "ee": "Ewe",
+    "el": "Greek",
+    "en": "English",
+    "eo": "Esperanto",
+    "es": "Spanish",
+    "et": "Estonian",
+    "eu": "Basque",
+    "fa": "Persian",
+    "ff": "Fulah",
+    "fi": "Finnish",
+    "fj": "Fijian",
+    "fo": "Faroese",
+    "fr": "French",
+    "fy": "Western Frisian",
+    "ga": "Irish",
+    "gd": "Gaelic",
+    "gl": "Galician",
+    "gn": "Guarani",
+    "gu": "Gujarati",
+    "gv": "Manx",
+    "ha": "Hausa",
+    "he": "Hebrew",
+    "hi": "Hindi",
+    "ho": "Hiri Motu",
+    "hr": "Croatian",
+    "ht": "Haitian Creole",
+    "hu": "Hungarian",
+    "hy": "Armenian",
+    "hz": "Herero",
+    "ia": "Interlingua",
+    "id": "Indonesian",
+    "ie": "Interlingue",
+    "ig": "Igbo",
+    "ii": "Sichuan Yi; Nuosu",
+    "ik": "Inupiaq",
+    "io": "Ido",
+    "is": "Icelandic",
+    "it": "Italian",
+    "iu": "Inuktitut",
+    "ja": "Japanese",
+    "jv": "Javanese",
+    "ka": "Georgian",
+    "kg": "Kongo",
+    "ki": "Kikuyu; Gikuyu",
+    "kj": "Kuanyama; Kwanyama",
+    "kk": "Kazakh",
+    "kl": "Greenlandic",
+    "km": "Central Khmer",
+    "kn": "Kannada",
+    "ko": "Korean",
+    "kr": "Kanuri",
+    "ks": "Kashmiri",
+    "ku": "Kurdish",
+    "kv": "Komi",
+    "kw": "Cornish",
+    "ky": "Kirghiz; Kyrgyz",
+    "la": "Latin",
+    "lb": "Luxembourgish",
+    "lg": "Ganda",
+    "li": "Limburgan; Limburger; Limburgish",
+    "ln": "Lingala",
+    "lo": "Lao",
+    "lt": "Lithuanian",
+    "lu": "Luba-Katanga",
+    "lv": "Latvian",
+    "mg": "Malagasy",
+    "mh": "Marshallese",
+    "mi": "Maori",
+    "mk": "Macedonian",
+    "ml": "Malayalam",
+    "mn": "Mongolian",
+    "mr": "Marathi",
+    "ms": "Malay",
+    "mt": "Maltese",
+    "my": "Burmese",
+    "na": "Nauru",
+    "nb": "Norwegian Bokmål",
+    "nd": "Ndebele, North; North Ndebele",
+    "ne": "Nepali",
+    "ng": "Ndonga",
+    "nl": "Dutch",
+    "nn": "Norwegian Nynorsk",
+    "no": "Norwegian",
+    "nr": "South Ndebele",
+    "nv": "Navajo",
+    "ny": "Chichewa; Chewa; Nyanja",
+    "oc": "Occitan",
+    "oj": "Ojibwa",
+    "om": "Oromo",
+    "or": "Oriya",
+    "os": "Ossetian; Ossetic",
+    "pa": "Punjabi",
+    "pi": "Pali",
+    "pl": "Polish",
+    "ps": "Pashto",
+    "pt": "Portuguese",
+    "qu": "Quechua",
+    "rm": "Romansh",
+    "rn": "Rundi",
+    "ro": "Romanian",
+    "ru": "Russian",
+    "rw": "Kinyarwanda",
+    "sa": "Sanskrit",
+    "sc": "Sardinian",
+    "sd": "Sindhi",
+    "se": "Northern Sami",
+    "sg": "Sango",
+    "sh": "Serbo-Croatian",
+    "si": "Sinhala; Sinhalese",
+    "sk": "Slovak",
+    "sl": "Slovenian",
+    "sm": "Samoan",
+    "sn": "Shona",
+    "so": "Somali",
+    "sq": "Albanian",
+    "sr": "Serbian",
+    "ss": "Swati",
+    "st": "Sotho, Southern",
+    "su": "Sundanese",
+    "sv": "Swedish",
+    "sw": "Swahili",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "tg": "Tajik",
+    "th": "Thai",
+    "ti": "Tigrinya",
+    "tk": "Turkmen",
+    "tl": "Tagalog",
+    "tn": "Tswana",
+    "to": "Tonga",
+    "tr": "Turkish",
+    "ts": "Tsonga",
+    "tt": "Tatar",
+    "tw": "Twi",
+    "ty": "Tahitian",
+    "ug": "Uyghur",
+    "uk": "Ukrainian",
+    "ur": "Urdu",
+    "uz": "Uzbek",
+    "ve": "Venda",
+    "vi": "Vietnamese",
+    "vo": "Volapük",
+    "wa": "Walloon",
+    "wo": "Wolof",
+    "xh": "Xhosa",
+    "yi": "Yiddish",
+    "yo": "Yoruba",
+    "za": "Zhuang; Chuang",
+    "zh": "Chinese",
+    "zu": "Zulu",
+}
+
 @app.context_processor
 def filter_urls():
     name_filter = g.get('filter')
@@ -707,11 +895,18 @@ def get_entity_oql(entity, criteria, radius=None):
         radius = get_radius()
     lat, lon = get_entity_coords(entity)
 
-    osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
+    osm_filter = 'around:{},{:.5f},{:.5f}'.format(radius, lat, lon)
 
     union = []
     for tag_or_key in criteria:
         union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+
+    # FIXME extend oql to also check is_in
+    # like this:
+    #
+    # is_in(48.856089,2.29789);
+    # area._[admin_level];
+    # out tags;
 
     oql = ('[timeout:300][out:json];\n' +
            '({}\n);\n' +
@@ -788,6 +983,8 @@ def api_item_match(wikidata_id):
 
 @app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
 def item_page(wikidata_id):
+    item = Item.query.get(wikidata_id).one_or_none()
+
     radius = get_radius()
     qid = 'Q' + str(wikidata_id)
     filename = overpass.item_filename(qid, radius)
@@ -800,6 +997,21 @@ def item_page(wikidata_id):
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
     trim_location_from_names(entity, wikidata_names)
+
+    sitelinks = []
+    for key, value in entity['sitelinks'].items():
+        if len(key) != 6 or not key.endswith('wiki'):
+            continue
+        lang = key[:2]
+        url = 'https://{}.wikipedia.org/wiki/{}'.format(lang, value['title'].replace(' ', '_'))
+        sitelinks.append({
+            'code': lang,
+            'lang': language_codes[lang],
+            'url': url,
+            'title': value['title'],
+        })
+
+    sitelinks.sort(key=lambda i: i['lang'])
 
     if 'en' in labels:
         label = labels['en']['value']
@@ -818,8 +1030,10 @@ def item_page(wikidata_id):
 
         return render_template('item_page.html',
                                entity=entity,
+                               item=item,
                                wikidata_names=wikidata_names,
                                wikidata_query=wikidata_query,
+                               sitelinks=sitelinks,
                                qid=qid,
                                lat=lat,
                                lon=lon,
@@ -827,26 +1041,10 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
-    osm_filter = 'around:{},{},{}'.format(radius, lat, lon)
+    oql = get_entity_oql(entity, criteria, radius=radius)
+    overpass_reply = overpass.item_query(oql, qid, radius)
 
     endings = get_ending_from_criteria(criteria)
-
-    union = []
-    for tag_or_key in criteria:
-        union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
-
-    oql = ('[timeout:300][out:json];\n' +
-           '({}\n);\n' +
-           'out qt tags;').format(''.join(union))
-
-    # FIXME extend oql to also check is_in
-    # like this:
-    #
-    # is_in(48.856089,2.29789);
-    # area._[admin_level];
-    # out tags;
-
-    overpass_reply = overpass.item_query(oql, qid, radius)
 
     found = []
     for element in overpass_reply:
@@ -855,10 +1053,12 @@ def item_page(wikidata_id):
             found.append((element, m))
 
     return render_template('item_page.html',
+                           item=item,
                            entity=entity,
                            wikidata_names=wikidata_names,
                            wikidata_query=wikidata_query,
                            overpass_reply=overpass_reply,
+                           sitelinks=sitelinks,
                            oql=oql,
                            qid=qid,
                            lat=lat,

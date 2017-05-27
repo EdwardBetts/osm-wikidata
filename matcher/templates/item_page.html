@@ -12,7 +12,21 @@
       <li>coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
       </li>
+
+      {% if sitelinks %}
+      <li>Wikipedia:
+          {% for link in sitelinks %}<a href="{{ link.url }}">{{ link.lang }}</a>
+{%- if not loop.last %}, {% endif %}{% endfor %}
+      </li>
+      {% endif %}
+      {% if 'commonswiki' in entity.sitelinks %}
+      <li><a href="https://commons.wikimedia.org/wiki/{{ entity.sitelinks.commonswiki.title.replace(' ', '_') }}">Wikimedia Commons</a>
+      </li>
+      {% endif %}
+
     </ul>
+
+    {#
 
     <h3>labels</h3>
     <pre>{{ entity['labels'] | pprint }}</pre>
@@ -21,14 +35,16 @@
       <pre>{{ entity.aliases | pprint }}</pre>
     {% endif %}
     <h3>site links</h3>
-    <pre>{{ entity['sitelinks'] | pprint }}</pre>
+    <pre>{{ entity.sitelinks | pprint }}</pre>
 
     <h3>wikidata names</h3>
     <pre>{{ wikidata_names | pprint }}</pre>
 
+    #}
+
     {% if osm_keys %}
 
-    <h3>osm_keys</h3>
+    <h3>OpenStreetMap search criteria</h3>
     <table class="table table-responsive table-hover table-sm">
     {% for row in osm_keys %}
       <tr>
