@@ -17,9 +17,13 @@
       {% endif %}
       <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
       <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
+      {% if lat and lon %}
       <li>coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
       </li>
+      {% else %}
+      <li>no coordinates for item</li>
+      {% endif %}
 
       {% if sitelinks %}
       <li>Wikipedia:
@@ -70,9 +74,9 @@
 
     {% endif %}
 
-    {% if not found %}
+    {% if overpass_reply and not found %}
         <h3>overpass result</h3>
-        {% if found | count > 10 %}
+        {% if overpass_reply['elements'] | count > 10 %}
             <p>more than 10 results</p>
         {% else %}
             <pre>{{ overpass_reply['elements'] | pprint }}</pre>
