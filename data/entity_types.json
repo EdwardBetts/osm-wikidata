@@ -860,7 +860,7 @@
     "dist": 15
 },
 {
-    "cats": ["Cities and towns"],
+    "cats": ["Cities and towns", "Communes"],
     "tags": ["place", "landuse=residential"],
     "trim": ["city", "town", "town of", "CP"],
     "area": true,
