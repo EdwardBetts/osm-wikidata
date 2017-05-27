@@ -1026,6 +1026,9 @@ def item_page(wikidata_id):
     criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
+    if item:  # add criteria from the Item object
+        criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
+
     if not criteria:
 
         return render_template('item_page.html',
