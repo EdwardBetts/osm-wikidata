@@ -44,16 +44,20 @@
 
   {% if candidates %}
 
+    {% if filtered and not g.user.is_authenticated %}
+      <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+    {% endif %}
+
+    {% if filtered and g.user.is_authenticated %}
     <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
 
-      {% if filtered %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
       {% endif %}
 
     <div class="my-3">
     {% for i in candidates %}
       <p>
-      {% if filtered %}
+      {% if filtered and g.user.is_authenticated %}
           {% if i.item_id in filtered %}
             <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
           {% else %}
@@ -87,10 +91,10 @@
       </ul>
     {% endfor %}
     </div>
-    {% if filtered %}
+    {% if filtered and g.user.is_authenticated %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
-    {% endif %}
     </form>
+    {% endif %}
 
   {% else %}
 
