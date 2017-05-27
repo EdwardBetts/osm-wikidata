@@ -76,7 +76,7 @@
       </ul> #}
       <ul>
       {% for c in i.candidates %}
-        {{ candidate_info(c) }}
+        {{ candidate_info(c, filtered=filtered) }}
       {% endfor %}
       </ul>
     {% endfor %}

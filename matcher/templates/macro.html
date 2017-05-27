@@ -9,7 +9,7 @@
 </div>
 {% endmacro %}
 
-{% macro candidate_info(c) %}
+{% macro candidate_info(c, filtered={}) %}
   {% set m = c.get_match() %}
     <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
       {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
