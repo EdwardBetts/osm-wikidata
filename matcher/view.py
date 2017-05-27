@@ -72,9 +72,10 @@ def navbar():
 @app.route('/logout')
 @login_required
 def logout():
+    next_url = request.args.get('next') or url_for('index')
     logout_user()
     flash('you are logged out')
-    return redirect(url_for('index'))
+    return redirect(next_url)
 
 @app.route('/done/')
 def done():
