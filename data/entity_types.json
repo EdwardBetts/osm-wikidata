@@ -169,8 +169,14 @@
 },
 {
     "cats": ["Dams by country"],
-    "tags": ["waterway=dam", "natural=water", "water=reservoir"],
+    "tags": ["waterway=dam"],
     "trim": ["dam"],
+    "dist": 10
+},
+{
+    "cats": ["Valleys by country"],
+    "tags": ["natural=valley"],
+    "trim": ["valley"],
     "dist": 10
 },
 {
