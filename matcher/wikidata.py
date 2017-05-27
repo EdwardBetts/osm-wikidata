@@ -43,16 +43,27 @@ wikidata_subclass_osm_tags = '''
 SELECT DISTINCT ?item ?itemLabel ?tag
 WHERE
 {
-  wd:{{qid}} wdt:P31/wdt:P279* ?item .
   {
-  ?item wdt:P1282 ?tag .
-  } UNION {
-  ?item wdt:P641 ?sport .
-  ?sport wdt:P1282 ?tag
-  } UNION {
-  ?item wdt:P140 ?religion .
-  ?religion wdt:P1282 ?tag
-  } .
+    wd:{{qid}} wdt:P31/wdt:P279* ?item .
+    {
+        ?item wdt:P1282 ?tag .
+    }
+    UNION
+    {
+        ?item wdt:P641 ?sport .
+        ?sport wdt:P1282 ?tag
+    }
+    UNION
+    {
+        ?item wdt:P140 ?religion .
+        ?religion wdt:P1282 ?tag
+    }
+  }
+  UNION
+  {
+      wd:{{qid}} wdt:P1435 ?item .
+      ?item wdt:P1282 ?tag
+  }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }'''
 
