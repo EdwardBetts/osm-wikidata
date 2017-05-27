@@ -14,8 +14,7 @@ The matching process takes a few minutes. It downloads potential OSM objects
 from Overpass and loads them into PostgreSQL with osm2pgsql. The interface
 provides status updates while the matching process is running.
 
-A large relation will trigger an Overpass timeout and the match will
-fail.
+A large area will trigger an Overpass timeout and the match will fail.
 
 Once the matching process is complete a 'view match candidates' link will
 appear. The matching is based on names and English Wikipedia categories.
@@ -30,11 +29,6 @@ or buildings within a large site like a hospital.
 For bridges with two roadways the system will look for the outline of the bridge
 tagged with man\_made=bridge and for a hospital or other campus the aim is to
 tag the way or relation that represents the entire site.
-
-Some Wikidata items represent geographical entities in multiple locations, for
-example Space Mountain (Q2306380) represents roller coasters in five different
-Disney theme parks. If each instance of the roller coaster on OSM had the same
-Wikidata tag there it would not be a one-to-one mapping.
 
 ### English language Wikipedia categories are used for matching
 
