@@ -26,5 +26,6 @@ def setup_error_mail(app):
     '''))
 
     mail_handler.setLevel(logging.ERROR)
+    app.logger.propagate = True
     app.logger.addHandler(mail_handler)
 
