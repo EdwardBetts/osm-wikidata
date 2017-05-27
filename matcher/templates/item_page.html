@@ -32,6 +32,12 @@
       </li>
       {% endif %}
 
+      {% if oql %}
+      <li>Overpass query: <a href="#" id="oql-toggle">show query</a>
+        <pre id="oql">{{ oql }}</pre>
+      </li>
+      {% endif %}
+
     </ul>
 
     {#
@@ -62,8 +68,8 @@
     {% endfor %}
     </table>
 
-    <h3>oql</h3>
-    <pre>{{ oql }}</pre>
+    {% endif %}
+
     {% if not found %}
         <h3>overpass result</h3>
         {% if found | count > 10 %}
@@ -103,8 +109,6 @@
         {% endif %}
       {% endfor %}
       </ul>
-    {% endif %}
-
     {% endif %}
 
   </div>
