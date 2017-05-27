@@ -95,8 +95,8 @@
 
          <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
          <div class="all_tags" id="candidate{{ c.key }}">
-           {% for k, v in c.tags.items() %}
-            {{ k }}: {{ v }}</br>
+           {% for k, v in c.tags|dictsort %}
+            {{ k }}={{ v }}</br>
            {% endfor %}
          </div>
          </li>
