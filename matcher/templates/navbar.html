@@ -20,11 +20,17 @@
     <ul class="navbar-nav">
       <li class="nav-item">
         {% if g.user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link" href="https://www.openstreetmap.org/user/{{ g.user.username }}/history">{{ g.user.username }}</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{{ url_for('logout') }}">logout</a>
+          </li>
         {% else %}
+          <li class="nav-item">
             <a class="nav-link" href="{{ url_for('social.auth', backend='openstreetmap') }}">login with OSM</a>
+          </li>
         {% endif %}
-      </li>
     </ul>
   </div>
 
