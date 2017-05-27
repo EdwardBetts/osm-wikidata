@@ -20,6 +20,9 @@ name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
 
+class RateLimited(Exception):
+    pass
+
 def oql_from_tag(tag, large_area, filters='area.a'):
     if tag == 'highway':
         return []
@@ -119,6 +122,21 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
 
     overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+
+    if r.status_code == 429 and 'rate_limited' in r.text:
+        send_error_mail('overpass rate limit', '''
+URL: {}
+wikidata ID: {}
+status code: {}
+
+oql:
+{}
+
+reply:
+{}
+        '''.format(request.url, wikidata_id, r.status_code, oql, r.text))
+
+        raise RateLimited
 
     try:
         data = r.json()
