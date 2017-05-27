@@ -415,7 +415,7 @@ class Changeset(Base):
     place_id = Column(BigInteger, ForeignKey(Place.place_id))
     item_id = Column(Integer)
     comment = Column(String)
-    user_id = Column(Integer)
+    user_id = Column(Integer, ForeignKey(User.id))
     update_count = Column(Integer, nullable=False)
 
     user = relationship(User, backref=backref('changesets', lazy='dynamic'))
