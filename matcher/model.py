@@ -375,6 +375,10 @@ class ItemCandidate(Base):
 
     item = relationship('Item', backref=backref('candidates', lazy='dynamic'))
 
+    @property
+    def key(self):
+        return '{0.osm_type:s}_{0.osm_id:d}'.format(self)
+
     def get_match(self):
         endings = set()
         for cat in self.item.categories:
