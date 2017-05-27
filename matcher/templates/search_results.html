@@ -1,7 +1,6 @@
 {% for hit in results %}
   <div class="box">
     {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
-    {% if hit.osm_type in ('relation', 'way') %}
       <b>
         {% if name %}
           <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ name }}</a>,
@@ -11,16 +10,6 @@
           <a href="{{ url_for('matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
         {% endif %}
       </b><br>
-    {% else %}
-      <b>
-      {% if name %}
-        {{ name }}, {{ hit.address.state }}, {{ hit.address.country }}
-      {% else %}
-        {{ hit.display_name }}
-      {% endif %}
-      </b><br>
-      [matcher doesn't support OSM nodes yet]<br>
-    {% endif %}
     category: {{ hit.category }}
     &mdash;
     type: {{ hit.type }}<br>

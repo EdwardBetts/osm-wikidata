@@ -23,6 +23,22 @@ SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHER
 GROUP BY ?place ?article ?end ?point_in_time
 '''
 
+wikidata_point_query = '''
+SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
+    SERVICE wikibase:around {
+        ?place wdt:P625 ?location .
+        bd:serviceParam wikibase:center "Point({{ lon }} {{ lat }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:radius "{{ '{:.1f}'.format(radius) }}" .
+    }
+    ?article schema:about ?place .
+    ?article schema:inLanguage "en" .
+    ?article schema:isPartOf <https://en.wikipedia.org/> .
+    OPTIONAL { ?place wdt:P582 ?end . }
+    OPTIONAL { ?place wdt:P585 ?point_in_time . }
+}
+GROUP BY ?place ?article ?end ?point_in_time
+'''
+
 wikidata_subclass_osm_tags = '''
 SELECT ?item ?itemLabel ?tag
 WHERE
@@ -47,16 +63,19 @@ def get_query(south, north, west, east):
                                   west=west,
                                   east=east)
 
+def get_point_query(lat, lon, radius):
+    return render_template_string(wikidata_point_query,
+                                  lat=lat,
+                                  lon=lon,
+                                  radius=float(radius) / 1000.0)
 
-def run_query(south, north, west, east):
-    query = get_query(south, north, west, east)
-
+def run_query(query):
     url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
     r = requests.get(url,
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
     assert r.status_code == 200
-    return r
+    return r.json()['results']['bindings']
 
 def parse_query(query):
     wd = 'http://www.wikidata.org/entity/Q'

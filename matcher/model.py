@@ -12,7 +12,6 @@ from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match
 from .overpass import oql_from_tag
-from pprint import pprint
 
 import subprocess
 import os.path
@@ -24,6 +23,8 @@ Base.query = session.query_property()
 osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
                                 name='osm_type_enum',
                                 metadata=Base.metadata)
+
+overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
 class User(Base, UserMixin):
     __tablename__ = 'user'
@@ -63,6 +64,8 @@ class Place(Base):   # assume all places are relations
     candidate_count = Column(Integer)
     state = Column(String, index=True)
     override_name = Column(String)
+    lat = Column(Float)
+    lon = Column(Float)
 
     area = column_property(func.ST_Area(geom))
     # match_ratio = column_property(candidate_count / item_count)
@@ -78,16 +81,15 @@ class Place(Base):   # assume all places are relations
 
     @classmethod
     def from_nominatim(cls, hit):
-        if hit.get('osm_type') not in ('way', 'relation'):
-            return
         keys = ('osm_id', 'osm_type', 'display_name', 'category', 'type',
                 'place_id', 'place_rank', 'icon', 'extratags', 'address',
-                'namedetails')
+                'namedetails', 'lat', 'lon')
         n = {k: hit[k] for k in keys if k in hit}
+        if hit['osm_type'] == 'node':
+            n['radius'] = 10000   # 10km
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
-        pprint(n)
         return cls(**n)
 
     @property
@@ -104,12 +106,16 @@ class Place(Base):   # assume all places are relations
         return '{:.1f} km²'.format(self.area_in_sq_km)
 
     def get_wikidata_query(self):
-        return wikidata.get_query(*self.bbox)
+        if self.osm_type == 'node':
+            query = wikidata.get_point_query(self.lat, self.lon, self.radius)
+        else:
+            query = wikidata.get_query(*self.bbox)
+        return query
 
     def items_from_wikidata(self):
-        r = wikidata.run_query(*self.bbox)
-        results = wikidata.parse_query(r.json()['results']['bindings'])
-        return [item for item in results if self.covers(item)]
+        rows = wikidata.run_query(self.get_wikidata_query())
+        results = wikidata.parse_query(rows)
+        return [item for item in results if self.osm_type == 'node' or self.covers(item)]
 
     def covers(self, item):
         return object_session(self).scalar(
@@ -237,36 +243,42 @@ class Place(Base):   # assume all places are relations
             tags |= set(item.tags)
         return matcher.simplify_tags(tags)
 
+    @property
+    def overpass_type(self):
+        return overpass_types[self.osm_type]
+
+    @property
+    def overpass_filter(self):
+        return 'around:{0.radius},{0.lat},{0.lon}'.format(self)
+
     def get_oql(self):
         large_area = self.area > 3000 * 1000 * 1000
 
-        q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
+        union = ['{}({});'.format(self.overpass_type, self.osm_id)]
 
-        if False and large_area and q.count() < 200:
-            union = []
-            for item in q:
-                union += item.get_oql()
+        for tag in self.all_tags:
+            u = (oql_from_tag(tag, large_area, filters=self.overpass_filter)
+                 if self.osm_type == 'node'
+                 else oql_from_tag(tag, large_area))
+            if u:
+                union += u
 
+        if self.osm_type == 'node':
             oql = ('[timeout:300][out:xml];\n' +
                    '({});\n' +
                    '(._;>;);\n' +
                    'out qt;').format(''.join(union))
-        else:
-            bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
-            union = ['rel({});'.format(self.osm_id)]
-            for tag in self.all_tags:
-                u = oql_from_tag(tag, large_area)
-                if u:
-                    union += u
+            return oql
 
-            offset = {'way': 2400000000, 'relation': 3600000000}
-            area_id = offset[self.osm_type] + int(self.osm_id)
+        bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
+        offset = {'way': 2400000000, 'relation': 3600000000}
+        area_id = offset[self.osm_type] + int(self.osm_id)
 
-            oql = ('[timeout:300][out:xml][bbox:{}];\n' +
-                   'area({})->.a;\n' +
-                   '({});\n' +
-                   '(._;>;);\n' +
-                   'out qt;').format(bbox, area_id, ''.join(union))
+        oql = ('[timeout:300][out:xml][bbox:{}];\n' +
+               'area({})->.a;\n' +
+               '({});\n' +
+               '(._;>;);\n' +
+               'out qt;').format(bbox, area_id, ''.join(union))
         return oql
 
     def candidates_url(self, **kwargs):
