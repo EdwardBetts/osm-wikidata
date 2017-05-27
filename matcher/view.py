@@ -332,7 +332,7 @@ def update_tags(osm_type, osm_id):
 
     flash('tags updated')
 
-    return redirect(url_for('candidates', osm_id=osm_id))
+    return redirect(url_for('candidates', osm_type=place.osm_type, osm_id=osm_id))
 
 @app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def add_tags(osm_type, osm_id):
