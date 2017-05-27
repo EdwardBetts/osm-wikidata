@@ -14,6 +14,9 @@ from sqlalchemy.orm.attributes import flag_modified
 
 import requests
 import os.path
+import re
+
+re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(social_auth)
@@ -790,7 +793,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state == 'ready', Place.candidate_count > 0)
+    q = (Place.query.filter(Place.state == 'ready', Place.candidate_count > 3)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
@@ -802,6 +805,10 @@ def sort_link(order):
 @app.route("/search")
 def search_results():
     q = request.args.get('q')
+    if q:
+        m = re_qid.match(q)
+        if m:
+            return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
     results = nominatim.lookup(q)
     for hit in results:
         p = Place.from_nominatim(hit)
@@ -936,7 +943,9 @@ def trim_location_from_names(entity, wikidata_names):
                   for i in entity['claims']['P131']]
 
     for location in wikidata.get_entities(located_in):
-        location_names |= {v['value'] for v in location['labels'].values()}
+        location_names |= {v['value']
+                           for v in location['labels'].values()
+                           if v['value'] not in wikidata_names}
 
     for name_key, name_values in list(wikidata_names.items()):
         for n in location_names:
