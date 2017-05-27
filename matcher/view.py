@@ -5,7 +5,7 @@ from flask_login import login_user, current_user, logout_user, LoginManager, log
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, PlaceItem, ItemCandidate, User, Category
+from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -94,16 +94,18 @@ def add_wikidata_tag():
     osm_backend = social_user.get_backend_instance()
     auth = osm_backend.oauth_auth(social_user.access_token)
 
+    comment = 'add wikidata tag'
+
     base = 'https://api.openstreetmap.org/api/0.6'
 
     changeset = '''
 <osm>
   <changeset>
     <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="add wikidata tag"/>
+    <tag k="comment" v="{}"/>
   </changeset>
 </osm>
-'''
+'''.format(comment)
 
     r = osm_backend.request(base + '/changeset/create',
                             method='PUT',
@@ -131,13 +133,15 @@ def add_wikidata_tag():
     for c in ItemCandidate.query.filter_by(osm_id=osm_id, osm_type=osm_type):
         c.tags['wikidata'] = wikidata_id
         flag_modified(c, 'tags')
-    database.session.commit()
 
-    osm.tags['wikidata'] = wikidata_id
-    flag_modified(osm, 'tags')
+    change = Changeset(id=changeset_id,
+                       item_id=wikidata_id[1:],
+                       comment=comment,
+                       update_count=1,
+                       user=g.user)
+
+    database.session.add(change)
     database.session.commit()
-    database.session.expire(osm)
-    assert osm.tags['wikidata'] == wikidata_id
 
     r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
@@ -245,15 +249,16 @@ def do_add_tags(place, table):
     auth = osm_backend.oauth_auth(social_user.access_token)
 
     base = 'https://api.openstreetmap.org/api/0.6'
+    comment = request.form['comment']
 
     changeset = '''
 <osm>
   <changeset>
     <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="{comment}"/>
+    <tag k="comment" v="{}"/>
   </changeset>
 </osm>
-'''.format(comment=request.form['comment'])
+'''.format(comment)
 
     r = osm_backend.request(base + '/changeset/create',
                             method='PUT',
@@ -295,6 +300,15 @@ def do_add_tags(place, table):
                             method='PUT',
                             auth=auth,
                             headers=user_agent_headers())
+
+    change = Changeset(id=changeset_id,
+                       place=place,
+                       comment=comment,
+                       update_count=update_count,
+                       user=g.user)
+
+    database.session.add(change)
+    database.session.commit()
 
     return update_count
 

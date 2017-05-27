@@ -408,3 +408,15 @@ class Category(Base):
 
     name = Column(String, primary_key=True)
     page_count = Column(Integer)
+
+class Changeset(Base):
+    __tablename__ = 'changeset'
+    id = Column(BigInteger, primary_key=True)
+    place_id = Column(BigInteger, ForeignKey(Place.place_id))
+    item_id = Column(Integer)
+    comment = Column(String)
+    user_id = Column(Integer)
+    update_count = Column(Integer, nullable=False)
+
+    user = relationship(User, backref=backref('changesets', lazy='dynamic'))
+    place = relationship('Place')
