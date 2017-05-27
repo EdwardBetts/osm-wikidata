@@ -24,11 +24,11 @@
             <a class="nav-link" href="https://www.openstreetmap.org/user/{{ g.user.username }}/history">{{ g.user.username }}</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('logout') }}">logout</a>
+            <a class="nav-link" href="{{ url_for('logout', next=request.script_root + request.full_path) }}">logout</a>
           </li>
         {% else %}
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('social.auth', backend='openstreetmap') }}">login with OSM</a>
+            <a class="nav-link" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login with OSM</a>
           </li>
         {% endif %}
     </ul>
