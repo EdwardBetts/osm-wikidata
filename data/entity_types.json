@@ -113,6 +113,13 @@
     "dist": 1.5
 },
 {
+    "cats": ["Hindu temples"],
+    "tags": ["amenity=place_of_worship"],
+    "trim": ["temple"],
+    "check_housename": true,
+    "dist": 2
+},
+{
     "cats": ["Chapels by country"],
     "tags": ["building=chapel", "amenity=place_of_worship"],
     "trim": ["chapel"],
@@ -848,6 +855,13 @@
     "cats": ["Towns by country"],
     "tags": ["place=town", "place=village", "place=suburb"],
     "skip_cats": ["Categories by town", "Wikipedia categories named after towns", "Lists by towns", "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford", "Barrow-in-Furness", "Cambridge", "city or town", "Visitor attractions in", "Categories by city"],
+    "trim": ["city", "town", "town of", "CP"],
+    "area": true,
+    "dist": 15
+},
+{
+    "cats": ["Cities and towns"],
+    "tags": ["place", "landuse=residential"],
     "trim": ["city", "town", "town of", "CP"],
     "area": true,
     "dist": 15
