@@ -949,11 +949,13 @@ def trim_location_from_names(entity, wikidata_names):
 
     for name_key, name_values in list(wikidata_names.items()):
         for n in location_names:
-            if not name_key.startswith(n + ' '):
-                continue
-            new_key = name_key[len(n) + 1:]
-            if new_key not in wikidata_names:
-                wikidata_names[new_key] = name_values
+            new = None
+            if name_key.startswith(n + ' '):
+                new = name_key[len(n) + 1:]
+            elif name_key.endswith(', ' + n):
+                new = name_key[:-(len(n) + 2)]
+            if new and new not in wikidata_names:
+                wikidata_names[new] = name_values
 
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
