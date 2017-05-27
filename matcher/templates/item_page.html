@@ -36,6 +36,14 @@
       </li>
       {% endif %}
 
+      {% if item %}
+        <li>English Wikipedia categories:
+        {% for cat in item.categories %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+        {% endfor %}
+        </li>
+      {% endif %}
+
       {% if oql %}
       <li>Overpass query: <a href="#" id="oql-toggle">show query</a>
         <pre id="oql">{{ oql }}</pre>
