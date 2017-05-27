@@ -465,6 +465,7 @@
 },
 {
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
+    "exclude_cats": ["power stations", "ski stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
@@ -473,7 +474,7 @@
 {
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
-    "exclude_cats": ["power stations"],
+    "exclude_cats": ["power stations", "ski stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
@@ -1145,11 +1146,11 @@
     "dist": 4
 },
 {
-    "cats": ["Ski areas and resorts by country", "Ski areas", "Ski resorts"],
-    "tags": ["landuse=winter_sports", "site=piste"],
+    "cats": ["Ski areas and resorts by country", "Ski areas", "Ski resorts", "Ski stations"],
+    "tags": ["landuse=winter_sports", "site=piste", "place", "sport=skiing"],
     "area": true,
     "trim": [],
-    "dist": 1
+    "dist": 2
 },
 {
     "cats": ["Food markets", "Wholesale markets"],
