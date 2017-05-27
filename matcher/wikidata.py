@@ -40,7 +40,7 @@ GROUP BY ?place ?article ?end ?point_in_time
 '''
 
 wikidata_subclass_osm_tags = '''
-SELECT ?item ?itemLabel ?tag
+SELECT DISTINCT ?item ?itemLabel ?tag
 WHERE
 {
   wd:{{qid}} wdt:P31/wdt:P279* ?item .
