@@ -211,10 +211,10 @@ def export_osm(osm_id, name):
 def redirect_to_matcher(osm_type, osm_id):
     return redirect(url_for('matcher_progress', osm_type=osm_type, osm_id=osm_id))
 
-@app.route('/filtered/<name_filter>/candidates/<int:osm_id>')
-def candidates_with_filter(name_filter, osm_id):
+@app.route('/filtered/<name_filter>/candidates/<osm_type>/<int:osm_id>')
+def candidates_with_filter(name_filter, osm_type, osm_id):
     g.filter = name_filter.replace('_', ' ')
-    return candidates(osm_id)
+    return candidates(osm_type, osm_id)
 
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
