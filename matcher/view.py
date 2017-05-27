@@ -691,6 +691,8 @@ def load_individual_match(place_id, item_id):
     global cat_to_ending
 
     place = Place.query.get(place_id)
+    if not place:
+        abort(404)
 
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
@@ -763,6 +765,7 @@ def matcher_progress(osm_type, osm_id):
             place_item = PlaceItem.query.get((item.item_id, place.osm_id))
             if not place_item:
                 database.session.add(PlaceItem(item=item, place=place))
+            database.session.commit()
         place.state = 'wikipedia'
         database.session.commit()
     if place.state == 'wikipedia':
@@ -1072,7 +1075,10 @@ def item_page(wikidata_id):
                                labels=labels)
 
     oql = get_entity_oql(entity, criteria, radius=radius)
-    overpass_reply = overpass.item_query(oql, qid, radius)
+    try:
+        overpass_reply = overpass.item_query(oql, qid, radius)
+    except overpass.RateLimited:
+        return 'error: Overpass rate limit exceeded'
 
     endings = get_ending_from_criteria(criteria)
 
