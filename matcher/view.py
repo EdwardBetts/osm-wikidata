@@ -349,16 +349,17 @@ def post_overpass(place_id):
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
-@app.route('/export/wikidata_<int:osm_id>_<name>.osm')
-def export_osm(osm_id, name):
-    place = Place.query.get(osm_id)
+@app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
+def export_osm(osm_type, osm_id, name):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
     items = place.items_with_candidates()
 
     items = list(matcher.filter_candidates_more(items))
 
     lookup = {}
-    for item in items:
-        osm = item.candidates.one()
+    for item, osm in items:
         lookup[(osm.osm_type, osm.osm_id)] = item
 
     filename = cache_filename('{}_overpass_export.xml'.format(osm_id))
@@ -366,8 +367,7 @@ def export_osm(osm_id, name):
         overpass_xml = open(filename, 'rb').read()
     else:
         union = ''
-        for item in items:
-            osm = item.candidates.one()
+        for item, osm in items:
             union += '{}({});\n'.format(osm.osm_type, osm.osm_id)
 
         oql = '({});(._;>);out meta;'.format(union)
@@ -887,6 +887,8 @@ def get_radius(default=1000):
     return int(arg_radius) if arg_radius and arg_radius.isdigit() else default
 
 def get_entity_coords(entity):
+    if 'P625' not in entity['claims']:
+        return None, None
     coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
     return coords['latitude'], coords['longitude']
 
@@ -950,6 +952,18 @@ def api_item_match(wikidata_id):
     radius = get_radius()
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.get_entity(qid)
+    if not entity:
+        abort(404)
+
+    if 'P625' not in entity['claims']:
+        return jsonify({
+            'item_id': qid,
+            'error': 'no coordinates',
+            'found_matches': False,
+        })
+
+    lat, lon = get_entity_coords(entity)
+
     wikidata_names = dict(wikidata.names_from_entity(entity))
     trim_location_from_names(entity, wikidata_names)
     wikidata_query = wikidata.osm_key_query(qid)
@@ -967,8 +981,6 @@ def api_item_match(wikidata_id):
     found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names, endings=endings)]
 
-    lat, lon = get_entity_coords(entity)
-
     return jsonify({
         'item_id': qid,
         'radius': radius,
@@ -985,15 +997,18 @@ def api_item_match(wikidata_id):
 def item_page(wikidata_id):
     item = Item.query.get(wikidata_id)
 
-    radius = get_radius()
     qid = 'Q' + str(wikidata_id)
+    entity = wikidata.get_entity(qid)
+    if not entity:
+        abort(404)
+
+    radius = get_radius()
     filename = overpass.item_filename(qid, radius)
     if request.method == 'POST':
         if os.path.exists(filename):
             os.remove(filename)
         return redirect(url_for(request.endpoint, **request.view_args, **request.args))
 
-    entity = wikidata.get_entity(qid)
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
     trim_location_from_names(entity, wikidata_names)
@@ -1029,7 +1044,7 @@ def item_page(wikidata_id):
     if item:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
-    if not criteria:
+    if not lat or not lon or not criteria:
 
         return render_template('item_page.html',
                                entity=entity,
