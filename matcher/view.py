@@ -11,7 +11,6 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from pprint import pprint
 
 import requests
 import os.path
