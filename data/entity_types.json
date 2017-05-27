@@ -475,7 +475,7 @@
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
     "exclude_cats": ["power stations", "ski stations"],
-    "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop", "public_transport=station"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
     "dist": 1
