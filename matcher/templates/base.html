@@ -19,5 +19,7 @@
   <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
   <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
   <script src="{{ url_for('static', filename='bootstrap4/js/bootstrap.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block script %}{% endblock %}
 </body>
 </html>

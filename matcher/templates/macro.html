@@ -8,3 +8,33 @@
   OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
 </div>
 {% endmacro %}
+
+{% macro candidate_info(c) %}
+  {% set m = c.get_match() %}
+    <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+      {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+    </a>
+    ({{ c.osm_type}}{% if c.dist %},
+     {{ c.dist | int }} m{% endif %})
+     {{ ', '.join(c.matching_tags()) }}
+
+       {% if c.item_id in filtered and c == filtered[c.item_id] %}
+         <span class="highlight">best match</span>
+       {% endif %}
+
+     <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
+     <div class="all_tags" id="candidate{{ c.key }}">
+       {% for k, v in c.tags.items() if k != 'way_area' %}
+        {{ k }}: {{ v }}</br>
+       {% endfor %}
+     </div>
+     {% if 'wikidata' in c.tags %}
+       <br>
+       {% if c.tags.wikidata == c.item.qid %}
+         wikidata match: <span class="match">{{ c.tags.wikidata }}</span>
+       {% else %}
+         wikidata mismatch: <span class="mismatch">{{ c.tags.wikidata }}</span>
+       {% endif %}
+     {% endif %}
+    </li>
+{% endmacro %}

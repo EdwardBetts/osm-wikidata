@@ -81,6 +81,8 @@ var load_ready = {{ url_for('load_ready', place_id=place_id) | tojson }};
 // var items = {{ item_list | tojson }};
 
 </script>
-<script src="https://code.jquery.com/jquery-3.1.1.js"></script>
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/matcher.js') }}"></script>
 {% endblock %}

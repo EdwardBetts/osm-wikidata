@@ -1,3 +1,4 @@
+{% from "macro.html" import place_box, candidate_info %}
 {% extends "base.html" %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
@@ -9,14 +10,7 @@
     <h1>{{ place.name }}</h1>
   {% set q = place.display_name %}
 
-    <div class="box">
-      <b>{{ place.display_name }}</b><br>
-      category: {{ place.category }}
-      &mdash;
-      type: {{ place.type }}
-      &mdash;
-      OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
-    </div>
+  {{ place_box(place) }}
 
   {% include "tabs.html" with context %}
 
@@ -49,22 +43,7 @@
     </ul> #}
     <ul>
     {% for c in i.candidates %}
-    {% set m = c.get_match() %}
-      <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-        {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
-      </a>
-      ({{ c.osm_type}}{% if c.dist %},
-       {{ c.dist | int }} m{% endif %})
-       {{ ', '.join(c.matching_tags()) }}
-       {% if 'wikidata' in c.tags %}
-         <br>
-         {% if c.tags.wikidata == i.qid %}
-           wikidata match: <span class="match">{{ c.tags.wikidata }}</span>
-         {% else %}
-           wikidata mismatch: <span class="mismatch">{{ c.tags.wikidata }}</span>
-         {% endif %}
-       {% endif %}
-      </li>
+      {{ candidate_info(c) }}
     {% endfor %}
     </ul>
   {% endfor %}

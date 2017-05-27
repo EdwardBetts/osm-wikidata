@@ -1,4 +1,4 @@
-{% from "macro.html" import place_box %}
+{% from "macro.html" import place_box, candidate_info %}
 {% extends "base.html" %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
@@ -76,17 +76,7 @@
       </ul> #}
       <ul>
       {% for c in i.candidates %}
-      {% set m = c.get_match() %}
-        <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-          {{ (m.osm_key + '=' + m.osm_name) if m else c.name -}}
-        </a>
-        ({{ c.osm_type}}{% if c.dist %},
-         {{ c.dist | int }} m{% endif %})
-         {{ ', '.join(c.matching_tags()) }}
-         {% if i.item_id in filtered and c == filtered[i.item_id] %}
-           <span class="highlight">best match</span>
-         {% endif %}
-        </li>
+        {{ candidate_info(c) }}
       {% endfor %}
       </ul>
     {% endfor %}
