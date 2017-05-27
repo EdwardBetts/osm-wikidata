@@ -54,6 +54,7 @@
     </div>
   {% endfor %}
   </div>
+  <div class="text-right"><a href="{{ url_for('saved_places') }}">more places &hellip;</a>
   {#
   <p>The aim is for a single OSM entity to link to one Wikidata item. Many geographical entities are represented by multiple objects in OSM with the same name, for example dual carriageway bridges are mapped as two roadways, or buildings within a large site like a hospital.</p>
   <p>The matching system makes use of categories on Wikipedia because the information on Wikidata is incomplete. Wikidata includes an import of all Wikipedia including the coordinates, but for a lot of items the 'instance of' property is not set.</p>
