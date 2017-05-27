@@ -35,8 +35,10 @@ def oql_from_tag(tag, large_area, filters='area.a'):
             return []  # ignore because osm2pgsql only does multipolygons
         if k in {'site', 'type', 'route'}:
             relation_only = True
-        if ':' in tag or ' ' in tag:
+        if not k.isalnum() or not v.isalnum():
             tag = '"{}"="{}"'.format(k, v)
+    elif not tag.isalnum():
+        tag = '"{}"'.format(tag)
 
     return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
@@ -58,8 +60,10 @@ def oql_from_wikidata_tag_or_key(tag_or_key, filters):
         k, _, v = tag.partition('=')
         if k in {'site', 'type', 'route'}:
             relation_only = True
-        if ':' in tag or ' ' in tag:
+        if not k.isalnum() or not v.isalnum():
             tag = '"{}"="{}"'.format(k, v)
+    elif not tag.isalnum():
+        tag = '"{}"'.format(tag)
 
     return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
