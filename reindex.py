@@ -100,8 +100,8 @@ app.config.from_object('config.default')
 with app.app_context():
     database.init_app(app)
     if len(sys.argv) > 1:
-        osm_id = sys.argv[1]
-        place = Place.query.get(osm_id)
+        place_id = sys.argv[1]
+        place = Place.query.get(place_id)
         do_reindex(place, force=True)
     else:
         reindex_all()
