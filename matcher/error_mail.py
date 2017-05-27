@@ -1,6 +1,10 @@
 import logging
+from flask import current_app
 from logging.handlers import SMTPHandler
 from logging import Formatter
+from email.mime.text import MIMEText
+from email.utils import formatdate, make_msgid
+import smtplib
 
 class MatcherSMTPHandler(SMTPHandler):
     def getSubject(self, record):
@@ -29,3 +33,18 @@ def setup_error_mail(app):
     app.logger.propagate = True
     app.logger.addHandler(mail_handler)
 
+def send_error_mail(subject, body):
+
+    mail_to = current_app.config['ADMIN_EMAIL']
+    mail_from = current_app.config['MAIL_FROM']
+    msg = MIMEText(body, 'plain', 'UTF-8')
+
+    msg['Subject'] = subject
+    msg['To'] = current_app.config['ADMIN_EMAIL']
+    msg['From'] = current_app.config['MAIL_FROM']
+    msg['Date'] = formatdate()
+    msg['Message-ID'] = make_msgid()
+
+    s = smtplib.SMTP(current_app.config['SMTP_HOST'])
+    s.sendmail(mail_from, [mail_to], msg.as_string())
+    s.quit()
