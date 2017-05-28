@@ -99,6 +99,10 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     # item_max_dist = max(max_dist[cat] for cat in item['cats'])
     item_max_dist = 4  # FIXME
 
+    hstore = item.hstore_query
+    if not hstore:
+        return []
+
     sql_list = []
     for obj_type in 'point', 'line', 'polygon':
         obj_sql = ('select \'{}\', osm_id, name, tags, '
@@ -106,7 +110,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
                    'from {}_{} '
                    'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, prefix, obj_type, point, item_max_dist)
         sql_list.append(obj_sql)
-    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist'.format(item.hstore_query)
+    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist'.format(hstore)
 
     if debug:
         print(sql)
