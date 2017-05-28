@@ -1,5 +1,29 @@
 {% extends "base.html" %}
 
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#mapid { height: 400px; }
+</style>
+{% endblock %}
+
+{% block script %}
+  {% if lat and lon %}
+  <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+
+  <script>
+    var lat = {{ '{:.4f}'.format(lat) }};
+    var lon = {{ '{:.4f}'.format(lon) }};
+    var map = L.map('mapid').setView([lat, lon], 17);
+
+    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var marker = L.marker([lat, lon]).addTo(map);
+
+  </script>
+  {% endif %}
+
+{% endblock %}
+
 {% block content %}
 <div class="m-3">
   <div class="container">
@@ -51,6 +75,8 @@
       {% endif %}
 
     </ul>
+
+    <div id="mapid"></div>
 
     {#
 
