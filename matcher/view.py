@@ -1006,19 +1006,9 @@ def api_item_match(wikidata_id):
     if not entity:
         abort(404)
 
-    sitelinks = []
-    for key, value in entity['sitelinks'].items():
-        if len(key) != 6 or not key.endswith('wiki'):
-            continue
-        lang = key[:2]
-        url = 'https://{}.wikipedia.org/wiki/{}'.format(lang, value['title'].replace(' ', '_'))
-        sitelinks.append({
-            'site': key,
-            'code': lang,
-            'language': language_codes[lang],
-            'url': url,
-            'title': value['title'],
-        })
+    for v in entity['sitelinks'].values():
+        if 'badges' in v:
+            del v['badges']
 
     if 'P625' not in entity['claims']:
         return jsonify({
@@ -1063,6 +1053,7 @@ def api_item_match(wikidata_id):
     for i in existing:
         index = (i['type'], i['id'])
         i['existing'] = True
+        i['match'] = False
         osm.append(i)
         osm_lookup[index] = i
     for i in found:
@@ -1071,6 +1062,7 @@ def api_item_match(wikidata_id):
             osm_lookup[index]['match'] = True
             continue
         i['match'] = True
+        i['existing'] = False
         osm.append(i)
 
     return jsonify({
