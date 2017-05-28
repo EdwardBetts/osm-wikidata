@@ -330,7 +330,7 @@ def add_wikidata_tag():
                                 headers=user_agent_headers())
     except requests.exceptions.HTTPError as e:
         r = e.response
-        error_mail('error saving element', wikidata_id, data, r)
+        error_mail('error saving element', data, r)
 
         return render_template('error_page.html',
                 message="The OSM API returned an error when saving your edit: {}: " + r.text)
@@ -380,21 +380,11 @@ def export_osm(osm_type, osm_id, name):
     for item, osm in items:
         lookup[(osm.osm_type, osm.osm_id)] = item
 
-    filename = cache_filename('{}_overpass_export.xml'.format(osm_id))
+    filename = cache_filename('{}_{}_overpass_export.xml'.format(osm_type, osm_id))
     if os.path.exists(filename):
         overpass_xml = open(filename, 'rb').read()
     else:
-        union = ''
-        for item, osm in items:
-            union += '{}({});\n'.format(osm.osm_type, osm.osm_id)
-
-        oql = '({});(._;>);out meta;'.format(union)
-
-        overpass_url = 'http://overpass-api.de/api/interpreter'
-        r = requests.post(overpass_url,
-                          data=oql,
-                          headers=user_agent_headers())
-        overpass_xml = r.content
+        overpass_xml = overpass.items_as_xml(items)
         with open(filename, 'wb') as f:
             f.write(overpass_xml)
     root = etree.fromstring(overpass_xml)
@@ -1002,23 +992,6 @@ def api_item_match(wikidata_id):
         if 'badges' in v:
             del v['badges']
 
-    if 'P625' not in entity['claims']:
-        response = jsonify({
-            'response': 'error',
-            'wikidata': {
-                'item': qid,
-                'sitelinks': sitelinks,
-            },
-            'search': {
-                'radius': radius,
-                'criteria': sorted(criteria),
-            },
-            'error': 'no coordinates',
-            'found_matches': False,
-        })
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-
     lat, lon = get_entity_coords(entity)
 
     wikidata_names = dict(wikidata.names_from_entity(entity))
@@ -1031,6 +1004,25 @@ def api_item_match(wikidata_id):
     item = Item.query.get(wikidata_id)
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
+
+    if 'P625' not in entity['claims']:
+        response = jsonify({
+            'response': 'error',
+            'wikidata': {
+                'item': qid,
+                'labels': entity.get('labels', {}),
+                'aliases': entity.get('aliases', {}),
+                'sitelinks': entity.get('sitelinks', {}),
+            },
+            'search': {
+                'radius': radius,
+                'criteria': sorted(criteria),
+            },
+            'error': 'no coordinates',
+            'found_matches': False,
+        })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     oql = get_entity_oql(entity, criteria, radius=radius)
 

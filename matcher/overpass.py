@@ -20,6 +20,10 @@ name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
 
+overpass_url = 'http://overpass-api.de/api/interpreter'
+# overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
+# overpass_url = 'http://api.openstreetmap.fr/oapi/interpreter'
+
 class RateLimited(Exception):
     pass
 
@@ -120,17 +124,16 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     if not refresh and os.path.exists(filename):
         return json.load(open(filename))['elements']
 
-    overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        error_mail('item query: overpass rate limit', wikidata_id, oql, r)
+        error_mail('item query: overpass rate limit', oql, r)
         raise RateLimited
 
     try:
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
-        error_mail('item overpass query error', wikidata_id, oql, r)
+        error_mail('item overpass query error', oql, r)
         return []
 
     json.dump(data, open(filename, 'w'))
@@ -143,17 +146,16 @@ def get_existing(wikidata_id):
 out qt center tags;
 '''.format(qid=wikidata_id)
 
-    overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        error_mail('get existing: overpass rate limit', wikidata_id, oql, r)
+        error_mail('get existing: overpass rate limit', oql, r)
         raise RateLimited
 
     try:
         return r.json()['elements']
     except simplejson.scanner.JSONDecodeError:
-        error_mail('get existing: overpass query error', wikidata_id, oql, r)
+        error_mail('get existing: overpass query error', oql, r)
         return []
 
 def get_tags(elements):
@@ -166,7 +168,23 @@ def get_tags(elements):
 out qt tags;
 '''.format(''.join(union))
 
-    overpass_url = 'https://overpass-api.de/api/interpreter'
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     return r.json()['elements']
+
+def items_as_xml(items):
+    union = ''
+    for item, osm in items:
+        union += '{}({});\n'.format(osm.osm_type, osm.osm_id)
+
+    oql = '({});(._;>);out meta;'.format(union)
+
+    r = requests.post(overpass_url,
+                      data=oql,
+                      headers=user_agent_headers())
+
+    if r.status_code == 429 and 'rate_limited' in r.text:
+        error_mail('items_as_xml: overpass rate limit', oql, r)
+        raise RateLimited
+
+    return r.content

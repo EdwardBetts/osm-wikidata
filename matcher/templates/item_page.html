@@ -70,7 +70,10 @@
       {% endif %}
 
       {% if oql %}
-      <li>Overpass query: <a href="#" id="oql-toggle">show query</a>
+      <li>Overpass query:
+        <a href="#" id="oql-toggle">show query</a>
+        &ndash;
+        <a href="https://overpass-turbo.eu/?Q={{ oql.replace('qt center tags', 'geom') | urlencode }}&R">Overpass Turbo</a>
         <pre id="oql">{{ oql }}</pre>
       </li>
       {% endif %}
@@ -105,7 +108,7 @@
     {% endif %}
 
     <h3>matches</h3>
-    {% if item.candidates %}
+    {% if item.candidates.count() %}
       {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
         {% if 'wikidata' not in c.tags %}
