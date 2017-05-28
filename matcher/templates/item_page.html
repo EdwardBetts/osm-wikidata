@@ -36,7 +36,7 @@
       </li>
       {% endif %}
 
-      {% if item %}
+      {% if item and item.categories %}
         <li>English Wikipedia categories:
         {% for cat in item.categories %}
             <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
