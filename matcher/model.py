@@ -306,6 +306,14 @@ class Item(Base):
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
 
     @property
+    def label(self):
+        labels = self.entity['labels']
+        if 'en' in labels:
+            return labels['en']['value']
+        else:
+            return list(labels.values())[0]['value']
+
+    @property
     def wikidata_uri(self):
         return 'https://www.wikidata.org/wiki/Q{}'.format(self.item_id)
 
@@ -418,3 +426,9 @@ class Changeset(Base):
 
     user = relationship(User, backref=backref('changesets', lazy='dynamic'))
     place = relationship('Place')
+
+    @property
+    def item_label(self):
+        item = Item.query.get(self.item_id)
+        if item:
+            return item.label
