@@ -10,10 +10,11 @@
   </form>
 
   {% if q %}
-  {% if results | count == 0 %}
-    <p>no matches found</p>
-  {% endif %}
-  {% include "search_results.html" with context %}
+      {% if results | count == 0 %}
+        <p>no matches found</p>
+      {% else %}
+        {% include "search_results.html" with context %}
+      {% endif %}
   {% endif %}
 
 </div>
