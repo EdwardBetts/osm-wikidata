@@ -820,7 +820,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state == 'ready', Place.candidate_count > 3)
+    q = (Place.query.filter(Place.state == 'ready', Place.area > 0, Place.candidate_count > 3)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
@@ -844,8 +844,10 @@ def search_results():
     database.session.commit()
 
     for hit in results:
-        if hit.get('osm_type') == 'relation':
-            hit['place'] = Place.query.get(hit['osm_id'])
+        p = Place.query.get(hit['place_id'])
+        print(hit['place_id'], p.area)
+        if p and p.area:
+            hit['area'] = p.area_in_sq_km
 
     return render_template('results_page.html', results=results, q=q)
 
