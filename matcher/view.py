@@ -1006,9 +1006,31 @@ def api_item_match(wikidata_id):
     if not entity:
         abort(404)
 
+    sitelinks = []
+    for key, value in entity['sitelinks'].items():
+        if len(key) != 6 or not key.endswith('wiki'):
+            continue
+        lang = key[:2]
+        url = 'https://{}.wikipedia.org/wiki/{}'.format(lang, value['title'].replace(' ', '_'))
+        sitelinks.append({
+            'site': key,
+            'code': lang,
+            'language': language_codes[lang],
+            'url': url,
+            'title': value['title'],
+        })
+
     if 'P625' not in entity['claims']:
         return jsonify({
-            'item_id': qid,
+            'response': 'error',
+            'wikidata': {
+                'item': qid,
+                'sitelinks': sitelinks,
+            },
+            'search': {
+                'radius': radius,
+                'criteria': sorted(criteria),
+            },
             'error': 'no coordinates',
             'found_matches': False,
         })
@@ -1022,6 +1044,10 @@ def api_item_match(wikidata_id):
     criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
+    item = Item.query.get(wikidata_id)
+    if item and item.tags:  # add criteria from the Item object
+        criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
+
     oql = get_entity_oql(entity, criteria, radius=radius)
 
     existing = overpass.get_existing(qid)
@@ -1032,15 +1058,37 @@ def api_item_match(wikidata_id):
     found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names, endings=endings)]
 
+    osm = []
+    osm_lookup = {}
+    for i in existing:
+        index = (i['type'], i['id'])
+        i['existing'] = True
+        osm.append(i)
+        osm_lookup[index] = i
+    for i in found:
+        index = (i['type'], i['id'])
+        if index in osm_lookup:
+            osm_lookup[index]['match'] = True
+            continue
+        i['match'] = True
+        osm.append(i)
+
     return jsonify({
-        'item_id': qid,
-        'radius': radius,
-        'matches': found,
-        'lat': lat,
-        'lon': lon,
-        'criteria': sorted(criteria),
+        'response': 'ok',
+        'wikidata': {
+            'item': qid,
+            'lat': lat,
+            'lon': lon,
+            'labels': entity.get('labels', {}),
+            'aliases': entity.get('aliases', {}),
+            'sitelinks': entity.get('sitelinks', {}),
+        },
+        'search': {
+            'radius': radius,
+            'criteria': sorted(criteria),
+        },
+        'osm': osm,
         'found_matches': bool(found),
-        'existing': existing,
     })
 
 
