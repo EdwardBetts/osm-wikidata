@@ -14,7 +14,7 @@
   <script>
     var lat = {{ '{:.4f}'.format(lat) }};
     var lon = {{ '{:.4f}'.format(lon) }};
-    var map = L.map('mapid').setView([lat, lon], 17);
+    var map = L.map('mapid').setView([lat, lon], 18);
 
     L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     var marker = L.marker([lat, lon]).addTo(map);
