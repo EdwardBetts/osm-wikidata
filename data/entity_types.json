@@ -732,6 +732,7 @@
 },
 {
     "cats": ["Hamlets", "Unincorporated communities"],
+    "exclude_cats": ["Tower Hamlets"],
     "tags": ["place", "landuse=residential"],
     "trim": ["CP"],
     "dist": 10
