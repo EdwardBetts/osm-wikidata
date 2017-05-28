@@ -1,3 +1,4 @@
+{% from "macro.html" import place_box, candidate_info %}
 {% extends "base.html" %}
 
 {% block style %}
@@ -32,9 +33,9 @@
     <h1>{{ label }} ({{ qid }})</h1>
     <ul>
       {% if item %}
-      <li>place:
+      <li>matcher place:
         {% for place in item.places %}
-            <a href="{{ place.candidates_url() }}">{{ place.name }}</a>
+            <a href="{{ place.candidates_url() }}">{{ place.name }}</a> ({{ place.osm_type }} {{ place.osm_id }})
             {%- if not loop.last %}, {% endif %}
         {% endfor %}
       </li>
@@ -42,7 +43,7 @@
       <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
       <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
       {% if lat and lon %}
-      <li>coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
+      <li>Wikidata coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
       </li>
       {% else %}
@@ -104,40 +105,54 @@
     {% endif %}
 
     <h3>matches</h3>
-    {% if not found %}
-        <p>no matches found</p>
-    {% else %}
-      <ul>
-      {% for c, m in found %}
-        <li><a href="https://www.openstreetmap.org/{{ c.type }}/{{ c.id }}">
-          {{ (m.osm_key + '=' + m.osm_name) if m else c.tags.name }}
-        </a> ({{ c.type}})
-
-         <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
-         <div class="all_tags" id="candidate{{ c.key }}">
-           {% for k, v in c.tags|dictsort %}
-            {{ k }}={{ v }}</br>
-           {% endfor %}
-         </div>
-         </li>
-
+    {% if item.candidates %}
+      {% for c in item.candidates %}
+        {{ candidate_info(c, filtered=filtered) }}
         {% if 'wikidata' not in c.tags %}
           <form method="post" action="{{ url_for('add_wikidata_tag') }}">
-            <input type="hidden" name="osm_id" value="{{ c.id }}" />
-            <input type="hidden" name="osm_type" value="{{ c.type }}" />
+            <input type="hidden" name="osm_id" value="{{ c.osm_id }}" />
+            <input type="hidden" name="osm_type" value="{{ c.osm_type }}" />
             <input type="hidden" name="wikidata" value="{{ qid }}" />
             <button class="btn btn-primary" type="submit">add wikidata tag to OSM</button>
           </form>
-        {% else %}
-          <p>OSM already includes wikidata tag.</p>
         {% endif %}
-      {% endfor %}
-      </ul>
+    {% endfor %}
+    {% else %}
+      {% if not found %}
+          <p>no matches found</p>
+      {% else %}
+        <ul>
+        {% for c, m in found %}
+          <li><a href="https://www.openstreetmap.org/{{ c.type }}/{{ c.id }}">
+            {{ (m.osm_key + '=' + m.osm_name) if m else c.tags.name }}
+          </a> ({{ c.type}})
+
+           <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
+           <div class="all_tags" id="candidate{{ c.key }}">
+             {% for k, v in c.tags|dictsort %}
+              {{ k }}={{ v }}</br>
+             {% endfor %}
+           </div>
+           </li>
+
+          {% if 'wikidata' not in c.tags %}
+            <form method="post" action="{{ url_for('add_wikidata_tag') }}">
+              <input type="hidden" name="osm_id" value="{{ c.id }}" />
+              <input type="hidden" name="osm_type" value="{{ c.type }}" />
+              <input type="hidden" name="wikidata" value="{{ qid }}" />
+              <button class="btn btn-primary" type="submit">add wikidata tag to OSM</button>
+            </form>
+          {% else %}
+            <p>OSM already includes wikidata tag.</p>
+          {% endif %}
+        {% endfor %}
+        </ul>
+      {% endif %}
     {% endif %}
 
     {% if osm_keys %}
 
-    <h3>Search criteria from Wikidata</h3>
+    <h3 class="my-2">Search criteria from Wikidata</h3>
     <table class="table table-responsive table-hover table-sm">
     {% for row in osm_keys %}
       <tr>
