@@ -889,6 +889,7 @@
 },
 {
     "cats": ["Civil parishes by country"],
+    "exclude_cats": ["Former civil parishes"],
     "tags": ["designation=civil_parish"],
     "trim": [],
     "area": true,
@@ -897,6 +898,7 @@
 {
     "name": "Districts",
     "cats": ["Districts", "Populated places", "Populated coastal places"],
+    "exclude_cats": ["Parishes united into districts"],
     "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
     "trim": [],
     "dist": 8
