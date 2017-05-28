@@ -1,3 +1,6 @@
+<p>Searching for <em>{{ q }}</em> found {{ results | count }} places. Select one to start matching.</p>
+
+{% set detail = 0 %}
 {% for hit in results %}
   <div class="box">
     {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
@@ -12,11 +15,12 @@
       </b><br>
     category: {{ hit.category }}
     &mdash;
-    type: {{ hit.type }}<br>
-    bounding box: {{ ', '.join(hit.boundingbox) }}<br>
-    {% if hit.place %}
-      area: {{ '{:.2f}'.format(hit.place.area_in_sq_km) }} km&sup2; <br>
+    type: {{ hit.type }}
+    {% if hit.osm_type in ('way', 'relation') and hit.area %}
+      &mdash;
+      area: {{ '{:.2f}'.format(hit.area) }} km&sup2;
     {% endif %}
+    <br>
     {% if hit.osm_type and hit.osm_id %}
       OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
     {% endif %}
