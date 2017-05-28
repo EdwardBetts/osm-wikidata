@@ -971,7 +971,7 @@ def trim_location_from_names(entity, wikidata_names):
 @app.route('/changes')
 def changesets():
     return render_template('changesets.html',
-                           objs=Changeset.query.order_by(Changeset.id))
+                           objs=Changeset.query.order_by(Changeset.id.desc()))
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):

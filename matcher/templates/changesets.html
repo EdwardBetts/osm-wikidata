@@ -9,6 +9,11 @@
 <table class="table table-hover">
 {% for obj in objs %}
 <tr>
+<td>
+  {% if obj.created %}
+    {{ obj.created.strftime('%H:%M %a, %d %b %Y') }}
+  {% endif %}
+</td>
 <td><a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">{{ obj.id }}</a></td>
 <td><a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a></td>
 <td>{{ obj.comment }}</td>
