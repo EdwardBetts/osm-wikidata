@@ -19,7 +19,7 @@ def send_mail(subject, body):
     s.sendmail(mail_from, [mail_to], msg.as_string())
     s.quit()
 
-def error_mail(subject, wikidata_id, data, r):
+def error_mail(subject, data, r):
     if g.user.is_authenticated:
         user = g.user.username
     else:
@@ -27,7 +27,6 @@ def error_mail(subject, wikidata_id, data, r):
 
     send_mail(subject, '''
 URL: {}
-wikidata ID: {}
 status code: {}
 user: {}
 
@@ -36,4 +35,4 @@ request data:
 
 reply:
 {}
-'''.format(request.url, wikidata_id, r.status_code, user, data, r.text))
+'''.format(request.url, r.status_code, user, data, r.text))
