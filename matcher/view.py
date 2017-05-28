@@ -715,6 +715,9 @@ def load_individual_match(place_id, item_id):
 @app.route('/load/<int:place_id>/ready', methods=['POST', 'GET'])
 def load_ready(place_id):
     place = Place.query.get(place_id)
+    if not place:
+        return abort(404)
+
     place.state = 'ready'
     place.item_count = place.items.count()
     place.candidate_count = place.items_with_candidates_count()
@@ -724,6 +727,8 @@ def load_ready(place_id):
 @app.route('/load/<int:place_id>/match', methods=['POST', 'GET'])
 def load_match(place_id):
     place = Place.query.get(place_id)
+    if not place:
+        return abort(404)
 
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
@@ -960,6 +965,10 @@ def trim_location_from_names(entity, wikidata_names):
             if new and new not in wikidata_names:
                 wikidata_names[new] = name_values
 
+@app.route('/changes')
+def changesets():
+    return render_template('changesets.html',
+                           objs=Changeset.query.order_by(Changeset.id))
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
@@ -1055,7 +1064,7 @@ def item_page(wikidata_id):
     criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
-    if item:  # add criteria from the Item object
+    if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
     if not lat or not lon or not criteria:

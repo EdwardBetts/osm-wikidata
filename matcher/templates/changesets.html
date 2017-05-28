@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Changes{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+<h1>Changes</h1>
+
+<table class="table table-hover">
+{% for obj in objs %}
+<tr>
+<td>{{ obj.id }}</td>
+<td>{{ obj.user.username }}</td>
+<td>{{ obj.comment }}</td>
+<td>
+    {% if obj.place %}
+    {{ obj.place.name }}
+    {% else %}
+    Q{{ obj.item_id }}
+    {% endif %}
+</td>
+<td>{{ obj.update_count }}</td>
+</tr>
+{% endfor %}
+</table>
+
+</div>
+{% endblock %}
