@@ -1003,7 +1003,7 @@ def api_item_match(wikidata_id):
             del v['badges']
 
     if 'P625' not in entity['claims']:
-        return jsonify({
+        response = jsonify({
             'response': 'error',
             'wikidata': {
                 'item': qid,
@@ -1016,6 +1016,8 @@ def api_item_match(wikidata_id):
             'error': 'no coordinates',
             'found_matches': False,
         })
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     lat, lon = get_entity_coords(entity)
 
@@ -1057,7 +1059,7 @@ def api_item_match(wikidata_id):
         i['existing'] = False
         osm.append(i)
 
-    return jsonify({
+    response = jsonify({
         'response': 'ok',
         'wikidata': {
             'item': qid,
@@ -1074,6 +1076,8 @@ def api_item_match(wikidata_id):
         'osm': osm,
         'found_matches': bool(found),
     })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 @app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
