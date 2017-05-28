@@ -12,7 +12,7 @@ from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
-from .error_mail import send_error_mail
+from .mail import error_mail
 
 import requests
 import os.path
@@ -331,18 +331,7 @@ def add_wikidata_tag():
                                 headers=user_agent_headers())
     except requests.exceptions.HTTPError as e:
         r = e.response
-        body = '''
-URL: {}
-wikidata ID: {}
-status code: {}
-
-element data:
-{}
-
-reply:
-{}
-'''.format(request.url, wikidata_id, r.status_code, element_data, r.text)
-        send_error_mail('error saving element', body)
+        error_mail('error saving element', wikidata_id, data, r)
 
         return render_template('error_page.html',
                 message="The OSM API returned an error when saving your edit: {}: " + r.text)
@@ -704,6 +693,8 @@ def overpass_timeout(place_id):
 @app.route('/load/<int:place_id>/osm2pgsql', methods=['POST', 'GET'])
 def load_osm2pgsql(place_id):
     place = Place.query.get(place_id)
+    if not place:
+        abort(404)
     expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
     tables = database.get_tables()
     if not all(t in tables for t in expect):
