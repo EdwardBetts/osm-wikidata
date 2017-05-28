@@ -1,7 +1,7 @@
 # coding: utf-8
 from flask import current_app, url_for, g
 from sqlalchemy import ForeignKey, Column, func, select
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
@@ -409,6 +409,7 @@ class Category(Base):
 class Changeset(Base):
     __tablename__ = 'changeset'
     id = Column(BigInteger, primary_key=True)
+    created = Column(DateTime)
     place_id = Column(BigInteger, ForeignKey(Place.place_id))
     item_id = Column(Integer)
     comment = Column(String)
