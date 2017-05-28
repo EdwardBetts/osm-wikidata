@@ -288,10 +288,18 @@ def add_wikidata_tag():
     osm_backend = social_user.get_backend_instance()
     auth = osm_backend.oauth_auth(social_user.access_token)
 
-    comment = 'add wikidata tag'
-
     base = 'https://api.openstreetmap.org/api/0.6'
 
+    url = '{}/{}/{}'.format(base, osm_type, osm_id)
+    r = requests.get(url, params=social_user.access_token)
+
+    root = etree.fromstring(r.content)
+
+    if root.find('.//tag[@k="wikidata"]'):
+        flash('no edit needed: OSM element already had wikidata tag')
+        return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
+
+    comment = 'add wikidata tag'
     changeset = '''
 <osm>
   <changeset>
@@ -308,10 +316,7 @@ def add_wikidata_tag():
                             headers=user_agent_headers())
     changeset_id = r.text.strip()
 
-    url = '{}/{}/{}'.format(base, osm_type, osm_id)
-    r = requests.get(url, params=social_user.access_token)
 
-    root = etree.fromstring(r.content)
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
@@ -340,7 +345,7 @@ reply:
         send_error_mail('error saving element', body)
 
         return render_template('error_page.html',
-                               message="The OSM API returned an error when saving your edit.")
+                message="The OSM API returned an error when saving your edit: {}: " + r.text)
 
     assert(r.text.strip().isdigit())
     for c in ItemCandidate.query.filter_by(osm_id=osm_id, osm_type=osm_type):
