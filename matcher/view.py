@@ -316,7 +316,6 @@ def add_wikidata_tag():
                             headers=user_agent_headers())
     changeset_id = r.text.strip()
 
-
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
@@ -1133,6 +1132,12 @@ def item_page(wikidata_id):
     else:
         category_map = None
 
+    if item and item.candidates:
+        filtered = {item.item_id: candidate
+                    for item, candidate in matcher.filter_candidates_more([item])}
+    else:
+        filtered = {}
+
     if not lat or not lon or not criteria:
 
         return render_template('item_page.html',
@@ -1143,6 +1148,7 @@ def item_page(wikidata_id):
                                criteria=criteria,
                                category_map=category_map,
                                sitelinks=sitelinks,
+                               filtered=filtered,
                                qid=qid,
                                lat=lat,
                                lon=lon,
@@ -1175,6 +1181,7 @@ def item_page(wikidata_id):
                            category_map=category_map,
                            criteria=criteria,
                            sitelinks=sitelinks,
+                           filtered=filtered,
                            oql=oql,
                            qid=qid,
                            lat=lat,
