@@ -18,11 +18,18 @@
 <td>{{ obj.comment }}</td>
 <td>
     {% if obj.place %}
-    <a href="{{ obj.place.candidates_url() }}">{{ obj.place.name }}</a>
+        <a href="{{ obj.place.candidates_url() }}">{{ obj.place.name }}</a>
     {% elif obj.item_id %}
-    <a href="{{ url_for('item_page', wikidata_id=obj.item_id) }}">Q{{ obj.item_id }}</a>
+        {% set label = obj.item_label %}
+        <a href="{{ url_for('item_page', wikidata_id=obj.item_id) }}">
+            {% if label %}
+                {{ label }} (Q{{ obj.item_id}})
+            {% else %}
+                Q{{ obj.item_id }}
+            {% endif %}
+        </a>
     {% else %}
-    unknown location
+        unknown location
     {% endif %}
 </td>
 <td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
