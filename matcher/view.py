@@ -13,7 +13,9 @@ from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
 from .mail import error_mail
+from werkzeug.exceptions import InternalServerError
 
+import sys
 import requests
 import os.path
 import re
@@ -274,6 +276,20 @@ def logout():
 def done():
     flash('login successful')
     return redirect(url_for('index'))
+
+def reraise(tp, value, tb=None):
+    if value.__traceback__ is not tb:
+        raise value.with_traceback(tb)
+    raise value
+
+@app.errorhandler(InternalServerError)
+def exception_handler(e):
+    exc_type, exc_value, tb = sys.exc_info()
+
+    if exc_value is e:
+        reraise(exc_type, exc_value, tb)
+    else:
+        raise e
 
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
