@@ -1070,6 +1070,8 @@ def item_page(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
+        category_map = matcher.categories_to_tags_map(item.categories)
+
     if not lat or not lon or not criteria:
 
         return render_template('item_page.html',
@@ -1078,6 +1080,7 @@ def item_page(wikidata_id):
                                wikidata_names=wikidata_names,
                                wikidata_query=wikidata_query,
                                criteria=criteria,
+                               category_map=category_map,
                                sitelinks=sitelinks,
                                qid=qid,
                                lat=lat,
@@ -1107,6 +1110,7 @@ def item_page(wikidata_id):
                            wikidata_names=wikidata_names,
                            wikidata_query=wikidata_query,
                            overpass_reply=overpass_reply,
+                           category_map=category_map,
                            criteria=criteria,
                            sitelinks=sitelinks,
                            oql=oql,

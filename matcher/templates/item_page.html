@@ -68,20 +68,6 @@
 
     #}
 
-    {% if osm_keys %}
-
-    <h3>OpenStreetMap search criteria</h3>
-    <table class="table table-responsive table-hover table-sm">
-    {% for row in osm_keys %}
-      <tr>
-        <td>{{ row['item']['value'] }}</td>
-        <td>{{ row['itemLabel']['value'] }}</td>
-        <td>{{ row['tag']['value'] }}</td>
-    {% endfor %}
-    </table>
-
-    {% endif %}
-
     {% if overpass_reply and not found %}
         <h3>overpass result</h3>
         {% if overpass_reply['elements'] | count > 10 %}
@@ -121,6 +107,36 @@
         {% endif %}
       {% endfor %}
       </ul>
+    {% endif %}
+
+    {% if osm_keys %}
+
+    <h3>Search criteria from Wikidata</h3>
+    <table class="table table-responsive table-hover table-sm">
+    {% for row in osm_keys %}
+      <tr>
+        <td>{{ row['item']['value'] }}</td>
+        <td>{{ row['itemLabel']['value'] }}</td>
+        <td>{{ row['tag']['value'] }}</td>
+    {% endfor %}
+    </table>
+
+    <h3>Search criteria from categories</h3>
+    <table class="table table-responsive table-hover table-sm">
+    {% for cat, tags in category_map | dictsort %}
+      <tr>
+        <td>
+          <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>
+        </td>
+        <td>
+          {% for tag in tags %}
+            {{ tag }}<br>
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+
     {% endif %}
 
   </div>

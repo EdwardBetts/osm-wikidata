@@ -896,7 +896,7 @@
 },
 {
     "name": "Districts",
-    "cats": ["Areas", "Districts", "Populated places", "Populated coastal places"],
+    "cats": ["Districts", "Populated places", "Populated coastal places"],
     "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
     "trim": [],
     "dist": 8

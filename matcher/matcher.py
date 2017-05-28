@@ -1,5 +1,5 @@
 from flask import current_app
-from collections import Counter
+from collections import Counter, defaultdict
 from . import match
 
 import os.path
@@ -32,6 +32,22 @@ def categories_to_tags(categories):
                     continue
             tags |= set(value['tags'])
     return sorted(tags)
+
+def categories_to_tags_map(categories):
+    cat_to_entity = build_cat_map()
+    ret = defaultdict(set)
+    for cat in categories:
+        lc_cat = cat.lower()
+        for key, value in cat_to_entity.items():
+            if not get_pattern(key).search(lc_cat):
+                continue
+            exclude = value.get('exclude_cats')
+            if exclude:
+                pattern = re.compile(r'\b(' + '|'.join(re.escape(e) for e in exclude) + r')\b', re.I)
+                if pattern.search(lc_cat):
+                    continue
+            ret[cat] |= set(value['tags'])
+    return ret
 
 def load_entity_types():
     data_dir = current_app.config['DATA_DIR']
