@@ -120,7 +120,9 @@
         <td>{{ row['tag']['value'] }}</td>
     {% endfor %}
     </table>
+    {% endif %}
 
+    {% if category_map %}
     <h3>Search criteria from categories</h3>
     <table class="table table-responsive table-hover table-sm">
     {% for cat, tags in category_map | dictsort %}
@@ -136,8 +138,8 @@
       </tr>
     {% endfor %}
     </table>
-
     {% endif %}
+
 
   </div>
 </div>
