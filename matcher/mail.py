@@ -1,4 +1,4 @@
-from flask import current_app, g
+from flask import current_app, g, request
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 import smtplib
