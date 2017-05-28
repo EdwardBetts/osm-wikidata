@@ -5,7 +5,7 @@ import os.path
 import json
 import simplejson
 from .error_mail import send_error_mail
-from flask import current_app, request
+from flask import current_app, request, g
 from time import sleep
 from . import user_agent_headers
 
@@ -114,6 +114,25 @@ def item_filename(wikidata_id, radius):
     overpass_dir = current_app.config['OVERPASS_DIR']
     return os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
 
+def overpass_error_mail(subject, wikidata_id, oql, r):
+    if g.user.is_authenticated:
+        user = g.user.username
+    else:
+        user = 'not authenticated'
+
+    send_error_mail(subject, '''
+URL: {}
+wikidata ID: {}
+status code: {}
+user: {}
+
+oql:
+{}
+
+reply:
+{}
+'''.format(request.url, wikidata_id, r.status_code, user, oql, r.text))
+
 def item_query(oql, wikidata_id, radius=1000, refresh=False):
     filename = item_filename(wikidata_id, radius)
 
@@ -124,34 +143,13 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        send_error_mail('overpass rate limit', '''
-URL: {}
-wikidata ID: {}
-status code: {}
-
-oql:
-{}
-
-reply:
-{}
-        '''.format(request.url, wikidata_id, r.status_code, oql, r.text))
-
+        overpass_error_mail('overpass rate limit', wikidata_id, oql, r)
         raise RateLimited
 
     try:
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
-        send_error_mail('item overpass query error', '''
-URL: {}
-wikidata ID: {}
-status code: {}
-
-oql:
-{}
-
-reply:
-{}
-        '''.format(request.url, wikidata_id, r.status_code, oql, r.text))
+        overpass_error_mail('item overpass query error', wikidata_id, oql, r)
         return []
 
     json.dump(data, open(filename, 'w'))
