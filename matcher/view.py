@@ -1070,7 +1070,10 @@ def item_page(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
+    if item:
         category_map = matcher.categories_to_tags_map(item.categories)
+    else:
+        category_map = None
 
     if not lat or not lon or not criteria:
 
