@@ -11,6 +11,7 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy import func
 
 import requests
 import os.path
@@ -328,6 +329,7 @@ def add_wikidata_tag():
 
     change = Changeset(id=changeset_id,
                        item_id=wikidata_id[1:],
+                       created=func.now(),
                        comment=comment,
                        update_count=1,
                        user=g.user)
@@ -495,6 +497,7 @@ def do_add_tags(place, table):
 
     change = Changeset(id=changeset_id,
                        place=place,
+                       created=func.now(),
                        comment=comment,
                        update_count=update_count,
                        user=g.user)
