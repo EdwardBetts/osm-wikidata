@@ -11,6 +11,7 @@ bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
 
 cat_to_ending = {}
 patterns = {}
+entity_types = {}
 
 def get_pattern(key):
     if key in patterns:
@@ -89,7 +90,10 @@ def build_cat_to_ending():  # unused?
     return cat_to_ending
 
 def get_ending_from_criteria(tags):
-    entity_types = load_entity_types()
+    global entity_types
+
+    if not entity_types:
+        entity_types = load_entity_types()
     tags = set(tags)
 
     endings = set()
