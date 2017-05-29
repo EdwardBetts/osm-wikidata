@@ -6,9 +6,12 @@ import requests
 from . import user_agent_headers
 
 page_size = 50
+wd_entity = 'http://www.wikidata.org/entity/Q'
+enwiki = 'https://en.wikipedia.org/wiki/'
 
-wikidata_query = '''
-SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
+# search for items in bounding box that have an English Wikipedia article
+wikidata_enwiki_query = '''
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
     SERVICE wikibase:box {
         ?place wdt:P625 ?location .
         bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
@@ -19,8 +22,9 @@ SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHER
     ?article schema:isPartOf <https://en.wikipedia.org/> .
     OPTIONAL { ?place wdt:P582 ?end . }
     OPTIONAL { ?place wdt:P585 ?point_in_time . }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
-GROUP BY ?place ?article ?end ?point_in_time
+GROUP BY ?place ?placeLabel ?article ?end ?point_in_time
 '''
 
 wikidata_point_query = '''
@@ -67,12 +71,35 @@ WHERE
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }'''
 
-def get_query(south, north, west, east):
-    return render_template_string(wikidata_query,
+# search for items in bounding box that have OSM tags in the subclass tree
+wikidata_item_tags = '''
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?item ?itemLabel ?tag WHERE {
+    SERVICE wikibase:box {
+        ?place wdt:P625 ?location .
+        bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
+    }
+    ?place wdt:P31/wdt:P279* ?item .
+    ?item wdt:P1282 ?tag .
+    OPTIONAL { ?place wdt:P969 ?address } .
+    OPTIONAL { ?place wdt:P669 ?street } .
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
+'''
+
+def get_query(q, south, north, west, east):
+    return render_template_string(q,
                                   south=south,
                                   north=north,
                                   west=west,
                                   east=east)
+
+def get_enwiki_query(*args):
+    return get_query(wikidata_enwiki_query, *args)
+
+def get_item_tag_query(*args):
+    return get_query(wikidata_item_tags, *args)
 
 def get_point_query(lat, lon, radius):
     return render_template_string(wikidata_point_query,
@@ -88,14 +115,52 @@ def run_query(query):
     assert r.status_code == 200
     return r.json()['results']['bindings']
 
-def parse_query(query):
-    wd = 'http://www.wikidata.org/entity/Q'
-    enwiki = 'https://en.wikipedia.org/wiki/'
+def wd_uri_to_id(value):
+    return int(drop_start(value, wd_entity))
+
+def wd_uri_to_qid(value):
+    assert value.startswith(wd_entity)
+    return value[len(wd_entity)-1:]
+
+def parse_enwiki_query_old(query):
     return [{
         'location': i['location']['value'],
-        'id': int(drop_start(i['place']['value'], wd)),
+        'id': wd_uri_to_id(i['place']['value']),
         'enwiki': unquote(drop_start(i['article']['value'], enwiki)),
     } for i in query]
+
+def parse_enwiki_query(rows):
+    return {wd_uri_to_qid(row['place']['value']):
+            {
+                'label': row['placeLabel']['value'],
+                'enwiki': unquote(drop_start(row['article']['value'], enwiki)),
+                'location': row['location']['value'],
+                'tags': set(),
+            } for row in rows}
+
+def drop_tag_prefix(v):
+    if v.startswith('Key:') and '=' not in v:
+        return v[4:]
+    if v.startswith('Tag:') and '=' in v:
+        return v[4:]
+
+def parse_item_tag_query(rows, items):
+    for row in rows:
+        tag_or_key = drop_tag_prefix(row['tag']['value'])
+        if not tag_or_key:
+            continue
+        qid = wd_uri_to_qid(row['place']['value'])
+
+        if qid not in items:
+            items[qid] = {
+                'label': row['placeLabel']['value'],
+                'location': row['location']['value'],
+                'tags': set(),
+            }
+            for k in 'address', 'street':
+                if k in row:
+                    items[qid][k] = row[k]['value']
+        items[qid]['tags'].add(tag_or_key)
 
 def entity_iter(ids):
     wikidata_url = 'https://www.wikidata.org/w/api.php'

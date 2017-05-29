@@ -669,22 +669,12 @@ def already_tagged(osm_type, osm_id):
                            tab_pages=tab_pages,
                            items=items)
 
-def wbgetentities(p):
-    q = p.items.filter(Item.tags != '{}')
-    items = {i.qid: i for i in q}
-
-    for qid, entity in wikidata.entity_iter(items.keys()):
-        item = items[qid]
-        item.entity = entity
-        database.session.add(item)
-    database.session.commit()
-
 @app.route('/load/<int:place_id>/wbgetentities', methods=['POST'])
 def load_wikidata(place_id):
     place = Place.query.get(place_id)
     if place.state != 'tags':
         return jsonify(item_list=place.item_list())
-    wbgetentities(place)
+    place.wbgetentities()
     place.state = 'wbgetentities'
     database.session.commit()
     return jsonify(item_list=place.item_list())
@@ -785,27 +775,13 @@ def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     if not place.state:
-        items = {i['enwiki']: i for i in place.items_from_wikidata()}
-
-        for title, cats in page_category_iter(items.keys()):
-            items[title]['categories'] = cats
-
-        for enwiki, i in items.items():
-            item = Item.query.get(i['id'])
-            if not item:
-                item = Item(item_id=i['id'],
-                            enwiki=enwiki,
-                            location=i['location'],
-                            categories=i.get('categories'))
-                database.session.add(item)
-            place_item = PlaceItem.query.get((item.item_id, place.osm_id))
-            if not place_item:
-                database.session.add(PlaceItem(item=item, place=place))
-            database.session.commit()
+        place.load_items()
         place.state = 'wikipedia'
-        database.session.commit()
+
     if place.state == 'wikipedia':
         place.add_tags_to_items()
+        place.state = 'tags'
+        database.session.commit()
 
     return render_template('wikidata_items.html', place=place)
 
@@ -964,17 +940,6 @@ def get_entity_oql(entity, criteria, radius=None):
 
     return oql
 
-def get_ending_from_criteria(criteria):
-    entity_types = matcher.load_entity_types()
-    tags = {i.partition(':')[2] for i in criteria}
-
-    endings = set()
-    for t in entity_types:
-        if tags & set(t['tags']):
-            endings.update(t.get('trim'))
-
-    return endings
-
 def trim_location_from_names(entity, wikidata_names):
     if 'P131' not in entity['claims']:
         return
@@ -1060,7 +1025,7 @@ def api_item_match(wikidata_id):
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
-    endings = get_ending_from_criteria(criteria)
+    endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
     try:
         overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
@@ -1205,7 +1170,7 @@ def item_page(wikidata_id):
         return render_template('error_page.html',
                                message='Overpass rate limit exceeded')
 
-    endings = get_ending_from_criteria(criteria)
+    endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
     found = []
     for element in overpass_reply:

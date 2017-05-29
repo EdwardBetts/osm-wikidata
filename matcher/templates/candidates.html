@@ -68,7 +68,7 @@
             <input type="checkbox" disabled="disabled" />
           {% endif %}
       {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
+      <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
       {# <br>
       <ul>
         <li>Categories:

@@ -10,7 +10,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from .database import session
 from flask_login import UserMixin
-from . import wikidata, matcher, match
+from . import wikidata, matcher, match, wikipedia
 from .overpass import oql_from_tag
 
 import subprocess
@@ -109,25 +109,29 @@ class Place(Base):   # assume all places are relations
         if self.osm_type == 'node':
             query = wikidata.get_point_query(self.lat, self.lon, self.radius)
         else:
-            query = wikidata.get_query(*self.bbox)
+            query = wikidata.get_enwiki_query(*self.bbox)
         return query
 
     def items_from_wikidata(self):
-        rows = wikidata.run_query(self.get_wikidata_query())
-        results = wikidata.parse_query(rows)
-        return [item for item in results if self.osm_type == 'node' or self.covers(item)]
+        q = wikidata.get_enwiki_query(*self.bbox)
+        rows = wikidata.run_query(q)
+
+        items = wikidata.parse_enwiki_query(rows)
+        q = wikidata.get_item_tag_query(*self.bbox)
+        rows = wikidata.run_query(q)
+        wikidata.parse_item_tag_query(rows, items)
+
+        print(len(items))
+
+        return {k: v for k, v in items.items() if self.osm_type == 'node' or self.covers(v)}
 
     def covers(self, item):
         return object_session(self).scalar(
                 select([func.ST_Covers(Place.geom, item['location'])]).where(Place.place_id == self.place_id))
 
     def add_tags_to_items(self):
-        cat_to_entity = matcher.build_cat_map()
         for item in self.items.filter(Item.categories != '{}'):
-            item.tags = matcher.categories_to_tags(item.categories)
-            session.add(item)
-        self.state = 'tags'
-        session.commit()
+            item.tags = set(item.tags) | set(matcher.categories_to_tags(item.categories))
 
     @property
     def prefix(self):
@@ -291,14 +295,46 @@ class Place(Base):   # assume all places are relations
 
     def item_list(self):
         q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-        return [{'id': i.item_id, 'name': i.enwiki} for i in q]
+        return [{'id': i.item_id, 'name': i.label} for i in q]
+
+    def load_items(self):
+        items = self.items_from_wikidata()
+        print(len(items))
+
+        enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
+
+        for title, cats in wikipedia.page_category_iter(enwiki_to_item.keys()):
+            enwiki_to_item[title]['categories'] = cats
+
+        for qid, v in items.items():
+            print(qid, v['label'])
+            wikidata_id = qid[1:]
+            item = Item.query.get(wikidata_id)
+            if not item:
+                item = Item(item_id=wikidata_id, location=v['location'])
+                session.add(item)
+            for k in 'enwiki', 'categories', 'tags':
+                if k in v:
+                    setattr(item, k, v[k])
+            if not item.places.filter(Place.place_id == self.place_id).count():
+                print('append')
+                item.places.append(self)
+        session.commit()
+
+    def wbgetentities(self):
+        q = self.items.filter(Item.tags != '{}')
+        items = {i.qid: i for i in q}
+
+        for qid, entity in wikidata.entity_iter(items.keys()):
+            items[qid].entity = entity
+        session.commit()
 
 class Item(Base):
     __tablename__ = 'item'
 
     item_id = Column(Integer, primary_key=True)
     location = Column(Geography('POINT', spatial_index=True), nullable=False)
-    enwiki = Column(String, nullable=False)
+    enwiki = Column(String)
     entity = Column(JSON)
     categories = Column(postgresql.ARRAY(String))
     tags = Column(postgresql.ARRAY(String))
@@ -377,14 +413,7 @@ class ItemCandidate(Base):
         return '{0.osm_type:s}_{0.osm_id:d}'.format(self)
 
     def get_match(self):
-        endings = set()
-        for cat in self.item.categories:
-            lc_cat = cat.lower()
-            for key, value in matcher.build_cat_to_ending().items():
-                pattern = re.compile(r'\b' + re.escape(key) + r'\b')
-                if pattern.search(lc_cat):
-                    endings |= value
-
+        endings = matcher.get_ending_from_criteria(set(self.tags))
         wikidata_names = self.item.names()
         return match.check_for_match(self.tags, wikidata_names, endings)
 
