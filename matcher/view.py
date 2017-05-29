@@ -393,7 +393,8 @@ def export_osm(osm_type, osm_id, name):
 
     items = list(matcher.filter_candidates_more(items))
 
-    assert items
+    if not items:
+        abort(404)
 
     lookup = {}
     for item, osm in items:
@@ -992,31 +993,48 @@ def api_item_match(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
+    data = {
+        'wikidata': {
+            'item': qid,
+            'labels': entity.get('labels', {}),
+            'aliases': entity.get('aliases', {}),
+            'sitelinks': entity.get('sitelinks', {}),
+        },
+        'search': {
+            'radius': radius,
+            'criteria': sorted(criteria),
+        },
+        'found_matches': False,
+    }
+
     if 'P625' not in entity['claims']:
-        response = jsonify({
-            'response': 'error',
-            'wikidata': {
-                'item': qid,
-                'labels': entity.get('labels', {}),
-                'aliases': entity.get('aliases', {}),
-                'sitelinks': entity.get('sitelinks', {}),
-            },
-            'search': {
-                'radius': radius,
-                'criteria': sorted(criteria),
-            },
-            'error': 'no coordinates',
-            'found_matches': False,
-        })
+        data['error'] = 'no coordinates'
+        data['response'] = 'error'
+        response = jsonify(data)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
     oql = get_entity_oql(entity, criteria, radius=radius)
 
-    existing = overpass.get_existing(qid)
+    try:
+        existing = overpass.get_existing(qid)
+    except overpass.RateLimited:
+        data['error'] = 'overpass rate limited'
+        data['response'] = 'error'
+        response = jsonify(data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
     endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
-    overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
+    try:
+        overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
+    except overpass.RateLimited:
+        data['error'] = 'overpass rate limited'
+        data['response'] = 'error'
+        response = jsonify(data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
     found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names, endings=endings)]
