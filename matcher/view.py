@@ -1075,7 +1075,9 @@ def api_item_match(wikidata_id):
 
     if lat is not None and lon is not None:
         for i in osm:
-            i['distance'] = int(distance((i['lat'], i['lon']), (lat, lon)).m);
+            coords = i.get('center', i)
+            i['distance'] = int(distance((coords['lat'], coords['lon']),
+                                         (lat, lon)).m);
 
     response = jsonify({
         'response': 'ok',
