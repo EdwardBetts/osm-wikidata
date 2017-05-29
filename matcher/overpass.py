@@ -173,6 +173,7 @@ out qt tags;
     return r.json()['elements']
 
 def items_as_xml(items):
+    assert items
     union = ''
     for item, osm in items:
         union += '{}({});\n'.format(osm.osm_type, osm.osm_id)
