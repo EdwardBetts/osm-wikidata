@@ -108,7 +108,7 @@
     {% endif %}
 
     <h3>matches</h3>
-    {% if item and item.candidates.count() %}
+    {% if item %}
       {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
         {% if 'wikidata' not in c.tags %}
