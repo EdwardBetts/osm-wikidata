@@ -108,7 +108,7 @@
     {% endif %}
 
     <h3>matches</h3>
-    {% if item.candidates.count() %}
+    {% if item and item.candidates.count() %}
       {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
         {% if 'wikidata' not in c.tags %}
@@ -119,7 +119,7 @@
             <button class="btn btn-primary" type="submit">add wikidata tag to OSM</button>
           </form>
         {% endif %}
-    {% endfor %}
+      {% endfor %}
     {% else %}
       {% if not found %}
           <p>no matches found</p>
