@@ -141,7 +141,7 @@ def parse_enwiki_query_old(query):
 def parse_enwiki_query(rows):
     return {wd_uri_to_qid(row['place']['value']):
             {
-                'label': row['placeLabel']['value'],
+                'query_label': row['placeLabel']['value'],
                 'enwiki': unquote(drop_start(row['article']['value'], enwiki)),
                 'location': row['location']['value'],
                 'tags': set(),
@@ -162,7 +162,7 @@ def parse_item_tag_query(rows, items):
 
         if qid not in items:
             items[qid] = {
-                'label': row['placeLabel']['value'],
+                'query_label': row['placeLabel']['value'],
                 'location': row['location']['value'],
                 'tags': set(),
             }

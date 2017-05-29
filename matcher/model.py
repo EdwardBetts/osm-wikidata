@@ -311,7 +311,7 @@ class Place(Base):   # assume all places are relations
             if not item:
                 item = Item(item_id=wikidata_id, location=v['location'])
                 session.add(item)
-            for k in 'enwiki', 'categories', 'tags':
+            for k in 'enwiki', 'categories', 'tags', 'query_label':
                 if k in v:
                     setattr(item, k, v[k])
             if not item.places.filter(Place.place_id == self.place_id).count():
@@ -337,6 +337,7 @@ class Item(Base):
     tags = Column(postgresql.ARRAY(String))
     qid = column_property('Q' + cast(item_id, String))
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
+    query_label = Column(String)
 
     @property
     def label(self):
@@ -346,8 +347,7 @@ class Item(Base):
                 return labels['en']['value']
             else:
                 return list(labels.values())[0]['value']
-        elif self.enwiki:
-            return self.enwiki
+        return self.enwiki or self.query_label or None
 
     @property
     def wikidata_uri(self):
