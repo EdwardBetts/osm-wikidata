@@ -722,7 +722,7 @@ def load_individual_match(place_id, item_id):
         cat_to_ending = matcher.build_cat_to_ending()
 
     item = Item.query.get(item_id)
-    candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
+    candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix, debug=False)
     for i in (candidates or []):
         c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
         if not c:
@@ -774,7 +774,7 @@ def load_match(place_id):
 def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
-    if not place.state:
+    if not place.state or place.state == 'refresh':
         place.load_items()
         place.state = 'wikipedia'
 
@@ -808,7 +808,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state == 'ready', Place.area > 0, Place.candidate_count > 3)
+    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 3)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
@@ -1016,25 +1016,31 @@ def api_item_match(wikidata_id):
 
     oql = get_entity_oql(entity, criteria, radius=radius)
 
-    try:
-        existing = overpass.get_existing(qid)
-    except overpass.RateLimited:
-        data['error'] = 'overpass rate limited'
-        data['response'] = 'error'
-        response = jsonify(data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+    existing = []
+
+    if False:
+        try:
+            existing = overpass.get_existing(qid)
+        except overpass.RateLimited:
+            data['error'] = 'overpass rate limited'
+            data['response'] = 'error'
+            response = jsonify(data)
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
 
     endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
-    try:
-        overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
-    except overpass.RateLimited:
-        data['error'] = 'overpass rate limited'
-        data['response'] = 'error'
-        response = jsonify(data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+    if False:
+        try:
+            overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
+        except overpass.RateLimited:
+            data['error'] = 'overpass rate limited'
+            data['response'] = 'error'
+            response = jsonify(data)
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
+
+    overpass_reply = []
 
     found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names, endings=endings)]
@@ -1163,12 +1169,15 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
-    oql = get_entity_oql(entity, criteria, radius=radius)
-    try:
-        overpass_reply = overpass.item_query(oql, qid, radius)
-    except overpass.RateLimited:
-        return render_template('error_page.html',
-                               message='Overpass rate limit exceeded')
+    if item:
+        overpass_reply = []
+    else:
+        oql = get_entity_oql(entity, criteria, radius=radius)
+        try:
+            overpass_reply = overpass.item_query(oql, qid, radius)
+        except overpass.RateLimited:
+            return render_template('error_page.html',
+                                   message='Overpass rate limit exceeded')
 
     endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
