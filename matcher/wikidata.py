@@ -8,6 +8,15 @@ from . import user_agent_headers
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
 enwiki = 'https://en.wikipedia.org/wiki/'
+skip_tags = {'route:road', 'building',
+             'highway=primary',
+             'highway=road',
+             'highway=service',
+             'highway=motorway',
+             'highway=trunk',
+             'highway=unclassified',
+             'highway',
+             'type=associatedStreet'}
 
 # search for items in bounding box that have an English Wikipedia article
 wikidata_enwiki_query = '''
@@ -147,7 +156,7 @@ def drop_tag_prefix(v):
 def parse_item_tag_query(rows, items):
     for row in rows:
         tag_or_key = drop_tag_prefix(row['tag']['value'])
-        if not tag_or_key:
+        if not tag_or_key or tag_or_key in skip_tags:
             continue
         qid = wd_uri_to_qid(row['place']['value'])
 
