@@ -33,7 +33,7 @@
     {% for i, c in table %}
       <tr>
         <td>
-          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.enwiki }} ({{ i.qid }})</a></p>
+          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
         </td>
         <td>
           {% set m = c.get_match() %}
