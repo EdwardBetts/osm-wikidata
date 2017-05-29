@@ -489,6 +489,9 @@ def do_add_tags(place, table):
             print('skip:', wikidata_id)
             continue
 
+        if r.status_code == 410 or r.content == b'':
+            continue  # element has been deleted
+
         root = etree.fromstring(r.content)
         tag = etree.Element('tag', k='wikidata', v=wikidata_id)
         root[0].set('changeset', changeset_id)
