@@ -94,7 +94,7 @@ class Place(Base):   # assume all places are relations
 
     @property
     def match_ratio(self):
-        if self.state == 'ready' and self.item_count:
+        if self.item_count:
             return self.candidate_count / self.item_count
 
     @property
@@ -299,7 +299,6 @@ class Place(Base):   # assume all places are relations
 
     def load_items(self):
         items = self.items_from_wikidata()
-        print(len(items))
 
         enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
 
@@ -307,7 +306,6 @@ class Place(Base):   # assume all places are relations
             enwiki_to_item[title]['categories'] = cats
 
         for qid, v in items.items():
-            print(qid, v['label'])
             wikidata_id = qid[1:]
             item = Item.query.get(wikidata_id)
             if not item:
@@ -317,7 +315,6 @@ class Place(Base):   # assume all places are relations
                 if k in v:
                     setattr(item, k, v[k])
             if not item.places.filter(Place.place_id == self.place_id).count():
-                print('append')
                 item.places.append(self)
         session.commit()
 
@@ -343,11 +340,14 @@ class Item(Base):
 
     @property
     def label(self):
-        labels = self.entity['labels']
-        if 'en' in labels:
-            return labels['en']['value']
-        else:
-            return list(labels.values())[0]['value']
+        if self.entity:
+            labels = self.entity['labels']
+            if 'en' in labels:
+                return labels['en']['value']
+            else:
+                return list(labels.values())[0]['value']
+        elif self.enwiki:
+            return self.enwiki
 
     @property
     def wikidata_uri(self):
