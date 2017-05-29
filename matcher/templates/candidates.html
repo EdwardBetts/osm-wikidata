@@ -30,8 +30,10 @@
     {{ '{:,d}'.format(full_count) }} candidates found
     ({{ '{:,d}'.format(multiple_match_count) }} with multiple matches)
     </p>
-    {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
-    <p><a href="{{ url }}">Download as OSM XML file</a></p>
+    {% if filtered %}
+        {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
+        <p><a href="{{ url }}">Download as OSM XML file</a></p>
+    {% endif %}
   {% endif %}
 
   {% if not overpass_error and candidates %}
