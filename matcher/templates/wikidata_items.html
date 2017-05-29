@@ -48,7 +48,7 @@
   {% for i in place.items %}
     <p>
       <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-      &mdash; {{ i.enwiki }}
+      &mdash; {{ i.label }}
       &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
       <br>
       <ul>
