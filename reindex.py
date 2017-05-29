@@ -7,22 +7,13 @@ from time import sleep
 import requests
 import sys
 
-def wbgetentities(p):
-    q = p.items.filter(Item.tags != '{}')
-    items = {i.qid: i for i in q}
-
-    for qid, entity in wikidata.entity_iter(items.keys()):
-        item = items[qid]
-        item.entity = entity
-        database.session.add(item)
-    database.session.commit()
-
 def do_reindex(place, force=False):
     print(place.display_name)
 
     existing = {item.item_id: item.tags for item in place.items}
     all_tags = place.all_tags
 
+    place.load_items()
     place.add_tags_to_items()
     print('tags updated')
 
@@ -42,7 +33,7 @@ def do_reindex(place, force=False):
         database.session.commit()
         return
 
-    wbgetentities(place)
+    place.wbgetentities()
     database.session.commit()
 
     print(sorted(place.all_tags))
@@ -89,11 +80,11 @@ def do_reindex(place, force=False):
     conn.close()
 
 def reindex_all(skip_places=None):
-    q = Place.query.filter(Place.state == 'ready')
+    q = Place.query.filter(Place.state == 'refresh')
     if skip_places:
         q = q.filter(~Place.osm_id.in_(skip_places))
-    for place in Place.query.filter(Place.state == 'ready'):
-        do_reindex(place)
+    for place in q:
+        do_reindex(place, force=True)
 
 
 app.config.from_object('config.default')
