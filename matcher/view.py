@@ -346,7 +346,7 @@ def add_wikidata_tag():
                                 headers=user_agent_headers())
     except requests.exceptions.HTTPError as e:
         r = e.response
-        error_mail('error saving element', data, r)
+        error_mail('error saving element', element_data, r)
 
         return render_template('error_page.html',
                 message="The OSM API returned an error when saving your edit: {}: " + r.text)
@@ -391,6 +391,8 @@ def export_osm(osm_type, osm_id, name):
     items = place.items_with_candidates()
 
     items = list(matcher.filter_candidates_more(items))
+
+    assert items
 
     lookup = {}
     for item, osm in items:
