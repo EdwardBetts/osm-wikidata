@@ -14,6 +14,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
 from .mail import error_mail
 from werkzeug.exceptions import InternalServerError
+from geopy.distance import distance
 
 import sys
 import requests
@@ -1071,6 +1072,9 @@ def api_item_match(wikidata_id):
         i['match'] = True
         i['existing'] = False
         osm.append(i)
+
+    for i in osm:
+        i['distance'] = int(distance((i['lat'], i['lon']), (lat, lon)).m);
 
     response = jsonify({
         'response': 'ok',
