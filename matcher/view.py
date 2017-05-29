@@ -718,11 +718,8 @@ def load_individual_match(place_id, item_id):
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
-    if cat_to_ending is None:
-        cat_to_ending = matcher.build_cat_to_ending()
-
     item = Item.query.get(item_id)
-    candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix, debug=False)
+    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
     for i in (candidates or []):
         c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
         if not c:
@@ -1169,10 +1166,10 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
+    oql = get_entity_oql(entity, criteria, radius=radius)
     if item:
         overpass_reply = []
     else:
-        oql = get_entity_oql(entity, criteria, radius=radius)
         try:
             overpass_reply = overpass.item_query(oql, qid, radius)
         except overpass.RateLimited:

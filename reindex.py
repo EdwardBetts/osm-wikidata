@@ -19,12 +19,13 @@ def do_reindex(place, force=False):
 
     tag_change = False
     for item in place.items:
-        old = existing[item.item_id]
-        if item.tags == old:
+        old = existing.get(item.item_id)
+        if old and set(item.tags) == set(old):
             continue
         tag_change = True
         print(item.qid, item.enwiki)
-        print('  old:', old)
+        if old:
+            print('  old:', old)
         print('  new:', item.tags)
 
     if not force and not tag_change:
@@ -43,15 +44,16 @@ def do_reindex(place, force=False):
     tables = database.get_tables()
     expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
     if not all(t in tables for t in expect) or place.all_tags != all_tags:
-        oql = place.get_oql()
-        overpass_url = 'https://overpass-api.de/api/interpreter'
+        if not place.overpass_done:
+            oql = place.get_oql()
+            overpass_url = 'https://overpass-api.de/api/interpreter'
 
-        wait_for_slot()
-        print('running overpass query')
-        r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-        print('overpass done')
+            wait_for_slot()
+            print('running overpass query')
+            r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+            print('overpass done')
 
-        place.save_overpass(r.content)
+            place.save_overpass(r.content)
         place.state = 'postgis'
         database.session.commit()
 
@@ -63,24 +65,22 @@ def do_reindex(place, force=False):
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
-    cat_to_ending = matcher.build_cat_to_ending()
-
     q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
     for item in q:
-        candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
+        candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
         for i in (candidates or []):
             c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
             if not c:
                 c = ItemCandidate(**i, item=item)
                 database.session.add(c)
-        print(len(candidates), item.enwiki)
+        print(len(candidates), item.label)
     place.state = 'ready'
     database.session.commit()
 
     conn.close()
 
 def reindex_all(skip_places=None):
-    q = Place.query.filter(Place.state == 'refresh')
+    q = Place.query.filter(Place.state.isnot(None), Place.state != 'ready')
     if skip_places:
         q = q.filter(~Place.osm_id.in_(skip_places))
     for place in q:
