@@ -393,7 +393,8 @@ def export_osm(osm_type, osm_id, name):
 
     items = list(matcher.filter_candidates_more(items))
 
-    assert items
+    if not items:
+        abort(404)
 
     lookup = {}
     for item, osm in items:
@@ -1027,7 +1028,7 @@ def api_item_match(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
 
-    data = jsonify({
+    data = {
         'wikidata': {
             'item': qid,
             'labels': entity.get('labels', {}),
@@ -1039,8 +1040,7 @@ def api_item_match(wikidata_id):
             'criteria': sorted(criteria),
         },
         'found_matches': False,
-    })
-
+    }
 
     if 'P625' not in entity['claims']:
         data['error'] = 'no coordinates'
@@ -1053,7 +1053,7 @@ def api_item_match(wikidata_id):
 
     try:
         existing = overpass.get_existing(qid)
-    except RateLimited:
+    except overpass.RateLimited:
         data['error'] = 'overpass rate limited'
         data['response'] = 'error'
         response = jsonify(data)
@@ -1064,7 +1064,7 @@ def api_item_match(wikidata_id):
 
     try:
         overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
-    except RateLimited:
+    except overpass.RateLimited:
         data['error'] = 'overpass rate limited'
         data['response'] = 'error'
         response = jsonify(data)
