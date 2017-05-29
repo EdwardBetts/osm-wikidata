@@ -72,7 +72,7 @@ def build_cat_map():
             cat_to_entity[lc_cat] = i
     return cat_to_entity
 
-def build_cat_to_ending():
+def build_cat_to_ending():  # unused?
     global cat_to_ending
 
     if cat_to_ending:
@@ -88,10 +88,21 @@ def build_cat_to_ending():
 
     return cat_to_ending
 
+def get_ending_from_criteria(tags):
+    entity_types = load_entity_types()
+    tags = set(tags)
+
+    endings = set()
+    for t in entity_types:
+        if tags & set(t['tags']):
+            endings.update(t.get('trim'))
+
+    return endings
+
 def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     if not item.entity:
         return []
-    cats = item.categories
+    cats = item.categories or []
 
     # point = "ST_GeomFromEWKT('{}')".format(item.ewkt)
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
@@ -119,12 +130,7 @@ def find_item_matches(cur, item, cat_to_ending, prefix, debug=False):
     rows = cur.fetchall()
     seen = set()
 
-    endings = set()
-    for cat in item.categories:
-        lc_cat = cat.lower()
-        for key, value in cat_to_ending.items():
-            if get_pattern(key).search(lc_cat):
-                endings |= value
+    endings = get_ending_from_criteria(set(item.tags))
 
     wikidata_names = item.names()
 
