@@ -9,7 +9,8 @@ from . import user_agent_headers
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
 enwiki = 'https://en.wikipedia.org/wiki/'
-skip_tags = {'route:road', 'building',
+skip_tags = {'route:road',
+             'building',
              'highway=primary',
              'highway=road',
              'highway=service',
@@ -18,7 +19,10 @@ skip_tags = {'route:road', 'building',
              'highway=unclassified',
              'highway',
              'name',
-             'type=associatedStreet'}
+             'addr:street',
+             'type=associatedStreet',
+             'type=waterway',
+             'waterway=river'}
 
 # search for items in bounding box that have an English Wikipedia article
 wikidata_enwiki_query = '''

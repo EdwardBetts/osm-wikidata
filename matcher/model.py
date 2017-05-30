@@ -38,6 +38,7 @@ skip_tags = {'route:road',
              'name',
              'type=waterway',
              'waterway=river'
+             'addr:street',
              'type=associatedStreet'}
 
 class User(Base, UserMixin):
