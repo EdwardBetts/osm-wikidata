@@ -6,6 +6,8 @@
 <div class="container my-2">
 <h1>Changes</h1>
 
+<p>{{ '{:,d}'.format(objs.count()) }} changesets</p>
+
 <table class="table table-hover">
 {% for obj in objs %}
 <tr>
@@ -15,7 +17,8 @@
     </a>
 </td>
 <td class="text-nowrap"><a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a></td>
-<td>{{ obj.comment }}</td>
+<td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
+<!-- <td>{{ obj.comment }}</td> -->
 <td>
     {% if obj.place %}
         <a href="{{ obj.place.candidates_url() }}">{{ obj.place.name }}</a>
@@ -32,7 +35,6 @@
         unknown location
     {% endif %}
 </td>
-<td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
 </tr>
 {% endfor %}
 </table>
