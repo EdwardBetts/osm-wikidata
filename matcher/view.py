@@ -12,7 +12,7 @@ from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
-from .mail import error_mail
+from .mail import error_mail, send_mail
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 
@@ -48,6 +48,7 @@ extra_keys = {
     'Q1021290': 'Tag:amenity=college',  # music school
     'Q5167149': 'Tag:amenity=college',  # cooking school
     'Q383092': 'Tag:amenity=college',  # film school
+    'Q11303': 'Key:height'  # skyscraper
 }
 
 language_codes = {
@@ -770,15 +771,29 @@ def load_match(place_id):
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if osm_type != 'node' and place.area and place.area > 90000:
+        return render_template('error_page.html', message='{}: area is too large for matcher'.format(place.name))
 
     if not place.state or place.state == 'refresh':
-        place.load_items()
+        try:
+            place.load_items()
+        except wikidata.QueryError:
+            return render_template('error_page.html', message='wikidata query error')
+
         place.state = 'wikipedia'
 
     if place.state == 'wikipedia':
         place.add_tags_to_items()
         place.state = 'tags'
         database.session.commit()
+
+    if g.user.is_authenticated:
+        user = g.user.username
+    else:
+        user = 'not authenticated'
+
+    body = 'user: {}'.format(user)
+    send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
 
@@ -1011,11 +1026,14 @@ def api_item_match(wikidata_id):
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
-    oql = get_entity_oql(entity, criteria, radius=radius)
+    if criteria:
+        oql = get_entity_oql(entity, criteria, radius=radius)
+    else:
+        oql = None
 
     existing = []
 
-    if False:
+    if True:
         try:
             existing = overpass.get_existing(qid)
         except overpass.RateLimited:
@@ -1025,19 +1043,22 @@ def api_item_match(wikidata_id):
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
 
-    endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
+    if criteria:
+        endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
+    else:
+        endings = []
 
-    if False:
+    if criteria:
         try:
-            overpass_reply = overpass.item_query(oql, qid, radius, refresh=True)
+            overpass_reply = overpass.item_query(oql, qid, radius)
         except overpass.RateLimited:
             data['error'] = 'overpass rate limited'
             data['response'] = 'error'
             response = jsonify(data)
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
-
-    overpass_reply = []
+    else:
+        overpass_reply = []
 
     found = [element for element in overpass_reply
              if check_for_match(element['tags'], wikidata_names, endings=endings)]
