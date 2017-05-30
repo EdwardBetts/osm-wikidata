@@ -4,6 +4,7 @@
 {% for hit in results %}
   <div class="box">
     {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
+      {% if hit.category != 'highway' and (hit.osm_type == 'node' or not hit.area or hit.area < 90000) %}
       <b>
         {% if name %}
           <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ name }}</a>,
@@ -13,12 +14,26 @@
           <a href="{{ url_for('matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
         {% endif %}
       </b><br>
+    {% else %}
+       <b>
+       {% if name %}
+         {{ name }}, {{ hit.address.state }}, {{ hit.address.country }}
+       {% else %}
+          {{ hit.display_name }}
+        {% endif %}
+        </b><br>
+        {% if hit.category == 'highway' %}
+            [matcher only works with polygons, not roads]<br>
+        {% elif hit.osm_type in ('way', 'relation') and hit.area and hit.area >= 90000 %}
+            [area too large]<br>
+        {% endif %}
+    {% endif %}
     category: {{ hit.category }}
     &mdash;
     type: {{ hit.type }}
     {% if hit.osm_type in ('way', 'relation') and hit.area %}
       &mdash;
-      area: {{ '{:.2f}'.format(hit.area) }} km&sup2;
+      area: {{ '{:,.1f}'.format(hit.area) }} km&sup2;
     {% endif %}
     <br>
     {% if hit.osm_type and hit.osm_id %}
