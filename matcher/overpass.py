@@ -20,8 +20,8 @@ name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
 
-overpass_url = 'http://overpass-api.de/api/interpreter'
-# overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
+# overpass_url = 'http://overpass-api.de/api/interpreter'
+overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
 # overpass_url = 'http://api.openstreetmap.fr/oapi/interpreter'
 
 class RateLimited(Exception):
@@ -101,13 +101,15 @@ def parse_status(status):
         'running': len(lines) - (i + 1)
     }
 
-def get_status():
-    status = requests.get('https://overpass-api.de/api/status').text
+def get_status(url=None):
+    if url is None:
+        url = 'https://overpass-api.de/api/status'
+    status = requests.get(url).text
     return parse_status(status)
 
-def wait_for_slot(status=None):
+def wait_for_slot(status=None, url=None):
     if status is None:
-        status = get_status()
+        status = get_status(url=url)
     slots = status['slots']
     if slots:
         print('waiting {} seconds'.format(slots[0]))
@@ -117,6 +119,11 @@ def item_filename(wikidata_id, radius):
     assert wikidata_id[0] == 'Q'
     overpass_dir = current_app.config['OVERPASS_DIR']
     return os.path.join(overpass_dir, '{}_{}.json'.format(wikidata_id, radius))
+
+def existing_item_filename(wikidata_id):
+    assert wikidata_id[0] == 'Q'
+    overpass_dir = current_app.config['OVERPASS_DIR']
+    return os.path.join(overpass_dir, '{}_existing.json'.format(wikidata_id))
 
 def item_query(oql, wikidata_id, radius=1000, refresh=False):
     filename = item_filename(wikidata_id, radius)
@@ -134,12 +141,17 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
         error_mail('item overpass query error', oql, r)
-        return []
+        raise
 
     json.dump(data, open(filename, 'w'))
     return data['elements']
 
-def get_existing(wikidata_id):
+def get_existing(wikidata_id, refresh=False):
+    filename = existing_item_filename(wikidata_id)
+
+    if not refresh and os.path.exists(filename):
+        return json.load(open(filename))['elements']
+
     oql = '''
 [timeout:300][out:json];
 (node[wikidata={qid}]; way[wikidata={qid}]; rel[wikidata={qid}];);
@@ -153,10 +165,13 @@ out qt center tags;
         raise RateLimited
 
     try:
-        return r.json()['elements']
+        data = r.json()
     except simplejson.scanner.JSONDecodeError:
-        error_mail('get existing: overpass query error', oql, r)
-        return []
+        error_mail('item overpass query error', oql, r)
+        raise
+
+    json.dump(data, open(filename, 'w'))
+    return data['elements']
 
 def get_tags(elements):
     union = {'{}({});\n'.format({'relation': 'rel'}.get(i.osm_type, i.osm_type), i.osm_id)
