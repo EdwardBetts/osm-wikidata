@@ -91,7 +91,7 @@
 },
 {
     "cats": ["Shopping malls by country", "Shopping centres"],
-    "tags": ["shop=mall", "site=mall", "type=site", "building", "landuse=commercial", "retail=retail_park"],
+    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park", "shop=department_store" ],
     "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
     "check_housename": true,
     "dist": 5
@@ -162,7 +162,7 @@
     "dist": 5
 },
 {
-    "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures"],
+    "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures", "Triumphal arches", "memorials", "monuments"],
     "tags": ["historic=monument", "tourism"],
     "trim": ["monument", "Statue of"],
     "dist": 3
@@ -465,7 +465,7 @@
 },
 {
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
-    "exclude_cats": ["power stations", "ski stations"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
@@ -474,7 +474,7 @@
 {
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
-    "exclude_cats": ["power stations", "ski stations"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop", "public_transport=station"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
     "check_housename": false,
@@ -550,6 +550,7 @@
 },
 {
     "cats": ["Universities by country", "University"],
+    "exclude_cats": ["History of", "Sport at"],
     "tags": ["amenity=university", "type=site", "site=university", "building=university"],
     "trim": ["university", "school", "college"],
     "area": true,
@@ -1163,7 +1164,7 @@
     "dist": 5
 },
 {
-    "cats": ["Military installations by country"],
+    "cats": ["Military installations by country", "Air Force", "military facilities"],
     "tags": ["military", "type=site", "site=military", "landuse=military"],
     "area": true,
     "trim": [],
