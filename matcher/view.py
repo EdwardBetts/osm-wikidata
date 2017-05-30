@@ -578,6 +578,13 @@ def add_tags(osm_type, osm_id):
                            osm_id=osm_id,
                            table=table)
 
+@app.route('/place/<name>')
+def place_redirect(name):
+    place = Place.query.filter(Place.state=='ready', Place.display_name.ilike(name + '%')).first()
+    if not place:
+        abort(404)
+    return redirect(place.candidates_url())
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
@@ -792,7 +799,9 @@ def matcher_progress(osm_type, osm_id):
     else:
         user = 'not authenticated'
 
-    body = 'user: {}'.format(user)
+    body = '''
+user: {}
+name: {}'''.format(user, place.display_name)
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
