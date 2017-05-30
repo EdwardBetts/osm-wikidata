@@ -31,9 +31,9 @@
      {% if 'wikidata' in c.tags %}
        <br>
        {% if c.tags.wikidata == c.item.qid %}
-         wikidata match: <span class="match">{{ c.tags.wikidata }}</span>
+         wikidata <span class="match">match</span>: {{ c.tags.wikidata }}
        {% else %}
-         wikidata mismatch: <span class="mismatch">{{ c.tags.wikidata }}</span>
+         wikidata <span class="mismatch">mismatch</span>: <a href="https://www.wikidata.org/wiki/{{ c.tags.wikidata }}">{{ c.tags.wikidata }}</a>
        {% endif %}
      {% endif %}
     </li>
