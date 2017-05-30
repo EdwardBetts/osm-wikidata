@@ -104,7 +104,7 @@ def get_ending_from_criteria(tags):
     return endings
 
 def find_item_matches(cur, item, prefix, debug=False):
-    if not item.entity:
+    if not item or not item.entity:
         return []
     cats = item.categories or []
 
