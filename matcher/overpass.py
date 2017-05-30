@@ -27,6 +27,9 @@ overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
 class RateLimited(Exception):
     pass
 
+class Timeout(Exception):
+    pass
+
 def oql_from_tag(tag, large_area, filters='area.a'):
     if tag == 'highway':
         return []
@@ -137,6 +140,10 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
         error_mail('item query: overpass rate limit', oql, r)
         raise RateLimited
 
+    if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
+        error_mail('item query: overpass 504 gateway timeout', oql, r)
+        raise Timeout
+
     try:
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
@@ -163,6 +170,10 @@ out qt center tags;
     if r.status_code == 429 and 'rate_limited' in r.text:
         error_mail('get existing: overpass rate limit', oql, r)
         raise RateLimited
+
+    if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
+        error_mail('item query: overpass 504 gateway timeout', oql, r)
+        raise Timeout
 
     try:
         data = r.json()

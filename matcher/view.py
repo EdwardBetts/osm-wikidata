@@ -1051,6 +1051,12 @@ def api_item_match(wikidata_id):
             response = jsonify(data)
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
+        except overpass.Timeout:
+            data['error'] = 'overpass timeout'
+            data['response'] = 'error'
+            response = jsonify(data)
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
 
     if criteria:
         endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
@@ -1062,6 +1068,12 @@ def api_item_match(wikidata_id):
             overpass_reply = overpass.item_query(oql, qid, radius)
         except overpass.RateLimited:
             data['error'] = 'overpass rate limited'
+            data['response'] = 'error'
+            response = jsonify(data)
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
+        except overpass.Timeout:
+            data['error'] = 'overpass timeout'
             data['response'] = 'error'
             response = jsonify(data)
             response.headers.add('Access-Control-Allow-Origin', '*')
