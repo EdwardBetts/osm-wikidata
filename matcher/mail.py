@@ -1,4 +1,4 @@
-from flask import current_app, g, request
+from flask import current_app, g, request, has_request_context
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 import smtplib
@@ -19,20 +19,29 @@ def send_mail(subject, body):
     s.sendmail(mail_from, [mail_to], msg.as_string())
     s.quit()
 
-def error_mail(subject, data, r):
-    if g.user.is_authenticated:
-        user = g.user.username
-    else:
-        user = 'not authenticated'
-
-    send_mail(subject, '''
-URL: {}
-status code: {}
-user: {}
+def error_mail(subject, data, r, via_web=True):
+    body = '''
+remote URL: {r.url}
+status code: {r.status_code}
 
 request data:
-{}
+{data}
 
 reply:
-{}
-'''.format(request.url, r.status_code, user, data, r.text))
+{r.text}
+'''.format(r=r, data=data)
+
+    if not has_request_context():
+        via_web = False
+
+    if via_web:
+        if hasattr(g, 'user'):
+            if g.user.is_authenticated:
+                user = g.user.username
+            else:
+                user = 'not authenticated'
+        else:
+            user = 'no user'
+        body = 'site URL: {}\nuser: {}\n'.format(request.url, user) + body
+
+    send_mail(subject, body)
