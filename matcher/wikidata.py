@@ -2,6 +2,7 @@ from flask import render_template_string
 from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start
+from .mail import error_mail
 import requests
 from . import user_agent_headers
 
@@ -16,6 +17,7 @@ skip_tags = {'route:road', 'building',
              'highway=trunk',
              'highway=unclassified',
              'highway',
+             'name',
              'type=associatedStreet'}
 
 # search for items in bounding box that have an English Wikipedia article
@@ -97,6 +99,9 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 '''
 
+class QueryError(Exception):
+    pass
+
 def get_query(q, south, north, west, east):
     return render_template_string(q,
                                   south=south,
@@ -121,6 +126,9 @@ def run_query(query):
     r = requests.get(url,
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
+    if r.status_code == 500:
+        error_mail('wikidata query error', query, r)
+        raise QueryError
     assert r.status_code == 200
     return r.json()['results']['bindings']
 
