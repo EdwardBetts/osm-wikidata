@@ -26,6 +26,20 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
 
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
+skip_tags = {'route:road',
+             'building',
+             'highway=primary',
+             'highway=road',
+             'highway=service',
+             'highway=motorway',
+             'highway=trunk',
+             'highway=unclassified',
+             'highway',
+             'name',
+             'type=waterway',
+             'waterway=river'
+             'type=associatedStreet'}
+
 class User(Base, UserMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
@@ -117,6 +131,7 @@ class Place(Base):   # assume all places are relations
         rows = wikidata.run_query(q)
 
         items = wikidata.parse_enwiki_query(rows)
+
         q = wikidata.get_item_tag_query(*self.bbox)
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
@@ -233,6 +248,7 @@ class Place(Base):   # assume all places are relations
         tags = set()
         for item in self.items.filter(Item.tags != '{}'):
             tags |= set(item.tags)
+        tags.difference_update(skip_tags)
         return matcher.simplify_tags(tags)
 
     @property
@@ -345,7 +361,7 @@ class Item(Base):
             labels = self.entity['labels']
             if 'en' in labels:
                 return labels['en']['value']
-            else:
+            elif labels:
                 return list(labels.values())[0]['value']
         return self.enwiki or self.query_label or None
 
