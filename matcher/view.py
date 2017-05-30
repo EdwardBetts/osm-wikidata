@@ -771,7 +771,7 @@ def load_match(place_id):
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if osm_type != 'node' and place.area and place.area > 90000:
+    if osm_type != 'node' and place.area and place.area_in_sq_km > 90000:
         return render_template('error_page.html', message='{}: area is too large for matcher'.format(place.name))
 
     if not place.state or place.state == 'refresh':
@@ -801,7 +801,7 @@ def get_existing():
     sort = request.args.get('sort') or 'name'
     name_filter = g.get('filter')
 
-    q = Place.query.filter(Place.state.isnot(None))
+    q = Place.query.filter(Place.state.isnot(None), Place.osm_type != 'node')
     if name_filter:
         q = q.filter(Place.display_name.ilike('%' + name_filter + '%'))
     if sort == 'name':
