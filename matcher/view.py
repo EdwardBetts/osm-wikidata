@@ -1217,6 +1217,9 @@ def item_page(wikidata_id):
         except overpass.RateLimited:
             return render_template('error_page.html',
                                    message='Overpass rate limit exceeded')
+        except overpass.Timeout:
+            return render_template('error_page.html',
+                                   message='Overpass timeout')
 
     endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
 
