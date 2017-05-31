@@ -41,25 +41,25 @@
 
 {% macro render_pagination(pagination) %}
 {% if pagination.pages > 1 %}
-<nav>
+<nav aria-label="Page navigation example">
   <ul class="pagination">
   {% if pagination.has_prev %}
-		<li><a href="{{ url_for_other_page(pagination.page - 1) }}">&laquo; Previous</a></li>
+		<li class="page-item"><a class="page-link" href="{{ url_for_other_page(pagination.page - 1) }}">&laquo; Previous</a></li>
   {% endif %}
   {%- for page in pagination.iter_pages() %}
     {% if page %}
       {% if page != pagination.page %}
-		<li><a href="{{ url_for_other_page(page) }}">{{ page }}</a></li>
+		<li class="page-item"><a class="page-link" href="{{ url_for_other_page(page) }}">{{ page }}</a></li>
       {% else %}
-        <li class="active"><span>{{ page }}</span></li>
+        <li class="page-item active"><a class="page-link" href="{{ url_for_other_page(page) }}">{{ page }} <span class="sr-only">(current)</span></a></li>
       {% endif %}
     {% else %}
       <li><span class="ellipsis">…</span></li>
     {% endif %}
   {%- endfor %}
   {% if pagination.has_next %}
-    <li>
-      <a href="{{ url_for_other_page(pagination.page + 1) }}" aria-label="Next">
+    <li class="page-item">
+      <a class="page-link" href="{{ url_for_other_page(pagination.page + 1) }}" aria-label="Next">
         <span aria-hidden="true">Next &raquo;</span>
       </a>
     </li>
