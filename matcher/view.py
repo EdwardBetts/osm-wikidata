@@ -296,8 +296,12 @@ def exception_handler(e):
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
     wikidata_id = request.form['wikidata']
-    osm_id = request.form['osm_id']
-    osm_type = request.form['osm_type']
+    osm = request.form.get('osm')
+    if osm:
+        osm_type, _, osm_id = osm.partition('/')
+    else:
+        osm_id = request.form['osm_id']
+        osm_type = request.form['osm_type']
 
     user = g.user._get_current_object()
     assert user.is_authenticated
