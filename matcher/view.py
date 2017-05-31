@@ -1232,12 +1232,12 @@ def item_page(wikidata_id):
             element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
             found.append((element, m))
 
-    if item:
-        upload_option = any(not c.wikidata_tag for c in item.candidates)
-    elif found:
-        upload_option = any('wikidata' not in c['tags'] for c, _ in found)
-    else:
-        upload_option = False
+    upload_option = False
+    if g.user.is_authenticated:
+        if item:
+            upload_option = any(not c.wikidata_tag for c in item.candidates)
+        elif found:
+            upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 
     return render_template('item_page.html',
                            item=item,
