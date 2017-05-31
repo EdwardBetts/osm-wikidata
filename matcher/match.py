@@ -77,7 +77,7 @@ def name_match_main(osm, wd, endings=None):
     if 'washington, d' in wd_lc:  # special case for Washington, D.C.
         wd_lc = wd_lc.replace('washington, d', 'washington d')
     comma = wd_lc.rfind(', ')
-    if comma != -1 and wd_lc[:comma] == osm_lc:
+    if comma != -1 and not osm_lc.isdigit() and wd_lc[:comma] == osm_lc:
         return Match(MatchType.good)
     if wd_lc.split() == list(reversed(osm_lc.split())):
         return Match(MatchType.good)
@@ -135,7 +135,10 @@ def check_name_matches_address(osm_tags, wikidata_names):
     number_start = {name for name in wikidata_names if name[0].isdigit()}
     if not number_start:
         return
-    number_start.update(name[:name.rfind(',')] for name in set(number_start) if ',' in name)
+    strip_comma = [name[:name.rfind(',')]
+                   for name in set(number_start)
+                   if ',' in name)]
+    number_start.update(n for n in strip_comma if not n.isdigit())
     number_start = {normalize_name(name) for name in number_start}
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:housenumber'] + osm_tags['addr:street'])
