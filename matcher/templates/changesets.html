@@ -1,3 +1,4 @@
+{% from "macro.html" import render_pagination %}
 {% extends "base.html" %}
 
 {% block title %}Changes{% endblock %}
@@ -6,10 +7,12 @@
 <div class="container my-2">
 <h1>Changes</h1>
 
-<p>{{ '{:,d}'.format(objs.count()) }} changesets</p>
+{% set total = pager.total_count %}
+
+<p>{{ '{:,d}'.format(total) }} changesets</p>
 
 <table class="table table-hover">
-{% for obj in objs %}
+{% for obj in objects %}
 <tr>
 <td class="text-nowrap">
     <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
@@ -38,6 +41,8 @@
 </tr>
 {% endfor %}
 </table>
+
+{{ render_pagination(pager) }}
 
 </div>
 {% endblock %}

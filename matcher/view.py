@@ -13,6 +13,7 @@ from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
 from .mail import error_mail, send_mail
+from .pager import Pagination
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 
@@ -990,10 +991,19 @@ def trim_location_from_names(entity, wikidata_names):
             if new and new not in wikidata_names:
                 wikidata_names[new] = name_values
 
+def get_int_arg(name):
+    if name in request.args and request.args[name].isdigit():
+        return int(request.args[name])
+
 @app.route('/changes')
 def changesets():
-    return render_template('changesets.html',
-                           objs=Changeset.query.order_by(Changeset.id.desc()))
+    q = Changeset.query.order_by(Changeset.id.desc())
+
+    page = get_int_arg('page') or 1
+    per_page = 50
+    pager = Pagination(page, per_page, q.count())
+
+    return render_template('changesets.html', objects=q, pager=pager)
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
