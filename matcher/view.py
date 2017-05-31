@@ -812,7 +812,7 @@ def matcher_progress(osm_type, osm_id):
 user: {}
 name: {}
 page: {}
-'''.format(user, place.display_name, place.candidates_url())
+'''.format(user, place.display_name, place.candidates_url(_external=True))
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
