@@ -44,7 +44,6 @@ function close_changeset() {
 
 function upload_tags() {
     var end = items.length;
-    end = 6;
 
     if(current_item >= end) {
         close_changeset();
