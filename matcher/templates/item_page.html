@@ -109,9 +109,15 @@
 
     <h3>matches</h3>
     {% if item %}
+
+      {% if not g.user.is_authenticated %}
+        <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+      {% endif %}
+
+
       {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
-        {% if 'wikidata' not in c.tags %}
+        {% if 'wikidata' not in c.tags and g.user.is_authenticated %}
           <form method="post" action="{{ url_for('add_wikidata_tag') }}">
             <input type="hidden" name="osm_id" value="{{ c.osm_id }}" />
             <input type="hidden" name="osm_type" value="{{ c.osm_type }}" />
@@ -138,7 +144,7 @@
            </div>
            </li>
 
-          {% if 'wikidata' not in c.tags %}
+          {% if 'wikidata' not in c.tags and g.user.is_authenticated %}
             <form method="post" action="{{ url_for('add_wikidata_tag') }}">
               <input type="hidden" name="osm_id" value="{{ c.id }}" />
               <input type="hidden" name="osm_type" value="{{ c.type }}" />
