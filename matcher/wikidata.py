@@ -10,7 +10,7 @@ page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
 enwiki = 'https://en.wikipedia.org/wiki/'
 skip_tags = {'route:road',
-             'building',
+             'route=road',
              'highway=primary',
              'highway=road',
              'highway=service',
