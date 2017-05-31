@@ -801,7 +801,9 @@ def matcher_progress(osm_type, osm_id):
 
     body = '''
 user: {}
-name: {}'''.format(user, place.display_name)
+name: {}
+page: {}
+'''.format(user, place.display_name, place.candidates_url)
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
@@ -1230,6 +1232,13 @@ def item_page(wikidata_id):
             element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
             found.append((element, m))
 
+    if item:
+        upload_option = any(not c.wikidata_tag for c in item.candidates)
+    elif found:
+        upload_option = any('wikidata' not in c['tags'] for c, _ in found)
+    else:
+        upload_option = False
+
     return render_template('item_page.html',
                            item=item,
                            entity=entity,
@@ -1239,6 +1248,7 @@ def item_page(wikidata_id):
                            category_map=category_map,
                            criteria=criteria,
                            sitelinks=sitelinks,
+                           upload_option=upload_option,
                            filtered=filtered,
                            oql=oql,
                            qid=qid,
