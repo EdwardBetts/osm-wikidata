@@ -61,6 +61,8 @@ function upload_tags() {
         if (data == 'done') {
             $('#' + item.row_id).addClass('table-success')
             update_count += 1;
+        } else if (data == 'already tagged') {
+            $('#' + item.row_id).addClass('table-warning')
         } else {
             $('#' + item.row_id).addClass('table-danger')
         }
