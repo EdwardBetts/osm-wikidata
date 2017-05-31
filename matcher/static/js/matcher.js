@@ -42,7 +42,7 @@ function check_overpass() {
 
 function load_osm2pgsql() {
   mark_active($('#load_osm2pgsql'));
-  $.post(load_osm2pgsql_url).done (function(data) {
+  $.post(load_osm2pgsql_url).done(function(data) {
     if(data == 'done') {
       mark_done($('#load_osm2pgsql'));
       load_match();

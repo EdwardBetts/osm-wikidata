@@ -30,6 +30,8 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 cat_to_ending = None
+osm_api_base = 'https://api.openstreetmap.org/api/0.6'
+really_save = True
 
 navbar_pages = [
     {'name': 'criteria_page', 'label': 'Criteria'},
@@ -316,9 +318,7 @@ def add_wikidata_tag():
     osm_backend = social_user.get_backend_instance()
     auth = osm_backend.oauth_auth(social_user.access_token)
 
-    base = 'https://api.openstreetmap.org/api/0.6'
-
-    url = '{}/{}/{}'.format(base, osm_type, osm_id)
+    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
     r = requests.get(url, params=social_user.access_token)
 
     root = etree.fromstring(r.content)
@@ -337,7 +337,7 @@ def add_wikidata_tag():
 </osm>
 '''.format(comment)
 
-    r = osm_backend.request(base + '/changeset/create',
+    r = osm_backend.request(osm_api_base + '/changeset/create',
                             method='PUT',
                             data=changeset,
                             auth=auth,
@@ -378,7 +378,7 @@ def add_wikidata_tag():
     database.session.add(change)
     database.session.commit()
 
-    r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
+    r = osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
                             auth=auth,
                             headers=user_agent_headers())
@@ -468,7 +468,71 @@ def overpass_query(osm_type, osm_id):
                            osm_id=osm_id,
                            full_count=full_count)
 
-def do_add_tags(place, table):
+@app.route('/close_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
+def close_changeset(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
+
+    osm_backend, auth = get_backend_and_auth()
+
+    changeset_id = request.form['changeset_id']
+    comment = request.form['comment']
+    update_count = request.form['update_count']
+
+    print((changeset_id, comment, update_count))
+
+    if really_save:
+        osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
+                            method='PUT',
+                            auth=auth,
+                            headers=user_agent_headers())
+
+        change = Changeset(id=changeset_id,
+                           place=place,
+                           created=func.now(),
+                           comment=comment,
+                           update_count=update_count,
+                           user=g.user)
+
+        database.session.add(change)
+        database.session.commit()
+
+    return Response('done', mimetype='text/plain')
+
+@app.route('/open_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
+def open_changeset(osm_type, osm_id):
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
+    comment = request.form['comment']
+    osm_backend, auth = get_backend_and_auth()
+
+    changeset = '''
+<osm>
+  <changeset>
+    <tag k="created_by" v="https://osm.wikidata.link/"/>
+    <tag k="comment" v="{}"/>
+  </changeset>
+</osm>
+'''.format(comment)
+
+    if really_save:
+        r = osm_backend.request(osm_api_base + '/changeset/create',
+                                method='PUT',
+                                data=changeset,
+                                auth=auth,
+                                headers=user_agent_headers())
+        changeset_id = r.text.strip()
+    else:
+        changeset_id = '1'
+
+    return Response(changeset_id, mimetype='text/plain')
+
+def get_backend_and_auth():
+    if not really_save:
+        return None, None
+
     user = g.user._get_current_object()
     assert user.is_authenticated
 
@@ -476,7 +540,60 @@ def do_add_tags(place, table):
     osm_backend = social_user.get_backend_instance()
     auth = osm_backend.oauth_auth(social_user.access_token)
 
-    base = 'https://api.openstreetmap.org/api/0.6'
+    return osm_backend, auth
+
+@app.route('/post_tag/<osm_type>/<int:osm_id>/Q<int:item_id>', methods=['POST'])
+def post_tag(osm_type, osm_id, item_id):
+    changeset_id = request.form['changeset_id']
+
+    osm_backend, auth = get_backend_and_auth()
+
+    wikidata_id = 'Q{:d}'.format(item_id)
+
+    osm = ItemCandidate.query.filter_by(item_id=item_id, osm_type=osm_type, osm_id=osm_id).one_or_none()
+
+    if not osm:
+        return Response('not found', mimetype='text/plain')
+
+    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
+    r = requests.get(url, headers=user_agent_headers())
+    root = etree.fromstring(r.content)
+    existing = root.find('.//tag[@k="wikidata"]')
+    if existing:
+        if really_save:
+            osm.tags['wikidata'] = existing.get('v')
+            flag_modified(osm, 'tags')
+            database.session.commit()
+        return Response('already tagged', mimetype='text/plain')
+
+    if r.status_code == 410 or r.content == b'':
+        return Response('deleted', mimetype='text/plain')
+
+    root = etree.fromstring(r.content)
+    tag = etree.Element('tag', k='wikidata', v=wikidata_id)
+    root[0].set('changeset', changeset_id)
+    root[0].append(tag)
+
+    element_data = etree.tostring(root).decode('utf-8')
+    if really_save:
+        r = osm_backend.request(url,
+                                method='PUT',
+                                data=element_data,
+                                auth=auth,
+                                headers=user_agent_headers())
+        if not r.text.strip().isdigit():
+            return Response('save error', mimetype='text/plain')
+
+    if really_save:
+        osm.tags['wikidata'] = wikidata_id
+        flag_modified(osm, 'tags')
+        database.session.commit()
+
+    return Response('done', mimetype='text/plain')
+
+def do_add_tags(place, table):
+    osm_backend, auth = get_backend_and_auth()
+
     comment = request.form['comment']
 
     changeset = '''
@@ -488,7 +605,7 @@ def do_add_tags(place, table):
 </osm>
 '''.format(comment)
 
-    r = osm_backend.request(base + '/changeset/create',
+    r = osm_backend.request(osm_api_base + '/changeset/create',
                             method='PUT',
                             data=changeset,
                             auth=auth,
@@ -498,7 +615,7 @@ def do_add_tags(place, table):
 
     for item, osm in table:
         wikidata_id = 'Q{:d}'.format(item.item_id)
-        url = '{}/{}/{}'.format(base, osm.osm_type, osm.osm_id)
+        url = '{}/{}/{}'.format(osm_api_base, osm.osm_type, osm.osm_id)
         r = requests.get(url, headers=user_agent_headers())
         if 'wikidata' in r.text:  # done already
             print('skip:', wikidata_id)
@@ -527,10 +644,10 @@ def do_add_tags(place, table):
         assert osm.tags['wikidata'] == wikidata_id
         update_count += 1
 
-    r = osm_backend.request(base + '/changeset/{}/close'.format(changeset_id),
-                            method='PUT',
-                            auth=auth,
-                            headers=user_agent_headers())
+    osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
+                        method='PUT',
+                        auth=auth,
+                        headers=user_agent_headers())
 
     change = Changeset(id=changeset_id,
                        place=place,
@@ -578,7 +695,17 @@ def add_tags(osm_type, osm_id):
     table = [(item, candidate)
              for item, candidate in matcher.filter_candidates_more(items)]
 
-    if request.form.get('confirm') == 'yes':
+    items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
+              'qid': i.qid,
+              'osm_type': c.osm_type,
+              'osm_id': c.osm_id,
+              'description': '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid),
+              'post_tag_url': url_for('.post_tag',
+                                      item_id=i.item_id,
+                                      osm_id=c.osm_id,
+                                      osm_type=c.osm_type)} for i, c in table]
+
+    if False and request.form.get('confirm') == 'yes':
         update_count = do_add_tags(place, table)
         flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
         return redirect(url_for('candidates', osm_type=place.osm_type, osm_id=place.osm_id))
@@ -586,6 +713,7 @@ def add_tags(osm_type, osm_id):
     return render_template('add_tags.html',
                            place=place,
                            osm_id=osm_id,
+                           items=items,
                            table=table)
 
 @app.route('/place/<name>')
@@ -631,9 +759,12 @@ def candidates(osm_type, osm_id):
     filtered = {item.item_id: candidate
                 for item, candidate in matcher.filter_candidates_more(items)}
 
+    upload_okay = filtered and g.user.is_authenticated
+
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
+                           upload_okay=upload_okay,
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,
                            filtered=filtered,

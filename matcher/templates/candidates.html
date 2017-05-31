@@ -48,11 +48,11 @@
 
   {% if candidates %}
 
-    {% if filtered and not g.user.is_authenticated %}
+    {% if filtered and not upload_okay %}
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
     {% endif %}
 
-    {% if filtered and g.user.is_authenticated %}
+    {% if filtered and upload_okay %}
     <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
 
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
@@ -62,7 +62,7 @@
     <div class="my-3">
     {% for i in candidates %}
       <p>
-      {% if filtered and g.user.is_authenticated %}
+      {% if filtered and upload_okay %}
           {% if i.item_id in filtered %}
             <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
           {% else %}
@@ -86,7 +86,7 @@
       </ul>
     {% endfor %}
     </div>
-    {% if filtered and g.user.is_authenticated %}
+    {% if filtered and upload_okay %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
       (Don't worry, there is a confirmation page)
     </form>

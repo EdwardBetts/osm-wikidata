@@ -9,29 +9,47 @@
   <div class="col">
     <h1>{{ place.name }}</h1>
 
+    <p><a href="{{ place.candidates_url() }}">back to candidate list</a></p>
+
   {{ place_box(place) }}
 
-    <form class="form-inline" method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
-      <input type="hidden" name="confirm" value="yes" />
+<div id="notice" class="card card-inverse card-primary mb-3">
+  <div class="card-block">
+    <blockquote class="card-blockquote">
+      <p>Please be check each match carefully before uploading to OpenStreetMap.</p>
+      <p>If in doubt contact the local mapping community before adding Wikidata tags.</p>
+    </blockquote>
+  </div>
+</div>
 
-      {% for include in request.form.getlist('include') %}
-        <input type="hidden" name="include" value="{{ include }}" />
-      {%- endfor %}
+  <div class="form-inline">
+    <label for="comment">change comment:</label>
+    <input class="form-control m-2"
+           id="comment"
+           name="comment"
+           size="50"
+           value="add wikidata tags within {{ place.name }}" />
 
-      <label for="comment">change comment:</label>
-      <input class="form-control m-2"
-             id="comment"
-             name="comment"
-             size="40"
-             value="add wikidata tags within {{ place.name }}" />
+    <button id="save" class="btn btn-primary">save</button>
+  </div>
 
-      <button class="btn btn-primary">save</button>
-    </form>
+    <p class="mt-2">
+      <span id="status"></span>
+      <span id="done">
+        <a id="changeset-link" href="#">view your changeset</a>
+        or
+        <a href="{{ place.candidates_url() }}">go back to candidate list</a>
+      </span>
+    </p>
+
+    <div class="progress">
+        <div id="upload-progress" class="progress-bar" role="progressbar"></div>
+    </div>
 
     <div class="my-3">
     <table class="table table-sm table-hover">
     {% for i, c in table %}
-      <tr>
+      <tr id="{{ i.qid }}-{{c.osm_type }}-{{ c.osm_id }}">
         <td>
           <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
         </td>
@@ -54,4 +72,18 @@
 </div>
 </div>
 </div>
+{% endblock %}
+
+{% block script %}
+
+<script>
+var open_changeset_url = {{ url_for('open_changeset', osm_id=place.osm_id, osm_type=place.osm_type) | tojson }};
+var close_changeset_url = {{ url_for('close_changeset', osm_id=place.osm_id, osm_type=place.osm_type) | tojson }};
+
+var items = {{ items | tojson }}
+
+</script>
+
+
+<script src="{{ url_for('static', filename='js/add_tags.js') }}"></script>
 {% endblock %}
