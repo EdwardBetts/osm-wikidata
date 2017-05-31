@@ -300,9 +300,14 @@ def add_wikidata_tag():
     osm = request.form.get('osm')
     if osm:
         osm_type, _, osm_id = osm.partition('/')
-    else:
-        osm_id = request.form['osm_id']
+    elif 'osm_id' in request.form and 'osm_type' in request.form:
+        osm_id = request.form['osm_id']  # old form paramters
         osm_type = request.form['osm_type']
+    else:
+        flash('no candidate selected')
+        return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
+
+    print(wikidata_id, osm_type, osm_id)
 
     user = g.user._get_current_object()
     assert user.is_authenticated
@@ -322,7 +327,7 @@ def add_wikidata_tag():
         flash('no edit needed: OSM element already had wikidata tag')
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-    comment = 'add wikidata tag'
+    comment = request.form.get('comment', 'add wikidata tag')
     changeset = '''
 <osm>
   <changeset>
@@ -808,7 +813,7 @@ def matcher_progress(osm_type, osm_id):
 user: {}
 name: {}
 page: {}
-'''.format(user, place.display_name, place.candidates_url)
+'''.format(user, place.display_name, place.candidates_url())
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
@@ -1246,12 +1251,12 @@ def item_page(wikidata_id):
             element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
             found.append((element, m))
 
-    if item:
-        upload_option = any(not c.wikidata_tag for c in item.candidates)
-    elif found:
-        upload_option = any('wikidata' not in c['tags'] for c, _ in found)
-    else:
-        upload_option = False
+    upload_option = False
+    if g.user.is_authenticated:
+        if item:
+            upload_option = any(not c.wikidata_tag for c in item.candidates)
+        elif found:
+            upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 
     return render_template('item_page.html',
                            item=item,
