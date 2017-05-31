@@ -108,6 +108,11 @@
     {% endif %}
 
     <h3>matches</h3>
+    {% if False and upload_option %}
+    <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
+      <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+      <input type="hidden" name="wikidata" value="{{ qid }}" />
+    {% endif %}
     {% if item %}
 
       {% if not g.user.is_authenticated %}
