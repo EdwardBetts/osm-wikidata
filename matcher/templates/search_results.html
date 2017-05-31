@@ -6,13 +6,12 @@
     {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
       {% if hit.osm_type != 'node' and hit.category != 'highway' and (hit.osm_type == 'node' or not hit.area or hit.area < 90000) %}
       <b>
-        {% if name %}
-          <a href="{{ url_for('matcher_progress', osm_id=hit.osm_id) }}">{{ name }}</a>,
-          {% if hit.address.state %}{{ hit.address.state }}, {% endif %}
-          {{ hit.address.country }}
+        {% if hit.place and hit.place.state == 'ready' %}
+            {% set hit_url = hit.place.candidates_url() %}
         {% else %}
-          <a href="{{ url_for('matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) }}">{{ hit.display_name }}</a>
+            {% set hit_url = url_for('matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) %}
         {% endif %}
+        <a href="{{ hit_url }}">{{ hit.display_name }}</a>
       </b><br>
     {% else %}
        <b>
