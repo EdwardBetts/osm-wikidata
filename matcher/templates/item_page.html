@@ -1,33 +1,3 @@
-{% macro candidate_info(c, upload_option) %}
-  {% set m = c.get_match() %}
-  <li>
-    {% if 'wikidata' not in c.tags and upload_option %}
-      <input type="radio" name="{{ osm }}" value="{{ c.osm_type }}/{{ c.osm_id }}">
-    {% endif %}
-    <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-      {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
-    </a>
-    ({{ c.osm_type}}{% if c.dist %},
-     {{ c.dist | int }} m{% endif %})
-     {{ ', '.join(c.matching_tags()) }}
-
-     <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
-     <div class="all_tags" id="candidate{{ c.key }}">
-       {% for k, v in c.tags.items() if k != 'way_area' %}
-        {{ k }}: {{ v }}</br>
-       {% endfor %}
-     </div>
-     {% if 'wikidata' in c.tags %}
-       <br>
-       {% if c.tags.wikidata == c.item.qid %}
-         wikidata <span class="match">match</span>: {{ c.tags.wikidata }}
-       {% else %}
-         wikidata <span class="mismatch">mismatch</span>: <a href="https://www.wikidata.org/wiki/{{ c.tags.wikidata }}">{{ c.tags.wikidata }}</a>
-       {% endif %}
-     {% endif %}
-    </li>
-{% endmacro %}
-
 {% extends "base.html" %}
 
 {% block style %}
@@ -139,7 +109,6 @@
     <h3>matches</h3>
     {% if upload_option %}
     <form method="post" action="{{ url_for('add_wikidata_tag') }}">
-      <button class="btn btn-primary">add wikidata tag to OpenStreetMap</button>
       <input type="hidden" name="wikidata" value="{{ qid }}" />
     {% endif %}
     {% if item %}
@@ -150,21 +119,56 @@
 
 
       {% for c in item.candidates %}
-        {{ candidate_info(c, upload_option) }}
+        {% set m = c.get_match() %}
+        <div>
+          {% if 'wikidata' not in c.tags and upload_option %}
+            <input type="radio"
+                   name="osm"
+                   value="{{ c.osm_type }}/{{ c.osm_id }}"
+                   {% if item.candidates.count() == 1 %}
+                       checked="checked"
+                   {% endif %} />
+          {% endif %}
+          <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
+            {{ (m.osm_key + '=' + m.osm_name) if m else c.name -}}
+          </a>
+          ({{ c.osm_type}}{% if c.dist %},
+           {{ c.dist | int }} m{% endif %})
+           {{ ', '.join(c.matching_tags()) }}
+
+           <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
+           <div class="all_tags" id="candidate{{ c.key }}">
+             {% for k, v in c.tags.items() if k != 'way_area' %}
+              {{ k }}: {{ v }}</br>
+             {% endfor %}
+           </div>
+           {% if 'wikidata' in c.tags %}
+             <br>
+             {% if c.tags.wikidata == c.item.qid %}
+               wikidata <span class="match">match</span>: {{ c.tags.wikidata }}
+             {% else %}
+               wikidata <span class="mismatch">mismatch</span>: <a href="https://www.wikidata.org/wiki/{{ c.tags.wikidata }}">{{ c.tags.wikidata }}</a>
+             {% endif %}
+           {% endif %}
+          </div>
       {% endfor %}
     {% else %}
       {% if not found %}
           <p>no matches found</p>
       {% else %}
-        <ul>
         {% for c, m in found %}
-          <li>
+          <div>
             {% if 'wikidata' not in c.tags and upload_option %}
-              <input type="radio" name="{{ osm }}" value="{{ c.osm_type }}/{{ c.osm_id }}">
+              <input type="radio"
+                     name="osm"
+                     value="{{ c.osm_type }}/{{ c.osm_id }}"
+                     {% if found | count == 1 %}
+                     checked="checked"
+                     {% endif %} />
             {% endif %}
             <a href="https://www.openstreetmap.org/{{ c.type }}/{{ c.id }}">
-            {{ (m.osm_key + '=' + m.osm_name) if m else c.tags.name }}
-          </a> ({{ c.type}})
+            {{ (m.osm_key + '=' + m.osm_name) if m else c.tags.name -}}
+            </a> ({{ c.type}})
 
            <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
            <div class="all_tags" id="candidate{{ c.key }}">
@@ -175,7 +179,7 @@
           {% if 'wikidata' in c.tags %}
             <p>OSM already includes wikidata tag.</p>
           {% endif %}
-           </li>
+           </div>
 
         {% endfor %}
         </ul>
