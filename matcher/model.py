@@ -27,7 +27,6 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
 skip_tags = {'route:road',
-             'building',
              'highway=primary',
              'highway=road',
              'highway=service',
@@ -35,7 +34,10 @@ skip_tags = {'route:road',
              'highway=trunk',
              'highway=unclassified',
              'highway',
+             'tunnel',
              'name',
+             'tunnel'
+             'website',
              'type=waterway',
              'waterway=river'
              'addr:street',
@@ -447,6 +449,10 @@ class ItemCandidate(Base):
                 continue
 
         return tags
+
+    @property
+    def wikidata_tag():
+        return self.tags.get('wikidata') or None
 
 class TagOrKey(Base):
     __tablename__ = 'tag_or_key'
