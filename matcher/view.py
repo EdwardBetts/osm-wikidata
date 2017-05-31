@@ -13,7 +13,7 @@ from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func
 from .mail import error_mail, send_mail
-from .pager import Pagination
+from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 
@@ -25,6 +25,7 @@ import re
 re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
+init_pager(app)
 app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -659,7 +660,26 @@ def do_add_tags(place, table):
     database.session.add(change)
     database.session.commit()
 
+    announce_change(change)
+
     return update_count
+
+def announce_change(change):
+    place = change.place
+    body = '''
+user: {change.user.username}
+name: {name}
+page: {url}
+items: {change.update_count}
+comment: {change.comment}
+
+https://www.openstreetmap.org/changeset/{change.id}
+
+'''.format(name=place.display_name,
+           url=place.candidates_url(_external=True),
+           change=change)
+
+    send_mail('tags added: {}'.format(place.name), body)
 
 @app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def update_tags(osm_type, osm_id):
@@ -919,6 +939,9 @@ def load_match(place_id):
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if place.state == 'ready':
+        return redirect(place.candidates_url())
+
     if osm_type != 'node' and place.area and place.area_in_sq_km > 90000:
         return render_template('error_page.html', message='{}: area is too large for matcher'.format(place.name))
 
@@ -940,11 +963,16 @@ def matcher_progress(osm_type, osm_id):
     else:
         user = 'not authenticated'
 
+
     body = '''
 user: {}
 name: {}
 page: {}
-'''.format(user, place.display_name, place.candidates_url())
+area: {}
+'''.format(user,
+           place.display_name,
+           place.candidates_url(_external=True),
+           ('{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'))
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
@@ -998,8 +1026,10 @@ def search_results():
     for hit in results:
         p = Place.query.get(hit['place_id'])
         print(hit['place_id'], p.area)
-        if p and p.area:
-            hit['area'] = p.area_in_sq_km
+        if p:
+            if p.area:
+                hit['area'] = p.area_in_sq_km
+            hit['place'] = p
 
     return render_template('results_page.html', results=results, q=q)
 
@@ -1139,7 +1169,7 @@ def changesets():
     per_page = 50
     pager = Pagination(page, per_page, q.count())
 
-    return render_template('changesets.html', objects=q, pager=pager)
+    return render_template('changesets.html', objects=pager.slice(q), pager=pager)
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
