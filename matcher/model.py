@@ -451,7 +451,7 @@ class ItemCandidate(Base):
         return tags
 
     @property
-    def wikidata_tag():
+    def wikidata_tag(self):
         return self.tags.get('wikidata') or None
 
 class TagOrKey(Base):
