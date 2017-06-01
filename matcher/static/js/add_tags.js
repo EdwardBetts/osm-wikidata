@@ -17,6 +17,10 @@ function open_changeset() {
 }
 
 function start_upload(data) {
+    if (data == 'error') {
+        $('#status').text('error opening changeset');
+        return
+    }
     changeset_id = data;
     var url = 'https://www.openstreetmap.org/changeset/' + changeset_id;
     $('#changeset-link').prop('href', url);
