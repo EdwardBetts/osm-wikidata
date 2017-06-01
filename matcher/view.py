@@ -481,8 +481,6 @@ def close_changeset(osm_type, osm_id):
     comment = request.form['comment']
     update_count = request.form['update_count']
 
-    print((changeset_id, comment, update_count))
-
     if really_save:
         osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
                             method='PUT',
@@ -498,6 +496,8 @@ def close_changeset(osm_type, osm_id):
 
         database.session.add(change)
         database.session.commit()
+
+        announce_change(change)
 
     return Response('done', mimetype='text/plain')
 
@@ -519,14 +519,37 @@ def open_changeset(osm_type, osm_id):
 '''.format(comment)
 
     if really_save:
-        r = osm_backend.request(osm_api_base + '/changeset/create',
-                                method='PUT',
-                                data=changeset,
-                                auth=auth,
-                                headers=user_agent_headers())
+        try:
+            r = osm_backend.request(osm_api_base + '/changeset/create',
+                                    method='PUT',
+                                    data=changeset.encode('utf-8'),
+                                    auth=auth,
+                                    headers=user_agent_headers())
+        except requests.exceptions.HTTPError as e:
+            error_mail('error creating changeset: ' + place.name, changeset, e.response)
+            return Response('error', mimetype='text/plain')
         changeset_id = r.text.strip()
-    else:
-        changeset_id = '1'
+        if not changeset_id.isdigit():
+            body = '''
+user: {change.user.username}
+name: {name}
+page: {url}
+
+sent:
+
+{sent}
+
+reply:
+
+{reply}
+
+'''.format(name=place.display_name,
+           url=place.candidates_url(_external=True),
+           sent=changeset,
+           reply=reply)
+
+            send_mail('error creating changeset:' + place.name, body)
+            return Response('error', mimetype='text/plain')
 
     return Response(changeset_id, mimetype='text/plain')
 
@@ -558,10 +581,10 @@ def post_tag(osm_type, osm_id, item_id):
 
     url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
     r = requests.get(url, headers=user_agent_headers())
-    root = etree.fromstring(r.content)
-    existing = root.find('.//tag[@k="wikidata"]')
-    if existing:
-        if really_save:
+    if b'wikidata' in r.content:
+        root = etree.fromstring(r.content)
+        existing = root.find('.//tag[@k="wikidata"]')
+        if existing is not None and really_save:
             osm.tags['wikidata'] = existing.get('v')
             flag_modified(osm, 'tags')
             database.session.commit()
@@ -577,11 +600,15 @@ def post_tag(osm_type, osm_id, item_id):
 
     element_data = etree.tostring(root).decode('utf-8')
     if really_save:
-        r = osm_backend.request(url,
-                                method='PUT',
-                                data=element_data,
-                                auth=auth,
-                                headers=user_agent_headers())
+        try:
+            r = osm_backend.request(url,
+                                    method='PUT',
+                                    data=element_data,
+                                    auth=auth,
+                                    headers=user_agent_headers())
+        except requests.exceptions.HTTPError as e:
+            error_mail('error saving element', element_data, e.response)
+            return Response('save error', mimetype='text/plain')
         if not r.text.strip().isdigit():
             return Response('save error', mimetype='text/plain')
 
