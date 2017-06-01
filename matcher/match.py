@@ -137,7 +137,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
         return
     strip_comma = [name[:name.rfind(',')]
                    for name in set(number_start)
-                   if ',' in name)]
+                   if ',' in name]
     number_start.update(n for n in strip_comma if not n.isdigit())
     number_start = {normalize_name(name) for name in number_start}
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
