@@ -489,14 +489,9 @@ def close_changeset(osm_type, osm_id):
                             auth=auth,
                             headers=user_agent_headers())
 
-        change = Changeset(id=changeset_id,
-                           place=place,
-                           created=func.now(),
-                           comment=comment,
-                           update_count=update_count,
-                           user=g.user)
+        change = Changeset.query.get(changeset_id)
+        change.update_count = update_count
 
-        database.session.add(change)
         database.session.commit()
 
         announce_change(change)
@@ -552,6 +547,16 @@ reply:
 
             send_mail('error creating changeset:' + place.name, body)
             return Response('error', mimetype='text/plain')
+
+        change = Changeset(id=changeset_id,
+                           place=place,
+                           created=func.now(),
+                           comment=comment,
+                           update_count=0,
+                           user=g.user)
+
+        database.session.add(change)
+        database.session.commit()
 
     return Response(changeset_id, mimetype='text/plain')
 
@@ -617,6 +622,10 @@ def post_tag(osm_type, osm_id, item_id):
     if really_save:
         osm.tags['wikidata'] = wikidata_id
         flag_modified(osm, 'tags')
+
+        change = Changeset.query.get(changeset_id)
+        change.update_count = change.update_count + 1
+
         database.session.commit()
 
     return Response('done', mimetype='text/plain')
