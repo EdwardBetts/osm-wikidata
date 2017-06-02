@@ -34,11 +34,12 @@ cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
 really_save = True
 
-navbar_pages = [
-    {'name': 'criteria_page', 'label': 'Criteria'},
-    {'name': 'saved_places', 'label': 'Saved'},
-    {'name': 'documentation', 'label': 'Documentation'},
-]
+navbar_pages = {
+    'criteria_page': 'Criteria',
+    'saved_places': 'Saved',
+    'documentation': 'Documentation',
+    'changesets': 'Recent changes',
+}
 
 tab_pages = [
     {'route': 'candidates', 'label': 'Match candidates'},
@@ -1190,7 +1191,7 @@ def get_int_arg(name):
 
 @app.route('/changes')
 def changesets():
-    q = Changeset.query.order_by(Changeset.id.desc())
+    q = Changeset.query.filter(Changeset.update_count > 0).order_by(Changeset.id.desc())
 
     page = get_int_arg('page') or 1
     per_page = 50
@@ -1336,6 +1337,35 @@ def api_item_match(wikidata_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/detail/Q<int:item_id>/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
+def match_detail(item_id, osm_type, osm_id):
+    osm = (ItemCandidate.query
+                        .filter_by(item_id=item_id, osm_type=osm_type, osm_id=osm_id)
+                        .one_or_none())
+    if not osm:
+        return abort(404)
+
+    item = osm.item
+
+    qid = 'Q' + str(item_id)
+    wikidata_names = dict(wikidata.names_from_entity(item.entity))
+    lat, lon = item.coords()
+    assert lat is not None and lon is not None
+
+    if item.categories:
+        category_map = matcher.categories_to_tags_map(item.categories)
+    else:
+        category_map = None
+
+    return render_template('match_detail.html',
+                           item=item,
+                           osm=osm,
+                           category_map=category_map,
+                           qid=qid,
+                           lat=lat,
+                           lon=lon,
+                           wikidata_names=wikidata_names,
+                           entity=item.entity)
 
 @app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
 def item_page(wikidata_id):
@@ -1381,8 +1411,9 @@ def item_page(wikidata_id):
 
     wikidata_query = wikidata.osm_key_query(qid)
     osm_keys = wikidata.get_osm_keys(wikidata_query)
+    wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
 
-    criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
+    criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
     if item and item.tags:  # add criteria from the Item object
@@ -1406,6 +1437,7 @@ def item_page(wikidata_id):
                                item=item,
                                wikidata_names=wikidata_names,
                                wikidata_query=wikidata_query,
+                               wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
                                category_map=category_map,
                                sitelinks=sitelinks,
@@ -1451,6 +1483,7 @@ def item_page(wikidata_id):
                            entity=entity,
                            wikidata_names=wikidata_names,
                            wikidata_query=wikidata_query,
+                           wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
                            category_map=category_map,
                            criteria=criteria,
