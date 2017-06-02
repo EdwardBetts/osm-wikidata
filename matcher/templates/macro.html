@@ -11,18 +11,21 @@
 
 {% macro candidate_info(c, filtered={}) %}
   {% set m = c.get_match() %}
-    <li><a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-      {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
-    </a>
-    ({{ c.osm_type}}{% if c.dist %},
-     {{ c.dist | int }} m{% endif %})
-     {{ ', '.join(c.matching_tags()) }}
+    <li>{{c.osm_type}}:
+      <a href="{{ url_for('match_detail', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">{{ c.label }}</a>
+      <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">(OSM)</a>
+    {% if c.dist -%},
+     {{ c.dist | int }} m from Wikidata
+    {%- else -%}
+      <span class="badge badge-success">exact location match</span>
+    {% endif %}
+     {# {{ ', '.join(c.matching_tags()) }} #}
 
        {% if c.item_id in filtered and c == filtered[c.item_id] %}
-         <span class="highlight">best match</span>
+         <span class="badge badge-info">best match</span>
        {% endif %}
 
-     <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
+     <a href="#" class="show_tags_link" data-key="{{ c.key }}">[show tags]</a>
      <div class="all_tags" id="candidate{{ c.key }}">
        {% for k, v in c.tags.items() if k != 'way_area' %}
         {{ k }}: {{ v }}</br>
