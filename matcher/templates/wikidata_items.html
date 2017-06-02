@@ -51,18 +51,18 @@
 
   <p>{{ '{:,d}'.format(place.items.count()) }} items found</p>
 
-  {% for i in place.items %}
+  {% for item in place.items %}
     <p>
-      <a href="{{ i.wikidata_uri }}">{{ i.qid }}</a>
-      &mdash; {{ i.label }}
-      &mdash; <a href="{{ i.get_osm_url() }}">Wikidata location on OSM</a>
+      <a href="{{ item.wikidata_uri }}">{{ item.qid }}</a>
+      &mdash; {{ item.label }}
+      &mdash; <a href="{{ item.get_osm_url() }}">Wikidata location on OSM</a>
       <br>
       <ul>
-        {% if i.categories %}
-          <li>Wikipedia categories: {{ ', '.join(i.categories) }}</li>
+        {% if item.categories %}
+          <li>Wikipedia categories: {{ ', '.join(item.categories) }}</li>
         {% endif %}
-        {% if i.tags %}
-          <li>possible OSM tags: {{ ', '.join(i.tags) }}</li>
+        {% if item.tag_list %}
+          <li>possible OSM tags: {{ ', '.join(item.tag_list) }}</li>
         {% endif %}
       </ul>
     </p>

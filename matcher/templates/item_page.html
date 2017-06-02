@@ -1,4 +1,7 @@
+{% from "macro.html" import taginfo_link %}
 {% extends "base.html" %}
+
+{% block title %}{{ label }} ({{ qid }}){% endblock %}
 
 {% block style %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
@@ -22,6 +25,15 @@
   </script>
   {% endif %}
 
+  {% if item and item.candidates.count() > 1 %}
+  <script>
+  $('#add-tag').attr('disabled', true);
+
+  $('input:radio').change(function() {
+      $('#add-tag').attr('disabled', false);
+  });
+  </script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -40,12 +52,7 @@
       </li>
       {% endif %}
       <li><a href="http://wikidata.org/wiki/{{ qid }}">view on Wikidata</a></li>
-      <li><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">Wikidata query</a></li>
-      {% if lat and lon %}
-      <li>Wikidata coordinates: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
-        <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
-      </li>
-      {% else %}
+      {% if not (lat and lon) %}
       <li>no coordinates for item</li>
       {% endif %}
 
@@ -78,6 +85,10 @@
       {% endif %}
 
     </ul>
+
+    <div>Wikidata location: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
+        <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
+</div>
 
     <div id="mapid"></div>
 
@@ -195,12 +206,13 @@
              size="40"
              value="add wikidata tag to {{ label }}" />
 
-      <button class="btn btn-primary">add wikidata tag to OpenStreetMap</button>
+      <button id='add-tag' class="btn btn-primary">add wikidata tag to OpenStreetMap</button>
       </form>
     {% endif %}
 
     {% if wikidata_osm_tags %}
         <h3 class="my-2">Search criteria from Wikidata</h3>
+        <p><a href="http://query.wikidata.org/#{{ wikidata_query | urlencode }}">view with query.wikidata.org</a></p>
         <table class="table table-responsive table-hover table-sm">
         {% for qid, wd in wikidata_osm_tags | dictsort %}
         <tr>
@@ -213,7 +225,8 @@
             </td>
             <td>
                 {% for tag in wd.tags %}
-                    {{ tag }}{% if not loop.last %},{% endif %}
+                  {{ taginfo_link(tag) -}}
+                  {%- if not loop.last %},{% endif %}
                 {% endfor %}
             </td>
         </tr>
@@ -232,7 +245,7 @@
         </td>
         <td>
           {% for tag in tags %}
-            {{ tag }}{% if not loop.last %},{% endif %}
+            {{ taginfo_link(tag) -}}{%- if not loop.last %},{% endif %}
           {% endfor %}
         </td>
       </tr>
@@ -244,3 +257,5 @@
   </div>
 </div>
 {% endblock %}
+
+

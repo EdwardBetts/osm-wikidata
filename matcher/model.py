@@ -150,7 +150,10 @@ class Place(Base):   # assume all places are relations
 
     def add_tags_to_items(self):
         for item in self.items.filter(Item.categories != '{}'):
-            item.tags = set(item.tags) | set(matcher.categories_to_tags(item.categories))
+            existing_tags = set(item.tag_list)
+            for t in set(matcher.categories_to_tags(item.categories)):
+                if t not in existing_tags:
+                    item.tags.append(ItemTag(tag_or_key=t))
 
     @property
     def prefix(self):
@@ -250,8 +253,8 @@ class Place(Base):   # assume all places are relations
     @property
     def all_tags(self):
         tags = set()
-        for item in self.items.filter(Item.tags != '{}'):
-            tags |= set(item.tags)
+        for item in self.items:
+            tags |= set(item.tag_list)
         tags.difference_update(skip_tags)
         return matcher.simplify_tags(tags)
 
@@ -331,15 +334,21 @@ class Place(Base):   # assume all places are relations
             if not item:
                 item = Item(item_id=wikidata_id, location=v['location'])
                 session.add(item)
-            for k in 'enwiki', 'categories', 'tags', 'query_label':
+            for k in 'enwiki', 'categories', 'query_label':
                 if k in v:
                     setattr(item, k, v[k])
+            item.tags = [ItemTag(tag_or_key=t) for t in v['tags']]
             if not item.places.filter(Place.place_id == self.place_id).count():
                 item.places.append(self)
         session.commit()
 
     def wbgetentities(self):
-        q = self.items.filter(Item.tags != '{}')
+        sub = (session.query(Item.item_id)
+                      .join(ItemTag)
+                      .group_by(Item.item_id)
+                      .subquery())
+        q = self.items.filter(Item.item_id == sub.c.item_id)
+
         items = {i.qid: i for i in q}
 
         for qid, entity in wikidata.entity_iter(items.keys()):
@@ -354,7 +363,7 @@ class Item(Base):
     enwiki = Column(String)
     entity = Column(JSON)
     categories = Column(postgresql.ARRAY(String))
-    tags = Column(postgresql.ARRAY(String))
+    old_tags = Column(postgresql.ARRAY(String))
     qid = column_property('Q' + cast(item_id, String))
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
     query_label = Column(String)
@@ -379,13 +388,17 @@ class Item(Base):
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
     @property
+    def tag_list(self):
+        return [i.tag_or_key for i in self.tags]
+
+    @property
     def hstore_query(self):
         '''hstore query for use with osm2pgsql database'''
-        if not self.tags:
+        if not self.tag_list:
             return
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
-                else "(tags ? '{}')".format(tag) for tag in self.tags)
+                else "(tags ? '{}')".format(tag) for tag in self.tag_list)
         return ' or '.join(cond)
 
     def instanceof(self):
@@ -400,13 +413,23 @@ class Item(Base):
     def get_oql(self):
         lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
         union = []
-        for tag in self.tags:
+        for tag in self.tag_list:
             osm_filter = 'around:1000,{:f},{:f}'.format(lat, lon)
             union += oql_from_tag(tag, False, osm_filter)
         return union
-    
+
     def coords(self):
         return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
+
+class ItemTag(Base):
+    __tablename__ = 'item_tag'
+
+    item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
+    tag_or_key = Column(String, primary_key=True, index=True)
+
+    item = relationship(Item, backref=backref('tags',
+                                              lazy='dynamic',
+                                              cascade='save-update, merge, delete, delete-orphan'))
 
 class PlaceItem(Base):
     __tablename__ = 'place_item'
@@ -441,7 +464,7 @@ class ItemCandidate(Base):
         return match.check_for_match(self.tags, wikidata_names, endings)
 
     def get_all_matches(self):
-        endings = matcher.get_ending_from_criteria(set(self.item.tags))
+        endings = matcher.get_ending_from_criteria(set(self.item.tag_list))
         wikidata_names = self.item.names()
         m = match.get_all_matches(self.tags, wikidata_names, endings)
         return m
@@ -449,7 +472,7 @@ class ItemCandidate(Base):
     def matching_tags(self):
         tags = []
 
-        for tag_or_key in self.item.tags:
+        for tag_or_key in self.item.tag_list:
             if '=' not in tag_or_key and tag_or_key in self.tags:
                 tags.append(tag_or_key)
                 continue
@@ -469,7 +492,7 @@ class ItemCandidate(Base):
         if 'name' in self.tags:
             return self.tags['name']
         if 'name:en' in self.tags:
-            return self.tags['name']
+            return self.tags['name:en']
         for k, v in self.tags.items():
             if k.startswith('name:'):
                 return v
@@ -478,6 +501,23 @@ class ItemCandidate(Base):
                 return v
         return '{}/{}'.format(self.osm_type, self.osm_id)
 
+# class ItemCandidateTag(Base):
+#     __tablename__ = 'item_candidate_tag'
+#     __table_args__ = (
+#         ForeignKeyConstraint(['item_id', 'osm_id', 'osm_type'],
+#                              [ItemCandidate.item_id,
+#                               ItemCandidate.osm_id,
+#                               ItemCandidate.osm_type]),
+#     )
+#
+#     item_id = Column(Integer, primary_key=True)
+#     osm_id = Column(BigInteger, primary_key=True)
+#     osm_type = Column(osm_type_enum, primary_key=True)
+#     k = Column(String, primary_key=True)
+#     v = Column(String, primary_key=True)
+#
+#     item_candidate = relationship(ItemCandidate,
+#                                   backref=backref('tag_table', lazy='dynamic'))
 
 class TagOrKey(Base):
     __tablename__ = 'tag_or_key'

@@ -1,0 +1,28 @@
+{% from "macro.html" import place_box, candidate_info %}
+{% extends "base.html" %}
+
+{% block title %}{{ tag_or_key }}{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+<h1>{{ tag_or_key }}</h1>
+
+<p>Matched OSM elements don't necessarily all search tags.</p>
+
+<p>These results don't cover the whole planet, just place that have been
+searched for using this tool.</p>
+
+<p>{{ q.count() }} items</p>
+
+{% for item in q %}
+    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
+      <ul>
+      {% for c in item.candidates %}
+        {{ candidate_info(c) }}
+      {% endfor %}
+      </ul>
+{% endfor %}
+
+</div>
+
+{% endblock %}

@@ -89,32 +89,32 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     {% endif %}
 
     <div class="my-3">
-    {% for i in candidates %}
+    {% for item in candidates %}
       <p>
       {% if filtered and upload_okay %}
-          {% if i.item_id in filtered %}
-            {% set c = filtered[i.item_id] %}
+          {% if item.item_id in filtered %}
+            {% set c = filtered[item.item_id] %}
             {% if not c.area or c.area < 500 %}
-                <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
+                <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
             {% else %}
-                <input type="checkbox" name="include" value="{{ i.qid }}">
+                <input type="checkbox" name="include" value="{{ item.qid }}">
             {% endif %}
           {% else %}
             ✕
           {% endif %}
       {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
+      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
       {# <br>
       <ul>
         <li>Categories:
-        {% for cat in i.categories %}
+        {% for cat in item.categories %}
             <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
         {% endfor %}
         </li>
-        <li>tags considered: {{ ', '.join(i.tags) }}</li>
+        <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
       </ul> #}
       <ul>
-      {% for c in i.candidates %}
+      {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
       {% endfor %}
       </ul>

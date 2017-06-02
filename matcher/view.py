@@ -5,13 +5,13 @@ from flask_login import login_user, current_user, logout_user, LoginManager, log
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset
+from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset, ItemTag
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
@@ -36,7 +36,8 @@ really_save = True
 
 navbar_pages = {
     'criteria_page': 'Criteria',
-    'saved_places': 'Saved',
+    'saved_places': 'Places',
+    'tag_list': 'Search tags',
     'documentation': 'Documentation',
     'changesets': 'Recent changes',
 }
@@ -1039,25 +1040,27 @@ def sort_link(order):
 
 @app.route("/search")
 def search_results():
-    q = request.args.get('q')
+    q = request.args.get('q') or ''
     if q:
         m = re_qid.match(q)
         if m:
             return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
-    results = nominatim.lookup(q)
-    for hit in results:
-        p = Place.from_nominatim(hit)
-        if p:
-            database.session.merge(p)
-    database.session.commit()
+        results = nominatim.lookup(q)
+        for hit in results:
+            p = Place.from_nominatim(hit)
+            if p:
+                database.session.merge(p)
+        database.session.commit()
 
-    for hit in results:
-        p = Place.query.get(hit['place_id'])
-        print(hit['place_id'], p.area)
-        if p:
-            if p.area:
-                hit['area'] = p.area_in_sq_km
-            hit['place'] = p
+        for hit in results:
+            p = Place.query.get(hit['place_id'])
+            print(hit['place_id'], p.area)
+            if p:
+                if p.area:
+                    hit['area'] = p.area_in_sq_km
+                hit['place'] = p
+    if not q:
+        results = []
 
     return render_template('results_page.html', results=results, q=q)
 
@@ -1222,7 +1225,7 @@ def api_item_match(wikidata_id):
 
     item = Item.query.get(wikidata_id)
     if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
+        criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
 
     data = {
         'wikidata': {
@@ -1337,6 +1340,33 @@ def api_item_match(wikidata_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/tag')
+def tag_list():
+    count = func.count(distinct(Item.item_id))
+    order_by = ([count, ItemTag.tag_or_key]
+                if request.args.get('sort') == 'count'
+                else [ItemTag.tag_or_key])
+    q = (database.session.query(ItemTag.tag_or_key, func.count(distinct(Item.item_id)))
+                         .join(Item)
+                         .join(ItemCandidate)
+                         # .filter(ItemTag.tag_or_key == sub.c.tag_or_key)
+                         .group_by(ItemTag.tag_or_key)
+                         .order_by(*order_by))
+    return render_template('tag_list.html', q=q)
+
+@app.route('/tag/<tag_or_key>')
+def tag_page(tag_or_key):
+    sub = (database.session.query(Item.item_id)
+              .join(ItemTag)
+              .join(ItemCandidate)
+              .filter(ItemTag.tag_or_key == tag_or_key)
+              .group_by(Item.item_id)
+              .subquery())
+
+    q = Item.query.filter(Item.item_id == sub.c.item_id)
+
+    return render_template('tag_page.html', tag_or_key=tag_or_key, q=q)
+
 @app.route('/detail/Q<int:item_id>/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 def match_detail(item_id, osm_type, osm_id):
     osm = (ItemCandidate.query
@@ -1367,25 +1397,26 @@ def match_detail(item_id, osm_type, osm_id):
                            wikidata_names=wikidata_names,
                            entity=item.entity)
 
-@app.route('/Q<int:wikidata_id>', methods=['GET', 'POST'])
+@app.route('/Q<int:wikidata_id>')
 def item_page(wikidata_id):
     item = Item.query.get(wikidata_id)
 
     qid = 'Q' + str(wikidata_id)
-    entity = wikidata.get_entity(qid)
+    if item:
+        entity = item.entity
+    else:
+        entity = wikidata.get_entity(qid)
     if not entity:
         abort(404)
 
     radius = get_radius()
     filename = overpass.item_filename(qid, radius)
-    if request.method == 'POST':
-        if os.path.exists(filename):
-            os.remove(filename)
-        return redirect(url_for(request.endpoint, **request.view_args, **request.args))
 
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
-    trim_location_from_names(entity, wikidata_names)
+
+    if not item:
+        trim_location_from_names(entity, wikidata_names)
 
     sitelinks = []
     for key, value in entity['sitelinks'].items():
@@ -1417,7 +1448,7 @@ def item_page(wikidata_id):
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
     if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in tag else 'Key:') + tag for tag in item.tags}
+        criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
 
     if item and item.categories:
         category_map = matcher.categories_to_tags_map(item.categories)

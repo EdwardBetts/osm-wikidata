@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Tags{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+<h1>Search tags</h1>
+
+<p>List of {{ q.count() }} search tags from Wikidata. Matched OSM elements
+don't necessarily all search tags.</p>
+
+<p>These results don't cover the whole planet, just place that have been
+searched for using this tool.</p>
+
+<p>Sort by <a href="{{ url_for('tag_list') }}">alphabetically</a>
+or by <a href="{{ url_for('tag_list', sort='count') }}">item count</a>.</p>
+
+<table class="table table-hover table-sm">
+<tr>
+<th>tag or key</th>
+<th class="text-right">item count</th>
+</tr>
+{% for tag_or_key, num in q %}
+<tr>
+    <td>
+        <a href="{{ url_for('tag_page', tag_or_key=tag_or_key) }}">{{ tag_or_key }}</a>
+        {% if num > 800 %}(lots of items, might be slow){% endif %}
+    </td>
+    <td class="text-right">{{ '{:,d}'.format(num) }}</td>
+</tr>
+{% endfor %}
+
+</div>
+
+{% endblock %}

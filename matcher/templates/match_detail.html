@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}{{ qid }} + {{ osm.osm_type }}/{{ osm.osm_id }}{% endblock %}
+
 {% block style %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 <style>
@@ -26,7 +28,7 @@
   <div class="container">
     {% include "flash_msg.html" %}
 
-    <h1>Match: {{ qid }} + {{ osm.osm_type }}/{{ osm.osm_id }}</h1>
+    <h1>Match: {{ self.title() }}</h1>
     <ul>
       <li>Wikidata: <a href="http://wikidata.org/wiki/{{ qid }}">{{ item.label }} ({{ qid }})</a></li>
       <li>OSM: <a href="https://www.openstreetmap.org/{{ osm.osm_type }}/{{ osm.osm_id }}">{{ osm.label }}</a></li>
@@ -61,9 +63,9 @@
         </li>
       {% endif %}
 
-      {% if item.tags %}
+      {% if item.tag_list %}
         <li>Tags from Wikidata and Wikipedia:
-        {% for tag in item.tags %}
+        {% for tag in item.tag_list %}
             {{ tag }}{% if not loop.last %},{% endif %}
         {% endfor %}
         </li>

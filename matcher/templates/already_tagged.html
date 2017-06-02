@@ -30,19 +30,19 @@
   </div>
   </div>
 
-  {% for i in items %}
-    <p><a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
+  {% for item in items %}
+    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
     {# <br>
     <ul>
       <li>Categories:
-      {% for cat in i.categories %}
+      {% for cat in item.categories %}
           <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
       {% endfor %}
       </li>
-      <li>tags considered: {{ ', '.join(i.tags) }}</li>
+      <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
     </ul> #}
     <ul>
-    {% for c in i.candidates %}
+    {% for c in item.candidates %}
       {{ candidate_info(c) }}
     {% endfor %}
     </ul>

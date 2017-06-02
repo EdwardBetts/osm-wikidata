@@ -134,7 +134,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     rows = cur.fetchall()
     seen = set()
 
-    endings = get_ending_from_criteria(set(item.tags))
+    endings = get_ending_from_criteria(set(item.tag_list))
 
     wikidata_names = item.names()
 
