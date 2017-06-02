@@ -10,6 +10,12 @@
 {% set item_list = place.item_list() %}
 
   <div class="container my-2">
+
+  <div class="alert alert-info" role="alert">
+    <p>Downloading data from the Overpass API can fail if the area is too large or dense.</p>
+    <p>Frequent access of the Overpass API can cause rate limiting. If the happens wait a few minutes, then try again.</p>
+  </div>
+
   <div class="row">
   <div class="col">
     <h1>{{ place.name }}</h1>
