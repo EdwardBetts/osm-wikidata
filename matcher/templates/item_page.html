@@ -117,7 +117,6 @@
         <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
       {% endif %}
 
-
       {% for c in item.candidates %}
         {% set m = c.get_match() %}
         <div>
@@ -129,14 +128,16 @@
                        checked="checked"
                    {% endif %} />
           {% endif %}
-          <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-            {{ (m.osm_key + '=' + m.osm_name) if m else c.name -}}
-          </a>
-          ({{ c.osm_type}}{% if c.dist %},
-           {{ c.dist | int }} m{% endif %})
-           {{ ', '.join(c.matching_tags()) }}
+          {{c.osm_type}}:
+          <a href="{{ url_for('match_detail', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">{{ c.label }}</a>
+          <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">(OSM)</a>
+          {% if c.dist -%},
+             {{ c.dist | int }} m from Wikidata
+          {%- else -%}
+              <span class="badge badge-success">exact location match</span>
+          {% endif %}
+          <a href="#" class="show_tags_link" data-key="{{ c.key }}">[show tags]</a>
 
-           <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
            <div class="all_tags" id="candidate{{ c.key }}">
              {% for k, v in c.tags.items() if k != 'way_area' %}
               {{ k }}: {{ v }}</br>
@@ -198,17 +199,27 @@
       </form>
     {% endif %}
 
-    {% if osm_keys %}
+    {% if wikidata_osm_tags %}
+        <h3 class="my-2">Search criteria from Wikidata</h3>
+        <table class="table table-responsive table-hover table-sm">
+        {% for qid, wd in wikidata_osm_tags | dictsort %}
+        <tr>
+            <td>
+                {% if wd.label %}
+                    <a href="{{ wd.uri }}">{{ wd.label }}</a> ({{ qid }})
+                {% else %}
+                    <a href="{{ wd.uri }}">{{ qid }}</a>
+                {% endif %}
+            </td>
+            <td>
+                {% for tag in wd.tags %}
+                    {{ tag }}{% if not loop.last %},{% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+        </table>
 
-    <h3 class="my-2">Search criteria from Wikidata</h3>
-    <table class="table table-responsive table-hover table-sm">
-    {% for row in osm_keys %}
-      <tr>
-        <td>{{ row['item']['value'] }}</td>
-        <td>{{ row['itemLabel']['value'] }}</td>
-        <td>{{ row['tag']['value'] }}</td>
-    {% endfor %}
-    </table>
     {% endif %}
 
     {% if category_map %}
@@ -221,7 +232,7 @@
         </td>
         <td>
           {% for tag in tags %}
-            {{ tag }}<br>
+            {{ tag }}{% if not loop.last %},{% endif %}
           {% endfor %}
         </td>
       </tr>

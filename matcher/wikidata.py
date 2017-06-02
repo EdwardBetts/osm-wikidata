@@ -18,6 +18,7 @@ skip_tags = {'route:road',
              'highway=trunk',
              'highway=unclassified',
              'highway',
+             'landuse'
              'name',
              'website',
              'addr:street',
@@ -268,3 +269,22 @@ def get_osm_keys(query):
                      headers=user_agent_headers())
     assert r.status_code == 200
     return r.json()['results']['bindings']
+
+def parse_osm_keys(rows):
+    start = 'http://www.wikidata.org/entity/'
+    items = {}
+    for row in rows:
+        uri = row['item']['value']
+        qid = drop_start(uri, start)
+        tag = row['tag']['value']
+        for i in 'Key:', 'Tag':
+            if tag.startswith(i):
+                tag = tag[4:]
+        if qid not in items:
+            items[qid] = {
+                'uri': uri,
+                'label': row['itemLabel']['value'],
+                'tags': set(),
+            }
+        items[qid]['tags'].add(tag)
+    return items
