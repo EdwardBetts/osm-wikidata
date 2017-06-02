@@ -1,7 +1,8 @@
 # coding: utf-8
 from flask import current_app, url_for, g
-from sqlalchemy import ForeignKey, Column, func, select
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean, DateTime
+from sqlalchemy import func, select
+from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
@@ -51,6 +52,7 @@ class User(Base, UserMixin):
     name = Column(String)
     email = Column(String)
     active = Column(Boolean, default=True)
+    sign_up = Column(DateTime, default=func.now())
 
     def is_active(self):
         return self.active
@@ -83,6 +85,7 @@ class Place(Base):   # assume all places are relations
     override_name = Column(String)
     lat = Column(Float)
     lon = Column(Float)
+    added = Column(DateTime, default=func.now())
 
     area = column_property(func.ST_Area(geom))
     # match_ratio = column_property(candidate_count / item_count)
@@ -103,7 +106,7 @@ class Place(Base):   # assume all places are relations
                 'namedetails', 'lat', 'lon')
         n = {k: hit[k] for k in keys if k in hit}
         if hit['osm_type'] == 'node':
-            n['radius'] = 5000   # 5km
+            n['radius'] = 1000   # 1km
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
@@ -138,8 +141,6 @@ class Place(Base):   # assume all places are relations
         q = wikidata.get_item_tag_query(*self.bbox)
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
-
-        print(len(items))
 
         return {k: v for k, v in items.items() if self.osm_type == 'node' or self.covers(v)}
 
@@ -403,6 +404,9 @@ class Item(Base):
             osm_filter = 'around:1000,{:f},{:f}'.format(lat, lon)
             union += oql_from_tag(tag, False, osm_filter)
         return union
+    
+    def coords(self):
+        return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
 
 class PlaceItem(Base):
     __tablename__ = 'place_item'
@@ -436,6 +440,12 @@ class ItemCandidate(Base):
         wikidata_names = self.item.names()
         return match.check_for_match(self.tags, wikidata_names, endings)
 
+    def get_all_matches(self):
+        endings = matcher.get_ending_from_criteria(set(self.item.tags))
+        wikidata_names = self.item.names()
+        m = match.get_all_matches(self.tags, wikidata_names, endings)
+        return m
+
     def matching_tags(self):
         tags = []
 
@@ -453,6 +463,21 @@ class ItemCandidate(Base):
     @property
     def wikidata_tag(self):
         return self.tags.get('wikidata') or None
+
+    @property
+    def label(self):
+        if 'name' in self.tags:
+            return self.tags['name']
+        if 'name:en' in self.tags:
+            return self.tags['name']
+        for k, v in self.tags.items():
+            if k.startswith('name:'):
+                return v
+        for k, v in self.tags.items():
+            if 'name' in k:
+                return v
+        return '{}/{}'.format(self.osm_type, self.osm_id)
+
 
 class TagOrKey(Base):
     __tablename__ = 'tag_or_key'
@@ -477,10 +502,27 @@ class Changeset(Base):
     update_count = Column(Integer, nullable=False)
 
     user = relationship(User, backref=backref('changesets', lazy='dynamic'))
-    place = relationship('Place')
+    place = relationship('Place', backref=backref('changesets', lazy='dynamic'))
 
     @property
     def item_label(self):
         item = Item.query.get(self.item_id)
         if item:
             return item.label
+
+class BadMatch(Base):
+    __tablename__ = 'bad_match'
+    __table_args__ = (
+        ForeignKeyConstraint(['item_id', 'osm_id', 'osm_type'],
+                             [ItemCandidate.item_id, ItemCandidate.osm_id, ItemCandidate.osm_type]),
+    )
+
+    item_id = Column(Integer, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
+    created = Column(DateTime, default=func.now())
+    comment = Column(Text)
+
+    item_candidate = relationship(ItemCandidate, backref=backref('bad_matches', lazy='dynamic'))
+    user = relationship(User, backref=backref('bad_matches', lazy='dynamic'))
