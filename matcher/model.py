@@ -99,6 +99,12 @@ class Place(Base):   # assume all places are relations
     def area_in_sq_km(self):
         return self.area / (1000 * 1000)
 
+    def update_from_nominatim(self, hit):
+        keys = ('display_name', 'category', 'type',
+                'place_rank', 'icon', 'extratags', 'address', 'namedetails')
+        for n in keys:
+            setattr(self, n, hit.get(n))
+
     @classmethod
     def from_nominatim(cls, hit):
         keys = ('osm_id', 'osm_type', 'display_name', 'category', 'type',
@@ -142,7 +148,9 @@ class Place(Base):   # assume all places are relations
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
 
-        return {k: v for k, v in items.items() if self.osm_type == 'node' or self.covers(v)}
+        return {k: v
+                for k, v in items.items()
+                if self.osm_type == 'node' or self.covers(v)}
 
     def covers(self, item):
         return object_session(self).scalar(
@@ -323,7 +331,9 @@ class Place(Base):   # assume all places are relations
     def load_items(self):
         items = self.items_from_wikidata()
 
-        enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
+        enwiki_to_item = {v['enwiki']: v
+                          for v in items.values()
+                          if 'enwiki' in v}
 
         for title, cats in wikipedia.page_category_iter(enwiki_to_item.keys()):
             enwiki_to_item[title]['categories'] = cats
@@ -337,7 +347,13 @@ class Place(Base):   # assume all places are relations
             for k in 'enwiki', 'categories', 'query_label':
                 if k in v:
                     setattr(item, k, v[k])
-            item.tags = [ItemTag(tag_or_key=t) for t in v['tags']]
+
+            tags = set(v['tags'])
+            if 'building' in tags and len(tags) > 1:
+                tags.remove('building')
+
+
+            item.tags = [ItemTag(tag_or_key=t) for t in tags]
             if not item.places.filter(Place.place_id == self.place_id).count():
                 item.places.append(self)
         session.commit()
@@ -452,7 +468,9 @@ class ItemCandidate(Base):
     planet_table = Column(String)
     src_id = Column(BigInteger)
 
-    item = relationship('Item', backref=backref('candidates', lazy='dynamic'))
+    item = relationship('Item', backref=backref('candidates',
+                                                lazy='dynamic',
+                                                cascade='save-update, merge, delete, delete-orphan'))
 
     @property
     def key(self):
