@@ -352,7 +352,6 @@ class Place(Base):   # assume all places are relations
             if 'building' in tags and len(tags) > 1:
                 tags.remove('building')
 
-
             item.tags = [ItemTag(tag_or_key=t) for t in tags]
             if not item.places.filter(Place.place_id == self.place_id).count():
                 item.places.append(self)
@@ -436,6 +435,10 @@ class Item(Base):
 
     def coords(self):
         return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
+
+    def image_filenames(self):
+        return [i['mainsnak']['datavalue']['value']
+                for i in self.entity['claims'].get('P18', [])]
 
 class ItemTag(Base):
     __tablename__ = 'item_tag'
