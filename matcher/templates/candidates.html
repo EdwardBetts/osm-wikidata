@@ -79,7 +79,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
     {% endif %}
 
-    {% if filtered and upload_okay %}
+    {% if upload_okay %}
     <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
 
     <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
@@ -91,7 +91,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <div class="my-3">
     {% for item in candidates %}
       <p>
-      {% if filtered and upload_okay %}
+      {% if upload_okay %}
           {% if item.item_id in filtered %}
             {% set c = filtered[item.item_id] %}
             {% if not c.area or c.area < 500 %}
@@ -120,7 +120,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       </ul>
     {% endfor %}
     </div>
-    {% if filtered and upload_okay %}
+    {% if upload_okay %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
       (Don't worry, there's a confirmation page)
     </form>
