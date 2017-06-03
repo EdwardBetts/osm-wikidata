@@ -16,9 +16,9 @@
     <li>{{c.osm_type}}:
       <a href="{{ url_for('match_detail', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">{{ c.label }}</a>
       <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">(OSM)</a>
-    {% if c.dist -%},
+    {% if c.dist and c.dist > 1 %}
      {{ c.dist | int }} m from Wikidata
-    {%- else -%}
+    {% else %}
       <span class="badge badge-success">exact location match</span>
     {% endif %}
      {# {{ ', '.join(c.matching_tags()) }} #}
