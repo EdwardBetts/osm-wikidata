@@ -1056,9 +1056,13 @@ def search_results():
             return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
         results = nominatim.lookup(q)
         for hit in results:
-            p = Place.from_nominatim(hit)
+            p = Place.query.filter_by(osm_type=hit['osm_type'],
+                                      osm_id=hit['osm_id']).one_or_none()
             if p:
-                database.session.merge(p)
+                p.update_from_nominatim(hit)
+            else:
+                p = Place.from_nominatim(hit)
+                database.session.add(p)
         database.session.commit()
 
         for hit in results:
