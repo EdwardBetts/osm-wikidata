@@ -1066,8 +1066,8 @@ def search_results():
         database.session.commit()
 
         for hit in results:
-            p = Place.query.get(hit['place_id'])
-            print(hit['place_id'], p.area)
+            p = Place.query.filter_by(osm_type=hit['osm_type'],
+                                      osm_id=hit['osm_id']).one_or_none()
             if p:
                 if p.area:
                     hit['area'] = p.area_in_sq_km
@@ -1449,7 +1449,8 @@ def item_page(wikidata_id):
     if 'en' in labels:
         label = labels['en']['value']
     else:
-        label = list(labels.values())[0]['value']
+        labels = list(labels.values())
+        label = labels[0]['value'] if labels else '[no label]'
 
     lat, lon = get_entity_coords(entity)
 
