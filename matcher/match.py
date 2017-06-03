@@ -12,6 +12,9 @@ re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
+bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
+                   'name:left', 'gnis:county_name', 'openGeoDB:name'}
+
 class Match(object):
     def __init__(self, match_type):
         self.match_type = match_type
@@ -26,10 +29,14 @@ def tidy_name(n):
         n = n[:-1]
     if not n.startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '')
-    for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les':
+    for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von':
         n = n.replace(' {} '.format(word), ' ')
     n = n.replace('center', 'centre').replace('theater', 'theatre')
-    return unidecode(n).strip()
+
+    decoded = unidecode(n).strip()
+    if not any(c.isalnum() for c in decoded):
+        return n.strip()
+    return decoded
 
 def initials_match(n1, n2, endings=None):
     n1_lc = n1.lower()
@@ -45,10 +52,11 @@ def initials_match(n1, n2, endings=None):
 def match_with_words_removed(osm, wd, words):
     x_wd = re_strip_non_chars.sub('', wd)
     x_osm = re_strip_non_chars.sub('', osm)
+    words = [re_strip_non_chars.sub('', w) for w in words]
     return any(x_wd.replace(word, '') == x_osm.replace(word, '')
                for word in words)
 
-def name_match_main(osm, wd, endings=None):
+def name_match_main(osm, wd, endings=None, debug=False):
     wd_lc = wd.lower()
     osm_lc = osm.lower()
     if not wd or not osm:
@@ -60,16 +68,15 @@ def name_match_main(osm, wd, endings=None):
 
     if re_strip_non_chars.sub('', wd_lc) == re_strip_non_chars.sub('', osm_lc):
         return Match(MatchType.good)
+
     wd_lc = tidy_name(wd_lc)
     osm_lc = tidy_name(osm_lc)
-
-    if endings and match_with_words_removed(osm_lc, wd_lc, endings):
-        return Match(MatchType.good)
 
     if not wd_lc or not osm_lc:
         return
 
-    # print((wd_lc, osm_lc, endings))
+    if endings and match_with_words_removed(osm_lc, wd_lc, [tidy_name(e) for e in endings]):
+        return Match(MatchType.good)
 
     if wd_lc == osm_lc:
         # print ('{} == {} was: {}'.format(wd_lc, osm_lc, osm))
@@ -115,8 +122,8 @@ def name_match_main(osm, wd, endings=None):
             return Match(MatchType.trim)
     return
 
-def name_match(osm, wd, endings=None):
-    match = name_match_main(osm, wd, endings)
+def name_match(osm, wd, endings=None, debug=False):
+    match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
 
@@ -172,15 +179,12 @@ def get_wikidata_names(item):
         names[v].append(('sitelink', k))
     return names
 
-def check_for_match(osm_tags, wikidata_names, endings=None):
-    bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
-                       'name:left', 'gnis:county_name', 'openGeoDB:name'}
-
-    # if not entity_endings:
-    #     build_entity_endings()
-
-    names = {k: v for k, v in osm_tags.items()
+def get_names(osm_tags):
+    return {k: v for k, v in osm_tags.items()
              if 'name' in k and k not in bad_name_fields}
+
+def check_for_match(osm_tags, wikidata_names, endings=None):
+    names = get_names(osm_tags)
 
     best = None
     for w, source in wikidata_names.items():
@@ -205,6 +209,30 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
         m.osm_name = o
         m.osm_key = osm_key
     return address_match or best
+
+def get_all_matches(osm_tags, wikidata_names, endings=None):
+    names = get_names(osm_tags)
+
+    matches = []
+    for w, source in wikidata_names.items():
+        for osm_key, o in names.items():
+            m = name_match(o, w, endings)
+            if m:
+                m.wikidata_name = w
+                m.wikidata_source = source
+                m.osm_name = o
+                m.osm_key = osm_key
+                matches.append(m)
+
+    address_match = check_name_matches_address(osm_tags, wikidata_names)
+    if address_match:
+        m = address_match
+        m.wikidata_name = w
+        m.wikidata_source = source
+        m.osm_name = o
+        m.osm_key = osm_key
+        matches.append(m)
+    return matches
 
 def get_osm_id_and_type(source_type, source_id):
     if source_type == 'point':

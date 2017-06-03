@@ -12,9 +12,18 @@
 <p>{{ '{:,d}'.format(total) }} changesets</p>
 
 <table class="table table-hover">
+<thead>
+  <tr>
+    <th class="text-right">when</th>
+    <th>user</th>
+    <th class="text-right">#</th>
+    <th>place / item</th>
+  </tr>
+</thead>
+<tbody>
 {% for obj in objects %}
 <tr>
-<td class="text-nowrap">
+<td class="text-nowrap text-right">
     <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
         {{- obj.created.strftime('%H:%M %a, %d %b %Y') if obj.created else obj.id -}}
     </a>
@@ -40,6 +49,7 @@
 </td>
 </tr>
 {% endfor %}
+</tbody>
 </table>
 
 {{ render_pagination(pager) }}

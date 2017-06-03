@@ -1,3 +1,14 @@
+{% macro nav_item(name) %}
+<li class="nav-item{% if name == active %} active{% endif %}">
+  <a class="nav-link" href="{{ url_for(name) }}">{{ navbar_pages[name] }}{% if name == active %} <span class="sr-only">(current)</span>{% endif %}</a>
+</li>
+{% endmacro %}
+
+{% macro dropdown_item(name) %}
+    <a class="dropdown-item" href="{{ url_for(name) }}">{{ navbar_pages[name] }}</a>
+{% endmacro %}
+
+
 <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
 <div class="container">
   <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -11,11 +22,20 @@
 
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      {% for p in navbar_pages %}
-        <li class="nav-item{% if p.name == active %} active{% endif %}">
-          <a class="nav-link" href="{{ url_for('.' + p.name) }}">{{ p.label }}{% if p.name == active %} <span class="sr-only">(current)</span>{% endif %}</a>
+    <ul class="navbar-nav mr-auto">
+      {{ nav_item('changesets') }}
+      {{ nav_item('tag_list') }}
+      {{ nav_item('saved_places') }}
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          About
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          {{ dropdown_item('documentation') }}
+          {{ dropdown_item('criteria_page') }}
+        </div>
       </li>
-    {% endfor %}
+    </ul>
     </ul>
     <ul class="navbar-nav">
       <li class="nav-item">

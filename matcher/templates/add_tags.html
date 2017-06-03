@@ -9,26 +9,31 @@
   <div class="col">
     <h1>{{ place.name }}</h1>
 
+{% if table %}
     <p><a href="{{ place.candidates_url() }}">back to candidate list</a></p>
+{% endif %}
 
   {{ place_box(place) }}
 
-<div id="notice" class="card card-inverse card-primary mb-3">
-  <div class="card-block">
-    <blockquote class="card-blockquote">
-      <p>Please be check each match carefully before uploading to OpenStreetMap.</p>
-      <p>If in doubt contact the local mapping community before adding Wikidata tags.</p>
-    </blockquote>
-  </div>
+{% if table %}
+<div id="notice" class="alert alert-danger" role="alert">
+  <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
+  <p>If in doubt, <strong>contact the local mapping community</strong> before adding Wikidata tags.</p>
 </div>
+{% endif %}
+
+{% if table %}
 
   <div class="form-inline">
     <label for="comment">change comment:</label>
+    {% set comment = 'add wikidata tag'
+        if table | length == 1
+        else 'add wikidata tags within ' + place.name %}
     <input class="form-control m-2"
            id="comment"
            name="comment"
            size="50"
-           value="add wikidata tags within {{ place.name }}" />
+           value="{{ comment }}" />
 
     <button id="save" class="btn btn-primary">save</button>
   </div>
@@ -48,6 +53,15 @@
 
     <div class="my-3">
     <table class="table table-sm table-hover">
+    <thead>
+      <tr>
+        <th>Wikidata</th>
+        <th>OSM</th>
+        <th>distance</th>
+        <th>matching tags</th>
+      </tr>
+    </thead>
+    <tbody>
     {% for i, c in table %}
       <tr id="{{ i.qid }}-{{c.osm_type }}-{{ c.osm_id }}">
         <td>
@@ -68,6 +82,11 @@
       </tr>
     {% endfor %}
     </table>
+
+{% else %}
+<p class="my-3">All done. <a href="{{ place.candidates_url() }}">go back to candidate list</a></p>
+
+{% endif %}
 
 </div>
 </div>

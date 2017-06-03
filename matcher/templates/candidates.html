@@ -13,6 +13,14 @@
 
   {{ place_box(place) }}
 
+    {% if filtered and upload_okay %}
+<div id="notice" class="alert alert-danger" role="alert">
+  <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
+  <p>If in doubt, <strong>contact the local mapping community</strong> before adding Wikidata tags.</p>
+</div>
+    {% endif %}
+
+
   {#
     <form method="POST" action="{{ url_for('update_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
       <button class="btn btn-primary">update OSM candidate tags</button>
@@ -20,6 +28,25 @@
   #}
 
   {% include "tabs.html" with context %}
+
+  {% if place.changesets.count() %}
+
+<p>Wikidata tags already added to OSM with this tool.</p>
+
+<ul>
+{% for obj in place.changesets %}
+<li>
+{{ obj.created.strftime('%H:%M %a, %d %b %Y') }}:
+<a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a>
+
+added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
+
+<a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">view changeset</a>
+</li>
+{% endfor %}
+</ul>
+
+  {% endif %}
 
   {% if overpass_error %}
     <div>&nbsp;</div>
@@ -55,32 +82,39 @@
     {% if upload_okay %}
     <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
 
-      <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
-      (Don't worry, there is a confirmation page)
-      {% endif %}
+    <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+    (Don't worry, there's a confirmation page)
+    <p class="mt-3">By default all likely matches are checked.
+	   If you prefer you can <a href="#" id="uncheck-all">uncheck all</a> and tick items as you check them.</p>
+    {% endif %}
 
     <div class="my-3">
-    {% for i in candidates %}
+    {% for item in candidates %}
       <p>
       {% if upload_okay %}
-          {% if i.item_id in filtered %}
-            <input type="checkbox" name="include" value="{{ i.qid }}" checked="checked" />
+          {% if item.item_id in filtered %}
+            {% set c = filtered[item.item_id] %}
+            {% if not c.area or c.area < 500 %}
+                <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
+            {% else %}
+                <input type="checkbox" name="include" value="{{ item.qid }}">
+            {% endif %}
           {% else %}
-            <input type="checkbox" disabled="disabled" />
+            ✕
           {% endif %}
       {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label }} ({{ i.qid }})</a></p>
+      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
       {# <br>
       <ul>
         <li>Categories:
-        {% for cat in i.categories %}
+        {% for cat in item.categories %}
             <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
         {% endfor %}
         </li>
-        <li>tags considered: {{ ', '.join(i.tags) }}</li>
+        <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
       </ul> #}
       <ul>
-      {% for c in i.candidates %}
+      {% for c in item.candidates %}
         {{ candidate_info(c, filtered=filtered) }}
       {% endfor %}
       </ul>
@@ -88,7 +122,7 @@
     </div>
     {% if upload_okay %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
-      (Don't worry, there is a confirmation page)
+      (Don't worry, there's a confirmation page)
     </form>
     {% endif %}
 

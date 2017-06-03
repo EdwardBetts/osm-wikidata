@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ qid }} + {{ osm.osm_type }}/{{ osm.osm_id }}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#mapid { height: 400px; }
+</style>
+{% endblock %}
+
+{% block script %}
+  <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+
+  <script>
+    var lat = {{ '{:.4f}'.format(lat) }};
+    var lon = {{ '{:.4f}'.format(lon) }};
+    var map = L.map('mapid').setView([lat, lon], 18);
+
+    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    var marker = L.marker([lat, lon]).addTo(map);
+
+  </script>
+{% endblock %}
+
+{% block content %}
+<div class="m-3">
+  <div class="container">
+    {% include "flash_msg.html" %}
+
+    <h1>Match: {{ self.title() }}</h1>
+    <ul>
+      <li>Wikidata: <a href="http://wikidata.org/wiki/{{ qid }}">{{ item.label }} ({{ qid }})</a></li>
+      <li>OSM: <a href="https://www.openstreetmap.org/{{ osm.osm_type }}/{{ osm.osm_id }}">{{ osm.label }}</a></li>
+      <li>matcher place:
+        {% for place in item.places %}
+            <a href="{{ place.candidates_url() }}">{{ place.name }}</a> ({{ place.osm_type }} {{ place.osm_id }})
+            {%- if not loop.last %}, {% endif %}
+        {% endfor %}
+      </li>
+      {% if osm.dist %}
+          <li>distance between Wikidata coordinates and OSM location: {{ osm.dist | int }}m</li>
+      {% else %}
+          <li>Wikidata and OSM <span class="badge badge-success">exact location match</span></li>
+      {% endif %}
+
+      {% if sitelinks %}
+      <li>Wikipedia:
+          {% for link in sitelinks %}<a href="{{ link.url }}">{{ link.lang }}</a>
+{%- if not loop.last %}, {% endif %}{% endfor %}
+      </li>
+      {% endif %}
+      {% if 'commonswiki' in entity.sitelinks %}
+      <li><a href="https://commons.wikimedia.org/wiki/{{ entity.sitelinks.commonswiki.title.replace(' ', '_') }}">Wikimedia Commons</a>
+      </li>
+      {% endif %}
+
+      {% if item.categories %}
+        <li>English Wikipedia categories:
+        {% for cat in item.categories %}
+            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+        {% endfor %}
+        </li>
+      {% endif %}
+
+      {% if item.tag_list %}
+        <li>Tags from Wikidata and Wikipedia:
+        {% for tag in item.tag_list %}
+            {{ tag }}{% if not loop.last %},{% endif %}
+        {% endfor %}
+        </li>
+      {% endif %}
+
+      {% if oql %}
+      <li>Overpass query:
+        <a href="#" id="oql-toggle">show query</a>
+        &ndash;
+        <a href="https://overpass-turbo.eu/?Q={{ oql.replace('qt center tags', 'geom') | urlencode }}&R">Overpass Turbo</a>
+        <pre id="oql">{{ oql }}</pre>
+      </li>
+      {% endif %}
+
+    </ul>
+
+    <div>Wikidata location: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
+        <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
+</div>
+    <div id="mapid"></div>
+
+    {# 
+
+    <h3>labels</h3>
+    <pre>{{ entity.labels | pprint }}</pre>
+    {% if entity.aliases %}
+      <h3>aliases</h3>
+      <pre>{{ entity.aliases | pprint }}</pre>
+    {% endif %}
+    <h3>site links</h3>
+    <pre>{{ entity.sitelinks | pprint }}</pre>
+
+    <h3>wikidata names</h3>
+    <pre>{{ wikidata_names | pprint }}</pre>
+
+    <h3>osm tags</h3>
+    <pre>{{ osm.tags | pprint }}</pre>
+
+    #}
+
+    <h3 class="mt-2">Match details</h3>
+    {% set matches = osm.get_all_matches() %}
+    {% if matches %}
+    {% for m in matches %}
+
+    <p>OSM tag <span class="badge badge-primary">{{ m.osm_key }}={{ m.osm_name }}</span>
+       matches <span class="badge badge-primary">{{ m.wikidata_name }}</span>
+       in these Wikidata fields:</p>
+
+    <ul>
+    {% for k, v in m.wikidata_source %}
+        <li>{{ k }}: {{ v }}</li>
+    {% endfor %}
+    </ul>
+
+    {% endfor %}
+
+    {% else %}
+    
+    <p>Match detail not available.</p>
+    
+    {% endif %}
+
+    {% if category_map %}
+    <h3>Search criteria from categories</h3>
+    <table class="table table-responsive table-hover table-sm">
+    {% for cat, tags in category_map | dictsort %}
+      <tr>
+        <td>
+          <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>
+        </td>
+        <td>
+          {% for tag in tags %}
+            {{ tag }}{% if not loop.last %},{% endif %}
+          {% endfor %}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

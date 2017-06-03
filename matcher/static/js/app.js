@@ -2,12 +2,17 @@ $(function() {
 
   $('.all_tags').hide();
 
+  $('#uncheck-all').click(function(e) {
+    e.preventDefault();
+    $('input:checkbox').prop('checked', false);
+  });
+
   $('.show_tags_link').click(function(e) {
     var link = $(this);
-    var show_all = 'show all tags';
+    var show_all = '[show tags]';
     e.preventDefault();
     $('#candidate' + link.data('key')).toggle();
-    link.text(link.text() == show_all ? 'hide tags' : show_all);
+    link.text(link.text() == show_all ? '[hide tags]' : show_all);
 
   });
 
