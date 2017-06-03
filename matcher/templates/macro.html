@@ -27,12 +27,24 @@
          <span class="badge badge-info">best match</span>
        {% endif %}
 
-     <a href="#" class="show_tags_link" data-key="{{ c.key }}">[show tags]</a>
-     <div class="all_tags" id="candidate{{ c.key }}">
+     <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
+     <a href="#" class="bad-match-link" data-key="{{ c.key }}">[bad match]</a>
+     <div class="all-tags" id="candidate-{{ c.key }}">
        {% for k, v in c.tags.items() if k != 'way_area' %}
         {{ k }}: {{ v }}</br>
        {% endfor %}
      </div>
+     <div class="bad-match" id="bad-match-{{ c.key }}">
+       <form method="POST" action="{{ url_for('bad_match', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">
+         <div class="form-group">
+           <label for="comment">what's wrong with this match? (optional)</label>
+           <textarea class="form-control" id="comment" rows="3"></textarea>
+         </div>
+
+         <button class="btn btn-danger btn-sm">report as bad match</button>
+       </form>
+     </div>
+
      {% if 'wikidata' in c.tags %}
        <br>
        {% if c.tags.wikidata == c.item.qid %}

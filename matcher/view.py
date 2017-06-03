@@ -5,7 +5,7 @@ from flask_login import login_user, current_user, logout_user, LoginManager, log
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset, ItemTag
+from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch
 from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -1379,6 +1379,25 @@ def tag_page(tag_or_key):
     q = Item.query.filter(Item.item_id == sub.c.item_id)
 
     return render_template('tag_page.html', tag_or_key=tag_or_key, q=q)
+
+@app.route('/bad_match/Q<int:item_id>/<osm_type>/<int:osm_id>', methods=['POST'])
+def bad_match(item_id, osm_type, osm_id):
+    comment = request.form.get('comment') or None
+
+    bad = BadMatch(item_id=item_id,
+                   osm_type=osm_type,
+                   osm_id=osm_id,
+                   comment=comment,
+                   user=g.user)
+
+    database.session.add(bad)
+    database.session.commit()
+    flash('bad match report saved')
+    return redirect(url_for('match_detail',
+                            item_id=item_id,
+                            osm_type=osm_type,
+                            osm_id=osm_id))
+
 
 @app.route('/detail/Q<int:item_id>/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 def match_detail(item_id, osm_type, osm_id):

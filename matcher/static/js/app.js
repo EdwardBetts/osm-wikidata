@@ -1,22 +1,29 @@
 $(function() {
 
-  $('.all_tags').hide();
+  $('.all-tags').hide();
+  $('.bad-match').hide();
+  $('#oql').hide();
+
 
   $('#uncheck-all').click(function(e) {
     e.preventDefault();
     $('input:checkbox').prop('checked', false);
   });
 
-  $('.show_tags_link').click(function(e) {
+  $('.show-tags-link').click(function(e) {
     var link = $(this);
     var show_all = '[show tags]';
     e.preventDefault();
-    $('#candidate' + link.data('key')).toggle();
+    $('#candidate-' + link.data('key')).toggle();
     link.text(link.text() == show_all ? '[hide tags]' : show_all);
 
   });
 
-  $('#oql').hide();
+  $('.bad-match-link').click(function(e) {
+    var link = $(this);
+    e.preventDefault();
+    $('#bad-match-' + link.data('key')).toggle();
+  });
 
   $('#oql-toggle').click(function(e) {
     var link = $(this);
