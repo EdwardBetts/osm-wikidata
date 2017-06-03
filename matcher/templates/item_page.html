@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block script %}
-  {% if lat and lon %}
+  {% if lat is not none and lon is not none %}
   <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
 
   <script>
@@ -86,11 +86,14 @@
 
     </ul>
 
+    {% if lat is not none and lon is not none %}
     <div>Wikidata location: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
-</div>
+    </div>
 
     <div id="mapid"></div>
+
+    {% endif %}
 
     {#
 
