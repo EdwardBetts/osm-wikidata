@@ -27,11 +27,14 @@
 <div class="m-3">
   <div class="container">
     {% include "flash_msg.html" %}
+    {% set is_bad = osm.bad_matches.count() %}
 
-    <h1>Match: {{ self.title() }}</h1>
+    <h1>Match: {{ self.title() }}
+    {% if is_bad %}<span class="badge badge-danger">reported as bad</span>{% endif %}
+    </h1>
     <ul>
       <li>Wikidata: <a href="http://wikidata.org/wiki/{{ qid }}">{{ item.label }} ({{ qid }})</a></li>
-      <li>OSM: <a href="https://www.openstreetmap.org/{{ osm.osm_type }}/{{ osm.osm_id }}">{{ osm.label }}</a></li>
+      <li>OSM: <a href="https://www.openstreetmap.org/{{ osm.osm_type }}/{{ osm.osm_id }}">{{ osm.label }}</a> ({{ osm.osm_type }} {{ osm.osm_id}})</li>
       <li>matcher place:
         {% for place in item.places %}
             <a href="{{ place.candidates_url() }}">{{ place.name }}</a> ({{ place.osm_type }} {{ place.osm_id }})
@@ -127,6 +130,18 @@
     
     <p>Match detail not available.</p>
     
+    {% endif %}
+
+    {% if is_bad %}
+    <h3 id="bad">Bad match</h3>
+    {% for bad in osm.bad_matches %}
+        <div class="alert alert-danger mt-2">
+        <strong><a href="https://www.openstreetmap.org/user/{{ bad.user.username }}" class="alert-link">{{ bad.user.username }}</a></strong> reported this as a bad match ({{ bad.created.strftime('%H:%M %a, %d %b %Y') }})
+        {% if bad.comment %}
+            <div>{{ bad.comment | newline_br }}</div>
+        {% endif %}
+        </div>
+    {% endfor %}
     {% endif %}
 
     {% if category_map %}
