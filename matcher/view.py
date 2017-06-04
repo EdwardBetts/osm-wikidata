@@ -423,11 +423,10 @@ def export_osm(osm_type, osm_id, name):
     if not any('candidate' in match for item, match in items):
         abort(404)
 
+    items = [item, match['candidate'] for item, match if 'candidate' in match]
+
     lookup = {}
-    for item, match in items:
-        if 'candidate' not in match:
-            continue
-        osm = match['candidate']
+    for item, osm in items:
         lookup[(osm.osm_type, osm.osm_id)] = item
 
     filename = cache_filename('{}_{}_overpass_export.xml'.format(osm_type, osm_id))
