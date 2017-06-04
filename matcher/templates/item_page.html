@@ -177,6 +177,9 @@
             {% for bad in c.bad_matches %}
             <div class="alert alert-danger mt-2">
             <strong><a href="https://www.openstreetmap.org/user/{{ bad.user.username }}" class="alert-link">{{ bad.user.username }}</a></strong> reported this as a bad match ({{ bad.created.strftime('%H:%M %a, %d %b %Y') }})
+            {% if bad.comment %}
+                <div>{{ bad.comment | newline_br }}</div>
+            {% endif %}
             </div>
             {% endfor %}
           {% elif g.user.is_authenticated %}
