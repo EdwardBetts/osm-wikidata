@@ -1,4 +1,4 @@
-{% from "macro.html" import place_box, candidate_info %}
+{% from "macro.html" import place_box, candidate_info with context %}
 {% extends "base.html" %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
@@ -94,7 +94,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       {% set picked = filtered[item.item_id]['candidate'] or none %}
       {% if upload_okay %}
           {% if picked %}
-            {% if not picked.area or picked.area < 500 and 'designation=civil_parish' not in picked.matching_tags() %}
+            {% if not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags() %}
                 <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
             {% else %}
                 <input type="checkbox" name="include" value="{{ item.qid }}">
