@@ -17,11 +17,14 @@ from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
+from jinja2 import evalcontextfilter, Markup, escape
 
 import sys
 import requests
 import os.path
 import re
+
+_paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
 re_qid = re.compile('^(Q\d+)$')
 
@@ -245,6 +248,15 @@ language_codes = {
     "zh": "Chinese",
     "zu": "Zulu",
 }
+
+@app.template_filter()
+@evalcontextfilter
+def newline_br(eval_ctx, value):
+    result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', '<br>\n') \
+        for p in _paragraph_re.split(escape(value)))
+    if eval_ctx.autoescape:
+        result = Markup(result)
+    return result
 
 @app.context_processor
 def filter_urls():
@@ -1065,7 +1077,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 3)
+    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 4)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
@@ -1260,7 +1272,14 @@ def api_item_match(wikidata_id):
     trim_location_from_names(entity, wikidata_names)
     wikidata_query = wikidata.osm_key_query(qid)
 
-    criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
+    osm_keys = wikidata.get_osm_keys(wikidata_query)
+
+    for row in osm_keys:
+        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
+            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
+            send_mail('broken OSM tag in Wikidata', body)
+
+    criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
     item = Item.query.get(wikidata_id)
@@ -1503,6 +1522,11 @@ def item_page(wikidata_id):
     wikidata_query = wikidata.osm_key_query(qid)
     osm_keys = wikidata.get_osm_keys(wikidata_query)
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
+
+    for row in osm_keys:
+        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
+            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
+            send_mail('broken OSM tag in Wikidata', body)
 
     criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
