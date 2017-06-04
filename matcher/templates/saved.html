@@ -10,7 +10,7 @@
 
 <p>These places have been analysed and the match results records.</p>
 
-<table class="table table-responsive table-hover m-2">
+<table class="table table-sm table-hover m-2">
   <thead>
     <tr>
       <th>
@@ -26,15 +26,16 @@
       <th class="text-right"><a href="{{ sort_link('ratio') }}">match<br>ratio</a></th>
       <th class="text-right"><a href="{{ sort_link('area') }}">area<br>(km&sup2;)</a></th>
     </tr>
+  </thead>
   <tbody>
   {% for place in existing %}
     {% set with_candidates_count = place.candidate_count %}
     <tr>
       <td>
         {% if place.state == 'overpass_timeout' %}
-          {{ place.display_name }} <span class="badge badge-danger">Overpass timeout</span>
+          {{ place.display_name.replace(';', '; ') }} <span class="badge badge-danger">Overpass timeout</span>
         {% else %}
-          <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a>
+          <a href="{{ place.candidates_url() }}">{{ place.display_name.replace(';', '; ') }}</a>
         {% endif %}
       </td>
       {% set item_count = place.item_count %}
