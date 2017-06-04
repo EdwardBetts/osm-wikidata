@@ -329,7 +329,7 @@ def filter_station(candidates):
             if match:  # multiple stations
                 return
             match = c
-        elif 'public_transport=platform' not in tags:
+        elif 'railway=tram_stop' not in tags:
             return
     return match
 
