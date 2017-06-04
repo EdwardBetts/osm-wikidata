@@ -132,6 +132,7 @@
       {% endif %}
 
       {% for c in item.candidates %}
+        {% set is_bad = c.bad_matches.count() %}
         {% set m = c.get_match() %}
         <div>
           {% if 'wikidata' not in c.tags and upload_option %}
@@ -150,13 +151,37 @@
           {%- else -%}
               <span class="badge badge-success">exact location match</span>
           {% endif %}
-          <a href="#" class="show_tags_link" data-key="{{ c.key }}">[show tags]</a>
+          {% if is_bad %}
+              <span class="badge badge-danger">bad match reported</span>
+          {% endif %}
+          <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
+          {% if not is_bad %}
+              <a href="#" class="bad-match-link" data-key="{{ c.key }}">[report bad match]</a>
+          {% endif %}
 
-           <div class="all_tags" id="candidate{{ c.key }}">
+           <div class="all-tags" id="candidate-{{ c.key }}">
              {% for k, v in c.tags.items() if k != 'way_area' %}
               {{ k }}: {{ v }}</br>
              {% endfor %}
            </div>
+          {% if is_bad %}
+            {% for bad in c.bad_matches %}
+            <div class="alert alert-danger mt-2">
+            <strong><a href="https://www.openstreetmap.org/user/{{ bad.user.username }}" class="alert-link">{{ bad.user.username }}</a></strong> reported this as a bad match ({{ bad.created.strftime('%H:%M %a, %d %b %Y') }})
+            </div>
+            {% endfor %}
+          {% else %}
+     <div class="bad-match" id="bad-match-{{ c.key }}">
+       <form method="POST" action="{{ url_for('bad_match', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">
+         <div class="form-group">
+           <label for="comment">what's wrong with this match? (optional)</label>
+           <textarea class="form-control" id="comment" rows="3"></textarea>
+         </div>
+
+         <button class="btn btn-danger btn-sm">report as bad match</button>
+       </form>
+     </div>
+          {% endif %}
            {% if 'wikidata' in c.tags %}
              <br>
              {% if c.tags.wikidata == c.item.qid %}
@@ -209,7 +234,7 @@
              size="40"
              value="add wikidata tag to {{ label }}" />
 
-      <button id='add-tag' class="btn btn-primary">add wikidata tag to OpenStreetMap</button>
+      <button id='add-tag' class="btn btn-primary mb-2">add wikidata tag to OpenStreetMap</button>
       </form>
     {% endif %}
 
@@ -239,7 +264,7 @@
     {% endif %}
 
     {% if category_map %}
-    <h3>Search criteria from categories</h3>
+    <h3 class="mt-2">Search criteria from categories</h3>
     <table class="table table-responsive table-hover table-sm">
     {% for cat, tags in category_map | dictsort %}
       <tr>

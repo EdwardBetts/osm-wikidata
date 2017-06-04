@@ -115,7 +115,8 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       </ul> #}
       <ul>
       {% for c in item.candidates %}
-        {{ candidate_info(c, filtered=filtered) }}
+        {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
+        {{ candidate_info(c, filtered=filtered, is_bad=is_bad) }}
       {% endfor %}
       </ul>
     {% endfor %}

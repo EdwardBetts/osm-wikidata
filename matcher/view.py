@@ -11,6 +11,7 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
 from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
@@ -776,14 +777,32 @@ def add_tags(osm_type, osm_id):
 
 @app.route('/place/<name>')
 def place_redirect(name):
-    place = Place.query.filter(Place.state=='ready', Place.display_name.ilike(name + '%')).first()
+    place = Place.query.filter(Place.state == 'ready', Place.display_name.ilike(name + '%')).first()
     if not place:
         abort(404)
     return redirect(place.candidates_url())
 
+def get_bad_matches(place):
+    q = (database.session
+                 .query(ItemCandidate.item_id,
+                        ItemCandidate.osm_type,
+                        ItemCandidate.osm_id)
+                 .join(BadMatch).distinct())
+
+    return set(tuple(row) for row in q)
+
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+#    place = (Place.query
+#                  .options(defaultload(Place.items),
+#                           joinedload(Item.candidates))
+#                  .filter_by(osm_type=osm_type, osm_id=osm_id)
+#                  .one_or_none())
+
+    place = (Place.query
+                  .filter_by(osm_type=osm_type, osm_id=osm_id)
+                  .one_or_none())
     if not place:
         abort(404)
     multiple_only = bool(request.args.get('multiple'))
@@ -818,6 +837,7 @@ def candidates(osm_type, osm_id):
                 for item, candidate in matcher.filter_candidates_more(items)}
 
     upload_okay = filtered and g.user.is_authenticated
+    bad_matches = get_bad_matches(place)
 
     return render_template('candidates.html',
                            place=place,
@@ -826,6 +846,7 @@ def candidates(osm_type, osm_id):
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,
                            filtered=filtered,
+                           bad_matches=bad_matches,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
                            candidates=items)
@@ -1442,7 +1463,7 @@ def item_page(wikidata_id):
         abort(404)
 
     radius = get_radius()
-    filename = overpass.item_filename(qid, radius)
+
 
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
@@ -1539,6 +1560,9 @@ def item_page(wikidata_id):
     if g.user.is_authenticated:
         if item:
             upload_option = any(not c.wikidata_tag for c in item.candidates)
+            q = database.session.query(BadMatch.item_id).filter(BadMatch.item_id == item.item_id)
+            if q.count():
+                upload_option = False
         elif found:
             upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 
