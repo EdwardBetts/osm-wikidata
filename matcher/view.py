@@ -423,7 +423,7 @@ def export_osm(osm_type, osm_id, name):
     if not any('candidate' in match for item, match in items):
         abort(404)
 
-    items = [item, match['candidate'] for item, match if 'candidate' in match]
+    items = [(item, match['candidate']) for item, match in items if 'candidate' in match]
 
     lookup = {}
     for item, osm in items:
@@ -495,7 +495,6 @@ def close_changeset(osm_type, osm_id):
     osm_backend, auth = get_backend_and_auth()
 
     changeset_id = request.form['changeset_id']
-    comment = request.form['comment']
     update_count = request.form['update_count']
 
     if really_save:
