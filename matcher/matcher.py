@@ -333,7 +333,7 @@ def filter_station(candidates):
             return
     return match
 
-def filter_candidates_more(items, debug=False):
+def filter_candidates_more(items):
     osm_count = Counter()
 
     q = (database.session.query(BadMatch.item_id)
@@ -346,6 +346,7 @@ def filter_candidates_more(items, debug=False):
 
     for item in items:
         if item.item_id in bad:
+            yield (item, {'note': 'has bad match'})
             continue
         candidates = item.candidates.all()
 
@@ -362,25 +363,17 @@ def filter_candidates_more(items, debug=False):
                 candidates = [station]
 
         if len(candidates) != 1:
-            if debug:
-                print('too many candidates', item.enwiki, item.candidates.count())
-                for c in item.candidates:
-                    print('  ', c.osm_type, c.tags)
+            yield (item, {'note': 'more than one candidate found'})
             continue
 
         candidate = candidates[0]
 
-        if candidate.matching_tags() == ['designation=civil_parish']:
-            continue  # skip for now
-
         if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
-            if debug:
-                print('multiple matches', item.enwiki)
+            yield (item, {'note': 'OSM candidate matches multiple Wikidata items'})
             continue
 
         if 'wikidata' in candidate.tags:
-            if debug:
-                print('already has wikidata', item.enwiki)
+            yield (item, {'note': 'candidate already tagged'})
             continue
 
-        yield (item, candidate)
+        yield (item, {'candidate': candidate})

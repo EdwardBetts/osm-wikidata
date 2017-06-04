@@ -408,11 +408,14 @@ def export_osm(osm_type, osm_id, name):
 
     items = list(matcher.filter_candidates_more(items))
 
-    if not items:
+    if not any('candidate' in match for item, match in items):
         abort(404)
 
     lookup = {}
-    for item, osm in items:
+    for item, match in items:
+        if 'candidate' not in match:
+            continue
+        osm = match['candidate']
         lookup[(osm.osm_type, osm.osm_id)] = item
 
     filename = cache_filename('{}_{}_overpass_export.xml'.format(osm_type, osm_id))
@@ -751,8 +754,8 @@ def add_tags(osm_type, osm_id):
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
 
-    table = [(item, candidate)
-             for item, candidate in matcher.filter_candidates_more(items)]
+    table = [(item, match['candidate'])
+             for item, match in matcher.filter_candidates_more(items)]
 
     items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
               'qid': i.qid,
@@ -833,15 +836,18 @@ def candidates(osm_type, osm_id):
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
-    filtered = {item.item_id: candidate
-                for item, candidate in matcher.filter_candidates_more(items)}
+    filtered = {item.item_id: match
+                for item, match in matcher.filter_candidates_more(items)}
 
-    upload_okay = filtered and g.user.is_authenticated
+    filter_okay = any('candidate' in m for m in filtered.values())
+
+    upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
     bad_matches = get_bad_matches(place)
 
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
+                           filter_okay=filter_okay,
                            upload_okay=upload_okay,
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,

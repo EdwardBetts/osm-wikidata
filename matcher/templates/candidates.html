@@ -13,7 +13,7 @@
 
   {{ place_box(place) }}
 
-    {% if filtered and upload_okay %}
+    {% if upload_okay %}
 <div id="notice" class="alert alert-danger" role="alert">
   <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
   <p>If in doubt, <strong>contact the local mapping community</strong> before adding Wikidata tags.</p>
@@ -57,7 +57,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     {{ '{:,d}'.format(full_count) }} candidates found
     ({{ '{:,d}'.format(multiple_match_count) }} with multiple matches)
     </p>
-    {% if filtered %}
+    {% if filter_okay %}
         {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
         <p><a href="{{ url }}">Download as OSM XML file</a></p>
     {% endif %}
@@ -75,7 +75,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
   {% if candidates %}
 
-    {% if filtered and not upload_okay %}
+    {% if filter_okay and not upload_okay %}
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
     {% endif %}
 
@@ -91,10 +91,10 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <div class="my-3">
     {% for item in candidates %}
       <p>
+      {% set picked = filtered[item.item_id]['candidate'] or none %}
       {% if upload_okay %}
-          {% if item.item_id in filtered %}
-            {% set c = filtered[item.item_id] %}
-            {% if not c.area or c.area < 500 %}
+          {% if picked %}
+            {% if not picked.area or picked.area < 500 and 'designation=civil_parish' not in picked.matching_tags() %}
                 <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
             {% else %}
                 <input type="checkbox" name="include" value="{{ item.qid }}">
@@ -103,7 +103,11 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
             ✕
           {% endif %}
       {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
+      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a>
+      {% if 'note' in filtered[item.item_id] %}
+        {{ filtered[item.item_id]['note'] }}
+      {% endif %}
+      <p>
       {# <br>
       <ul>
         <li>Categories:
@@ -116,7 +120,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       <ul>
       {% for c in item.candidates %}
         {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
-        {{ candidate_info(c, filtered=filtered, is_bad=is_bad) }}
+        {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad) }}
       {% endfor %}
       </ul>
     {% endfor %}
