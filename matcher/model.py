@@ -139,13 +139,15 @@ class Place(Base):   # assume all places are relations
             query = wikidata.get_enwiki_query(*self.bbox)
         return query
 
-    def items_from_wikidata(self):
-        q = wikidata.get_enwiki_query(*self.bbox)
+    def items_from_wikidata(self, bbox=None):
+        if bbox is None:
+            bbox = self.bbox
+        q = wikidata.get_enwiki_query(*bbox)
         rows = wikidata.run_query(q)
 
         items = wikidata.parse_enwiki_query(rows)
 
-        q = wikidata.get_item_tag_query(*self.bbox)
+        q = wikidata.get_item_tag_query(*bbox)
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
 
@@ -329,8 +331,12 @@ class Place(Base):   # assume all places are relations
         q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
         return [{'id': i.item_id, 'name': i.label} for i in q]
 
-    def load_items(self):
-        items = self.items_from_wikidata()
+    def load_items(self, bbox=None, debug=False):
+        if bbox is None:
+            bbox = self.bbox
+        items = self.items_from_wikidata(bbox)
+        if debug:
+            print('{:d} items'.format(len(items)))
 
         enwiki_to_item = {v['enwiki']: v
                           for v in items.values()
