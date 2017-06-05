@@ -272,7 +272,7 @@ def filter_urls():
 
 @app.before_request
 def global_user():
-    g.user = current_user
+    g.user = current_user._get_current_object()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -327,7 +327,7 @@ def add_wikidata_tag():
 
     print(wikidata_id, osm_type, osm_id)
 
-    user = g.user._get_current_object()
+    user = g.user
     assert user.is_authenticated
 
     social_user = user.social_auth.one()
@@ -578,7 +578,7 @@ def get_backend_and_auth():
     if not really_save:
         return None, None
 
-    user = g.user._get_current_object()
+    user = g.user
     assert user.is_authenticated
 
     social_user = user.social_auth.one()
@@ -765,7 +765,7 @@ def add_tags(osm_type, osm_id):
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
 
     table = [(item, match['candidate'])
-             for item, match in matcher.filter_candidates_more(items)]
+             for item, match in matcher.filter_candidates_more(items) if 'candidate' in match]
 
     items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
               'qid': i.qid,
@@ -1091,7 +1091,11 @@ def search_results():
         m = re_qid.match(q)
         if m:
             return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
-        results = nominatim.lookup(q)
+        try:
+            results = nominatim.lookup(q)
+        except nominatim.SearchError:
+            message = 'nominatim API search error'
+            return render_template('error_page.html', message=message)
         for hit in results:
             p = Place.query.filter_by(osm_type=hit['osm_type'],
                                       osm_id=hit['osm_id']).one_or_none()
