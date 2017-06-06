@@ -2,7 +2,7 @@
 from flask import current_app, url_for, g
 from sqlalchemy import func, select
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Enum, Boolean, DateTime, Text
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
@@ -16,7 +16,6 @@ from .overpass import oql_from_tag
 
 import subprocess
 import os.path
-import re
 
 Base = declarative_base()
 Base.query = session.query_property()
