@@ -1,6 +1,5 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from .model import BadMatch
 from . import match, database
 
 import os.path
@@ -333,12 +332,11 @@ def filter_station(candidates):
             return
     return match
 
-def filter_candidates_more(items):
+def filter_candidates_more(items, bad=None):
     osm_count = Counter()
 
-    q = (database.session.query(BadMatch.item_id)
-                         .filter(BadMatch.item_id.in_([i.item_id for i in items])))
-    bad = {item_id for item_id, in q}
+    if bad is None:
+        bad = {}
 
     for item in items:
         for c in item.candidates:

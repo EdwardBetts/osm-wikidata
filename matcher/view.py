@@ -1,23 +1,24 @@
 #!/usr/bin/python3
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, _app_ctx_stack
 from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
 from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch
-from .wikipedia import page_category_iter
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm import joinedload, defaultload
+# from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
 from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
+
+from dogpile.cache import make_region
 
 import sys
 import requests
@@ -37,6 +38,14 @@ login_manager.login_view = 'login'
 cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
 really_save = True
+
+region = make_region().configure(
+    'dogpile.cache.pylibmc',
+    expiration_time = 3600,
+    arguments = {
+        'url': ["127.0.0.1"],
+    }
+)
 
 navbar_pages = {
     'criteria_page': 'Criteria',
@@ -411,6 +420,11 @@ def post_overpass(place_id):
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
+def get_bad(items):
+    q = (database.session.query(BadMatch.item_id)
+                         .filter(BadMatch.item_id.in_([i.item_id for i in items])))
+    return {item_id for item_id, in q}
+
 @app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
 def export_osm(osm_type, osm_id, name):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
@@ -418,7 +432,7 @@ def export_osm(osm_type, osm_id, name):
         abort(404)
     items = place.items_with_candidates()
 
-    items = list(matcher.filter_candidates_more(items))
+    items = list(matcher.filter_candidates_more(items, bad=get_bad(items)))
 
     if not any('candidate' in match for item, match in items):
         abort(404)
@@ -765,7 +779,8 @@ def add_tags(osm_type, osm_id):
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
 
     table = [(item, match['candidate'])
-             for item, match in matcher.filter_candidates_more(items) if 'candidate' in match]
+             for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))
+             if 'candidate' in match]
 
     items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
               'qid': i.qid,
@@ -847,7 +862,7 @@ def candidates(osm_type, osm_id):
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
     filtered = {item.item_id: match
-                for item, match in matcher.filter_candidates_more(items)}
+                for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))}
 
     filter_okay = any('candidate' in m for m in filtered.values())
 
@@ -1052,10 +1067,7 @@ area: {}
 
     return render_template('wikidata_items.html', place=place)
 
-def get_existing():
-    sort = request.args.get('sort') or 'name'
-    name_filter = g.get('filter')
-
+def get_existing(sort, name_filter):
     q = Place.query.filter(Place.state.isnot(None), Place.osm_type != 'node')
     if name_filter:
         q = q.filter(Place.display_name.ilike('%' + name_filter + '%'))
@@ -1077,7 +1089,7 @@ def get_existing():
 def get_top_existing():
     q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 4)
                     .order_by((Place.item_count / Place.area).desc()))
-    return q
+    return q[:30]
 
 def sort_link(order):
     args = request.view_args.copy()
@@ -1118,7 +1130,11 @@ def search_results():
 
     return render_template('results_page.html', results=results, q=q)
 
-@app.route("/")
+@region.cache_on_arguments()
+def get_place_cards():
+    return render_template('top_places.html', existing=get_top_existing())
+
+@app.route('/')
 def index():
     q = request.args.get('q')
     if q:
@@ -1131,8 +1147,7 @@ def index():
         else:
             return redirect(url_for('saved_places'))
 
-    return render_template('index.html', existing=get_top_existing())
-
+    return render_template('index.html', place_cards=get_place_cards())
 
 @app.route('/criteria')
 def criteria_page():
@@ -1164,6 +1179,10 @@ def saved_with_filter(name_filter):
     g.filter = name_filter.replace('_', ' ')
     return saved_places()
 
+@region.cache_on_arguments()
+def get_place_tbody(sort):
+    return render_template('place_tbody.html', existing=get_existing(sort, None))
+
 @app.route('/saved')
 def saved_places():
     if 'filter' in request.args:
@@ -1173,9 +1192,16 @@ def saved_places():
         else:
             return redirect(url_for('saved_places'))
 
-    return render_template('saved.html',
-                           existing=get_existing(),
-                           sort_link=sort_link)
+    sort = request.args.get('sort') or 'name'
+    name_filter = g.get('filter') or None
+
+    if name_filter:
+        place_tbody = render_template('place_tbody.html',
+                                      existing=get_existing(sort, name_filter))
+    else:
+        place_tbody = get_place_tbody(sort)
+
+    return render_template('saved.html', place_tbody=place_tbody, sort_link=sort_link)
 
 @app.route("/documentation")
 def documentation():
@@ -1401,18 +1427,22 @@ def api_item_match(wikidata_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-@app.route('/tag')
-def tag_list():
+@region.cache_on_arguments()
+def get_tag_list(sort):
     count = func.count(distinct(Item.item_id))
-    order_by = ([count, ItemTag.tag_or_key]
-                if request.args.get('sort') == 'count'
-                else [ItemTag.tag_or_key])
+    order_by = ([count, ItemTag.tag_or_key] if sort == 'count' else [ItemTag.tag_or_key])
     q = (database.session.query(ItemTag.tag_or_key, func.count(distinct(Item.item_id)))
                          .join(Item)
                          .join(ItemCandidate)
                          # .filter(ItemTag.tag_or_key == sub.c.tag_or_key)
                          .group_by(ItemTag.tag_or_key)
                          .order_by(*order_by))
+
+    return [(tag, num) for tag, num in q]
+
+@app.route('/tag')
+def tag_list():
+    q = get_tag_list(request.args.get('sort'))
     return render_template('tag_list.html', q=q)
 
 @app.route('/tag/<tag_or_key>')
@@ -1440,12 +1470,7 @@ def bad_match(item_id, osm_type, osm_id):
 
     database.session.add(bad)
     database.session.commit()
-    flash('bad match report saved')
-    return redirect(url_for('match_detail',
-                            item_id=item_id,
-                            osm_type=osm_type,
-                            osm_id=osm_id))
-
+    return Response('saved', mimetype='text/plain')
 
 @app.route('/detail/Q<int:item_id>/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 def match_detail(item_id, osm_type, osm_id):
