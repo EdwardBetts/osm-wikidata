@@ -53,6 +53,7 @@ class User(Base, UserMixin):
     email = Column(String)
     active = Column(Boolean, default=True)
     sign_up = Column(DateTime, default=func.now())
+    is_admin = Column(Boolean, default=False)
 
     def is_active(self):
         return self.active

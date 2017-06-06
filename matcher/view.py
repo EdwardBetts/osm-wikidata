@@ -11,16 +11,20 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
 from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
+from jinja2 import evalcontextfilter, Markup, escape
 
 import sys
 import requests
 import os.path
 import re
+
+_paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
 re_qid = re.compile('^(Q\d+)$')
 
@@ -245,6 +249,15 @@ language_codes = {
     "zu": "Zulu",
 }
 
+@app.template_filter()
+@evalcontextfilter
+def newline_br(eval_ctx, value):
+    result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', '<br>\n') \
+        for p in _paragraph_re.split(escape(value)))
+    if eval_ctx.autoescape:
+        result = Markup(result)
+    return result
+
 @app.context_processor
 def filter_urls():
     name_filter = g.get('filter')
@@ -259,7 +272,7 @@ def filter_urls():
 
 @app.before_request
 def global_user():
-    g.user = current_user
+    g.user = current_user._get_current_object()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -314,7 +327,7 @@ def add_wikidata_tag():
 
     print(wikidata_id, osm_type, osm_id)
 
-    user = g.user._get_current_object()
+    user = g.user
     assert user.is_authenticated
 
     social_user = user.social_auth.one()
@@ -407,8 +420,10 @@ def export_osm(osm_type, osm_id, name):
 
     items = list(matcher.filter_candidates_more(items))
 
-    if not items:
+    if not any('candidate' in match for item, match in items):
         abort(404)
+
+    items = [(item, match['candidate']) for item, match in items if 'candidate' in match]
 
     lookup = {}
     for item, osm in items:
@@ -480,7 +495,6 @@ def close_changeset(osm_type, osm_id):
     osm_backend, auth = get_backend_and_auth()
 
     changeset_id = request.form['changeset_id']
-    comment = request.form['comment']
     update_count = request.form['update_count']
 
     if really_save:
@@ -564,7 +578,7 @@ def get_backend_and_auth():
     if not really_save:
         return None, None
 
-    user = g.user._get_current_object()
+    user = g.user
     assert user.is_authenticated
 
     social_user = user.social_auth.one()
@@ -750,8 +764,8 @@ def add_tags(osm_type, osm_id):
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
 
-    table = [(item, candidate)
-             for item, candidate in matcher.filter_candidates_more(items)]
+    table = [(item, match['candidate'])
+             for item, match in matcher.filter_candidates_more(items) if 'candidate' in match]
 
     items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
               'qid': i.qid,
@@ -776,14 +790,32 @@ def add_tags(osm_type, osm_id):
 
 @app.route('/place/<name>')
 def place_redirect(name):
-    place = Place.query.filter(Place.state=='ready', Place.display_name.ilike(name + '%')).first()
+    place = Place.query.filter(Place.state == 'ready', Place.display_name.ilike(name + '%')).first()
     if not place:
         abort(404)
     return redirect(place.candidates_url())
 
+def get_bad_matches(place):
+    q = (database.session
+                 .query(ItemCandidate.item_id,
+                        ItemCandidate.osm_type,
+                        ItemCandidate.osm_id)
+                 .join(BadMatch).distinct())
+
+    return set(tuple(row) for row in q)
+
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+#    place = (Place.query
+#                  .options(defaultload(Place.items),
+#                           joinedload(Item.candidates))
+#                  .filter_by(osm_type=osm_type, osm_id=osm_id)
+#                  .one_or_none())
+
+    place = (Place.query
+                  .filter_by(osm_type=osm_type, osm_id=osm_id)
+                  .one_or_none())
     if not place:
         abort(404)
     multiple_only = bool(request.args.get('multiple'))
@@ -814,18 +846,23 @@ def candidates(osm_type, osm_id):
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
-    filtered = {item.item_id: candidate
-                for item, candidate in matcher.filter_candidates_more(items)}
+    filtered = {item.item_id: match
+                for item, match in matcher.filter_candidates_more(items)}
 
-    upload_okay = filtered and g.user.is_authenticated
+    filter_okay = any('candidate' in m for m in filtered.values())
+
+    upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
+    bad_matches = get_bad_matches(place)
 
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
+                           filter_okay=filter_okay,
                            upload_okay=upload_okay,
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,
                            filtered=filtered,
+                           bad_matches=bad_matches,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
                            candidates=items)
@@ -1038,7 +1075,7 @@ def get_existing():
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 3)
+    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 4)
                     .order_by((Place.item_count / Place.area).desc()))
     return q
 
@@ -1054,7 +1091,11 @@ def search_results():
         m = re_qid.match(q)
         if m:
             return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
-        results = nominatim.lookup(q)
+        try:
+            results = nominatim.lookup(q)
+        except nominatim.SearchError:
+            message = 'nominatim API search error'
+            return render_template('error_page.html', message=message)
         for hit in results:
             p = Place.query.filter_by(osm_type=hit['osm_type'],
                                       osm_id=hit['osm_id']).one_or_none()
@@ -1233,7 +1274,14 @@ def api_item_match(wikidata_id):
     trim_location_from_names(entity, wikidata_names)
     wikidata_query = wikidata.osm_key_query(qid)
 
-    criteria = {row['tag']['value'] for row in wikidata.get_osm_keys(wikidata_query)}
+    osm_keys = wikidata.get_osm_keys(wikidata_query)
+
+    for row in osm_keys:
+        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
+            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
+            send_mail('broken OSM tag in Wikidata', body)
+
+    criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
 
     item = Item.query.get(wikidata_id)
@@ -1442,7 +1490,7 @@ def item_page(wikidata_id):
         abort(404)
 
     radius = get_radius()
-    filename = overpass.item_filename(qid, radius)
+
 
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
@@ -1476,6 +1524,11 @@ def item_page(wikidata_id):
     wikidata_query = wikidata.osm_key_query(qid)
     osm_keys = wikidata.get_osm_keys(wikidata_query)
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
+
+    for row in osm_keys:
+        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
+            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
+            send_mail('broken OSM tag in Wikidata', body)
 
     criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
@@ -1539,6 +1592,9 @@ def item_page(wikidata_id):
     if g.user.is_authenticated:
         if item:
             upload_option = any(not c.wikidata_tag for c in item.candidates)
+            q = database.session.query(BadMatch.item_id).filter(BadMatch.item_id == item.item_id)
+            if q.count():
+                upload_option = False
         elif found:
             upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 

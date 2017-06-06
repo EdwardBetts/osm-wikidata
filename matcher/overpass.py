@@ -58,7 +58,8 @@ def oql_from_tag(tag, large_area, filters='area.a'):
 def oql_from_wikidata_tag_or_key(tag_or_key, filters):
     osm_type, _, tag = tag_or_key.partition(':')
     osm_type = osm_type.lower()
-    assert {'key': False, 'tag': True}[osm_type] == ('=' in tag)
+    if not {'key': False, 'tag': True}[osm_type] == ('=' in tag):
+        return []
 
     relation_only = tag == 'site'
 

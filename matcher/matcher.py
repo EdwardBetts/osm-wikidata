@@ -1,6 +1,7 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from . import match
+from .model import BadMatch
+from . import match, database
 
 import os.path
 import json
@@ -312,13 +313,41 @@ def filter_schools(candidates):
             return
     return match
 
-def filter_candidates_more(items, debug=False):
+def filter_station(candidates):
+    if len(candidates) < 2:
+        return
+    if all('public_transport=station' not in c.matching_tags() for c in candidates):
+        return
+
+    # use the one thing tagged public_transport=station
+    # check everything else is tagged public_transport=platform
+
+    match = None
+    for c in candidates:
+        tags = c.matching_tags()
+        if 'public_transport=station' in tags:
+            if match:  # multiple stations
+                return
+            match = c
+        elif 'railway=tram_stop' not in tags:
+            return
+    return match
+
+def filter_candidates_more(items):
     osm_count = Counter()
+
+    q = (database.session.query(BadMatch.item_id)
+                         .filter(BadMatch.item_id.in_([i.item_id for i in items])))
+    bad = {item_id for item_id, in q}
+
     for item in items:
         for c in item.candidates:
             osm_count[(c.osm_type, c.osm_id)] += 1
 
     for item in items:
+        if item.item_id in bad:
+            yield (item, {'note': 'has bad match'})
+            continue
         candidates = item.candidates.all()
 
         place = filter_place(candidates)
@@ -329,26 +358,22 @@ def filter_candidates_more(items, debug=False):
             if school:
                 candidates = [school]
 
+            station = filter_station(candidates)
+            if station:
+                candidates = [station]
+
         if len(candidates) != 1:
-            if debug:
-                print('too many candidates', item.enwiki, item.candidates.count())
-                for c in item.candidates:
-                    print('  ', c.osm_type, c.tags)
+            yield (item, {'note': 'more than one candidate found'})
             continue
 
         candidate = candidates[0]
 
-        if candidate.matching_tags() == ['designation=civil_parish']:
-            continue  # skip for now
-
         if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
-            if debug:
-                print('multiple matches', item.enwiki)
+            yield (item, {'note': 'OSM candidate matches multiple Wikidata items'})
             continue
 
         if 'wikidata' in candidate.tags:
-            if debug:
-                print('already has wikidata', item.enwiki)
+            yield (item, {'note': 'candidate already tagged'})
             continue
 
-        yield (item, candidate)
+        yield (item, {'candidate': candidate})

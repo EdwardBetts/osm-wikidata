@@ -11,39 +11,55 @@
 
 {% macro taginfo_link(tag) %}{% if '=' in tag %}<a href="https://taginfo.openstreetmap.org/tags/{{ tag }}">{{ tag }}</a>{% else %}<a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% endif -%}{%- endmacro -%}
 
-{% macro candidate_info(c, filtered={}) %}
+{% macro candidate_info(c, is_picked=false, is_bad=false) %}
   {% set m = c.get_match() %}
     <li>{{c.osm_type}}:
       <a href="{{ url_for('match_detail', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">{{ c.label }}</a>
       <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">(OSM)</a>
     {% if c.dist and c.dist > 1 %}
-     {{ c.dist | int }} m from Wikidata
+     {{ '{:,d}'.format(c.dist | int) }} m from Wikidata
     {% else %}
       <span class="badge badge-success">exact location match</span>
     {% endif %}
      {# {{ ', '.join(c.matching_tags()) }} #}
 
-       {% if c.item_id in filtered and c == filtered[c.item_id] %}
+       {% if is_bad %}
+         <span class="badge badge-danger">bad match reported</span>
+       {% elif is_picked %}
          <span class="badge badge-info">best match</span>
        {% endif %}
 
      <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
-     <a href="#" class="bad-match-link" data-key="{{ c.key }}">[bad match]</a>
+     {% if not is_bad and g.user.is_authenticated %}
+         <a href="#" class="bad-match-link" data-key="{{ c.key }}">[report bad match]</a>
+     {% endif %}
+     {% if is_bad %}
+         {% for bad in c.bad_matches %}
+            <div class="alert alert-danger mt-2">
+            <strong><a href="https://www.openstreetmap.org/user/{{ bad.user.username }}" class="alert-link">{{ bad.user.username }}</a></strong> reported this as a bad match ({{ bad.created.strftime('%H:%M %a, %d %b %Y') }})
+            {% if bad.comment %}
+                <div>{{ bad.comment | newline_br }}</div>
+            {% endif %}
+            </div>
+         {% endfor %}
+     {% endif %}
      <div class="all-tags" id="candidate-{{ c.key }}">
        {% for k, v in c.tags.items() if k != 'way_area' %}
         {{ k }}: {{ v }}</br>
        {% endfor %}
      </div>
+     {% if not is_bad and g.user.is_authenticated %}
      <div class="bad-match" id="bad-match-{{ c.key }}">
        <form method="POST" action="{{ url_for('bad_match', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">
          <div class="form-group">
            <label for="comment">what's wrong with this match? (optional)</label>
-           <textarea class="form-control" id="comment" rows="3"></textarea>
+           <textarea class="form-control" name="comment" id="comment" rows="3"></textarea>
          </div>
 
          <button class="btn btn-danger btn-sm">report as bad match</button>
        </form>
      </div>
+     {% endif %}
 
      {% if 'wikidata' in c.tags %}
        <br>
