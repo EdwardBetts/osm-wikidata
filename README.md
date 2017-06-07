@@ -30,16 +30,12 @@ For bridges with two roadways the system will look for the outline of the bridge
 tagged with man\_made=bridge and for a hospital or other campus the aim is to
 tag the way or relation that represents the entire site.
 
-### English language Wikipedia categories are used for matching
+### English language Wikipedia categories and Wikidata are used for matching
 
 The matching system makes use of categories on Wikipedia because the information
 on Wikidata is incomplete. Wikidata includes an import of all Wikipedia
 including the coordinates, but for a lot of items the 'instance of' property is
 not set.
-
-Only Wikidata items with a page on English language Wikipedia are included in
-the match. In the future I'll add support for matching items without a linked
-Wikipedia article.
 
 There is a mapping from Wikipedia category to possible OSM tags. For example if
 a Wikipedia article has the word 'station' in any category then railway=station
