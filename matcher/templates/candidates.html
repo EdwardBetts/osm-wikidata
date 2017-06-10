@@ -94,7 +94,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       {% set picked = filtered[item.item_id]['candidate'] or none %}
       {% if upload_okay %}
           {% if picked %}
-            {% if not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags() %}
+            {% if (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
                 <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
             {% else %}
                 <input type="checkbox" name="include" value="{{ item.qid }}">
