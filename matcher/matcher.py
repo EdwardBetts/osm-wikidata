@@ -149,6 +149,9 @@ def find_item_matches(cur, item, prefix, debug=False):
             print((osm_type, osm_id, osm_name, osm_tags, dist))
         seen.add((obj_type, osm_id))
 
+        if osm_tags.get('locality') == 'townland' and 'locality=townland' not in search_tags:
+            continue  # only match townlands when specifically searching for one
+
         try:
             admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
         except Exception:
@@ -347,6 +350,21 @@ def filter_candidates_more(items, bad=None):
             yield (item, {'note': 'has bad match'})
             continue
         candidates = item.candidates.all()
+
+        done = False
+        for candidate in candidates:
+            housename = candidate.tags.get('addr:housename')
+            if housename and housename.isdigit():
+                yield (item, {'note': 'number as house name'})
+                done = True
+                break
+            name = candidate.tags.get('name')
+            if name and name.isdigit():
+                yield (item, {'note': 'number as name'})
+                done = True
+                break
+        if done:
+            continue
 
         place = filter_place(candidates)
         if place:
