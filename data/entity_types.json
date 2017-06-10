@@ -732,6 +732,13 @@
     "max_area": 30
 },
 {
+    "cats": ["Townlands"],
+    "tags": ["locality=townland"],
+    "area": true,
+    "dist": 5,
+    "max_area": 30
+},
+{
     "cats": ["Hamlets", "Unincorporated communities"],
     "exclude_cats": ["Tower Hamlets"],
     "tags": ["place", "landuse=residential"],
@@ -892,7 +899,7 @@
 {
     "cats": ["Civil parishes by country"],
     "exclude_cats": ["Former civil parishes"],
-    "tags": ["designation=civil_parish"],
+    "tags": ["designation=civil_parish", "boundary=civil_parish"],
     "trim": [],
     "area": true,
     "dist": 10
