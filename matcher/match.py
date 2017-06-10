@@ -93,7 +93,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     osm_lc = re_keep_commas.sub('', osm_lc)
 
     comma = wd_lc.rfind(', ')
-    if comma != -1:
+    if comma != -1 and not osm_lc.isdigit():
         if wd_lc[:comma] == osm_lc:
             return Match(MatchType.good)
         if remove_start(wd_lc[:comma], 'the ') == remove_start(osm_lc, 'the '):
