@@ -28,7 +28,7 @@ skip_tags = {'route:road',
 
 # search for items in bounding box that have an English Wikipedia article
 wikidata_enwiki_query = '''
-SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     SERVICE wikibase:box {
         ?place wdt:P625 ?location .
         bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
@@ -37,15 +37,13 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article ?end ?point_
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    OPTIONAL { ?place wdt:P582 ?end . }
-    OPTIONAL { ?place wdt:P585 ?point_in_time . }
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
-GROUP BY ?place ?placeLabel ?article ?end ?point_in_time
+GROUP BY ?place ?placeLabel ?article
 '''
 
 wikidata_point_query = '''
-SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHERE {
+SELECT ?place (SAMPLE(?location) AS ?location) ?article WHERE {
     SERVICE wikibase:around {
         ?place wdt:P625 ?location .
         bd:serviceParam wikibase:center "Point({{ lon }} {{ lat }})"^^geo:wktLiteral .
@@ -54,10 +52,8 @@ SELECT ?place (SAMPLE(?location) AS ?location) ?article ?end ?point_in_time WHER
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    OPTIONAL { ?place wdt:P582 ?end . }
-    OPTIONAL { ?place wdt:P585 ?point_in_time . }
 }
-GROUP BY ?place ?article ?end ?point_in_time
+GROUP BY ?place ?article
 '''
 
 wikidata_subclass_osm_tags = '''
