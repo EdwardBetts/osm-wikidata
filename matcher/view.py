@@ -1,11 +1,9 @@
-#!/usr/bin/python3
-
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, _app_ctx_stack
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
 from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, PlaceItem, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch
+from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
@@ -555,7 +553,7 @@ def open_changeset(osm_type, osm_id):
             return Response('error', mimetype='text/plain')
         changeset_id = r.text.strip()
         if not changeset_id.isdigit():
-            body = '''
+            template = '''
 user: {change.user.username}
 name: {name}
 page: {url}
@@ -568,10 +566,11 @@ reply:
 
 {reply}
 
-'''.format(name=place.display_name,
-           url=place.candidates_url(_external=True),
-           sent=changeset,
-           reply=reply)
+'''
+            body = template.format(name=place.display_name,
+                                   url=place.candidates_url(_external=True),
+                                   sent=changeset,
+                                   reply=r.text)
 
             send_mail('error creating changeset:' + place.name, body)
             return Response('error', mimetype='text/plain')
@@ -803,7 +802,7 @@ def add_tags(osm_type, osm_id):
                            items=items,
                            table=table)
 
-@app.route('/place/<name>')
+@app.route('/places/<name>')
 def place_redirect(name):
     place = Place.query.filter(Place.state == 'ready', Place.display_name.ilike(name + '%')).first()
     if not place:
@@ -822,12 +821,6 @@ def get_bad_matches(place):
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
-#    place = (Place.query
-#                  .options(defaultload(Place.items),
-#                           joinedload(Item.candidates))
-#                  .filter_by(osm_type=osm_type, osm_id=osm_id)
-#                  .one_or_none())
-
     place = (Place.query
                   .filter_by(osm_type=osm_type, osm_id=osm_id)
                   .one_or_none())
@@ -949,6 +942,27 @@ def overpass_timeout(place_id):
     place = Place.query.get(place_id)
     place.state = 'overpass_timeout'
     database.session.commit()
+
+    if g.user.is_authenticated:
+        user = g.user.username
+    else:
+        user = 'not authenticated'
+
+    template = '''
+user: {}
+name: {}
+page: {}
+area: {}
+'''
+
+    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
+    body = template.format(user,
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           area)
+
+    send_mail('overpass timeout: {}'.format(place.name), body)
+
     return Response('timeout noted', mimetype='text/plain')
 
 @app.route('/load/<int:place_id>/osm2pgsql', methods=['POST', 'GET'])
@@ -1053,16 +1067,18 @@ def matcher_progress(osm_type, osm_id):
     else:
         user = 'not authenticated'
 
-
-    body = '''
+    template = '''
 user: {}
 name: {}
 page: {}
 area: {}
-'''.format(user,
-           place.display_name,
-           place.candidates_url(_external=True),
-           ('{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'))
+'''
+
+    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
+    body = template.format(user,
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           area)
     send_mail('matcher: {}'.format(place.name), body)
 
     return render_template('wikidata_items.html', place=place)
@@ -1108,17 +1124,25 @@ def search_results():
         except nominatim.SearchError:
             message = 'nominatim API search error'
             return render_template('error_page.html', message=message)
+        need_commit = False
         for hit in results:
+            if not ('osm_type' in hit and 'osm_id' in hit):
+                continue
             p = Place.query.filter_by(osm_type=hit['osm_type'],
                                       osm_id=hit['osm_id']).one_or_none()
-            if p:
+            if p and p.place_id != hit['place_id']:
                 p.update_from_nominatim(hit)
-            else:
+                need_commit = True
+            elif not p:
                 p = Place.from_nominatim(hit)
                 database.session.add(p)
-        database.session.commit()
+                need_commit = True
+        if need_commit:
+            database.session.commit()
 
         for hit in results:
+            if not ('osm_type' in hit and 'osm_id' in hit):
+                continue
             p = Place.query.filter_by(osm_type=hit['osm_type'],
                                       osm_id=hit['osm_id']).one_or_none()
             if p:
@@ -1183,7 +1207,7 @@ def saved_with_filter(name_filter):
 def get_place_tbody(sort):
     return render_template('place_tbody.html', existing=get_existing(sort, None))
 
-@app.route('/saved')
+@app.route('/places')
 def saved_places():
     if 'filter' in request.args:
         arg_filter = request.args['filter'].strip().replace(' ', '_')
@@ -1440,12 +1464,12 @@ def get_tag_list(sort):
 
     return [(tag, num) for tag, num in q]
 
-@app.route('/tag')
+@app.route('/tags')
 def tag_list():
     q = get_tag_list(request.args.get('sort'))
     return render_template('tag_list.html', q=q)
 
-@app.route('/tag/<tag_or_key>')
+@app.route('/tags/<tag_or_key>')
 def tag_page(tag_or_key):
     sub = (database.session.query(Item.item_id)
               .join(ItemTag)
@@ -1515,7 +1539,6 @@ def item_page(wikidata_id):
         abort(404)
 
     radius = get_radius()
-
 
     labels = entity['labels']
     wikidata_names = dict(wikidata.names_from_entity(entity))
