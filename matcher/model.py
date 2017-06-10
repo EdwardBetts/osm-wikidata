@@ -161,6 +161,10 @@ class Place(Base):   # assume all places are relations
     def add_tags_to_items(self):
         for item in self.items.filter(Item.categories != '{}'):
             existing_tags = set(item.tag_list)
+            # if wikidata says this is a place then adding tags
+            # from wikipedia can just confuse things
+            if any(t.startswith('place') for t in existing_tags):
+                continue
             for t in set(matcher.categories_to_tags(item.categories)):
                 if t not in existing_tags:
                     item.tags.append(ItemTag(tag_or_key=t))
@@ -208,8 +212,10 @@ class Place(Base):   # assume all places are relations
         if self.override_name:
             return self.override_name
 
-        name = self.namedetails.get('name:en') or self.namedetails['name']
+        name = self.namedetails.get('name:en') or self.namedetails.get('name')
         display = self.display_name
+        if not name:
+            return display
 
         for short in ('City', '1st district'):
             start = len(short) + 2
@@ -517,7 +523,12 @@ class ItemCandidate(Base):
     @property
     def label(self):
         if 'name' in self.tags:
-            return self.tags['name']
+            name = self.tags['name']
+            if 'addr:housename' in self.tags:
+                return '{} (house name: {})'.format(name, self.tags['addr:housename'])
+            else:
+                return name
+
         if 'name:en' in self.tags:
             return self.tags['name:en']
         for k, v in self.tags.items():
