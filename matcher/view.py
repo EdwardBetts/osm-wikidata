@@ -1043,6 +1043,8 @@ def load_match(place_id):
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        return abort(404)
     if place.state == 'ready':
         return redirect(place.candidates_url())
 
