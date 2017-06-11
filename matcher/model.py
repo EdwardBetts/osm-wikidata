@@ -12,7 +12,7 @@ from sqlalchemy.sql.expression import cast
 from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia
-from .overpass import oql_from_tag
+from .overpass import oql_from_tag, oql_for_area
 
 import subprocess
 import os.path
@@ -283,7 +283,17 @@ class Place(Base):   # assume all places are relations
         return 'around:{0.radius},{0.lat},{0.lon}'.format(self)
 
     def get_oql(self):
+        assert self.osm_type != 'node'
+
+        bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
+
+        return oql_for_area(self.overpass_type,
+                            self.osm_id,
+                            self.all_tags,
+                            bbox)
+
         large_area = self.area > 3000 * 1000 * 1000
+
 
         union = ['{}({});'.format(self.overpass_type, self.osm_id)]
 

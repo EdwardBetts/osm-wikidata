@@ -5,9 +5,10 @@ import os.path
 import json
 import simplejson
 from .mail import error_mail
-from flask import current_app, request, g
+from flask import current_app, request
 from time import sleep
 from . import user_agent_headers
+from collections import defaultdict
 
 re_slot_available = re.compile('^Slot available after: ([^,]+), in (\d+) seconds?\.$')
 re_available_now = re.compile('^\d+ slots available now.$')
@@ -29,6 +30,58 @@ class RateLimited(Exception):
 
 class Timeout(Exception):
     pass
+
+def oql_for_area(overpass_type, osm_id, tags, bbox):
+    union = ['{}({});'.format(overpass_type, osm_id)]
+
+    for key, values in group_tags(tags).items():
+        u = oql_element_filter(key, values)
+        if u:
+            union += u
+
+    offset = {'way': 2400000000, 'rel': 3600000000}
+    area_id = offset[overpass_type] + int(osm_id)
+
+    oql_template = '''
+[timeout:300][out:xml][bbox:{}];
+area({}) -> .a;
+(
+{}
+) -> .b;
+(
+    node.b[~"^(addr:housenumber|.*name.*)$"~".",i];
+    way.b[~"^(addr:housenumber|.*name.*)$"~".",i];
+    rel.b[~"^(addr:housenumber|.*name.*)$"~".",i];
+);
+(._;>;);
+out qt;'''
+    return oql_template.format(bbox, area_id, '\n'.join(union))
+
+def group_tags(tags):
+    '''given a list of keys and tags return a dict group by key'''
+    ret = defaultdict(list)
+    for tag_or_key in tags:
+        if '=' in tag_or_key:
+            key, _, value = tag_or_key.partition('=')
+            ret[key].append(value)
+        else:
+            ret[tag_or_key] = []
+    return dict(ret)
+
+def oql_element_filter(key, values, filters='area.a'):
+    # optimisation: we only expect route, type or site on relations
+    relation_only = key in {'site', 'type', 'route'}
+
+    if values:
+        if len(values) == 1:
+            tag = '"{}"="{}"'.format(key, values[0])
+        else:
+            tag = '"{}"~"^({})$"'.format(key, '|'.join(values))
+    else:
+        tag = '"{}"'.format(key)
+
+    return ['{}({})[{}];'.format(t, filters, tag)
+            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
 
 def oql_from_tag(tag, large_area, filters='area.a'):
     if tag == 'highway':
