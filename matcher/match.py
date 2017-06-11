@@ -24,6 +24,7 @@ class Match(object):
         self.osm_key = None
 
 def tidy_name(n):
+    # expects to be passed a name in lowercase
     n = n.replace('saint ', 'st ')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
@@ -50,6 +51,8 @@ def initials_match(n1, n2, endings=None):
         return Match(MatchType.initials_trim)
 
 def match_with_words_removed(osm, wd, words):
+    if not words:
+        return False
     x_wd = re_strip_non_chars.sub('', wd)
     x_osm = re_strip_non_chars.sub('', osm)
     words = [re_strip_non_chars.sub('', w) for w in words]
