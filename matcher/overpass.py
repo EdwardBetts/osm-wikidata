@@ -5,7 +5,7 @@ import os.path
 import json
 import simplejson
 from .mail import error_mail
-from flask import current_app, request
+from flask import current_app
 from time import sleep
 from . import user_agent_headers
 from collections import defaultdict
@@ -21,8 +21,8 @@ name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
 
-# overpass_url = 'http://overpass-api.de/api/interpreter'
-overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
+overpass_url = 'http://overpass-api.de/api/interpreter'
+# overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
 # overpass_url = 'http://api.openstreetmap.fr/oapi/interpreter'
 
 class RateLimited(Exception):
