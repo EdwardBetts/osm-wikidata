@@ -951,17 +951,52 @@ def already_tagged(osm_type, osm_id):
 def load_wikidata(place_id):
     place = Place.query.get(place_id)
     if place.state != 'tags':
-        return jsonify(item_list=place.item_list())
+        oql = place.get_oql()
+        return jsonify(item_list=place.item_list(), oql=oql)
     place.wbgetentities()
     place.state = 'wbgetentities'
     database.session.commit()
-    return jsonify(item_list=place.item_list())
+    return jsonify(item_list=place.item_list(), oql=oql)
 
 @app.route('/load/<int:place_id>/check_overpass', methods=['POST'])
 def check_overpass(place_id):
     place = Place.query.get(place_id)
     reply = 'got' if place.overpass_done else 'get'
     return Response(reply, mimetype='text/plain')
+
+@app.route('/load/<int:place_id>/overpass_error', methods=['POST'])
+def overpass_error(place_id):
+    place = Place.query.get(place_id)
+    if not place:
+        abort(404)
+    place.state = 'overpass_error'
+    database.session.commit()
+
+    error = request.form['error']
+
+    if g.user.is_authenticated:
+        user = g.user.username
+    else:
+        user = 'not authenticated'
+
+    template = '''
+user: {}
+name: {}
+page: {}
+area: {}
+error: {}
+'''
+
+    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
+    body = template.format(user,
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           area,
+                           error)
+
+    send_mail('overpass error: {}'.format(place.name), body)
+
+    return Response('noted', mimetype='text/plain')
 
 @app.route('/load/<int:place_id>/overpass_timeout', methods=['POST'])
 def overpass_timeout(place_id):

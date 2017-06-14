@@ -31,8 +31,8 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
-def oql_for_area(overpass_type, osm_id, tags, bbox):
-    union = ['{}({});'.format(overpass_type, osm_id)]
+def oql_for_area(overpass_type, osm_id, tags, bbox, buildings):
+    union = []
 
     for key, values in group_tags(tags).items():
         u = oql_element_filter(key, values)
@@ -42,6 +42,15 @@ def oql_for_area(overpass_type, osm_id, tags, bbox):
     offset = {'way': 2400000000, 'rel': 3600000000}
     area_id = offset[overpass_type] + int(osm_id)
 
+    if buildings:
+        oql_building = '''
+    node(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+    way(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+    rel(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+'''.strip().format(buildings, buildings, buildings)
+    else:
+        oql_building = ''
+
     oql_template = '''
 [timeout:300][out:xml][bbox:{}];
 area({}) -> .a;
@@ -49,13 +58,15 @@ area({}) -> .a;
 {}
 ) -> .b;
 (
+    {}({});
     node.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     way.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     rel.b[~"^(addr:housenumber|.*name.*)$"~".",i];
+    {}
 );
 (._;>;);
 out qt;'''
-    return oql_template.format(bbox, area_id, '\n'.join(union))
+    return oql_template.format(bbox, area_id, '\n'.join(union), overpass_type, osm_id, oql_building)
 
 def group_tags(tags):
     '''given a list of keys and tags return a dict group by key'''

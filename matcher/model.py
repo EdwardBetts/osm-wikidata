@@ -16,6 +16,7 @@ from .overpass import oql_from_tag, oql_for_area
 
 import subprocess
 import os.path
+import re
 
 Base = declarative_base()
 Base.query = session.query_property()
@@ -282,18 +283,48 @@ class Place(Base):   # assume all places are relations
     def overpass_filter(self):
         return 'around:{0.radius},{0.lat},{0.lon}'.format(self)
 
-    def get_oql(self):
+    def building_names(self):
+        re_paren = re.compile(r'\(.+\)')
+        re_drop = re.compile(r'\b(the|and|at|of|de|le|la|les|von)\b')
+        names = set()
+        for building in (item for item in self.items if 'building' in item.tag_list):
+            for n in building.names():
+                if n[0].isdigit() and ',' in n:
+                    continue
+                n = n.lower()
+                comma = n.rfind(', ')
+                if comma != -1 and not n[0].isdigit():
+                    n = n[:comma]
+
+                n = re_paren.sub('', n).replace("'s", "('s)?")
+                n = n.replace('(', '').replace(')', '').replace('.', r'\.')
+                names.add(n)
+                names.add(re_drop.sub('', n))
+
+        names = sorted(n.replace(' ', '\W*') for n in names)
+        if names:
+            return '({})'.format('|'.join(names))
+
+    def get_oql(self, buildings_special=False):
         assert self.osm_type != 'node'
 
         bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
 
+        tags = self.all_tags
+
+        if buildings_special and 'building' in tags:
+            buildings = self.building_names()
+            tags.remove('building')
+        else:
+            buildings = None
+
         return oql_for_area(self.overpass_type,
                             self.osm_id,
-                            self.all_tags,
-                            bbox)
+                            tags,
+                            bbox,
+                            buildings)
 
         large_area = self.area > 3000 * 1000 * 1000
-
 
         union = ['{}({});'.format(self.overpass_type, self.osm_id)]
 
