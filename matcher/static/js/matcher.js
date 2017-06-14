@@ -1,5 +1,8 @@
+'use strict;'
+
 var items = [];
 var current_item = 0;
+var runtime_error = 'runtime error';
 
 window.setInterval(fade, 1100);
 
@@ -22,6 +25,7 @@ function load_wikidata() {
   mark_active($('#load_wikidata'));
   $.post(load_wikidata_url).done (function(data) {
     items = data.item_list;
+    oql = data.oql;
     $('#item_list_count').text(items.length);
     mark_done($('#load_wikidata'));
     check_overpass();
@@ -98,6 +102,23 @@ function trigger_overpass() {
     data: oql,
   })
   .done(function(data) {
+    if(data.length < 1000) {
+        var error_start = data.indexOf(runtime_error);
+        if(error_start != -1) {
+            var error_end = data.indexOf('<', error_start)
+            var error = data.slice(error_start + runtime_error.length, error_end);
+            if(error.charAt(0) == ':')
+                error = error.substr(1);
+            error = error.trim();
+            $('#overpass_slow').hide();
+            $('#load_overpass').removeClass('active');
+            $('#overpass_error_message').text(error);
+            $('#overpass_error').show();
+            $.post(overpass_error_url, {'error': error});
+            return;
+        }
+    }
+
     $.ajax({
        type: 'POST',
        dataType: 'text',
