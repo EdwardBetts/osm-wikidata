@@ -425,6 +425,8 @@ def get_bad(items):
 
 @app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
 def export_osm(osm_type, osm_id, name):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
@@ -476,7 +478,11 @@ def candidates_with_filter(name_filter, osm_type, osm_id):
 
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
 
     full_count = place.items_with_candidates_count()
 
@@ -488,7 +494,11 @@ def wikidata_page(osm_type, osm_id):
 
 @app.route('/overpass/<osm_type>/<int:osm_id>')
 def overpass_query(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
 
     full_count = place.items_with_candidates_count()
 
@@ -500,6 +510,8 @@ def overpass_query(osm_type, osm_id):
 
 @app.route('/close_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def close_changeset(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
@@ -526,6 +538,8 @@ def close_changeset(osm_type, osm_id):
 
 @app.route('/open_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def open_changeset(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
@@ -748,6 +762,8 @@ https://www.openstreetmap.org/changeset/{change.id}
 
 @app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def update_tags(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
@@ -770,6 +786,8 @@ def update_tags(osm_type, osm_id):
 
 @app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def add_tags(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
@@ -821,6 +839,8 @@ def get_bad_matches(place):
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = (Place.query
                   .filter_by(osm_type=osm_type, osm_id=osm_id)
                   .one_or_none())
@@ -877,6 +897,8 @@ def candidates(osm_type, osm_id):
 
 @app.route('/no_match/<osm_type>/<int:osm_id>')
 def no_match(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     if place.state != 'ready':
@@ -901,7 +923,11 @@ def no_match(osm_type, osm_id):
 
 @app.route('/already_tagged/<osm_type>/<int:osm_id>')
 def already_tagged(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        abort(404)
 
     if place.state != 'ready':
         return redirect_to_matcher(osm_type, osm_id)
@@ -1042,6 +1068,8 @@ def load_match(place_id):
 
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         return abort(404)
