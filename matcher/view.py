@@ -175,6 +175,7 @@ language_codes = {
     "mk": "Macedonian",
     "ml": "Malayalam",
     "mn": "Mongolian",
+    "mo": "Moldovan",
     "mr": "Marathi",
     "ms": "Malay",
     "mt": "Maltese",
@@ -956,6 +957,7 @@ def load_wikidata(place_id):
     place.wbgetentities()
     place.state = 'wbgetentities'
     database.session.commit()
+    oql = place.get_oql()
     return jsonify(item_list=place.item_list(), oql=oql)
 
 @app.route('/load/<int:place_id>/check_overpass', methods=['POST'])
