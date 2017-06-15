@@ -4,6 +4,8 @@
     <td>
       {% if place.state == 'overpass_timeout' %}
         {{ place.display_name.replace(';', '; ') }} <span class="badge badge-danger">Overpass timeout</span>
+      {% elif place.state == 'overpass_error' %}
+        {{ place.display_name.replace(';', '; ') }} <span class="badge badge-danger">Overpass error</span>
       {% else %}
         <a href="{{ place.candidates_url() }}">{{ place.display_name.replace(';', '; ') }}</a>
       {% endif %}
