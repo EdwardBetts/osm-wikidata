@@ -3,7 +3,7 @@ from flask_login import login_user, current_user, logout_user, LoginManager, log
 from .utils import cache_filename
 from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
-from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch
+from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
@@ -15,6 +15,7 @@ from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
+from time import time
 
 from dogpile.cache import make_region
 
@@ -614,40 +615,60 @@ def get_backend_and_auth():
 
     return osm_backend, auth
 
+def save_timing(name, t0):
+    timing = Timing(start=t0,
+                    path=request.full_path,
+                    name=name,
+                    seconds=time() - t0)
+    database.session.add(timing)
+
 @app.route('/post_tag/<osm_type>/<int:osm_id>/Q<int:item_id>', methods=['POST'])
 def post_tag(osm_type, osm_id, item_id):
     changeset_id = request.form['changeset_id']
 
+    t0 = time()
     osm_backend, auth = get_backend_and_auth()
+    save_timing('backend and auth', t0)
 
     wikidata_id = 'Q{:d}'.format(item_id)
 
+    t0 = time()
     osm = ItemCandidate.query.filter_by(item_id=item_id, osm_type=osm_type, osm_id=osm_id).one_or_none()
+    save_timing('get candidate', t0)
 
     if not osm:
+        database.session.commit()
         return Response('not found', mimetype='text/plain')
 
     url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
+    t0 = time()
     r = requests.get(url, headers=user_agent_headers())
-    if b'wikidata' in r.content:
-        root = etree.fromstring(r.content)
+    content = r.content
+    save_timing('OSM API get', t0)
+    if b'wikidata' in content:
+        root = etree.fromstring(content)
         existing = root.find('.//tag[@k="wikidata"]')
         if existing is not None and really_save:
             osm.tags['wikidata'] = existing.get('v')
             flag_modified(osm, 'tags')
             database.session.commit()
+        database.session.commit()
         return Response('already tagged', mimetype='text/plain')
 
     if r.status_code == 410 or r.content == b'':
+        database.session.commit()
         return Response('deleted', mimetype='text/plain')
 
+    t0 = time()
     root = etree.fromstring(r.content)
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
+    save_timing('build tree', t0)
 
     element_data = etree.tostring(root).decode('utf-8')
     if really_save:
+        t0 = time()
         try:
             r = osm_backend.request(url,
                                     method='PUT',
@@ -656,18 +677,24 @@ def post_tag(osm_type, osm_id, item_id):
                                     headers=user_agent_headers())
         except requests.exceptions.HTTPError as e:
             error_mail('error saving element', element_data, e.response)
+            database.session.commit()
             return Response('save error', mimetype='text/plain')
         if not r.text.strip().isdigit():
+            database.session.commit()
             return Response('save error', mimetype='text/plain')
+        save_timing('add tag via OSM API', t0)
 
+    t0 = time()
     if really_save:
         osm.tags['wikidata'] = wikidata_id
         flag_modified(osm, 'tags')
 
+    if changeset_id:
         change = Changeset.query.get(changeset_id)
         change.update_count = change.update_count + 1
+    save_timing('update database', t0)
 
-        database.session.commit()
+    database.session.commit()
 
     return Response('done', mimetype='text/plain')
 

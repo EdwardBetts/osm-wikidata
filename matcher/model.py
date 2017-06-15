@@ -645,3 +645,11 @@ class BadMatch(Base):
 
     item_candidate = relationship(ItemCandidate, backref=backref('bad_matches', lazy='dynamic'))
     user = relationship(User, backref=backref('bad_matches', lazy='dynamic'))
+
+class Timing(Base):
+    __tablename__ = 'timing'
+    id = Column(Integer, primary_key=True)
+    start = Column(Float, nullable=False)
+    path = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    seconds = Column(Float, nullable=False)
