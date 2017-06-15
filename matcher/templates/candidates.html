@@ -106,6 +106,8 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a>
       {% if 'note' in filtered[item.item_id] %}
         {{ filtered[item.item_id]['note'] }}
+      {% else %}
+        search tags: {{ ', '.join(item.tag_list) }}
       {% endif %}
       <p>
       {# <br>
