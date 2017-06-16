@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, Response, redirect, url_for, 
 from flask_login import login_user, current_user, logout_user, LoginManager, login_required
 from .utils import cache_filename
 from lxml import etree
-from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass
+from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -10,7 +10,6 @@ from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 # from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
-from .mail import error_mail, send_mail
 from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
@@ -195,7 +194,7 @@ def add_wikidata_tag():
                                 headers=user_agent_headers())
     except requests.exceptions.HTTPError as e:
         r = e.response
-        error_mail('error saving element', element_data, r)
+        mail.error_mail('error saving element', element_data, r)
 
         return render_template('error_page.html',
                 message="The OSM API returned an error when saving your edit: {}: " + r.text)
@@ -346,7 +345,7 @@ def close_changeset(osm_type, osm_id):
 
         database.session.commit()
 
-        announce_change(change)
+        mail.announce_change(change)
 
     return Response('done', mimetype='text/plain')
 
@@ -377,30 +376,11 @@ def open_changeset(osm_type, osm_id):
                                     auth=auth,
                                     headers=user_agent_headers())
         except requests.exceptions.HTTPError as e:
-            error_mail('error creating changeset: ' + place.name, changeset, e.response)
+            mail.error_mail('error creating changeset: ' + place.name, changeset, e.response)
             return Response('error', mimetype='text/plain')
         changeset_id = r.text.strip()
         if not changeset_id.isdigit():
-            template = '''
-user: {change.user.username}
-name: {name}
-page: {url}
-
-sent:
-
-{sent}
-
-reply:
-
-{reply}
-
-'''
-            body = template.format(name=place.display_name,
-                                   url=place.candidates_url(_external=True),
-                                   sent=changeset,
-                                   reply=r.text)
-
-            send_mail('error creating changeset:' + place.name, body)
+            mail.open_changeset_error(place, changeset, r)
             return Response('error', mimetype='text/plain')
 
         change = Changeset(id=changeset_id,
@@ -489,7 +469,7 @@ def post_tag(osm_type, osm_id, item_id):
                                     auth=auth,
                                     headers=user_agent_headers())
         except requests.exceptions.HTTPError as e:
-            error_mail('error saving element', element_data, e.response)
+            mail.error_mail('error saving element', element_data, e.response)
             database.session.commit()
             return Response('save error', mimetype='text/plain')
         if not r.text.strip().isdigit():
@@ -579,26 +559,9 @@ def do_add_tags(place, table):
     database.session.add(change)
     database.session.commit()
 
-    announce_change(change)
+    mail.announce_change(change)
 
     return update_count
-
-def announce_change(change):
-    place = change.place
-    body = '''
-user: {change.user.username}
-name: {name}
-page: {url}
-items: {change.update_count}
-comment: {change.comment}
-
-https://www.openstreetmap.org/changeset/{change.id}
-
-'''.format(name=place.display_name,
-           url=place.candidates_url(_external=True),
-           change=change)
-
-    send_mail('tags added: {}'.format(place.name), body)
 
 @app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def update_tags(osm_type, osm_id):
@@ -814,28 +777,7 @@ def overpass_error(place_id):
     database.session.commit()
 
     error = request.form['error']
-
-    if g.user.is_authenticated:
-        user = g.user.username
-    else:
-        user = 'not authenticated'
-
-    template = '''
-user: {}
-name: {}
-page: {}
-area: {}
-error: {}
-'''
-
-    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
-    body = template.format(user,
-                           place.display_name,
-                           place.candidates_url(_external=True),
-                           area,
-                           error)
-
-    send_mail('overpass error: {}'.format(place.name), body)
+    mail.overpass_error(place, error)
 
     return Response('noted', mimetype='text/plain')
 
@@ -845,25 +787,7 @@ def overpass_timeout(place_id):
     place.state = 'overpass_timeout'
     database.session.commit()
 
-    if g.user.is_authenticated:
-        user = g.user.username
-    else:
-        user = 'not authenticated'
-
-    template = '''
-user: {}
-name: {}
-page: {}
-area: {}
-'''
-
-    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
-    body = template.format(user,
-                           place.display_name,
-                           place.candidates_url(_external=True),
-                           area)
-
-    send_mail('overpass timeout: {}'.format(place.name), body)
+    overpass_error(place, 'timeout')
 
     return Response('timeout noted', mimetype='text/plain')
 
@@ -982,12 +906,11 @@ page: {}
 area: {}
 '''
 
-    area = '{:,.2f} sq km'.format(place.area_in_sq_km) if place.area else 'n/a'
     body = template.format(user,
                            place.display_name,
                            place.candidates_url(_external=True),
-                           area)
-    send_mail(subject, body)
+                           mail.get_area(place))
+    mail.send_mail(subject, body)
 
     return render_template('wikidata_items.html', place=place)
 
@@ -1237,7 +1160,7 @@ def api_item_match(wikidata_id):
     for row in osm_keys:
         if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
             body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
-            send_mail('broken OSM tag in Wikidata', body)
+            mail.send_mail('broken OSM tag in Wikidata', body)
 
     criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
@@ -1484,7 +1407,7 @@ def item_page(wikidata_id):
     for row in osm_keys:
         if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
             body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
-            send_mail('broken OSM tag in Wikidata', body)
+            mail.send_mail('broken OSM tag in Wikidata', body)
 
     criteria = {row['tag']['value'] for row in osm_keys}
     criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}

@@ -19,6 +19,22 @@ def send_mail(subject, body):
     s.sendmail(mail_from, [mail_to], msg.as_string())
     s.quit()
 
+def get_username():
+    if hasattr(g, 'user'):
+        if g.user.is_authenticated:
+            user = g.user.username
+        else:
+            user = 'not authenticated'
+    else:
+        user = 'no user'
+
+    return user
+
+def get_area(place):
+    return ('{:,.2f} sq km'.format(place.area_in_sq_km)
+            if place.area
+            else 'n/a')
+
 def error_mail(subject, data, r, via_web=True):
     body = '''
 remote URL: {r.url}
@@ -35,13 +51,64 @@ reply:
         via_web = False
 
     if via_web:
-        if hasattr(g, 'user'):
-            if g.user.is_authenticated:
-                user = g.user.username
-            else:
-                user = 'not authenticated'
-        else:
-            user = 'no user'
+        user = get_username()
         body = 'site URL: {}\nuser: {}\n'.format(request.url, user) + body
 
     send_mail(subject, body)
+
+def announce_change(change):
+    place = change.place
+    body = '''
+user: {change.user.username}
+name: {name}
+page: {url}
+items: {change.update_count}
+comment: {change.comment}
+
+https://www.openstreetmap.org/changeset/{change.id}
+
+'''.format(name=place.display_name,
+           url=place.candidates_url(_external=True),
+           change=change)
+
+    send_mail('tags added: {}'.format(place.name), body)
+
+def overpass_error(place, error):
+    template = '''
+user: {}
+name: {}
+page: {}
+area: {}
+error: {}
+'''
+
+    body = template.format(get_username(),
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           get_area(),
+                           error)
+
+    subject = 'overpass error: {} - {}'.format(place.name, error)
+    send_mail(subject, body)
+
+def open_changeset_error(place, changeset, r):
+    template = '''
+user: {change.user.username}
+name: {name}
+page: {url}
+
+sent:
+
+{sent}
+
+reply:
+
+{reply}
+
+'''
+    body = template.format(name=place.display_name,
+                           url=place.candidates_url(_external=True),
+                           sent=changeset,
+                           reply=r.text)
+
+    send_mail('error creating changeset:' + place.name, body)
