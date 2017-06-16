@@ -16,7 +16,7 @@ from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time
-from language_codes import get_language_label
+from .language import get_language_label
 
 from dogpile.cache import make_region
 
@@ -970,8 +970,10 @@ def matcher_progress(osm_type, osm_id):
 
     if g.user.is_authenticated:
         user = g.user.username
+        subject = 'matcher: {} (user: {})'.format(place.name, user)
     else:
         user = 'not authenticated'
+        subject = 'matcher: {} (no auth)'.format(place.name)
 
     template = '''
 user: {}
@@ -985,7 +987,7 @@ area: {}
                            place.display_name,
                            place.candidates_url(_external=True),
                            area)
-    send_mail('matcher: {}'.format(place.name), body)
+    send_mail(subject, body)
 
     return render_template('wikidata_items.html', place=place)
 
