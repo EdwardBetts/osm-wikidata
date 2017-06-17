@@ -85,7 +85,7 @@ error: {}
     body = template.format(get_username(),
                            place.display_name,
                            place.candidates_url(_external=True),
-                           get_area(),
+                           get_area(place),
                            error)
 
     subject = 'overpass error: {} - {}'.format(place.name, error)
