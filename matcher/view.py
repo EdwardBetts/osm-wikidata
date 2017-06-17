@@ -787,7 +787,7 @@ def overpass_timeout(place_id):
     place.state = 'overpass_timeout'
     database.session.commit()
 
-    overpass_error(place, 'timeout')
+    mail.overpass_error(place, 'timeout')
 
     return Response('timeout noted', mimetype='text/plain')
 
