@@ -54,6 +54,9 @@ class User(Base, UserMixin):
     active = Column(Boolean, default=True)
     sign_up = Column(DateTime, default=func.now())
     is_admin = Column(Boolean, default=False)
+    description = Column(Text)
+    img = Column(String)
+    languages = Column(postgresql.ARRAY(String))
 
     def is_active(self):
         return self.active
