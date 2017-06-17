@@ -65,7 +65,7 @@ area({}) -> .a;
     {}
 );
 (._;>;);
-out qt;'''
+out;'''
     return oql_template.format(bbox, area_id, '\n'.join(union), overpass_type, osm_id, oql_building)
 
 def group_tags(tags):
