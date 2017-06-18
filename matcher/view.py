@@ -19,6 +19,7 @@ from .language import get_language_label
 
 from dogpile.cache import make_region
 
+import operator
 import sys
 import requests
 import os.path
@@ -1073,6 +1074,32 @@ def changesets():
 
     return render_template('changesets.html', objects=pager.slice(q), pager=pager)
 
+def api_overpass_error(data, error):
+    data['error'] = error
+    data['response'] = 'error'
+    response = jsonify(data)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+def api_osm_list(existing, found):
+    osm = []
+    osm_lookup = {}
+    for i in existing:
+        index = (i['type'], i['id'])
+        i['existing'] = True
+        i['match'] = False
+        osm.append(i)
+        osm_lookup[index] = i
+    for i in found:
+        index = (i['type'], i['id'])
+        if index in osm_lookup:
+            osm_lookup[index]['match'] = True
+            continue
+        i['match'] = True
+        i['existing'] = False
+        osm.append(i)
+    return osm
+
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
     '''API call: find matches for Wikidata item
@@ -1080,7 +1107,6 @@ def api_item_match(wikidata_id):
     Optional parameter: radius (in metres)
     '''
 
-    radius = get_radius()
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.WikidataItem.retrieve_item(qid)
     if not entity:
@@ -1098,6 +1124,7 @@ def api_item_match(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
 
+    radius = get_radius()
     data = {
         'wikidata': {
             'item': qid,
@@ -1113,92 +1140,45 @@ def api_item_match(wikidata_id):
     }
 
     if not entity.has_coords:
-        data['error'] = 'no coordinates'
-        data['response'] = 'error'
-        response = jsonify(data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return api_overpass_error(data, 'no coordinates')
+
+    lat, lon = item.coords()
+    data['wikidata']['lat'] = lat
+    data['wikidata']['lon'] = lon
 
     oql = entity.get_oql(criteria, radius=radius)
-
-    existing = []
 
     try:
         existing = overpass.get_existing(qid)
     except overpass.RateLimited:
-        data['error'] = 'overpass rate limited'
-        data['response'] = 'error'
-        response = jsonify(data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return api_overpass_error(data, 'overpass rate limited')
     except overpass.Timeout:
-        data['error'] = 'overpass timeout'
-        data['response'] = 'error'
-        response = jsonify(data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        return api_overpass_error(data, 'overpass timeout')
 
     found = []
     if criteria:
-        endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
-
         try:
             overpass_reply = overpass.item_query(oql, qid, radius)
         except overpass.RateLimited:
-            data['error'] = 'overpass rate limited'
-            data['response'] = 'error'
-            response = jsonify(data)
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response
+            return api_overpass_error(data, 'overpass rate limited')
         except overpass.Timeout:
-            data['error'] = 'overpass timeout'
-            data['response'] = 'error'
-            response = jsonify(data)
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response
+            return api_overpass_error(data, 'overpass timeout')
+
+        endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
         found = [element for element in overpass_reply
                  if check_for_match(element['tags'], wikidata_names, endings=endings)]
 
-    osm = []
-    osm_lookup = {}
-    for i in existing:
-        index = (i['type'], i['id'])
-        i['existing'] = True
-        i['match'] = False
-        osm.append(i)
-        osm_lookup[index] = i
-    for i in found:
-        index = (i['type'], i['id'])
-        if index in osm_lookup:
-            osm_lookup[index]['match'] = True
-            continue
-        i['match'] = True
-        i['existing'] = False
-        osm.append(i)
+    osm = api_osm_list(existing, found)
 
-    lat, lon = entity.coords
     for i in osm:
-        coords = i.get('center', i)
-        i['distance'] = int(distance((coords['lat'], coords['lon']),
-                                     (lat, lon)).m);
+        coords = operator.itemgetter('lat', 'lon')(i.get('center', i))
+        i['distance'] = int(distance(coords, (lat, lon)).m);
 
-    response = jsonify({
-        'response': 'ok',
-        'wikidata': {
-            'item': qid,
-            'lat': lat,
-            'lon': lon,
-            'labels': entity.labels,
-            'aliases': entity.aliases,
-            'sitelinks': entity.sitelinks,
-        },
-        'search': {
-            'radius': radius,
-            'criteria': sorted(criteria),
-        },
-        'osm': osm,
-        'found_matches': bool(found),
-    })
+    data['response'] = 'ok'
+    data['found_matches'] = bool(found)
+    data['osm'] = osm
+
+    response = jsonify(data)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -1286,10 +1266,9 @@ def item_page(wikidata_id):
         entity = wikidata.WikidataItem(qid, item.entity)
     else:
         entity = wikidata.WikidataItem.retrieve_item(qid)
+
     if not entity:
         abort(404)
-
-    radius = get_radius()
 
     labels = entity.labels
     wikidata_names = entity.names
@@ -1358,6 +1337,7 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
+    radius = get_radius()
     oql = entity.get_oql(criteria, radius=radius)
     if item:
         overpass_reply = []
