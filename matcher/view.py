@@ -62,13 +62,6 @@ tab_pages = [
     {'route': 'overpass_query', 'label': 'Overpass query'},
 ]
 
-extra_keys = {
-    'Q1021290': 'Tag:amenity=college',  # music school
-    'Q5167149': 'Tag:amenity=college',  # cooking school
-    'Q383092': 'Tag:amenity=college',  # film school
-    'Q11303': 'Key:height'  # skyscraper
-}
-
 @app.template_filter()
 @evalcontextfilter
 def newline_br(eval_ctx, value):
@@ -1062,66 +1055,9 @@ def saved_places():
 def documentation():
     return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
 
-def get_isa(entity):
-    return [isa['mainsnak']['datavalue']['value']['id']
-            for isa in entity['claims'].get('P31', [])]
-
 def get_radius(default=1000):
     arg_radius = request.args.get('radius')
     return int(arg_radius) if arg_radius and arg_radius.isdigit() else default
-
-def get_entity_coords(entity):
-    if 'P625' not in entity['claims']:
-        return None, None
-    coords = entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
-    return coords['latitude'], coords['longitude']
-
-def get_entity_oql(entity, criteria, radius=None):
-    if radius is None:
-        radius = get_radius()
-    lat, lon = get_entity_coords(entity)
-
-    osm_filter = 'around:{},{:.5f},{:.5f}'.format(radius, lat, lon)
-
-    union = []
-    for tag_or_key in criteria:
-        union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
-
-    # FIXME extend oql to also check is_in
-    # like this:
-    #
-    # is_in(48.856089,2.29789);
-    # area._[admin_level];
-    # out tags;
-
-    oql = ('[timeout:300][out:json];\n' +
-           '({}\n);\n' +
-           'out qt center tags;').format(''.join(union))
-
-    return oql
-
-def trim_location_from_names(entity, wikidata_names):
-    if 'P131' not in entity['claims']:
-        return
-
-    location_names = set()
-    located_in = [i['mainsnak']['datavalue']['value']['id']
-                  for i in entity['claims']['P131']]
-
-    for location in wikidata.get_entities(located_in):
-        location_names |= {v['value']
-                           for v in location['labels'].values()
-                           if v['value'] not in wikidata_names}
-
-    for name_key, name_values in list(wikidata_names.items()):
-        for n in location_names:
-            new = None
-            if name_key.startswith(n + ' '):
-                new = name_key[len(n) + 1:]
-            elif name_key.endswith(', ' + n):
-                new = name_key[:-(len(n) + 2)]
-            if new and new not in wikidata_names:
-                wikidata_names[new] = name_values
 
 def get_int_arg(name):
     if name in request.args and request.args[name].isdigit():
@@ -1139,31 +1075,24 @@ def changesets():
 
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
+    '''API call: find matches for Wikidata item
+
+    Optional parameter: radius (in metres)
+    '''
+
     radius = get_radius()
     qid = 'Q' + str(wikidata_id)
-    entity = wikidata.get_entity(qid)
+    entity = wikidata.WikidataItem.retrieve_item(qid)
     if not entity:
         abort(404)
 
-    for v in entity['sitelinks'].values():
-        if 'badges' in v:
-            del v['badges']
+    entity.remove_badges()  # don't need badges in API response
 
-    lat, lon = get_entity_coords(entity)
+    wikidata_names = entity.names
+    entity.trim_location_from_names(wikidata_names)
+    entity.report_broken_wikidata_osm_tags()
 
-    wikidata_names = dict(wikidata.names_from_entity(entity))
-    trim_location_from_names(entity, wikidata_names)
-    wikidata_query = wikidata.osm_key_query(qid)
-
-    osm_keys = wikidata.get_osm_keys(wikidata_query)
-
-    for row in osm_keys:
-        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
-            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
-            mail.send_mail('broken OSM tag in Wikidata', body)
-
-    criteria = {row['tag']['value'] for row in osm_keys}
-    criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
+    criteria = entity.criteria()
 
     item = Item.query.get(wikidata_id)
     if item and item.tags:  # add criteria from the Item object
@@ -1172,9 +1101,9 @@ def api_item_match(wikidata_id):
     data = {
         'wikidata': {
             'item': qid,
-            'labels': entity.get('labels', {}),
-            'aliases': entity.get('aliases', {}),
-            'sitelinks': entity.get('sitelinks', {}),
+            'labels': entity.labels,
+            'aliases': entity.aliases,
+            'sitelinks': entity.sitelinks,
         },
         'search': {
             'radius': radius,
@@ -1183,42 +1112,36 @@ def api_item_match(wikidata_id):
         'found_matches': False,
     }
 
-    if 'P625' not in entity['claims']:
+    if not entity.has_coords:
         data['error'] = 'no coordinates'
         data['response'] = 'error'
         response = jsonify(data)
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
 
-    if criteria:
-        oql = get_entity_oql(entity, criteria, radius=radius)
-    else:
-        oql = None
+    oql = entity.get_oql(criteria, radius=radius)
 
     existing = []
 
-    if True:
-        try:
-            existing = overpass.get_existing(qid)
-        except overpass.RateLimited:
-            data['error'] = 'overpass rate limited'
-            data['response'] = 'error'
-            response = jsonify(data)
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response
-        except overpass.Timeout:
-            data['error'] = 'overpass timeout'
-            data['response'] = 'error'
-            response = jsonify(data)
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response
+    try:
+        existing = overpass.get_existing(qid)
+    except overpass.RateLimited:
+        data['error'] = 'overpass rate limited'
+        data['response'] = 'error'
+        response = jsonify(data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    except overpass.Timeout:
+        data['error'] = 'overpass timeout'
+        data['response'] = 'error'
+        response = jsonify(data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
 
+    found = []
     if criteria:
         endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
-    else:
-        endings = []
 
-    if criteria:
         try:
             overpass_reply = overpass.item_query(oql, qid, radius)
         except overpass.RateLimited:
@@ -1233,11 +1156,8 @@ def api_item_match(wikidata_id):
             response = jsonify(data)
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
-    else:
-        overpass_reply = []
-
-    found = [element for element in overpass_reply
-             if check_for_match(element['tags'], wikidata_names, endings=endings)]
+        found = [element for element in overpass_reply
+                 if check_for_match(element['tags'], wikidata_names, endings=endings)]
 
     osm = []
     osm_lookup = {}
@@ -1256,11 +1176,11 @@ def api_item_match(wikidata_id):
         i['existing'] = False
         osm.append(i)
 
-    if lat is not None and lon is not None:
-        for i in osm:
-            coords = i.get('center', i)
-            i['distance'] = int(distance((coords['lat'], coords['lon']),
-                                         (lat, lon)).m);
+    lat, lon = entity.coords
+    for i in osm:
+        coords = i.get('center', i)
+        i['distance'] = int(distance((coords['lat'], coords['lon']),
+                                     (lat, lon)).m);
 
     response = jsonify({
         'response': 'ok',
@@ -1268,9 +1188,9 @@ def api_item_match(wikidata_id):
             'item': qid,
             'lat': lat,
             'lon': lon,
-            'labels': entity.get('labels', {}),
-            'aliases': entity.get('aliases', {}),
-            'sitelinks': entity.get('sitelinks', {}),
+            'labels': entity.labels,
+            'aliases': entity.aliases,
+            'sitelinks': entity.sitelinks,
         },
         'search': {
             'radius': radius,
@@ -1363,22 +1283,22 @@ def item_page(wikidata_id):
 
     qid = 'Q' + str(wikidata_id)
     if item:
-        entity = item.entity
+        entity = wikidata.WikidataItem(qid, item.entity)
     else:
-        entity = wikidata.get_entity(qid)
+        entity = wikidata.WikidataItem.retrieve_item(qid)
     if not entity:
         abort(404)
 
     radius = get_radius()
 
-    labels = entity['labels']
-    wikidata_names = dict(wikidata.names_from_entity(entity))
+    labels = entity.labels
+    wikidata_names = entity.names
 
     if not item:
-        trim_location_from_names(entity, wikidata_names)
+        entity.trim_location_from_names(wikidata_names)
 
     sitelinks = []
-    for key, value in entity['sitelinks'].items():
+    for key, value in entity.sitelinks.items():
         if len(key) != 6 or not key.endswith('wiki'):
             continue
         lang = key[:2]
@@ -1398,19 +1318,13 @@ def item_page(wikidata_id):
         labels = list(labels.values())
         label = labels[0]['value'] if labels else '[no label]'
 
-    lat, lon = get_entity_coords(entity)
+    lat, lon = entity.coords
 
-    wikidata_query = wikidata.osm_key_query(qid)
-    osm_keys = wikidata.get_osm_keys(wikidata_query)
+    osm_keys = entity.osm_keys
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
+    entity.report_broken_wikidata_osm_tags()
 
-    for row in osm_keys:
-        if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
-            body = 'qid: {}\nrow: {}\n'.format(qid, repr(row))
-            mail.send_mail('broken OSM tag in Wikidata', body)
-
-    criteria = {row['tag']['value'] for row in osm_keys}
-    criteria |= {extra_keys[isa] for isa in get_isa(entity) if isa in extra_keys}
+    criteria = entity.criteria()
 
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
@@ -1426,13 +1340,12 @@ def item_page(wikidata_id):
     else:
         filtered = {}
 
-    if not lat or not lon or not criteria:
+    if lat is None or lon is None or not criteria:
 
         return render_template('item_page.html',
-                               entity=entity,
                                item=item,
                                wikidata_names=wikidata_names,
-                               wikidata_query=wikidata_query,
+                               wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
                                category_map=category_map,
@@ -1445,7 +1358,7 @@ def item_page(wikidata_id):
                                label=label,
                                labels=labels)
 
-    oql = get_entity_oql(entity, criteria, radius=radius)
+    oql = entity.get_oql(criteria, radius=radius)
     if item:
         overpass_reply = []
     else:
@@ -1479,9 +1392,9 @@ def item_page(wikidata_id):
 
     return render_template('item_page.html',
                            item=item,
-                           entity=entity,
                            wikidata_names=wikidata_names,
-                           wikidata_query=wikidata_query,
+                           wikidata_query=entity.osm_key_query(),
+                           entity=entity,
                            wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
                            category_map=category_map,

@@ -2,9 +2,8 @@ from flask import render_template_string
 from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start
-from .mail import error_mail
 import requests
-from . import user_agent_headers
+from . import user_agent_headers, overpass, mail
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -25,6 +24,13 @@ skip_tags = {'route:road',
              'type=associatedStreet',
              'type=waterway',
              'waterway=river'}
+
+extra_keys = {
+    'Q1021290': 'Tag:amenity=college',  # music school
+    'Q5167149': 'Tag:amenity=college',  # cooking school
+    'Q383092': 'Tag:amenity=college',  # film school
+    'Q11303': 'Key:height'  # skyscraper
+}
 
 # search for items in bounding box that have an English Wikipedia article
 wikidata_enwiki_query = '''
@@ -129,7 +135,7 @@ def run_query(query):
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
     if r.status_code == 500:
-        error_mail('wikidata query error', query, r)
+        mail.error_mail('wikidata query error', query, r)
         raise QueryError
     assert r.status_code == 200
     return r.json()['results']['bindings']
@@ -227,7 +233,9 @@ def get_entities(ids):
                              headers=user_agent_headers()).json()
     return list(json_data['entities'].values())
 
-def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
+def names_from_entity(entity, skip_lang=None):
+    if skip_lang is None:
+        skip_lang = set()
     if not entity:
         return
 
@@ -256,16 +264,6 @@ def names_from_entity(entity, skip_lang={'ar', 'arc', 'pl'}):
 
     return ret
 
-def osm_key_query(qid):
-    return render_template_string(wikidata_subclass_osm_tags, qid=qid)
-
-def get_osm_keys(query):
-    r = requests.get('https://query.wikidata.org/bigdata/namespace/wdq/sparql',
-                     params={'query': query, 'format': 'json'},
-                     headers=user_agent_headers())
-    assert r.status_code == 200
-    return r.json()['results']['bindings']
-
 def parse_osm_keys(rows):
     start = 'http://www.wikidata.org/entity/'
     items = {}
@@ -284,3 +282,129 @@ def parse_osm_keys(rows):
             }
         items[qid]['tags'].add(tag)
     return items
+
+class WikidataItem:
+    def __init__(self, qid, entity):
+        self.qid = qid
+        self.entity = entity
+
+    @classmethod
+    def retrieve_item(cls, qid):
+        entity = get_entity(qid)
+        if not entity:
+            return
+        item = cls(qid, entity)
+        return item
+
+    @property
+    def labels(self):
+        return self.entity.get('labels', {})
+
+    @property
+    def aliases(self):
+        return self.entity.get('aliases', {})
+
+    @property
+    def sitelinks(self):
+        return self.entity.get('sitelinks', {})
+
+    def remove_badges(self):
+        for v in self.entity['sitelinks'].values():
+            if 'badges' in v:
+                del v['badges']
+
+    @property
+    def has_coords(self):
+        return 'P625' in self.entity['claims']
+
+    @property
+    def coords(self):
+        if 'P625' not in self.entity['claims']:
+            return None, None
+        c = self.entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
+        return c['latitude'], c['longitude']
+
+    def get_oql(self, criteria, radius=None):
+        if not criteria:
+            return
+        lat, lon = self.coords
+        if lat is None or lon is None:
+            return
+
+        osm_filter = 'around:{},{:.5f},{:.5f}'.format(radius, lat, lon)
+
+        union = []
+        for tag_or_key in criteria:
+            union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+
+        # FIXME extend oql to also check is_in
+        # like this:
+        #
+        # is_in(48.856089,2.29789);
+        # area._[admin_level];
+        # out tags;
+
+        oql = ('[timeout:300][out:json];\n' +
+               '({}\n);\n' +
+               'out qt center tags;').format(''.join(union))
+
+        return oql
+
+    def trim_location_from_names(self, wikidata_names):
+        if 'P131' not in self.entity['claims']:
+            return
+
+        location_names = set()
+        located_in = [i['mainsnak']['datavalue']['value']['id']
+                      for i in self.entity['claims']['P131']]
+
+        for location in get_entities(located_in):
+            location_names |= {v['value']
+                               for v in location['labels'].values()
+                               if v['value'] not in wikidata_names}
+
+        for name_key, name_values in list(wikidata_names.items()):
+            for n in location_names:
+                new = None
+                if name_key.startswith(n + ' '):
+                    new = name_key[len(n) + 1:]
+                elif name_key.endswith(', ' + n):
+                    new = name_key[:-(len(n) + 2)]
+                if new and new not in wikidata_names:
+                    wikidata_names[new] = name_values
+
+    def osm_key_query(self):
+        return render_template_string(wikidata_subclass_osm_tags,
+                                      qid=self.qid)
+
+    @property
+    def osm_keys(self):
+        if hasattr(self, '_osm_keys'):
+            return self._osm_keys
+        query = self.osm_key_query()
+        r = requests.get('https://query.wikidata.org/bigdata/namespace/wdq/sparql',
+                         params={'query': query, 'format': 'json'},
+                         headers=user_agent_headers())
+        assert r.status_code == 200
+        self._osm_keys = r.json()['results']['bindings']
+        return self._osm_keys
+
+    @property
+    def names(self):
+        return dict(names_from_entity(self.entity))
+
+    @property
+    def is_a(self):
+        return [isa['mainsnak']['datavalue']['value']['id']
+                for isa in self.entity['claims'].get('P31', [])]
+
+    def criteria(self):
+        ret = {row['tag']['value'] for row in self.osm_keys}
+        ret |= {extra_keys[is_a] for is_a in self.is_a if is_a in extra_keys}
+        return ret
+
+    def report_broken_wikidata_osm_tags(self):
+        for row in self.osm_keys:
+            if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
+                body = 'qid: {}\nrow: {}\n'.format(self.qid, repr(row))
+                mail.send_mail('broken OSM tag in Wikidata', body)
