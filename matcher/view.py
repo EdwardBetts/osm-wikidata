@@ -1265,7 +1265,7 @@ def item_page(wikidata_id):
     item = Item.query.get(wikidata_id)
 
     qid = 'Q' + str(wikidata_id)
-    if item:
+    if item and item.entity:
         entity = wikidata.WikidataItem(qid, item.entity)
     else:
         entity = wikidata.WikidataItem.retrieve_item(qid)
@@ -1326,6 +1326,7 @@ def item_page(wikidata_id):
 
         return render_template('item_page.html',
                                item=item,
+                               entity=entity,
                                wikidata_names=wikidata_names,
                                wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
