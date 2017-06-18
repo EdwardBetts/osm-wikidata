@@ -399,7 +399,10 @@ class WikidataItem:
 
     @property
     def names(self):
-        return dict(names_from_entity(self.entity))
+        if self.entity:
+            return dict(names_from_entity(self.entity))
+        else:
+            return {}
 
     @property
     def is_a(self):
