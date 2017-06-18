@@ -298,14 +298,20 @@ class WikidataItem:
 
     @property
     def labels(self):
+        if not self.entity:
+            return {}
         return self.entity.get('labels', {})
 
     @property
     def aliases(self):
+        if not self.entity:
+            return {}
         return self.entity.get('aliases', {})
 
     @property
     def sitelinks(self):
+        if not self.entity:
+            return {}
         return self.entity.get('sitelinks', {})
 
     def remove_badges(self):
