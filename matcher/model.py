@@ -378,8 +378,10 @@ class Place(Base):   # assume all places are relations
             return url_for('matcher_progress', osm_id=self.osm_id)
 
     def item_list(self):
+        lang = self.most_common_language() or 'en'
         q = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-        return [{'id': i.item_id, 'name': i.label} for i in q]
+        return [{'id': i.item_id, 'name': i.label(lang=lang)}
+                for i in q]
 
     def load_items(self, bbox=None, debug=False):
         if bbox is None:
@@ -430,8 +432,9 @@ class Place(Base):   # assume all places are relations
     def most_common_language(self):
         lang_count = Counter()
         for item in self.items:
-            for lang in item.entity['labels'].keys():
-                lang_count[lang] += 1
+            if item.entity and 'labels' in item.entity:
+                for lang in item.entity['labels'].keys():
+                    lang_count[lang] += 1
         return lang_count.most_common(1)[0][0]
 
 class Item(Base):

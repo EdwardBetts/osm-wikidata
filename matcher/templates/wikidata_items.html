@@ -85,7 +85,6 @@ var load_individual_match_url = {{ url_for('load_individual_match', place_id=pla
 load_individual_match_url = load_individual_match_url.slice(0, -1);
 
 var load_ready = {{ url_for('load_ready', place_id=place_id) | tojson }};
-// var items = {{ item_list | tojson }};
 
 </script>
 {% endblock %}
