@@ -151,7 +151,7 @@ def test_wikidata():
     way(around:1000,48.85830,2.29440)["admin_level"][name];
     rel(around:1000,48.85830,2.29440)["admin_level"][name];
 );
-out qt center tags;'''.strip()
+out center tags;'''.strip()
     oql = item.get_oql(criteria, 1000)
     print(oql)
     assert oql == expect
@@ -168,6 +168,3 @@ out qt center tags;'''.strip()
     assert item.names == expect
 
     assert item.coords == (48.8583, 2.2944)
-
-
-

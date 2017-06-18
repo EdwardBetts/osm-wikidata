@@ -360,7 +360,7 @@ class WikidataItem:
 
         oql = ('[timeout:300][out:json];\n' +
                '({}\n);\n' +
-               'out qt center tags;').format(''.join(union))
+               'out center tags;').format(''.join(union))
 
         return oql
 
