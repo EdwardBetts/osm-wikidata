@@ -108,7 +108,9 @@ GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 '''
 
 class QueryError(Exception):
-    pass
+    def __init__(self, query, r):
+        self.query = query
+        self.r = r
 
 def get_query(q, south, north, west, east):
     return render_template_string(q,
@@ -136,7 +138,7 @@ def run_query(query):
                      headers=user_agent_headers())
     if r.status_code == 500:
         mail.error_mail('wikidata query error', query, r)
-        raise QueryError
+        raise QueryError(query, r)
     assert r.status_code == 200
     return r.json()['results']['bindings']
 

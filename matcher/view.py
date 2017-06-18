@@ -876,8 +876,11 @@ def matcher_progress(osm_type, osm_id):
     if not place.state or place.state == 'refresh':
         try:
             place.load_items()
-        except wikidata.QueryError:
-            return render_template('error_page.html', message='wikidata query error')
+        except wikidata.QueryError as e:
+            return render_template('wikidata_query_error.html',
+                                   query=e.query,
+                                   place=place,
+                                   reply=e.r.text)
 
         place.state = 'wikipedia'
 
