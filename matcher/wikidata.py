@@ -287,6 +287,7 @@ def parse_osm_keys(rows):
 
 class WikidataItem:
     def __init__(self, qid, entity):
+        assert entity
         self.qid = qid
         self.entity = entity
 
@@ -299,21 +300,19 @@ class WikidataItem:
         return item
 
     @property
+    def claims(self):
+        return self.entity['claims']
+
+    @property
     def labels(self):
-        if not self.entity:
-            return {}
         return self.entity.get('labels', {})
 
     @property
     def aliases(self):
-        if not self.entity:
-            return {}
         return self.entity.get('aliases', {})
 
     @property
     def sitelinks(self):
-        if not self.entity:
-            return {}
         return self.entity.get('sitelinks', {})
 
     def remove_badges(self):
@@ -323,13 +322,13 @@ class WikidataItem:
 
     @property
     def has_coords(self):
-        return 'P625' in self.entity['claims']
+        return 'P625' in self.claims
 
     @property
     def coords(self):
-        if 'P625' not in self.entity['claims']:
+        if not self.has_coords:
             return None, None
-        c = self.entity['claims']['P625'][0]['mainsnak']['datavalue']['value']
+        c = self.claims['P625'][0]['mainsnak']['datavalue']['value']
         return c['latitude'], c['longitude']
 
     def get_oql(self, criteria, radius=None):
@@ -407,7 +406,7 @@ class WikidataItem:
     @property
     def is_a(self):
         return [isa['mainsnak']['datavalue']['value']['id']
-                for isa in self.entity['claims'].get('P31', [])]
+                for isa in self.entity.get('claims', {}).get('P31', [])]
 
     def criteria(self):
         ret = {row['tag']['value'] for row in self.osm_keys}
