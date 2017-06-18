@@ -15,7 +15,7 @@ searched for using this tool.</p>
 <p>{{ q.count() }} items</p>
 
 {% for item in q %}
-    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
+    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a></p>
       <ul>
       {% for c in item.candidates %}
         {{ candidate_info(c) }}

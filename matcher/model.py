@@ -9,6 +9,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property, object_session
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
+from collections import Counter
 from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia
@@ -426,6 +427,13 @@ class Place(Base):   # assume all places are relations
             items[qid].entity = entity
         session.commit()
 
+    def most_common_language(self):
+        lang_count = Counter()
+        for item in self.items:
+            for lang in item.entity['labels'].keys():
+                lang_count[lang] += 1
+        return lang_count.most_common(1)[0][0]
+
 class Item(Base):
     __tablename__ = 'item'
 
@@ -439,14 +447,16 @@ class Item(Base):
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
     query_label = Column(String)
 
-    @property
-    def label(self):
+    def label(self, lang='en'):
         if self.entity:
             labels = self.entity['labels']
-            if 'en' in labels:
+            if lang in labels:
+                return labels[lang]['value']
+            elif lang != 'en' and 'en' in labels:
                 return labels['en']['value']
             elif labels:
                 return list(labels.values())[0]['value']
+
         return self.enwiki or self.query_label or None
 
     @property
@@ -630,7 +640,7 @@ class Changeset(Base):
     def item_label(self):
         item = Item.query.get(self.item_id)
         if item:
-            return item.label
+            return item.label()
 
 class BadMatch(Base):
     __tablename__ = 'bad_match'

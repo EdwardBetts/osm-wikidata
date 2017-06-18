@@ -35,7 +35,7 @@
     {% if obj.place %}
         <a href="{{ obj.place.candidates_url() }}">{{ obj.place.name }}</a>
     {% elif obj.item_id %}
-        {% set label = obj.item_label %}
+        {% set label = obj.item_label() %}
         <a href="{{ url_for('item_page', wikidata_id=obj.item_id) }}">
             {% if label %}
                 {{ label }} (Q{{ obj.item_id}})

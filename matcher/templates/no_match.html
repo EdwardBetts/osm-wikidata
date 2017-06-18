@@ -34,7 +34,7 @@
   <p>{{ '{:,d}'.format(items_without_matches.count()) }} items</p>
 
   {% for item in items_without_matches %}
-    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a><br>
+    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a><br>
       <ul>
         {% if item.categories %}
           <li>Wikipedia categories: {{ ', '.join(item.categories) }}</li>

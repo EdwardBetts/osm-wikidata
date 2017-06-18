@@ -30,8 +30,9 @@
   </div>
   </div>
 
+  {% set lang = place.most_common_language() %}
   {% for item in items %}
-    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a></p>
+    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a></p>
     {# <br>
     <ul>
       <li>Categories:

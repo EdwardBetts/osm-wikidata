@@ -74,6 +74,8 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
   </div>
 
   {% if candidates %}
+    {% set lang=place.most_common_language() %}
+    <p>most common language: {{ lang }}</p>
 
     {% if filter_okay and not upload_okay %}
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
@@ -104,7 +106,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
             ✕
           {% endif %}
       {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label }} ({{ item.qid }})</a>
+      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a>
       {% if 'note' in filtered[item.item_id] %}
         {{ filtered[item.item_id]['note'] }}
       {% else %}

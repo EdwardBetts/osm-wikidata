@@ -33,7 +33,7 @@
     {% if is_bad %}<span class="badge badge-danger">reported as bad</span>{% endif %}
     </h1>
     <ul>
-      <li>Wikidata: <a href="http://wikidata.org/wiki/{{ qid }}">{{ item.label }} ({{ qid }})</a></li>
+      <li>Wikidata: <a href="http://wikidata.org/wiki/{{ qid }}">{{ item.label() }} ({{ qid }})</a></li>
       <li>OSM: <a href="https://www.openstreetmap.org/{{ osm.osm_type }}/{{ osm.osm_id }}">{{ osm.label }}</a> ({{ osm.osm_type }} {{ osm.osm_id}})</li>
       <li>matcher place:
         {% for place in item.places %}
