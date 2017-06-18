@@ -435,7 +435,10 @@ class Place(Base):   # assume all places are relations
             if item.entity and 'labels' in item.entity:
                 for lang in item.entity['labels'].keys():
                     lang_count[lang] += 1
-        return lang_count.most_common(1)[0][0]
+        try:
+            return lang_count.most_common(1)[0][0]
+        except IndexError:
+            return None
 
 class Item(Base):
     __tablename__ = 'item'
