@@ -141,15 +141,14 @@ def test_wikidata():
 
     assert item.get_oql(set(), 1000) is None
 
-    expect = '''
-[timeout:300][out:json];
+    expect = '''[timeout:300][out:json];
 (
-    node(around:1000,48.85830,2.29440)[place=country][name];
-    way(around:1000,48.85830,2.29440)[place=country][name];
-    rel(around:1000,48.85830,2.29440)[place=country][name];
     node(around:1000,48.85830,2.29440)["admin_level"][name];
     way(around:1000,48.85830,2.29440)["admin_level"][name];
     rel(around:1000,48.85830,2.29440)["admin_level"][name];
+    node(around:1000,48.85830,2.29440)[place=country][name];
+    way(around:1000,48.85830,2.29440)[place=country][name];
+    rel(around:1000,48.85830,2.29440)[place=country][name];
 );
 out center tags;'''.strip()
     oql = item.get_oql(criteria, 1000)
