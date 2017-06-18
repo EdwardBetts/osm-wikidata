@@ -325,13 +325,20 @@ class WikidataItem:
         return 'P625' in self.claims
 
     @property
+    def has_earth_coords(self):
+        if not self.has_coords:
+            return
+        globe = self.claims['P625'][0]['mainsnak']['datavalue']['value']['globe']
+        return globe == 'http://www.wikidata.org/entity/Q2'
+
+    @property
     def coords(self):
         if not self.has_coords:
             return None, None
         c = self.claims['P625'][0]['mainsnak']['datavalue']['value']
         return c['latitude'], c['longitude']
 
-    def get_oql(self, criteria, radius=None):
+    def get_oql(self, criteria, radius):
         if not criteria:
             return
         lat, lon = self.coords

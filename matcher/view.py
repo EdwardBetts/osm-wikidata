@@ -1149,7 +1149,7 @@ def api_item_match(wikidata_id):
     data['wikidata']['lat'] = lat
     data['wikidata']['lon'] = lon
 
-    oql = entity.get_oql(criteria, radius=radius)
+    oql = entity.get_oql(criteria, radius)
 
     try:
         existing = overpass.get_existing(qid)
@@ -1342,7 +1342,7 @@ def item_page(wikidata_id):
                                labels=labels)
 
     radius = get_radius()
-    oql = entity.get_oql(criteria, radius=radius)
+    oql = entity.get_oql(criteria, radius)
     if item:
         overpass_reply = []
     else:
