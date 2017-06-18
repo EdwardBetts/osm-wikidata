@@ -34,7 +34,7 @@ class Timeout(Exception):
 def oql_for_area(overpass_type, osm_id, tags, bbox, buildings):
     union = []
 
-    for key, values in group_tags(tags).items():
+    for key, values in sorted(group_tags(tags).items()):
         u = oql_element_filter(key, values)
         if u:
             union += u
@@ -62,7 +62,7 @@ area({}) -> .a;
     node.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     way.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     rel.b[~"^(addr:housenumber|.*name.*)$"~".",i];
-    {}
+{}
 );
 (._;>;);
 out;'''

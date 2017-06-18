@@ -348,7 +348,7 @@ class WikidataItem:
         osm_filter = 'around:{},{:.5f},{:.5f}'.format(radius, lat, lon)
 
         union = []
-        for tag_or_key in criteria:
+        for tag_or_key in sorted(criteria):
             union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
 
         # FIXME extend oql to also check is_in
