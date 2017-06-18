@@ -1,0 +1,29 @@
+{% from "macro.html" import place_box %}
+{% extends "base.html" %}
+
+{% block title %}{{ place.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-3">
+  <h1>{{ self.title() }}</h1>
+
+  {{ place_box(place) }}
+
+  <div class="alert alert-danger"><strong>Wikidata query error</strong>: Failed to retrieve the list of items from Wikidata, the area is too large. Try a smaller area.</div>
+
+  <h4>Technical details</h4>
+  <p>Wikidata query <a href="#" id="oql-toggle">show query</a></p>
+  <div id="oql">
+  <pre>{{ query }}</pre>
+  </div>
+
+  {% if 'Query deadline is expired' in reply %}
+    <p>Error: Query deadline is expired</p>
+  {% else %}
+    <p>Response</p>
+    <pre>{{ reply }}</pre>
+  {% endif %}
+
+</div>
+
+{% endblock %}
