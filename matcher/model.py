@@ -514,6 +514,14 @@ class Item(Base):
         return [i['mainsnak']['datavalue']['value']
                 for i in self.entity['claims'].get('P18', [])]
 
+    def defunct_cats(self):
+        look_for = {'demolish', 'disestablishment', 'defunct', 'abandoned', 'decommission'}
+        found = []
+        for item_cat in self.categories or []:
+            lc_item_cat = item_cat.lower()
+            found += [item_cat for i in look_for if i in lc_item_cat]
+        return found
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 

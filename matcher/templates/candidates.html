@@ -112,6 +112,13 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       {% else %}
         search tags: {{ ', '.join(search_tags | sort) }}
       {% endif %}
+      {% set defunct_cats = item.defunct_cats() %}
+      {% if defunct_cats %}
+        <div class="alert alert-danger">
+        <strong>This item might be defunct.</strong> The English Wikipedia
+        article is in these categories: {{ ', '.join(defunct_cats) }}
+        </div>
+      {% endif %}
       <p>
       {# <br>
       <ul>
