@@ -40,7 +40,7 @@
           <li>Wikipedia categories: {{ ', '.join(item.categories) }}</li>
         {% endif %}
         {% if item.tags %}
-          <li>possible OSM tags: {{ ', '.join(item.tag_list) }}</li>
+          <li>possible OSM tags: {{ ', '.join(item.tags|sort) }}</li>
         {% endif %}
       </ul>
     </p>

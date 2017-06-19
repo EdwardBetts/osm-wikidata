@@ -12,7 +12,7 @@
 {% macro taginfo_link(tag) %}{% if '=' in tag %}<a href="https://taginfo.openstreetmap.org/tags/{{ tag }}">{{ tag }}</a>{% else %}<a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% endif -%}{%- endmacro -%}
 
 {% macro candidate_info(c, is_picked=false, is_bad=false) %}
-  {% set search_tags = c.item.tag_list %}
+  {% set search_tags = c.item.tags %}
   {% set m = c.get_match() %}
     <li>{{c.osm_type}}:
       <a href="{{ url_for('match_detail', item_id=c.item_id, osm_type=c.osm_type, osm_id=c.osm_id) }}">{{ c.label }}</a>

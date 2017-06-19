@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property, object_session
@@ -165,14 +166,12 @@ class Place(Base):   # assume all places are relations
 
     def add_tags_to_items(self):
         for item in self.items.filter(Item.categories != '{}'):
-            existing_tags = set(item.tag_list)
             # if wikidata says this is a place then adding tags
             # from wikipedia can just confuse things
-            if any(t.startswith('place') for t in existing_tags):
+            if any(t.startswith('place') for t in item.tags):
                 continue
-            for t in set(matcher.categories_to_tags(item.categories)):
-                if t not in existing_tags:
-                    item.tags.append(ItemTag(tag_or_key=t))
+            for t in matcher.categories_to_tags(item.categories):
+                item.tags.add(t)
 
     @property
     def prefix(self):
@@ -275,7 +274,7 @@ class Place(Base):   # assume all places are relations
     def all_tags(self):
         tags = set()
         for item in self.items:
-            tags |= set(item.tag_list)
+            tags |= set(item.tags)
         tags.difference_update(skip_tags)
         return matcher.simplify_tags(tags)
 
@@ -291,7 +290,7 @@ class Place(Base):   # assume all places are relations
         re_paren = re.compile(r'\(.+\)')
         re_drop = re.compile(r'\b(the|and|at|of|de|le|la|les|von)\b')
         names = set()
-        for building in (item for item in self.items if 'building' in item.tag_list):
+        for building in (item for item in self.items if 'building' in item.tags):
             for n in building.names():
                 if n[0].isdigit() and ',' in n:
                     continue
@@ -411,7 +410,7 @@ class Place(Base):   # assume all places are relations
             if 'building' in tags and len(tags) > 1:
                 tags.remove('building')
 
-            item.tags = [ItemTag(tag_or_key=t) for t in tags]
+            item.tags = tags
             if not item.places.filter(Place.place_id == self.place_id).count():
                 item.places.append(self)
         session.commit()
@@ -453,6 +452,13 @@ class Item(Base):
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
     query_label = Column(String)
 
+    db_tags = relationship('ItemTag',
+                           collection_class=set,
+                           cascade='save-update, merge, delete, delete-orphan',
+                           backref='item')
+
+    tags = association_proxy('db_tags', 'tag_or_key')
+
     def label(self, lang='en'):
         if self.entity:
             labels = self.entity['labels']
@@ -475,17 +481,13 @@ class Item(Base):
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
     @property
-    def tag_list(self):
-        return [i.tag_or_key for i in self.tags]
-
-    @property
     def hstore_query(self):
         '''hstore query for use with osm2pgsql database'''
-        if not self.tag_list:
+        if not self.tags:
             return
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
-                else "(tags ? '{}')".format(tag) for tag in self.tag_list)
+                else "(tags ? '{}')".format(tag) for tag in self.tags)
         return ' or '.join(cond)
 
     def instanceof(self):
@@ -500,7 +502,7 @@ class Item(Base):
     def get_oql(self):
         lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
         union = []
-        for tag in self.tag_list:
+        for tag in self.tags:
             osm_filter = 'around:1000,{:f},{:f}'.format(lat, lon)
             union += oql_from_tag(tag, False, osm_filter)
         return union
@@ -518,9 +520,8 @@ class ItemTag(Base):
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
     tag_or_key = Column(String, primary_key=True, index=True)
 
-    item = relationship(Item, backref=backref('tags',
-                                              lazy='dynamic',
-                                              cascade='save-update, merge, delete, delete-orphan'))
+    def __init__(self, tag_or_key):
+        self.tag_or_key = tag_or_key
 
 class PlaceItem(Base):
     __tablename__ = 'place_item'
@@ -552,12 +553,12 @@ class ItemCandidate(Base):
         return '{0.osm_type:s}_{0.osm_id:d}'.format(self)
 
     def get_match(self):
-        endings = matcher.get_ending_from_criteria(set(self.tags))
+        endings = matcher.get_ending_from_criteria(self.tags)
         wikidata_names = self.item.names()
         return match.check_for_match(self.tags, wikidata_names, endings)
 
     def get_all_matches(self):
-        endings = matcher.get_ending_from_criteria(set(self.item.tag_list))
+        endings = matcher.get_ending_from_criteria(self.item.tags)
         wikidata_names = self.item.names()
         m = match.get_all_matches(self.tags, wikidata_names, endings)
         return m
@@ -565,7 +566,7 @@ class ItemCandidate(Base):
     def matching_tags(self):
         tags = []
 
-        for tag_or_key in self.item.tag_list:
+        for tag_or_key in self.item.tags:
             if '=' not in tag_or_key and tag_or_key in self.tags:
                 tags.append(tag_or_key)
                 continue

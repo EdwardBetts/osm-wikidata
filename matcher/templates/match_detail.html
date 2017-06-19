@@ -66,9 +66,9 @@
         </li>
       {% endif %}
 
-      {% if item.tag_list %}
+      {% if item.tags %}
         <li>Tags from Wikidata and Wikipedia:
-        {% for tag in item.tag_list %}
+        {% for tag in item.tags | sort %}
             {{ tag }}{% if not loop.last %},{% endif %}
         {% endfor %}
         </li>

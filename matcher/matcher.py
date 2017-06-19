@@ -18,8 +18,9 @@ def get_pattern(key):
         return patterns[key]
     return patterns.setdefault(key, re.compile(r'\b' + re.escape(key) + r'\b', re.I))
 
-def categories_to_tags(categories):
-    cat_to_entity = build_cat_map()
+def categories_to_tags(categories, cat_to_entity=None):
+    if cat_to_entity is None:
+        cat_to_entity = build_cat_map()
     tags = set()
     for cat in categories:
         lc_cat = cat.lower()
@@ -134,9 +135,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     rows = cur.fetchall()
     seen = set()
 
-    search_tags = set(item.tag_list)
-
-    endings = get_ending_from_criteria(search_tags)
+    endings = get_ending_from_criteria(item.tags)
 
     wikidata_names = item.names()
 
@@ -149,7 +148,7 @@ def find_item_matches(cur, item, prefix, debug=False):
             print((osm_type, osm_id, osm_name, osm_tags, dist))
         seen.add((obj_type, osm_id))
 
-        if osm_tags.get('locality') == 'townland' and 'locality=townland' not in search_tags:
+        if osm_tags.get('locality') == 'townland' and 'locality=townland' not in item.tags:
             continue  # only match townlands when specifically searching for one
 
         try:

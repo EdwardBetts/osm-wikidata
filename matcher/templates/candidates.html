@@ -92,7 +92,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
     <div class="my-3">
     {% for item in candidates %}
-      {% set search_tags = item.tag_list %}
+      {% set search_tags = item.tags %}
       <p>
       {% set picked = filtered[item.item_id]['candidate'] or none %}
       {% if upload_okay %}
@@ -110,7 +110,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       {% if 'note' in filtered[item.item_id] %}
         {{ filtered[item.item_id]['note'] }}
       {% else %}
-        search tags: {{ ', '.join(search_tags) }}
+        search tags: {{ ', '.join(search_tags | sort) }}
       {% endif %}
       <p>
       {# <br>
