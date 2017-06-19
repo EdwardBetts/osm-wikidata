@@ -954,7 +954,7 @@ def search_results():
             return render_template('error_page.html', message=message)
         need_commit = False
         for hit in results:
-            if not ('osm_type' in hit and 'osm_id' in hit):
+            if not ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit):
                 continue
             p = Place.query.filter_by(osm_type=hit['osm_type'],
                                       osm_id=hit['osm_id']).one_or_none()
@@ -1125,7 +1125,7 @@ def api_item_match(wikidata_id):
 
     item = Item.query.get(wikidata_id)
     if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
+        criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
 
     radius = get_radius()
     data = {
@@ -1145,7 +1145,7 @@ def api_item_match(wikidata_id):
     if not entity.has_coords:
         return api_overpass_error(data, 'no coordinates')
 
-    lat, lon = item.coords()
+    lat, lon = entity.coords
     data['wikidata']['lat'] = lat
     data['wikidata']['lon'] = lon
 
@@ -1309,7 +1309,7 @@ def item_page(wikidata_id):
     criteria = entity.criteria()
 
     if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in t.tag_or_key else 'Key:') + t.tag_or_key for t in item.tags}
+        criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
 
     if item and item.categories:
         category_map = matcher.categories_to_tags_map(item.categories)
