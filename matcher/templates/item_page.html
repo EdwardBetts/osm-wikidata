@@ -89,6 +89,8 @@
     {% if lat is not none and lon is not none %}
     <div>Wikidata location: {{ '{:.4f}'.format(lat) }}, {{ '{:.4f}'.format(lon) }}
         <a href="https://www.openstreetmap.org/#map=18/{{ lat }}/ {{ lon }}">view on OSM</a>
+        or
+        <a href="https://www.openstreetmap.org/edit#map=18/{{ lat }}/ {{ lon }}">edit on OSM</a>
     </div>
 
     <div id="mapid"></div>
