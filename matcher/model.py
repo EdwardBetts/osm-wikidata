@@ -515,7 +515,7 @@ class Item(Base):
                 for i in self.entity['claims'].get('P18', [])]
 
     def defunct_cats(self):
-        look_for = {'demolish', 'disestablishment', 'defunct', 'abandoned', 'decommission'}
+        look_for = {'demolish', 'disestablishment', 'defunct', 'abandoned', 'decommission', 'former'}
         found = []
         for item_cat in self.categories or []:
             lc_item_cat = item_cat.lower()
