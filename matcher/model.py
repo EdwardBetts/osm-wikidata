@@ -515,11 +515,14 @@ class Item(Base):
                 for i in self.entity['claims'].get('P18', [])]
 
     def defunct_cats(self):
-        look_for = {'demolish', 'disestablishment', 'defunct', 'abandoned', 'decommission', 'former'}
+        words = {'demolish', 'disestablishment', 'defunct', 'abandon', 'decommission', 'former', 'dismantled',
+                 'disused', 'disassembled', 'abandoned', 'disband', 'scrapped', 'unused', 'closed', 'condemned',
+                 'mothballed'}
+
         found = []
         for item_cat in self.categories or []:
             lc_item_cat = item_cat.lower()
-            found += [item_cat for i in look_for if i in lc_item_cat]
+            found += [item_cat for i in words if i in lc_item_cat]
         return found
 
 class ItemTag(Base):
