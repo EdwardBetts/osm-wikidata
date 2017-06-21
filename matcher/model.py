@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import relationship, backref, column_property, object_session
+from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import cast
 from collections import Counter
@@ -82,9 +82,9 @@ class Place(Base):   # assume all places are relations
     west = Column(Float, nullable=False)
     north = Column(Float, nullable=False)
     east = Column(Float, nullable=False)
-    extratags = Column(JSON)
-    address = Column(JSON)
-    namedetails = Column(JSON)
+    extratags = deferred(Column(JSON))
+    address = deferred(Column(JSON))
+    namedetails = deferred(Column(JSON))
     item_count = Column(Integer)
     candidate_count = Column(Integer)
     state = Column(String, index=True)
