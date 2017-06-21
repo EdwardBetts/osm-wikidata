@@ -8,6 +8,7 @@ from .taginfo import get_taginfo
 from .match import check_for_match
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm import load_only
 # from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
 from .pager import Pagination, init_pager
@@ -931,7 +932,16 @@ def get_existing(sort, name_filter):
     return q
 
 def get_top_existing():
-    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']), Place.area > 0, Place.candidate_count > 4)
+    cols = [Place.place_id, Place.display_name, Place.area, Place.state,
+            Place.candidate_count, Place.item_count]
+
+    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
+                            Place.area > 0,
+                            Place.candidate_count > 4)
+                    .options(load_only(*cols))
+                    .outerjoin(Changeset)
+                    .group_by(*cols)
+                    .add_columns(func.count(Changeset.id))
                     .order_by((Place.item_count / Place.area).desc()))
     return q[:30]
 

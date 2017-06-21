@@ -1,5 +1,5 @@
   <div class="card-columns">
-  {% for place in existing %}
+  {% for place, changeset_count in existing %}
     <div class="card">
       <h5 class="card-header">
         {% if place.address.country_code == 'us' %}
@@ -7,11 +7,7 @@
         {% else %}
             {% set name = place.name %}
         {% endif %}
-        {% if place.state == 'overpass_timeout' %}
-          {{ name }}
-        {% else %}
-          <a href="{{ place.candidates_url() }}">{{ name }}</a>
-        {% endif %}
+        <a href="{{ place.candidates_url() }}">{{ name }}</a>
         <span class="text-muted small font-weight-normal">
           ({{ '{:,.1f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
       </h5>
@@ -27,6 +23,9 @@
           <li>{{ '{:,d}'.format(place.candidate_count) }} matches
             ({{ '{:.1%}'.format(place.match_ratio) }})
           </li>
+        {% endif %}
+        {% if changeset_count != 0 %}
+        <span class="badge badge-success">tags uploaded</span>
         {% endif %}
         </p>
       </div>
