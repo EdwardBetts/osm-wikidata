@@ -46,8 +46,10 @@ def initials_match(n1, n2, endings=None):
         return
     if initals == n1:
         return Match(MatchType.initials)
-    if any(initals == trim for trim in [n1[:-len(end)].strip()
-           for end in endings or [] if n1_lc.endswith(end.lower())]):
+    if initals == ''.join(c for c in n1 if c.isalnum()):
+        return Match(MatchType.initials)
+    if any(initals == trim for trim in
+            [n1[:-len(end)].strip() for end in endings or [] if n1_lc.endswith(end.lower())]):
         return Match(MatchType.initials_trim)
 
 def match_with_words_removed(osm, wd, words):
