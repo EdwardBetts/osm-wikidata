@@ -13,6 +13,7 @@ def test_add_tags_to_items(app):
 
     item = Item(item_id=1,
                 tags={'amenity=library'},
+                location='Point(-2.62071 51.454)',
                 categories=['Museums'])
     place.items.append(item)
     database.session.add(place)
