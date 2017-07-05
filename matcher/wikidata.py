@@ -216,9 +216,11 @@ def get_entity(qid):
                              params=params,
                              headers=user_agent_headers()).json()
     try:
-        return list(json_data['entities'].values())[0]
+        entity = list(json_data['entities'].values())[0]
     except KeyError:
         return None
+    if 'missing' not in entity:
+        return entity
 
 def get_entities(ids):
     if not ids:
@@ -316,6 +318,8 @@ class WikidataItem:
         return self.entity.get('sitelinks', {})
 
     def remove_badges(self):
+        if 'sitelinks' not in self.entity:
+            return
         for v in self.entity['sitelinks'].values():
             if 'badges' in v:
                 del v['badges']
