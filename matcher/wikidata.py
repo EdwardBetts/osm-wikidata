@@ -147,20 +147,23 @@ def wd_uri_to_id(value):
 
 def wd_uri_to_qid(value):
     assert value.startswith(wd_entity)
-    return value[len(wd_entity)-1:]
+    return value[len(wd_entity) - 1:]
+
+def enwiki_url_to_title(url):
+    return unquote(drop_start(url, enwiki)).replace('_', ' ')
 
 def parse_enwiki_query_old(query):
     return [{
         'location': i['location']['value'],
         'id': wd_uri_to_id(i['place']['value']),
-        'enwiki': unquote(drop_start(i['article']['value'], enwiki)),
+        'enwiki':enwiki_url_to_title(i['article']['value']),
     } for i in query]
 
 def parse_enwiki_query(rows):
     return {wd_uri_to_qid(row['place']['value']):
             {
                 'query_label': row['placeLabel']['value'],
-                'enwiki': unquote(drop_start(row['article']['value'], enwiki)),
+                'enwiki': enwiki_url_to_title(row['article']['value']),
                 'location': row['location']['value'],
                 'tags': set(),
             } for row in rows}
