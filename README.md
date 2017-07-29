@@ -69,4 +69,4 @@ it will be left alone.
 * Code: <https://github.com/EdwardBetts/osm-wikidata>
 * Tasks: <https://github.com/EdwardBetts/osm-wikidata/issues>
 
-vim: syntax=markdown tw=80 spell
+<!--- vim: set syntax=markdown tw=80 spell: --->
