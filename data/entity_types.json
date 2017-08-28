@@ -327,7 +327,7 @@
 },
 {
     "cats": ["Music venues by country", "Nightclubs by country", "Jazz clubs", "Concert halls", "Opera houses"],
-    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall"],
+    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall", "amenity=pub"],
     "trim": ["music venue", "club", "night club", "lounge"],
     "check_housename": true,
     "dist": 1
@@ -1214,6 +1214,12 @@
 {
     "cats": ["Orphanages"],
     "tags": ["social_facility:for=orphan"],
+    "trim": [],
+    "dist": 4
+},
+{
+    "cats": ["Metropolitan boroughs"],
+    "tags": ["designation=metropolitan_district"],
     "trim": [],
     "dist": 4
 },

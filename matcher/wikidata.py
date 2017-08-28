@@ -329,7 +329,11 @@ class WikidataItem:
 
     @property
     def has_coords(self):
-        return 'P625' in self.claims
+        try:
+            self.claims['P625'][0]['mainsnak']['datavalue']['value']
+        except (IndexError, KeyError):
+            return False
+        return True
 
     @property
     def has_earth_coords(self):
