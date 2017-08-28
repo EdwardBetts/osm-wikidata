@@ -385,13 +385,12 @@ class Place(Base):   # assume all places are relations
     def load_items(self, bbox=None, debug=False):
         if bbox is None:
             bbox = self.bbox
+
         items = self.items_from_wikidata(bbox)
         if debug:
             print('{:d} items'.format(len(items)))
 
-        enwiki_to_item = {v['enwiki']: v
-                          for v in items.values()
-                          if 'enwiki' in v}
+        enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
 
         for title, cats in wikipedia.page_category_iter(enwiki_to_item.keys()):
             enwiki_to_item[title]['categories'] = cats
@@ -411,8 +410,9 @@ class Place(Base):   # assume all places are relations
                 tags.remove('building')
 
             item.tags = tags
-            if not item.places.filter(Place.place_id == self.place_id).count():
-                item.places.append(self)
+
+            place_item = PlaceItem(item=item, place=self)
+            session.merge(place_item)
         session.commit()
 
     def wbgetentities(self):
