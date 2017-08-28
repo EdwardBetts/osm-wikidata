@@ -23,6 +23,8 @@ import re
 Base = declarative_base()
 Base.query = session.query_property()
 
+osm_api_base = 'https://api.openstreetmap.org/api/0.6'
+
 osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
                                 name='osm_type_enum',
                                 metadata=Base.metadata)
@@ -615,6 +617,10 @@ class ItemCandidate(Base):
                 return v
         return '{}/{}'.format(self.osm_type, self.osm_id)
 
+    @property
+    def url(self):
+        return '{}/{}/{}'.format(osm_api_base, self.osm_type, self.osm_id)
+
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'
 #     __table_args__ = (
@@ -655,7 +661,7 @@ class Changeset(Base):
     user_id = Column(Integer, ForeignKey(User.id))
     update_count = Column(Integer, nullable=False)
 
-    user = relationship(User, backref=backref('changesets', lazy='dynamic'))
+    user = relationship('User', backref=backref('changesets', lazy='dynamic'))
     place = relationship('Place', backref=backref('changesets', lazy='dynamic'))
 
     @property
@@ -664,11 +670,32 @@ class Changeset(Base):
         if item:
             return item.label()
 
+class ChangesetEdit(Base):
+    __tablename__ = 'changeset_edit'
+    __table_args__ = (
+        ForeignKeyConstraint(['item_id', 'osm_id', 'osm_type'],
+                             [ItemCandidate.item_id,
+                              ItemCandidate.osm_id,
+                              ItemCandidate.osm_type]),
+    )
+
+    changeset_id = Column(BigInteger,
+                          ForeignKey('changeset.id'),
+                          primary_key=True)
+    item_id = Column(Integer, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+
+    changeset = relationship('Changeset',
+                             backref=backref('matches', lazy='dynamic'))
+
 class BadMatch(Base):
     __tablename__ = 'bad_match'
     __table_args__ = (
         ForeignKeyConstraint(['item_id', 'osm_id', 'osm_type'],
-                             [ItemCandidate.item_id, ItemCandidate.osm_id, ItemCandidate.osm_type]),
+                             [ItemCandidate.item_id,
+                              ItemCandidate.osm_id,
+                              ItemCandidate.osm_type]),
     )
 
     item_id = Column(Integer, primary_key=True)
@@ -678,7 +705,8 @@ class BadMatch(Base):
     created = Column(DateTime, default=func.now())
     comment = Column(Text)
 
-    item_candidate = relationship(ItemCandidate, backref=backref('bad_matches', lazy='dynamic'))
+    item_candidate = relationship(ItemCandidate,
+                                  backref=backref('bad_matches', lazy='dynamic'))
     user = relationship(User, backref=backref('bad_matches', lazy='dynamic'))
 
 class Timing(Base):
