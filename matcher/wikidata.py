@@ -4,6 +4,7 @@ from collections import defaultdict
 from .utils import chunk, drop_start
 import requests
 from . import user_agent_headers, overpass, mail
+import json
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -410,7 +411,10 @@ class WikidataItem:
         r = requests.get('https://query.wikidata.org/bigdata/namespace/wdq/sparql',
                          params={'query': query, 'format': 'json'},
                          headers=user_agent_headers())
-        assert r.status_code == 200
+        if r.status_code != 200:
+            mail.error_mail('wikidata query error', json.dumps(query, indent=2), r)
+            raise QueryError(query, r)
+
         self._osm_keys = r.json()['results']['bindings']
         return self._osm_keys
 
