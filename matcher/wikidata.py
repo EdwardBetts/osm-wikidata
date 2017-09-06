@@ -4,7 +4,6 @@ from collections import defaultdict
 from .utils import chunk, drop_start
 import requests
 from . import user_agent_headers, overpass, mail
-import json
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -412,7 +411,7 @@ class WikidataItem:
                          params={'query': query, 'format': 'json'},
                          headers=user_agent_headers())
         if r.status_code != 200:
-            mail.error_mail('wikidata query error', json.dumps(query, indent=2), r)
+            mail.error_mail('wikidata query error', query, r)
             raise QueryError(query, r)
 
         self._osm_keys = r.json()['results']['bindings']
