@@ -739,6 +739,14 @@
     "max_area": 30
 },
 {
+    "cats": ["Townships"],
+    "tags": ["place=township"],
+    "trim": ["township"],
+    "area": true,
+    "dist": 5,
+    "max_area": 30
+},
+{
     "cats": ["Hamlets", "Unincorporated communities"],
     "exclude_cats": ["Tower Hamlets"],
     "tags": ["place", "landuse=residential"],
