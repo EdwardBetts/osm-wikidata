@@ -752,6 +752,7 @@ def load_wikidata(place_id):
         oql = place.get_oql()
         return jsonify(item_list=place.item_list(), oql=oql)
     place.wbgetentities()
+    place.load_extracts()
     place.state = 'wbgetentities'
     database.session.commit()
     oql = place.get_oql()

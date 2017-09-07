@@ -417,6 +417,14 @@ class Place(Base):   # assume all places are relations
             session.merge(place_item)
         session.commit()
 
+    def load_extracts(self):
+        by_title = {item.enwiki: item for item in self.items if item.enwiki}
+
+        for title, extract in wikipedia.get_extracts(by_title.keys()):
+            item = by_title[title]
+            item.extract = extract
+            item.extract_names = wikipedia.html_names(extract)
+
     def wbgetentities(self):
         sub = (session.query(Item.item_id)
                       .join(ItemTag)
@@ -428,7 +436,6 @@ class Place(Base):   # assume all places are relations
 
         for qid, entity in wikidata.entity_iter(items.keys()):
             items[qid].entity = entity
-        session.commit()
 
     def most_common_language(self):
         lang_count = Counter()
@@ -453,6 +460,8 @@ class Item(Base):
     qid = column_property('Q' + cast(item_id, String))
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
     query_label = Column(String)
+    extract = Column(String)
+    extract_names = Column(postgresql.ARRAY(String))
 
     db_tags = relationship('ItemTag',
                            collection_class=set,
@@ -498,8 +507,10 @@ class Item(Base):
                     for i in self.entity['claims'].get('P31', [])]
 
     def names(self):
-        if self.entity:
-            return wikidata.names_from_entity(self.entity)
+        d = wikidata.names_from_entity(self.entity) or defaultdict(list)
+        for name in self.extract_names or []:
+            d[name].append(('extract', 'enwiki'))
+        return d or None
 
     def get_oql(self):
         lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
