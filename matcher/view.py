@@ -1284,7 +1284,6 @@ def item_page(wikidata_id):
     if not entity:
         abort(404)
 
-    labels = entity.labels
     wikidata_names = entity.names
 
     if not item:
@@ -1304,12 +1303,6 @@ def item_page(wikidata_id):
         })
 
     sitelinks.sort(key=lambda i: i['lang'])
-
-    if 'en' in labels:
-        label = labels['en']['value']
-    else:
-        labels = list(labels.values())
-        label = labels[0]['value'] if labels else '[no label]'
 
     lat, lon = entity.coords
 
@@ -1348,9 +1341,7 @@ def item_page(wikidata_id):
                                qid=qid,
                                lat=lat,
                                lon=lon,
-                               osm_keys=osm_keys,
-                               label=label,
-                               labels=labels)
+                               osm_keys=osm_keys)
 
     radius = get_radius()
     oql = entity.get_oql(criteria, radius)
@@ -1402,6 +1393,4 @@ def item_page(wikidata_id):
                            lat=lat,
                            lon=lon,
                            found=found,
-                           osm_keys=osm_keys,
-                           label=label,
-                           labels=labels)
+                           osm_keys=osm_keys)

@@ -107,6 +107,8 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 '''
 
+wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
+
 class QueryError(Exception):
     def __init__(self, query, r):
         self.query = query
@@ -132,14 +134,12 @@ def get_point_query(lat, lon, radius):
                                   radius=float(radius) / 1000.0)
 
 def run_query(query):
-    url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
-    r = requests.get(url,
+    r = requests.get(wikidata_query_api_url,
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
-    if r.status_code == 500:
+    if r.status_code != 200:
         mail.error_mail('wikidata query error', query, r)
         raise QueryError(query, r)
-    assert r.status_code == 200
     return r.json()['results']['bindings']
 
 def wd_uri_to_id(value):
@@ -406,16 +406,56 @@ class WikidataItem:
     def osm_keys(self):
         if hasattr(self, '_osm_keys'):
             return self._osm_keys
-        query = self.osm_key_query()
-        r = requests.get('https://query.wikidata.org/bigdata/namespace/wdq/sparql',
-                         params={'query': query, 'format': 'json'},
-                         headers=user_agent_headers())
-        if r.status_code != 200:
-            mail.error_mail('wikidata query error', query, r)
-            raise QueryError(query, r)
-
-        self._osm_keys = r.json()['results']['bindings']
+        self._osm_keys = run_query(self.osm_key_query())
         return self._osm_keys
+
+    def languages_from_country(self):
+        langs = []
+        for country in self.claims.get('P17', []):
+            c = p17['mainsnak']['datavalue']['value']['numeric-id']
+            for l in language.get_country_lanaguage(c):
+                if l not in langs:
+                    langs.append(l)
+        return langs
+
+    def query_language_from_country(self):
+        if hasattr(self, '_language_codes'):
+            return self._language_codes
+        query = '''
+SELECT DISTINCT ?code WHERE {
+  wd:QID wdt:P17 ?country .
+  ?country wdt:P37 ?lang .
+  ?lang wdt:P424 ?code .
+}'''.replace('QID', self.qid)
+        rows = run_query(query)
+        self._language_codes = [row['code']['value'] for row in rows]
+        return self._language_codes
+
+    def label(self, lang=None):
+        labels = self.labels
+        sitelinks = [i[:-4] for i in self.sitelinks.keys() if i.endswith('wiki')]
+        if not labels:
+            return
+        if lang and lang in labels:  # requested language
+            return labels[lang]['value']
+
+        language_codes = self.languages_from_country()
+        for code in language_codes:
+            if code in labels and code in sitelinks:
+                return labels[code]['value']
+
+        for code in language_codes:
+            if code in labels:
+                return labels[code]['value']
+
+        if 'en' in labels:
+            return labels['en']['value']
+
+        for code in sitelinks:
+            if code in labels:
+                return labels[code]['value']
+
+        return list(labels.values())[0]['value']
 
     @property
     def names(self):

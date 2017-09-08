@@ -1,6 +1,8 @@
 {% from "macro.html" import taginfo_link %}
 {% extends "base.html" %}
 
+{% set label = entity.label() or '[no label]' %}
+
 {% block title %}{{ label }} ({{ qid }}){% endblock %}
 
 {% block style %}
