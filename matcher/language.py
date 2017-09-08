@@ -196,6 +196,7 @@ country_language = {
     26: ['en'],                                              # Northern Ireland
     27: ['en', 'ga'],                                        # Ireland
     28: ['hu'],                                              # Hungary
+    29: ['es'],                                              # Spain
     30: ['en'],                                              # United States of America
     31: ['fr', 'nl', 'de'],                                  # Belgium
     32: ['lb', 'fr', 'de'],                                  # Luxembourg
