@@ -3,7 +3,7 @@ from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start
 import requests
-from . import user_agent_headers, overpass, mail
+from . import user_agent_headers, overpass, mail, language
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -412,7 +412,7 @@ class WikidataItem:
     def languages_from_country(self):
         langs = []
         for country in self.claims.get('P17', []):
-            c = p17['mainsnak']['datavalue']['value']['numeric-id']
+            c = country['mainsnak']['datavalue']['value']['numeric-id']
             for l in language.get_country_lanaguage(c):
                 if l not in langs:
                     langs.append(l)
