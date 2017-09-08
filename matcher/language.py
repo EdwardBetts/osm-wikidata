@@ -546,4 +546,4 @@ def get_language_label(lang):
     return language_codes.get(lang, lang)
 
 def get_country_lanaguage(item_id):
-    return country_language.get(item_id)
+    return country_language.get(item_id, [])
