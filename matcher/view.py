@@ -1,25 +1,28 @@
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
-from flask_login import login_user, current_user, logout_user, LoginManager, login_required
-from .utils import cache_filename
-from lxml import etree
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
+from .utils import cache_filename
 from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
 from .taginfo import get_taginfo
 from .match import check_for_match
+from .pager import Pagination, init_pager
+from .language import get_language_label
+
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
+from flask_login import current_user, logout_user, LoginManager, login_required
+from lxml import etree
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import load_only
-# from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy import func, distinct
-from .pager import Pagination, init_pager
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time
-from .language import get_language_label
-
 from dogpile.cache import make_region
+from dukpy.webassets import BabelJS
 
+import json
+import flask_assets
+import webassets.filter
 import operator
 import sys
 import requests
@@ -32,6 +35,7 @@ re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
 init_pager(app)
+env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -42,10 +46,8 @@ really_save = True
 
 region = make_region().configure(
     'dogpile.cache.pylibmc',
-    expiration_time = 3600,
-    arguments = {
-        'url': ["127.0.0.1"],
-    }
+    expiration_time=3600,
+    arguments={'url':["127.0.0.1"]}
 )
 
 navbar_pages = {
@@ -63,6 +65,26 @@ tab_pages = [
     {'route': 'wikidata_page', 'label': 'Wikidata query'},
     {'route': 'overpass_query', 'label': 'Overpass query'},
 ]
+
+webassets.filter.register_filter(BabelJS)
+js_lib = webassets.Bundle('jquery/jquery.js',
+                          'js/tether.js',
+                          'bootstrap4/js/bootstrap.js',
+                          filters='jsmin')
+js_app = webassets.Bundle('js/app.js',
+                          filters='babeljs')
+
+env.register('js', js_lib, js_app, output='gen/pack.js')
+
+env.register('style', 'css/style.css', 'bootstrap4/css/bootstrap.css',
+             filters='cssmin', output='gen/pack.css')
+
+env.register('add_tags', 'js/add_tags.js',
+             filters='babeljs', output='gen/add_tags.js')
+env.register('matcher', 'js/matcher.js',
+             filters='babeljs', output='gen/matcher.js')
+env.register('node_is_in', 'js/node_is_in.js',
+             filters='babeljs', output='gen/node_is_in.js')
 
 @app.template_filter()
 @evalcontextfilter
@@ -127,8 +149,18 @@ def exception_handler(e):
     else:
         raise e
 
+def new_changeset(comment):
+    return '''
+<osm>
+  <changeset>
+    <tag k="created_by" v="https://osm.wikidata.link/"/>
+    <tag k="comment" v="{}"/>
+  </changeset>
+</osm>'''.format(comment)
+
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
+    '''Add wikidata tags for a single item'''
     wikidata_id = request.form['wikidata']
     osm = request.form.get('osm')
     if osm:
@@ -140,8 +172,6 @@ def add_wikidata_tag():
         flash('no candidate selected')
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-    print(wikidata_id, osm_type, osm_id)
-
     user = g.user
     assert user.is_authenticated
 
@@ -149,9 +179,7 @@ def add_wikidata_tag():
     osm_backend = social_user.get_backend_instance()
     auth = osm_backend.oauth_auth(social_user.access_token)
 
-    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
-    r = requests.get(url, params=social_user.access_token)
-
+    r = requests.get(osm.url, params=social_user.access_token)
     root = etree.fromstring(r.content)
 
     if root.find('.//tag[@k="wikidata"]'):
@@ -159,14 +187,7 @@ def add_wikidata_tag():
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
     comment = request.form.get('comment', 'add wikidata tag')
-    changeset = '''
-<osm>
-  <changeset>
-    <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="{}"/>
-  </changeset>
-</osm>
-'''.format(comment)
+    changeset = new_changeset(comment)
 
     r = osm_backend.request(osm_api_base + '/changeset/create',
                             method='PUT',
@@ -182,7 +203,7 @@ def add_wikidata_tag():
     element_data = etree.tostring(root).decode('utf-8')
 
     try:
-        r = osm_backend.request(url,
+        r = osm_backend.request(osm.url,
                                 method='PUT',
                                 data=element_data,
                                 auth=auth,
@@ -231,18 +252,21 @@ def get_bad(items):
                          .filter(BadMatch.item_id.in_([i.item_id for i in items])))
     return {item_id for item_id, in q}
 
+def place_or_abort(osm_type, osm_id):
+    if osm_type in {'way', 'relation'}:
+        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+        if place:
+            return place
+    abort(404)
+
 @app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
 def export_osm(osm_type, osm_id, name):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
     items = place.items_with_candidates()
 
     items = list(matcher.filter_candidates_more(items, bad=get_bad(items)))
 
-    if not any('candidate' in match for item, match in items):
+    if not any('candidate' in match for _, match in items):
         abort(404)
 
     items = [(item, match['candidate']) for item, match in items if 'candidate' in match]
@@ -286,11 +310,7 @@ def candidates_with_filter(name_filter, osm_type, osm_id):
 
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
 
     full_count = place.items_with_candidates_count()
 
@@ -302,11 +322,7 @@ def wikidata_page(osm_type, osm_id):
 
 @app.route('/overpass/<osm_type>/<int:osm_id>')
 def overpass_query(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
 
     full_count = place.items_with_candidates_count()
 
@@ -318,11 +334,7 @@ def overpass_query(osm_type, osm_id):
 
 @app.route('/close_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def close_changeset(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place_or_abort(osm_type, osm_id)
 
     osm_backend, auth = get_backend_and_auth()
 
@@ -346,47 +358,39 @@ def close_changeset(osm_type, osm_id):
 
 @app.route('/open_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def open_changeset(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
-    comment = request.form['comment']
+    place = place_or_abort(osm_type, osm_id)
+
     osm_backend, auth = get_backend_and_auth()
 
-    changeset = '''
-<osm>
-  <changeset>
-    <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="{}"/>
-  </changeset>
-</osm>
-'''.format(comment)
+    comment = request.form['comment']
+    changeset = new_changeset(comment)
 
-    if really_save:
-        try:
-            r = osm_backend.request(osm_api_base + '/changeset/create',
-                                    method='PUT',
-                                    data=changeset.encode('utf-8'),
-                                    auth=auth,
-                                    headers=user_agent_headers())
-        except requests.exceptions.HTTPError as e:
-            mail.error_mail('error creating changeset: ' + place.name, changeset, e.response)
-            return Response('error', mimetype='text/plain')
-        changeset_id = r.text.strip()
-        if not changeset_id.isdigit():
-            mail.open_changeset_error(place, changeset, r)
-            return Response('error', mimetype='text/plain')
+    if not really_save:
+        return Response(changeset_id, mimetype='text/plain')
 
-        change = Changeset(id=changeset_id,
-                           place=place,
-                           created=func.now(),
-                           comment=comment,
-                           update_count=0,
-                           user=g.user)
+    try:
+        r = osm_backend.request(osm_api_base + '/changeset/create',
+                                method='PUT',
+                                data=changeset.encode('utf-8'),
+                                auth=auth,
+                                headers=user_agent_headers())
+    except requests.exceptions.HTTPError as e:
+        mail.error_mail('error creating changeset: ' + place.name, changeset, e.response)
+        return Response('error', mimetype='text/plain')
+    changeset_id = r.text.strip()
+    if not changeset_id.isdigit():
+        mail.open_changeset_error(place, changeset, r)
+        return Response('error', mimetype='text/plain')
 
-        database.session.add(change)
-        database.session.commit()
+    change = Changeset(id=changeset_id,
+                       place=place,
+                       created=func.now(),
+                       comment=comment,
+                       update_count=0,
+                       user=g.user)
+
+    database.session.add(change)
+    database.session.commit()
 
     return Response(changeset_id, mimetype='text/plain')
 
@@ -490,15 +494,7 @@ def do_add_tags(place, table):
     osm_backend, auth = get_backend_and_auth()
 
     comment = request.form['comment']
-
-    changeset = '''
-<osm>
-  <changeset>
-    <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="{}"/>
-  </changeset>
-</osm>
-'''.format(comment)
+    changeset = new_changeset(comment)
 
     r = osm_backend.request(osm_api_base + '/changeset/create',
                             method='PUT',
@@ -560,11 +556,7 @@ def do_add_tags(place, table):
 
 @app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def update_tags(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
 
     candidates = []
     for item in place.items_with_candidates():
@@ -573,22 +565,19 @@ def update_tags(osm_type, osm_id):
     elements = overpass.get_tags(candidates)
 
     for e in elements:
-        for c in ItemCandidate.query.filter_by(osm_id=e['id'], osm_type=e['type']):
+        for c in ItemCandidate.query.filter_by(osm_id=e['id'],
+                                               osm_type=e['type']):
             if 'tags' in e:  # FIXME do something clever like delete the OSM candidate
                 c.tags = e['tags']
     database.session.commit()
 
     flash('tags updated')
 
-    return redirect(url_for('candidates', osm_type=place.osm_type, osm_id=osm_id))
+    return redirect(place.candidates_url())
 
 @app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def add_tags(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
 
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
@@ -610,7 +599,7 @@ def add_tags(osm_type, osm_id):
     if False and request.form.get('confirm') == 'yes':
         update_count = do_add_tags(place, table)
         flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
-        return redirect(url_for('candidates', osm_type=place.osm_type, osm_id=place.osm_id))
+        return redirect(place.candidates_url())
 
     return render_template('add_tags.html',
                            place=place,
@@ -620,7 +609,8 @@ def add_tags(osm_type, osm_id):
 
 @app.route('/places/<name>')
 def place_redirect(name):
-    place = Place.query.filter(Place.state == 'ready', Place.display_name.ilike(name + '%')).first()
+    place = Place.query.filter(Place.state == 'ready',
+                               Place.display_name.ilike(name + '%')).first()
     if not place:
         abort(404)
     return redirect(place.candidates_url())
@@ -695,9 +685,7 @@ def candidates(osm_type, osm_id):
 
 @app.route('/no_match/<osm_type>/<int:osm_id>')
 def no_match(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    place = place_or_abort(osm_type, osm_id)
 
     if place.state != 'ready':
         return redirect_to_matcher(osm_type, osm_id)
@@ -721,11 +709,7 @@ def no_match(osm_type, osm_id):
 
 @app.route('/already_tagged/<osm_type>/<int:osm_id>')
 def already_tagged(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = place_or_abort(osm_type, osm_id)
 
     if place.state != 'ready':
         return redirect_to_matcher(osm_type, osm_id)
@@ -861,6 +845,23 @@ def load_match(place_id):
 
     conn.close()
     return Response('done', mimetype='text/plain')
+
+@app.route('/matcher/node/<int:osm_id>')
+def node_is_in(osm_id):
+    place = Place.query.filter_by(osm_type='node', osm_id=osm_id).one_or_none()
+    if not place:
+        return abort(404)
+
+    oql = '''[out:json][timeout:180];
+node({});
+is_in->.a;
+(way(pivot.a); rel(pivot.a););
+out bb tags;
+'''.format(osm_id)
+
+    reply = json.load(open('sample/node_is_in.json'))
+
+    return render_template('node_is_in.html', place=place, oql=oql, reply=reply)
 
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
