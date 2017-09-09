@@ -72,6 +72,8 @@ def extracts_query(titles, language_code='en'):
 def get_extracts(titles):
     for cur in chunk(titles, extracts_page_size):
         for page in extracts_query(cur):
+            if 'extract' not in page:
+                continue
             extract = page['extract'].strip()
             if extract:
                 yield (page['title'], page['extract'])
