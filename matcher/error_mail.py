@@ -4,7 +4,7 @@ from logging.handlers import SMTPHandler
 from logging import Formatter
 
 class MatcherSMTPHandler(SMTPHandler):
-    def getSubject(self, record):
+    def getSubject(self, record):  # noqa: N802
         return ('osm-wikidata error: {}'.format(record.exc_info[0].__name__)
                 if (record.exc_info and record.exc_info[0])
                 else 'osm-wikidata error: {}:{:d}'.format(record.pathname, record.lineno))
