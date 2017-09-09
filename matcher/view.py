@@ -47,7 +47,7 @@ really_save = True
 region = make_region().configure(
     'dogpile.cache.pylibmc',
     expiration_time=3600,
-    arguments={'url':["127.0.0.1"]}
+    arguments={'url': ["127.0.0.1"]}
 )
 
 navbar_pages = {
