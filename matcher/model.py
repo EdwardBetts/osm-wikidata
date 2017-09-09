@@ -115,9 +115,9 @@ class Place(Base):   # assume all places are relations
 
     @property
     def name_for_change_comment(self):
-        address = place['address']
+        address = place.get('address')
         n = place.name
-        if address['country_code'] == 'us':
+        if address and address.get('country_code') == 'us':
             state = address.get('state')
             if state and n != state:
                 return n + ', ' + state
