@@ -507,39 +507,17 @@ country_language = {
     40430: ['pt'],                                           # Bahia
     40888: ['hi', 'ta'],                                     # Andaman and Nicobar Islands
     66743: ['ml', 'ta', 'te'],                               # Puducherry
-    112558: ['fr', 'frp'],                                   # Republic of Saugeais
     120730: ['ja'],                                          # Kyōto Prefecture
     193714: ['ar', 'en', 'he'],                              # Mandatory Palestine
     205776: ['es'],                                          # Monagas
     219060: ['ar', 'en'],                                    # Palestine
     244165: ['hy'],                                          # Republic of Artsakh
     407199: ['ar', 'he'],                                    # Palestinian territories
-    551798: ['en', 'nl'],                                    # Grand Duchy of Flandrensis
-    591309: ['en', 'eo', 'fr'],                              # Principality of Hutt River
-    744042: ['en'],                                          # Grand Duchy of Avram
     756617: ['da'],                                          # Kingdom of Denmark
-    877579: ['de'],                                          # Kugelmugel
     907112: ['mo', 'ru', 'uk'],                              # Transnistria
-    968430: ['en', 'sv'],                                    # Ladonia
-    1026065: ['it'],                                         # Senarica
-    1083009: ['en'],                                         # Principality of Wy
-    1123960: ['en'],                                         # Conch Republic
-    1152445: ['en'],                                         # Aerican Empire
-    1194329: ['en', 'la'],                                   # Nova Roma
     1249802: ['en'],                                         # Falkland Islands
-    1423680: ['en'],                                         # Gay and Lesbian Kingdom of the Coral Sea Islands
-    1549254: ['fr', 'it', 'lij'],                            # Principality of Seborga
-    2078820: ['ru'],                                         # Odessa Soviet Republic
-    2353425: ['en', 'tzl'],                                  # Talossa
-    2429253: ['ar'],                                         # Islamic State of Iraq and the Levant
-    2949827: ['tr'],                                         # Government of the Grand National Assembly
-    3456417: ['fr'],                                         # Republic of Saint-Malo
-    7382038: ['ru'],                                         # Imperial Throne
     16150196: ['ru', 'uk'],                                  # Donetsk People's Republic
     16746854: ['ru', 'uk'],                                  # Luhansk People's Republic
-    19356759: ['en', 'pt'],                                  # Holy Empire of Reunion
-    19801186: ['cs', 'en'],                                  # Liberland
-    27304761: ['en', 'es', 'ru'],                            # Asgardia
     31354462: ['ab', 'ru'],                                  # The Republic of Abkhazia
 }
 
