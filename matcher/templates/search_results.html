@@ -13,7 +13,7 @@
         {% endif %}
         <a href="{{ hit_url }}">{{ hit.display_name }}</a>
       </b><br>
-    {% elif hit.osm_id and hit.osm_type == 'node' and hit.category in ('place', 'boundary') %}
+    {% elif 0 and hit.osm_id and hit.osm_type == 'node' and hit.category in ('place', 'boundary') %}
         {% set hit_url = url_for('node_is_in', osm_id=hit.osm_id) %}
         <a href="{{ hit_url }}">{{ hit.display_name }}</a>
     {% else %}
