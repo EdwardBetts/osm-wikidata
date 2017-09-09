@@ -71,7 +71,7 @@ https://www.openstreetmap.org/changeset/{change.id}
            url=place.candidates_url(_external=True),
            change=change)
 
-    send_mail('tags added: {}'.format(place.name), body)
+    send_mail('tags added: {}'.format(place.name_for_changeset), body)
 
 def overpass_error(place, error):
     template = '''

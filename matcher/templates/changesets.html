@@ -33,7 +33,8 @@
 <!-- <td>{{ obj.comment }}</td> -->
 <td>
     {% if obj.place %}
-        <a href="{{ obj.place.candidates_url() }}">{{ obj.place.name }}</a>
+        {% set name = obj.place.name_for_changeset %}
+        <a href="{{ obj.place.candidates_url() }}">{{ name }}</a>
     {% elif obj.item_id %}
         {% set label = obj.item_label %}
         <a href="{{ url_for('item_page', wikidata_id=obj.item_id) }}">

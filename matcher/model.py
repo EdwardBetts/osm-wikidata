@@ -114,8 +114,22 @@ class Place(Base):   # assume all places are relations
             setattr(self, n, hit.get(n))
 
     @property
+    def name_for_changeset(self):
+        address = self.address
+        n = self.name
+        if address and address.get('country_code') == 'us':
+            state = address.get('state')
+            if state and n != state:
+                return n + ', ' + state
+
+        country = address.get('country')
+        if country and self.name != country:
+            return '{} ({})'.format(self.name, country)
+        return self.name
+
+    @property
     def name_for_change_comment(self):
-        address = self.get('address')
+        address = self.address
         n = self.name
         if address and address.get('country_code') == 'us':
             state = address.get('state')
