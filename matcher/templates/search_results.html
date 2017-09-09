@@ -4,7 +4,7 @@
 {% for hit in results %}
   <div class="box">
     {% if hit.icon %}<img src="{{ hit.icon.replace('http://', 'https://') }}">{% endif %}
-      {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary') and (not hit.area or hit.area < 90000) %}
+    {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary') and (not hit.area or hit.area < 90000) %}
       <b>
         {% if hit.place and hit.place.state == 'ready' %}
             {% set hit_url = hit.place.candidates_url() %}
@@ -13,6 +13,9 @@
         {% endif %}
         <a href="{{ hit_url }}">{{ hit.display_name }}</a>
       </b><br>
+    {% elif hit.osm_id and hit.osm_type == 'node' and hit.category in ('place', 'boundary') %}
+        {% set hit_url = url_for('node_is_in', osm_id=hit.osm_id) %}
+        <a href="{{ hit_url }}">{{ hit.display_name }}</a>
     {% else %}
        <b>
        {% if name %}
