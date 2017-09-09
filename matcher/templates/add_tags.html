@@ -28,8 +28,7 @@
     <label for="comment">change comment:</label>
     {% set comment = 'add wikidata tag'
         if table | length == 1
-        else ('add wikidata tags within' +
-           (' the ' if ' of ' in place.name else ' ' + place.name)) %}
+        else ('add wikidata tags within ' + place.name_for_change_comment) %}
     <input class="form-control m-2"
            id="comment"
            name="comment"

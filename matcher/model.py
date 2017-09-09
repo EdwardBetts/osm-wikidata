@@ -113,6 +113,16 @@ class Place(Base):   # assume all places are relations
         for n in keys:
             setattr(self, n, hit.get(n))
 
+    @property
+    def name_for_change_comment(self):
+        address = place['address']
+        n = place.name
+        if address['country_code'] == 'us':
+            state = address.get('state')
+            if state and n != state:
+                return n + ', ' + state
+        return 'the ' + n if ' of ' in n else n
+
     @classmethod
     def from_nominatim(cls, hit):
         keys = ('osm_id', 'osm_type', 'display_name', 'category', 'type',
