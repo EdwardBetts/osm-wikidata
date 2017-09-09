@@ -471,16 +471,16 @@ class Item(Base):
     tags = association_proxy('db_tags', 'tag_or_key')
 
     def label(self, lang='en'):
-        if self.entity:
-            labels = self.entity['labels']
-            if lang in labels:
-                return labels[lang]['value']
-            elif lang != 'en' and 'en' in labels:
-                return labels['en']['value']
-            elif labels:
-                return list(labels.values())[0]['value']
+        if not self.entity:
+            return self.enwiki or self.query_label or None
 
-        return self.enwiki or self.query_label or None
+        labels = self.entity['labels']
+        if lang in labels:
+            return labels[lang]['value']
+        elif lang != 'en' and 'en' in labels:
+            return labels['en']['value']
+        elif labels:
+            return list(labels.values())[0]['value']
 
     @property
     def wikidata_uri(self):
