@@ -1139,6 +1139,8 @@ def api_item_match(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
 
+    criteria = flatten_criteria(criteria)
+
     radius = get_radius()
     data = {
         'wikidata': {
@@ -1343,6 +1345,8 @@ def item_page(wikidata_id):
                                lat=lat,
                                lon=lon,
                                osm_keys=osm_keys)
+
+    criteria = wikidata.flatten_criteria(criteria)
 
     radius = get_radius()
     oql = entity.get_oql(criteria, radius)

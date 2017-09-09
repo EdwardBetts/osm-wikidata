@@ -142,6 +142,10 @@ def run_query(query):
         raise QueryError(query, r)
     return r.json()['results']['bindings']
 
+def flatten_criteria(items):
+    start = {'Tag:' + i[4:] + '=' for i in items if i.startswith('Key:')}
+    return {i for i in items if not any(i.startswith(s) for s in start)}
+
 def wd_uri_to_id(value):
     return int(drop_start(value, wd_entity))
 
@@ -278,7 +282,7 @@ def parse_osm_keys(rows):
         uri = row['item']['value']
         qid = drop_start(uri, start)
         tag = row['tag']['value']
-        for i in 'Key:', 'Tag':
+        for i in 'Key:', 'Tag:':
             if tag.startswith(i):
                 tag = tag[4:]
         if qid not in items:
@@ -470,9 +474,9 @@ SELECT DISTINCT ?code WHERE {
                 for isa in self.entity.get('claims', {}).get('P31', [])]
 
     def criteria(self):
-        ret = {row['tag']['value'] for row in self.osm_keys}
-        ret |= {extra_keys[is_a] for is_a in self.is_a if is_a in extra_keys}
-        return ret
+        items = {row['tag']['value'] for row in self.osm_keys}
+        items |= {extra_keys[is_a] for is_a in self.is_a if is_a in extra_keys}
+        return items
 
     def report_broken_wikidata_osm_tags(self):
         for row in self.osm_keys:
