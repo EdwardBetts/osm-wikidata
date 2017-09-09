@@ -1,6 +1,53 @@
 {% from "macro.html" import place_box, candidate_info with context %}
 {% extends "base.html" %}
 
+{% macro candidate_item(item) %}
+  <p>
+  {% set picked = filtered[item.item_id]['candidate'] or none %}
+  {% if upload_okay %}
+      {% if picked %}
+        {% if (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
+            <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
+        {% else %}
+            <input type="checkbox" name="include" value="{{ item.qid }}">
+        {% endif %}
+      {% else %}
+        ✕
+      {% endif %}
+  {% endif %}
+  <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a>
+
+  {% set search_tags = item.tags %}
+  {% if 'note' in filtered[item.item_id] %}
+    {{ filtered[item.item_id]['note'] }}
+  {% else %}
+    search tags: {{ ', '.join(search_tags | sort) }}
+  {% endif %}
+  {% set defunct_cats = item.defunct_cats() %}
+  {% if defunct_cats %}
+    <div class="alert alert-danger">
+    <strong>This item might be defunct.</strong> The English Wikipedia
+    article is in these categories: {{ ', '.join(defunct_cats) }}
+    </div>
+  {% endif %}
+  <p>
+  {# <br>
+  <ul>
+    <li>Categories:
+    {% for cat in item.categories %}
+        <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+    {% endfor %}
+    </li>
+    <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
+  </ul> #}
+  <ul>
+  {% for c in item.candidates %}
+    {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
+    {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad) }}
+  {% endfor %}
+  </ul>
+{% endmacro %}
+
 {% block title %}{{ place.display_name }}:{% endblock %}
 
 {% block content %}
@@ -92,50 +139,19 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
     <div class="my-3">
     {% for item in candidates %}
-      {% set search_tags = item.tags %}
-      <p>
-      {% set picked = filtered[item.item_id]['candidate'] or none %}
-      {% if upload_okay %}
-          {% if picked %}
-            {% if (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
-                <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
-            {% else %}
-                <input type="checkbox" name="include" value="{{ item.qid }}">
-            {% endif %}
-          {% else %}
-            ✕
-          {% endif %}
-      {% endif %}
-      <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a>
-      {% if 'note' in filtered[item.item_id] %}
-        {{ filtered[item.item_id]['note'] }}
-      {% else %}
-        search tags: {{ ', '.join(search_tags | sort) }}
-      {% endif %}
-      {% set defunct_cats = item.defunct_cats() %}
-      {% if defunct_cats %}
-        <div class="alert alert-danger">
-        <strong>This item might be defunct.</strong> The English Wikipedia
-        article is in these categories: {{ ', '.join(defunct_cats) }}
-        </div>
-      {% endif %}
-      <p>
-      {# <br>
-      <ul>
-        <li>Categories:
-        {% for cat in item.categories %}
-            <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
-        {% endfor %}
-        </li>
-        <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
-      </ul> #}
-      <ul>
-      {% for c in item.candidates %}
-        {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
-        {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad) }}
-      {% endfor %}
-      </ul>
+        {% set picked = filtered[item.item_id]['candidate'] or none %}
+        {% if picked and not ((not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1) %}
+            {{ candidate_item(item) }}
+        {% endif %}
     {% endfor %}
+
+    {% for item in candidates %}
+        {% set picked = filtered[item.item_id]['candidate'] or none %}
+        {% if not picked or (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
+            {{ candidate_item(item) }}
+        {% endif %}
+    {% endfor %}
+
     </div>
     {% if upload_okay %}
       <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
