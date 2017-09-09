@@ -5,8 +5,10 @@
   <title>
     {% block title %}{% endblock %} OSM ↔ Wikidata
   </title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  {% assets "style" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
 
   {% block style %}
   {% endblock %}
@@ -16,10 +18,9 @@
   {% include 'navbar.html' %}
   {% block content %}{% endblock %}
 
-  <script src="https://code.jquery.com/jquery-3.1.1.js"></script>
-  <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
-  <script src="{{ url_for('static', filename='bootstrap4/js/bootstrap.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% assets "js" %}
+  <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
   {% block script %}{% endblock %}
 </body>
 </html>
