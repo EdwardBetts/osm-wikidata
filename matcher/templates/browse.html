@@ -1,0 +1,19 @@
+{% from "macro.html" import place_box %}
+{% extends "base.html" %}
+
+{% block title %}{{ qid }}{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+<div class="row">
+<div class="col">
+<h1>{{ qid }}</h1>
+
+{% for row in rows %}
+{{ row }}<br>
+{% endfor %}
+
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1139,7 +1139,7 @@ def api_item_match(wikidata_id):
     if item and item.tags:  # add criteria from the Item object
         criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
 
-    criteria = flatten_criteria(criteria)
+    criteria = wikidata.flatten_criteria(criteria)
 
     radius = get_radius()
     data = {
@@ -1198,6 +1198,34 @@ def api_item_match(wikidata_id):
     response = jsonify(data)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+
+@app.route('/browse/Q<int:item_id>')
+def browse_page(item_id):
+    qid = 'Q{}'.format(item_id)
+    query = '''
+SELECT DISTINCT ?item ?itemLabel ?startLabel ?pop ?area WHERE {
+  VALUES ?start { wd:QID } .
+  ?start wdt:P31/wdt:P279* ?subclass .
+  ?subclass wdt:P150 ?nextlevel .
+  ?item wdt:P131 ?start .
+  ?item wdt:P31/wdt:P279* ?nextlevel .
+  ?item wdt:P31/wdt:P279* wd:Q56061 .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+} ORDER BY ?itemLabel
+'''.replace('QID', qid)
+    rows = [{
+        'pop': (int(row['pop']['value']) if row.get('pop') else None),
+        'area': (int(float(row['area']['value'])) if row.get('area') else None),
+        'label': row['itemLabel']['value'],
+        'start': row['startLabel']['value'],
+        'item_id': wikidata.wd_uri_to_id(row['item']['value']),
+    } for row in wikidata.run_query(query)]
+
+    return render_template('browse.html', qid=qid, rows=rows)
 
 @region.cache_on_arguments()
 def get_tag_list(sort):
