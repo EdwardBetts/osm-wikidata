@@ -223,9 +223,11 @@ def entity_iter(ids):
     }
     for cur in chunk(ids, page_size):
         params['ids'] = '|'.join(cur)
-        json_data = requests.get(wikidata_url,
-                                 params=params,
-                                 headers=user_agent_headers()).json()
+        r = requests.get(wikidata_url,
+                         params=params,
+                         headers=user_agent_headers())
+        r.raise_for_status()
+        json_data = r.json()
         for qid, entity in json_data['entities'].items():
             yield qid, entity
 

@@ -734,13 +734,22 @@ def load_wikidata(place_id):
     place = Place.query.get(place_id)
     if place.state != 'tags':
         oql = place.get_oql()
-        return jsonify(item_list=place.item_list(), oql=oql)
-    place.wbgetentities()
+        return jsonify(success=True, item_list=place.item_list(), oql=oql)
+    try:
+        place.wbgetentities()
+    except requests.exceptions.HTTPError as e:
+        error = e.response.text
+        mail.place_error(place, 'wikidata', error)
+        lc_error = error.lower()
+        if 'timeout' in lc_error or 'time out' in lc_error:
+            error = 'wikidata query timeout'
+        return jsonify(success=False, error=e.r.text)
+
     place.load_extracts()
     place.state = 'wbgetentities'
     database.session.commit()
     oql = place.get_oql()
-    return jsonify(item_list=place.item_list(), oql=oql)
+    return jsonify(success=True, item_list=place.item_list(), oql=oql)
 
 @app.route('/load/<int:place_id>/check_overpass', methods=['POST'])
 def check_overpass(place_id):

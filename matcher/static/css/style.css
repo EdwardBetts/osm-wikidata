@@ -32,6 +32,12 @@
   padding: 2px;
 }
 
+#wikidata_error_message {
+  background: darkred;
+  color: white;
+  padding: 2px;
+}
+
 .match {
   background: green;
   color: white;

@@ -24,11 +24,17 @@ function mark_done(e) {
 function load_wikidata() {
   mark_active($('#load_wikidata'));
   $.post(load_wikidata_url).done (function(data) {
-    items = data.item_list;
-    oql = data.oql;
-    $('#item_list_count').text(items.length);
-    mark_done($('#load_wikidata'));
-    check_overpass();
+    if(data.success) {
+      items = data.item_list;
+      oql = data.oql;
+      $('#item_list_count').text(items.length);
+      mark_done($('#load_wikidata'));
+      check_overpass();
+    } else {
+      $('#load_wikidata').removeClass('active');
+      $('#wikidata_error_message').text(data.error);
+      $('#wikidata_error').show();
+    }
   });
 }
 
