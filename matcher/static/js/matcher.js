@@ -91,6 +91,7 @@ function load_individual_match() {
 }
 
 $('#candidates-link').hide();
+$('#wikidata_error').hide();
 $('#overpass_error').hide();
 $('#osm2pgsql_error').hide();
 $('#overpass_slow').hide();
