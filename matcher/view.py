@@ -757,7 +757,7 @@ def overpass_error(place_id):
     database.session.commit()
 
     error = request.form['error']
-    mail.overpass_error(place, error)
+    mail.place_error(place, 'overpass', error)
 
     return Response('noted', mimetype='text/plain')
 
@@ -767,7 +767,7 @@ def overpass_timeout(place_id):
     place.state = 'overpass_timeout'
     database.session.commit()
 
-    mail.overpass_error(place, 'timeout')
+    mail.place_error(place, 'overpass', 'timeout')
 
     return Response('timeout noted', mimetype='text/plain')
 
@@ -780,6 +780,7 @@ def load_osm2pgsql(place_id):
     tables = database.get_tables()
     if not all(t in tables for t in expect):
         error = place.load_into_pgsql()
+        mail.place_error(place, 'osm2pgl', error)
         if error:
             return Response(error, mimetype='text/plain')
     place.state = 'osm2pgsql'

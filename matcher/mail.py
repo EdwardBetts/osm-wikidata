@@ -73,22 +73,26 @@ https://www.openstreetmap.org/changeset/{change.id}
 
     send_mail('tags added: {}'.format(place.name_for_changeset), body)
 
-def overpass_error(place, error):
+def place_error(place, error_type, error_detail):
     template = '''
 user: {}
 name: {}
 page: {}
 area: {}
-error: {}
+error:
+{}
 '''
 
     body = template.format(get_username(),
                            place.display_name,
                            place.candidates_url(_external=True),
                            get_area(place),
-                           error)
+                           error_detail)
 
-    subject = 'overpass error: {} - {}'.format(place.name, error)
+    if len(error_detail) > 100:
+        error_detail = '[long error message]'
+
+    subject = '{}: {} - {}'.format(error_type, place.name, error_detail)
     send_mail(subject, body)
 
 def open_changeset_error(place, changeset, r):
