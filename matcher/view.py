@@ -789,8 +789,8 @@ def load_osm2pgsql(place_id):
     tables = database.get_tables()
     if not all(t in tables for t in expect):
         error = place.load_into_pgsql()
-        mail.place_error(place, 'osm2pgl', error)
         if error:
+            mail.place_error(place, 'osm2pgl', error)
             return Response(error, mimetype='text/plain')
     place.state = 'osm2pgsql'
     database.session.commit()
