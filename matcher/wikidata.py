@@ -28,8 +28,8 @@ skip_tags = {'route:road',
 extra_keys = {
     'Q1021290': 'Tag:amenity=college',  # music school
     'Q5167149': 'Tag:amenity=college',  # cooking school
-    'Q383092': 'Tag:amenity=college',  # film school
-    'Q11303': 'Key:height'  # skyscraper
+    'Q383092': 'Tag:amenity=college',   # film school
+    'Q11303': 'Key:height'              # skyscraper
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -43,6 +43,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .     # ignore timeline articles
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article
@@ -102,6 +103,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
     ?item wdt:P1282 ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } . # ignore timeline articles
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
