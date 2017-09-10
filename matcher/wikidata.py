@@ -107,6 +107,22 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 '''
 
+next_level_query = '''
+SELECT DISTINCT ?item ?itemLabel ?startLabel ?pop ?area WHERE {
+  VALUES ?start { wd:QID } .
+  ?start wdt:P31/wdt:P279* ?subclass .
+  ?subclass wdt:P150 ?nextlevel .
+  ?item wdt:P131 ?start .
+  ?item wdt:P31/wdt:P279* ?nextlevel .
+  ?item wdt:P31/wdt:P279* wd:Q56061 .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+} ORDER BY ?area
+'''
+
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
 
 class QueryError(Exception):
@@ -293,6 +309,22 @@ def parse_osm_keys(rows):
             }
         items[qid]['tags'].add(tag)
     return items
+
+def next_level_places(qid):
+    rows = []
+    for row in run_query(next_level_query.replace('QID', qid)):
+        item_id = wd_uri_to_id(row['item']['value'])
+        qid = 'Q{:d}'.format(item_id)
+        i = {
+            'population': (int(row['pop']['value']) if row.get('pop') else None),
+            'area': (int(float(row['area']['value'])) if row.get('area') else None),
+            'label': row['itemLabel']['value'],
+            'start': row['startLabel']['value'],
+            'item_id': item_id,
+            'qid': qid,
+        }
+        rows.append(i)
+    return rows
 
 class WikidataItem:
     def __init__(self, qid, entity):

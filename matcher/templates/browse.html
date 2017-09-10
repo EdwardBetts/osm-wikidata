@@ -9,9 +9,34 @@
 <div class="col">
 <h1>{{ qid }}</h1>
 
+<table class="table">
+<thead>
+<tr>
+  <th>place</th>
+  <th>matcher</th>
+  <th class="text-right">area</th>
+  <th class="text-right">population</th>
+</tr>
+</thead>
+<tbody>
 {% for row in rows %}
-{{ row }}<br>
+<tr>
+  <td><a href="{{url_for(request.endpoint, item_id=row.item_id)}}">{{ row.label }}</a>
+    ({{ row.qid }})
+  </td>
+  <td>
+    {% if not row.area or row.area < 2500 %}
+      <a href="{{ url_for('search_results', q=row.label + ', ' + row.start) }}">match</a>
+    {% else %}
+      too big for matcher
+    {% endif %}
+  </td>
+  <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'n/a' }}</td>
+  <td class="text-right">{{ '{:,d}'.format(row.population) }}</td>
+</tr>
 {% endfor %}
+</tbody>
+</table>
 
 </div>
 </div>
