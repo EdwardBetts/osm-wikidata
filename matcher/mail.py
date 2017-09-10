@@ -89,7 +89,9 @@ error:
                            get_area(place),
                            error_detail)
 
-    if len(error_detail) > 100:
+    if error_detail is None:
+        error_detail = '[None]'
+    elif len(error_detail) > 100:
         error_detail = '[long error message]'
 
     subject = '{}: {} - {}'.format(error_type, place.name, error_detail)
