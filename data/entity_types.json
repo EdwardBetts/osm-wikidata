@@ -181,6 +181,7 @@
 },
 {
     "cats": ["Houses by country"],
+    "exclude_cats": ["lower houses", "public houses"],
     "tags": ["building", "historic=manor"],
     "trim": ["house", "hall"],
     "check_housename": true,
