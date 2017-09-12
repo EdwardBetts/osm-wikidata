@@ -1014,8 +1014,12 @@ def search_results():
                 p.update_from_nominatim(hit)
                 need_commit = True
             elif not p:
-                p = Place.from_nominatim(hit)
-                database.session.add(p)
+                p = Place.query.get(hit['place_id'])
+                if p:
+                    p.update_from_nominatim(hit)
+                else:
+                    p = Place.from_nominatim(hit)
+                    database.session.add(p)
                 need_commit = True
         if need_commit:
             database.session.commit()
