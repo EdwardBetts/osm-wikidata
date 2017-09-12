@@ -1,6 +1,10 @@
 {% from "macro.html" import place_box, candidate_info with context %}
 {% extends "base.html" %}
 
+{% macro refresh_button(place) %}
+<a class="btn btn-info" href="{{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) }}">Refresh cached data about this place</a>
+{% endmacro %}
+
 {% macro candidate_item(item) %}
   <p>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
@@ -104,11 +108,14 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     {{ '{:,d}'.format(full_count) }} candidates found
     ({{ '{:,d}'.format(multiple_match_count) }} with multiple matches)
     </p>
+    {#
     {% if filter_okay %}
         {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
         <p><a href="{{ url }}">Download as OSM XML file</a></p>
     {% endif %}
+    #}
   {% endif %}
+
 
   {% if not overpass_error and candidates %}
     {% if multiple_only %}
@@ -120,9 +127,13 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
   </div>
   </div>
 
+  {% if not candidates %}
+  <p>{{ refresh_button(place) }}</p>
+  {% endif %}
+
   {% if candidates %}
     {% set lang=place.most_common_language() %}
-    <p>most common language: {{ lang }}</p>
+    <p>{{ refresh_button(place) }}most common language: {{ lang }}</p>
 
     {% if filter_okay and not upload_okay %}
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
