@@ -1,0 +1,23 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container my-2">
+  {% include "flash_msg.html" %}
+  <div class="row">
+  <div class="col">
+    <h1>{{ place.name }}</h1>
+  {% set q = place.display_name %}
+
+  {{ place_box(place) }}
+
+  <h3 class="my-3">Do you want to refresh this place?</h3>
+
+  <form method="POST">
+  <button class="btn btn-primary">Yes, refresh place</button>
+  </form>
+
+</div>
+</div>
+</div>
+{% endblock %}
