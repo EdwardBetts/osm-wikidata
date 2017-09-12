@@ -1167,7 +1167,7 @@
 },
 {
     "cats": ["Ski areas and resorts by country", "Ski areas", "Ski resorts", "Ski stations"],
-    "tags": ["landuse=winter_sports", "site=piste", "place", "sport=skiing"],
+    "tags": ["landuse=winter_sports", "site=piste", "sport=skiing", "leisure=resort"],
     "area": true,
     "trim": [],
     "dist": 2
