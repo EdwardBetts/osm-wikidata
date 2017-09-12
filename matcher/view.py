@@ -1,6 +1,6 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .utils import cache_filename
-from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
+from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, Base
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
@@ -872,6 +872,36 @@ out bb tags;
     reply = json.load(open('sample/node_is_in.json'))
 
     return render_template('node_is_in.html', place=place, oql=oql, reply=reply)
+
+@app.route('/refresh/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
+def refresh_place(osm_type, osm_id):
+    if osm_type not in {'way', 'relation'}:
+        abort(404)
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+    if not place:
+        return abort(404)
+    if place.state != 'ready':
+        return redirect(place.matcher_progress_url())
+
+    if request.method != 'POST':  # confirm
+        return render_template('refresh.html', place=place)
+
+    place.move_overpass_to_backup()
+    place.state = 'refresh'
+
+    engine = database.session.bind
+    for t in database.get_tables():
+        if not t.startswith(place.prefix):
+            continue
+        engine.execute('drop table if exists {}'.format(t))
+    engine.execute('commit')
+    database.session.commit()
+
+    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
+    tables = database.get_tables()
+    assert not any(t in tables for t in expect)
+
+    return redirect(place.matcher_progress_url())
 
 @app.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
