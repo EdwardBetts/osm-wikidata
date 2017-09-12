@@ -19,6 +19,7 @@ from .overpass import oql_from_tag, oql_for_area
 import subprocess
 import os.path
 import re
+import shutil
 
 Base = declarative_base()
 Base.query = session.query_property()
@@ -207,6 +208,17 @@ class Place(Base):   # assume all places are relations
     def overpass_filename(self):
         overpass_dir = current_app.config['OVERPASS_DIR']
         return os.path.join(overpass_dir, '{}.xml'.format(self.place_id))
+
+    @property
+    def overpass_backup(self):
+        overpass_dir = current_app.config['OVERPASS_DIR']
+        return os.path.join(overpass_dir, 'backup', '{}.xml'.format(self.place_id))
+
+    def move_overpass_to_backup(self):
+        filename = self.overpass_filename
+        if not os.path.exists(filename):
+            return
+        shutil.move(filename, self.overpass_backup)
 
     @property
     def overpass_done(self):
@@ -400,7 +412,7 @@ class Place(Base):   # assume all places are relations
                            name_filter=g.filter,
                            osm_id=self.osm_id)
         else:
-            return url_for('matcher_progress', osm_id=self.osm_id)
+            return url_for('matcher_progress', osm_type=self.osm_type, osm_id=self.osm_id)
 
     def item_list(self):
         lang = self.most_common_language() or 'en'
@@ -421,10 +433,13 @@ class Place(Base):   # assume all places are relations
         for title, cats in wikipedia.page_category_iter(enwiki_to_item.keys()):
             enwiki_to_item[title]['categories'] = cats
 
+        seen = set()
         for qid, v in items.items():
             wikidata_id = qid[1:]
             item = Item.query.get(wikidata_id)
-            if not item:
+            if item:
+                item.location = v['location']
+            else:
                 item = Item(item_id=wikidata_id, location=v['location'])
                 session.add(item)
             for k in 'enwiki', 'categories', 'query_label':
@@ -436,9 +451,17 @@ class Place(Base):   # assume all places are relations
                 tags.remove('building')
 
             item.tags = tags
+            seen.add(int(item.item_id))
 
-            place_item = PlaceItem(item=item, place=self)
-            session.merge(place_item)
+            existing = PlaceItem.query.filter_by(item=item, place=self).one_or_none()
+            if not existing:
+                place_item = PlaceItem(item=item, place=self)
+                session.add(place_item)
+
+        for item in self.items:
+            if int(item.item_id) not in seen:
+                link = PlaceItem.query.filter_by(item=item, place=self).one()
+                session.delete(link)
         session.commit()
 
     def load_extracts(self):
