@@ -25,14 +25,14 @@
     ({{ row.qid }})
   </td>
   <td>
-    {% if not row.area or row.area < 2500 %}
+    {% if not row.area or row.area < 4000 %}
       <a href="{{ url_for('search_results', q=row.label + ', ' + row.start) }}">match</a>
     {% else %}
       too big for matcher
     {% endif %}
   </td>
   <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'n/a' }}</td>
-  <td class="text-right">{{ '{:,d}'.format(row.population) }}</td>
+  <td class="text-right">{{ '{:,d}'.format(row.population) if row.population else 'n/a' }}</td>
 </tr>
 {% endfor %}
 </tbody>
