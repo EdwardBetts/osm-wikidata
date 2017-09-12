@@ -43,7 +43,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .     # ignore timeline articles
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .     # ignore timeline articles
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article
