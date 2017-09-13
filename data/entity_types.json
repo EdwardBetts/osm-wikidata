@@ -69,6 +69,13 @@
     "dist": 2
 },
 {
+    "cats": ["Meadows", "Grasslands"],
+    "tags": ["landuse=meadow", "natural=grassland"],
+    "trim": [],
+    "check_housename": false,
+    "dist": 2
+},
+{
     "cats": ["Hospitals by country"],
     "tags": ["amenity=hospital", "building=hospital"],
     "trim": ["hospital"],
@@ -193,6 +200,12 @@
     "trim": ["palace"],
     "check_housename": true,
     "dist": 3
+},
+{
+    "cats": ["Fire stations"],
+    "tags": ["amenity=fire_station"],
+    "check_housename": true,
+    "dist": 2
 },
 {
     "cats": ["Commercial buildings by country", "Office buildings by country"],
