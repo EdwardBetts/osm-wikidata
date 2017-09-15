@@ -25,7 +25,7 @@
     ({{ row.qid }})
   </td>
   <td>
-    {% if not row.area or row.area < 4000 %}
+    {% if not row.area or row.area < 8000 %}
       <a href="{{ url_for('search_results', q=row.label + ', ' + row.start) }}">match</a>
     {% else %}
       too big for matcher
