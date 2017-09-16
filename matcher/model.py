@@ -1,6 +1,5 @@
 # coding: utf-8
-from flask import current_app, url_for, g
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,16 +8,10 @@ from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
-from collections import Counter
 from .database import session
 from flask_login import UserMixin
-from . import wikidata, matcher, match, wikipedia
-from .overpass import oql_from_tag, oql_for_area
-
-import subprocess
-import os.path
-import re
-import shutil
+from . import wikidata, matcher, match
+from .overpass import oql_from_tag
 
 Base = declarative_base()
 Base.query = session.query_property()
@@ -286,7 +279,7 @@ class Changeset(Base):
     __tablename__ = 'changeset'
     id = Column(BigInteger, primary_key=True)
     created = Column(DateTime)
-    place_id = Column(BigInteger, ForeignKey(Place.place_id))
+    place_id = Column(BigInteger, ForeignKey('place.place_id'))
     item_id = Column(Integer)
     comment = Column(String)
     user_id = Column(Integer, ForeignKey(User.id))

@@ -1,10 +1,37 @@
-from .model import Base, osm_type_enum
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Boolean, DateTime
+from flask import current_app, url_for, g
+from .model import Base, Item, ItemCandidate, osm_type_enum
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
 from sqlalchemy.schema import Column
 from sqlalchemy import func, select
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.ext.hybrid import hybrid_property
+from .database import session
+from . import wikidata, matcher, wikipedia
+from collections import Counter
+
+import subprocess
+import os.path
+import re
+import shutil
+
+skip_tags = {'route:road',
+             'highway=primary',
+             'highway=road',
+             'highway=service',
+             'highway=motorway',
+             'highway=trunk',
+             'highway=unclassified',
+             'highway',
+             'tunnel',
+             'name',
+             'tunnel'
+             'website',
+             'type=waterway',
+             'waterway=river'
+             'addr:street',
+             'type=associatedStreet'}
+
 
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'

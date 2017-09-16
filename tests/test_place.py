@@ -1,4 +1,5 @@
-from matcher.model import Place, Item
+from matcher.model import Item
+from matcher.place import Place
 from matcher import database
 
 def test_add_tags_to_items(app):
