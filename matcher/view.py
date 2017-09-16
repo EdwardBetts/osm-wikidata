@@ -1,6 +1,7 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .utils import cache_filename
-from .model import Place, Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, Base
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, Base
+from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
