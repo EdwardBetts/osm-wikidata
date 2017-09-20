@@ -100,7 +100,7 @@ def get_ending_from_criteria(tags):
     endings = set()
     for t in entity_types:
         if tags & set(t['tags']):
-            endings.update(t.get('trim'))
+            endings.update(t.get('trim', []))
 
     return endings
 

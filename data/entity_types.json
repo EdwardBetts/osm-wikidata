@@ -204,6 +204,7 @@
 {
     "cats": ["Fire stations"],
     "tags": ["amenity=fire_station"],
+    "trim": [],
     "check_housename": true,
     "dist": 2
 },
