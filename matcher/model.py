@@ -159,6 +159,12 @@ class Item(Base):
     def criteria(self):
         return {('Tag:' if '=' in t else 'Key:') + t for t in self.tags or []}
 
+    @property
+    def category_map(self):
+        if self.categories:
+            return matcher.categories_to_tags_map(self.categories)
+
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 
