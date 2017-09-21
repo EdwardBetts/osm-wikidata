@@ -243,6 +243,8 @@ def add_wikidata_tag():
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
 def get_bad(items):
+    if not items:
+        return {}
     q = (database.session.query(BadMatch.item_id)
                          .filter(BadMatch.item_id.in_([i.item_id for i in items])))
     return {item_id for item_id, in q}
