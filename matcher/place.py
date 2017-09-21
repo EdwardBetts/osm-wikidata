@@ -1,5 +1,5 @@
 from flask import current_app, url_for, g
-from .model import Base, Item, ItemCandidate, osm_type_enum
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, osm_type_enum
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
 from sqlalchemy.schema import Column
 from sqlalchemy import func, select
@@ -9,11 +9,14 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session
 from . import wikidata, matcher, wikipedia
 from collections import Counter
+from .overpass import oql_for_area, oql_from_tag
 
 import subprocess
 import os.path
 import re
 import shutil
+
+overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
 skip_tags = {'route:road',
              'highway=primary',

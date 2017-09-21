@@ -22,25 +22,6 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
                                 name='osm_type_enum',
                                 metadata=Base.metadata)
 
-overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
-
-skip_tags = {'route:road',
-             'highway=primary',
-             'highway=road',
-             'highway=service',
-             'highway=motorway',
-             'highway=trunk',
-             'highway=unclassified',
-             'highway',
-             'tunnel',
-             'name',
-             'tunnel'
-             'website',
-             'type=waterway',
-             'waterway=river'
-             'addr:street',
-             'type=associatedStreet'}
-
 class User(Base, UserMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
