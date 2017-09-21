@@ -10,8 +10,8 @@ def send_mail(subject, body):
     msg = MIMEText(body, 'plain', 'UTF-8')
 
     msg['Subject'] = subject
-    msg['To'] = current_app.config['ADMIN_EMAIL']
-    msg['From'] = current_app.config['MAIL_FROM']
+    msg['To'] = mail_to
+    msg['From'] = mail_from
     msg['Date'] = formatdate()
     msg['Message-ID'] = make_msgid()
 
