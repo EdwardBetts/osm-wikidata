@@ -1181,8 +1181,8 @@ def api_item_match(wikidata_id):
     criteria = entity.criteria()
 
     item = Item.query.get(wikidata_id)
-    if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
+    if item:  # add criteria from the Item object
+        criteria |= item.criteria
 
     criteria = wikidata.flatten_criteria(criteria)
 
@@ -1344,6 +1344,7 @@ def item_page(wikidata_id):
 
     if not item:
         entity.trim_location_from_names(wikidata_names)
+    entity.report_broken_wikidata_osm_tags()
 
     sitelinks = []
     for key, value in entity.sitelinks.items():
@@ -1368,8 +1369,8 @@ def item_page(wikidata_id):
 
     criteria = entity.criteria()
 
-    if item and item.tags:  # add criteria from the Item object
-        criteria |= {('Tag:' if '=' in t else 'Key:') + t for t in item.tags}
+    if item:  # add criteria from the Item object
+        criteria |= item.criteria
 
     if item and item.categories:
         category_map = matcher.categories_to_tags_map(item.categories)
