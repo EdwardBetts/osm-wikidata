@@ -857,7 +857,8 @@ def load_match(place_id):
     conn.close()
     return Response('done', mimetype='text/plain')
 
-@app.route('/matcher/node/<int:osm_id>')
+# disable matcher for nodes, it isn't finished
+# @app.route('/matcher/node/<int:osm_id>')
 def node_is_in(osm_id):
     place = Place.query.filter_by(osm_type='node', osm_id=osm_id).one_or_none()
     if not place:
