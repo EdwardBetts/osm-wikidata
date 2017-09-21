@@ -1229,7 +1229,7 @@ def item_page(wikidata_id):
                            entity=entity,
                            wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
-                           category_map=category_map,
+                           category_map=item.category_map,
                            criteria=criteria,
                            sitelinks=sitelinks,
                            upload_option=upload_option,
