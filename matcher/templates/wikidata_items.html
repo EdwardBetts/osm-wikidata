@@ -78,16 +78,16 @@
 <script>
 var overpass_url = 'https://overpass-api.de/api/interpreter';
 var oql = '';
-var load_wikidata_url = {{ url_for('load_wikidata', place_id=place_id) | tojson }};
-var check_overpass_url = {{ url_for('check_overpass', place_id=place_id) | tojson }};
-var overpass_timeout_url = {{ url_for('overpass_timeout', place_id=place_id) | tojson }};
-var overpass_error_url = {{ url_for('overpass_error', place_id=place_id) | tojson }};
-var post_overpass_url = {{ url_for('post_overpass', place_id=place_id) | tojson }};
-var load_osm2pgsql_url = {{ url_for('load_osm2pgsql', place_id=place_id) | tojson }};
-var load_individual_match_url = {{ url_for('load_individual_match', place_id=place_id, item_id=0) | tojson }};
+var load_wikidata_url = {{ url_for('.load_wikidata', place_id=place_id) | tojson }};
+var check_overpass_url = {{ url_for('.check_overpass', place_id=place_id) | tojson }};
+var overpass_timeout_url = {{ url_for('.overpass_timeout', place_id=place_id) | tojson }};
+var overpass_error_url = {{ url_for('.overpass_error', place_id=place_id) | tojson }};
+var post_overpass_url = {{ url_for('.post_overpass', place_id=place_id) | tojson }};
+var load_osm2pgsql_url = {{ url_for('.load_osm2pgsql', place_id=place_id) | tojson }};
+var load_individual_match_url = {{ url_for('.load_individual_match', place_id=place_id, item_id=0) | tojson }};
 load_individual_match_url = load_individual_match_url.slice(0, -1);
 
-var load_ready = {{ url_for('load_ready', place_id=place_id) | tojson }};
+var load_ready = {{ url_for('.load_ready', place_id=place_id) | tojson }};
 
 </script>
 {% endblock %}

@@ -14,9 +14,9 @@
   <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
-  <a class="navbar-brand" href="{{ url_for('.index') }}">OSM ↔ Wikidata</a>
+  <a class="navbar-brand" href="{{ url_for('index') }}">OSM ↔ Wikidata</a>
 
-  <form class="form-inline" action="{{ url_for('.search_results') }}">
+  <form class="form-inline" action="{{ url_for('search_results') }}">
     <input class="form-control mr-sm-2" name="q" type="text" placeholder="Search">
   </form>
 

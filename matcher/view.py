@@ -1,6 +1,6 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .utils import cache_filename, get_radius, get_int_arg
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, Base
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
 from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -20,6 +20,8 @@ from time import time
 from dogpile.cache import make_region
 from dukpy.webassets import BabelJS
 
+from .matcher_view import matcher_blueprint
+
 import json
 import flask_assets
 import webassets.filter
@@ -34,6 +36,7 @@ _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
+app.register_blueprint(matcher_blueprint)
 init_pager(app)
 env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
@@ -239,29 +242,14 @@ def add_wikidata_tag():
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-@app.route('/overpass/<int:place_id>', methods=['POST'])
-def post_overpass(place_id):
-    place = Place.query.get(place_id)
-    place.save_overpass(request.data)
-    place.state = 'overpass'
-    database.session.commit()
-    return Response('done', mimetype='text/plain')
-
 def get_bad(items):
     q = (database.session.query(BadMatch.item_id)
                          .filter(BadMatch.item_id.in_([i.item_id for i in items])))
     return {item_id for item_id, in q}
 
-def place_or_abort(osm_type, osm_id):
-    if osm_type in {'way', 'relation'}:
-        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-        if place:
-            return place
-    abort(404)
-
 @app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
 def export_osm(osm_type, osm_id, name):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
     items = place.items_with_candidates()
 
     items = list(matcher.filter_candidates_more(items, bad=get_bad(items)))
@@ -300,8 +288,8 @@ def export_osm(osm_type, osm_id, name):
     xml = etree.tostring(root, pretty_print=True)
     return Response(xml, mimetype='text/xml')
 
-def redirect_to_matcher(osm_type, osm_id):
-    return redirect(url_for('matcher_progress', osm_type=osm_type, osm_id=osm_id))
+def redirect_to_matcher(place):
+    return redirect(place.matcher_progress_url())
 
 @app.route('/filtered/<name_filter>/candidates/<osm_type>/<int:osm_id>')
 def candidates_with_filter(name_filter, osm_type, osm_id):
@@ -310,7 +298,7 @@ def candidates_with_filter(name_filter, osm_type, osm_id):
 
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
 
     full_count = place.items_with_candidates_count()
 
@@ -322,7 +310,7 @@ def wikidata_page(osm_type, osm_id):
 
 @app.route('/overpass/<osm_type>/<int:osm_id>')
 def overpass_query(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
 
     full_count = place.items_with_candidates_count()
 
@@ -334,7 +322,7 @@ def overpass_query(osm_type, osm_id):
 
 @app.route('/close_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def close_changeset(osm_type, osm_id):
-    place_or_abort(osm_type, osm_id)
+    Place.get_or_abort(osm_type, osm_id)
 
     osm_backend, auth = get_backend_and_auth()
 
@@ -358,7 +346,7 @@ def close_changeset(osm_type, osm_id):
 
 @app.route('/open_changeset/<osm_type>/<int:osm_id>', methods=['POST'])
 def open_changeset(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
 
     osm_backend, auth = get_backend_and_auth()
 
@@ -556,7 +544,7 @@ def do_add_tags(place, table):
 
 @app.route('/update_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def update_tags(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
 
     candidates = []
     for item in place.items_with_candidates():
@@ -577,7 +565,7 @@ def update_tags(osm_type, osm_id):
 
 @app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def add_tags(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+    place = Place.get_or_abort(osm_type, osm_id)
 
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
@@ -637,7 +625,7 @@ def candidates(osm_type, osm_id):
     multiple_only = bool(request.args.get('multiple'))
 
     if place.state != 'ready':
-        return redirect_to_matcher(osm_type, osm_id)
+        return redirect_to_matcher(place)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
@@ -683,18 +671,24 @@ def candidates(osm_type, osm_id):
                            multiple_match_count=multiple_match_count,
                            candidates=items)
 
-@app.route('/no_match/<osm_type>/<int:osm_id>')
-def no_match(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
+def get_place(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
 
     if place.state != 'ready':
-        return redirect_to_matcher(osm_type, osm_id)
+        return redirect_to_matcher(place)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
         return render_template('candidates.html',
                                overpass_error=error,
                                place=place)
+    return place
+
+@app.route('/no_match/<osm_type>/<int:osm_id>')
+def no_match(osm_type, osm_id):
+    place = get_place(osm_type, osm_id)
+    if not isinstance(place, Place):
+        return place
 
     full_count = place.items_with_candidates_count()
 
@@ -709,16 +703,9 @@ def no_match(osm_type, osm_id):
 
 @app.route('/already_tagged/<osm_type>/<int:osm_id>')
 def already_tagged(osm_type, osm_id):
-    place = place_or_abort(osm_type, osm_id)
-
-    if place.state != 'ready':
-        return redirect_to_matcher(osm_type, osm_id)
-
-    if place.state == 'overpass_error':
-        error = open(place.overpass_filename).read()
-        return render_template('candidates.html',
-                               overpass_error=error,
-                               place=place)
+    place = get_place(osm_type, osm_id)
+    if not isinstance(place, Place):
+        return place
 
     items = [item for item in place.items_with_candidates()
              if any('wikidata' in c.tags for c in item.candidates)]
@@ -729,139 +716,12 @@ def already_tagged(osm_type, osm_id):
                            tab_pages=tab_pages,
                            items=items)
 
-@app.route('/load/<int:place_id>/wbgetentities', methods=['POST'])
-def load_wikidata(place_id):
-    place = Place.query.get(place_id)
-    if place.state != 'tags':
-        oql = place.get_oql()
-        return jsonify(success=True, item_list=place.item_list(), oql=oql)
-    try:
-        place.wbgetentities()
-    except requests.exceptions.HTTPError as e:
-        error = e.response.text
-        mail.place_error(place, 'wikidata', error)
-        lc_error = error.lower()
-        if 'timeout' in lc_error or 'time out' in lc_error:
-            error = 'wikidata query timeout'
-        return jsonify(success=False, error=e.r.text)
-
-    place.load_extracts()
-    place.state = 'wbgetentities'
-    database.session.commit()
-    oql = place.get_oql()
-    return jsonify(success=True, item_list=place.item_list(), oql=oql)
-
-@app.route('/load/<int:place_id>/check_overpass', methods=['POST'])
-def check_overpass(place_id):
-    place = Place.query.get(place_id)
-    reply = 'got' if place.overpass_done else 'get'
-    return Response(reply, mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/overpass_error', methods=['POST'])
-def overpass_error(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        abort(404)
-    place.state = 'overpass_error'
-    database.session.commit()
-
-    error = request.form['error']
-    mail.place_error(place, 'overpass', error)
-
-    return Response('noted', mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/overpass_timeout', methods=['POST'])
-def overpass_timeout(place_id):
-    place = Place.query.get(place_id)
-    place.state = 'overpass_timeout'
-    database.session.commit()
-
-    mail.place_error(place, 'overpass', 'timeout')
-
-    return Response('timeout noted', mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/osm2pgsql', methods=['POST', 'GET'])
-def load_osm2pgsql(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        abort(404)
-    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
-    tables = database.get_tables()
-    if not all(t in tables for t in expect):
-        error = place.load_into_pgsql()
-        if error:
-            mail.place_error(place, 'osm2pgl', error)
-            return Response(error, mimetype='text/plain')
-    place.state = 'osm2pgsql'
-    database.session.commit()
-    return Response('done', mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/match/Q<int:item_id>', methods=['POST', 'GET'])
-def load_individual_match(place_id, item_id):
-    global cat_to_ending
-
-    place = Place.query.get(place_id)
-    if not place:
-        abort(404)
-
-    conn = database.session.bind.raw_connection()
-    cur = conn.cursor()
-
-    item = Item.query.get(item_id)
-    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
-    for i in (candidates or []):
-        c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
-        if not c:
-            c = ItemCandidate(**i, item=item)
-            database.session.add(c)
-    database.session.commit()
-
-    conn.close()
-    return Response('done', mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/ready', methods=['POST', 'GET'])
-def load_ready(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        return abort(404)
-
-    place.state = 'ready'
-    place.item_count = place.items.count()
-    place.candidate_count = place.items_with_candidates_count()
-    database.session.commit()
-    return Response('done', mimetype='text/plain')
-
-@app.route('/load/<int:place_id>/match', methods=['POST', 'GET'])
-def load_match(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        return abort(404)
-
-    conn = database.session.bind.raw_connection()
-    cur = conn.cursor()
-
-    cat_to_ending = matcher.build_cat_to_ending()
-
-    q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-    for item in q:
-        candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
-        for i in (candidates or []):
-            c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
-            if not c:
-                c = ItemCandidate(**i, item=item)
-                database.session.add(c)
-    place.state = 'ready'
-    database.session.commit()
-
-    conn.close()
-    return Response('done', mimetype='text/plain')
-
 # disable matcher for nodes, it isn't finished
 # @app.route('/matcher/node/<int:osm_id>')
 def node_is_in(osm_id):
     place = Place.query.filter_by(osm_type='node', osm_id=osm_id).one_or_none()
     if not place:
-        return abort(404)
+        abort(404)
 
     oql = '''[out:json][timeout:180];
 node({});
@@ -880,9 +740,9 @@ def refresh_place(osm_type, osm_id):
         abort(404)
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
-        return abort(404)
+        abort(404)
     if place.state != 'ready':
-        return redirect(place.matcher_progress_url())
+        return redirect_to_matcher(place)
 
     if request.method != 'POST':  # confirm
         return render_template('refresh.html', place=place)
@@ -902,58 +762,7 @@ def refresh_place(osm_type, osm_id):
     tables = database.get_tables()
     assert not any(t in tables for t in expect)
 
-    return redirect(place.matcher_progress_url())
-
-@app.route('/matcher/<osm_type>/<int:osm_id>')
-def matcher_progress(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        return abort(404)
-    if place.state == 'ready':
-        return redirect(place.candidates_url())
-
-    if osm_type != 'node' and place.area and place.area_in_sq_km > 90000:
-        return render_template('error_page.html', message='{}: area is too large for matcher'.format(place.name))
-
-    if not place.state or place.state == 'refresh':
-        try:
-            place.load_items()
-        except wikidata.QueryError as e:
-            return render_template('wikidata_query_error.html',
-                                   query=e.query,
-                                   place=place,
-                                   reply=e.r.text)
-
-        place.state = 'wikipedia'
-
-    if place.state == 'wikipedia':
-        place.add_tags_to_items()
-        place.state = 'tags'
-        database.session.commit()
-
-    if g.user.is_authenticated:
-        user = g.user.username
-        subject = 'matcher: {} (user: {})'.format(place.name, user)
-    else:
-        user = 'not authenticated'
-        subject = 'matcher: {} (no auth)'.format(place.name)
-
-    template = '''
-user: {}
-name: {}
-page: {}
-area: {}
-'''
-
-    body = template.format(user,
-                           place.display_name,
-                           place.candidates_url(_external=True),
-                           mail.get_area(place))
-    mail.send_mail(subject, body)
-
-    return render_template('wikidata_items.html', place=place)
+    return redirect_to_matcher(place)
 
 def get_existing(sort, name_filter):
     q = Place.query.filter(Place.state.isnot(None), Place.osm_type != 'node')

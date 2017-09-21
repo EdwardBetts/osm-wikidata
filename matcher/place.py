@@ -1,4 +1,4 @@
-from flask import current_app, url_for, g
+from flask import current_app, url_for, g, abort
 from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, osm_type_enum
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
 from sqlalchemy.schema import Column
@@ -70,6 +70,14 @@ class Place(Base):   # assume all places are relations
                          secondary='place_item',
                          lazy='dynamic',
                          backref=backref('places', lazy='dynamic'))
+
+    @classmethod
+    def get_or_abort(cls, osm_type, osm_id):
+        if osm_type in {'way', 'relation'}:
+            place = cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+            if place:
+                return place
+        abort(404)
 
     @hybrid_property
     def area_in_sq_km(self):
@@ -374,12 +382,9 @@ class Place(Base):   # assume all places are relations
                        **kwargs)
 
     def matcher_progress_url(self):
-        if g.get('filter'):
-            return url_for('matcher_progress_with_filter',
-                           name_filter=g.filter,
-                           osm_id=self.osm_id)
-        else:
-            return url_for('matcher_progress', osm_type=self.osm_type, osm_id=self.osm_id)
+        return url_for('matcher.matcher_progress',
+                       osm_type=self.osm_type,
+                       osm_id=self.osm_id)
 
     def item_list(self):
         lang = self.most_common_language() or 'en'
