@@ -12,6 +12,7 @@ bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
 cat_to_ending = {}
 patterns = {}
 entity_types = {}
+default_max_dist = 4
 
 def get_pattern(key):
     if key in patterns:
@@ -88,6 +89,21 @@ def get_ending_from_criteria(tags):
 
     return endings
 
+def get_max_dist_from_criteria(tags):
+    global entity_types
+
+    if not entity_types:
+        entity_types = load_entity_types()
+    tags = set(tags)
+
+    max_dists = []
+    for t in entity_types:
+        type_max_dist = t.get('max_dist')
+        if type_max_dist and tags & set(t['tags']):
+            max_dists.append(type_max_dist)
+
+    return max(max_dists) if max_dists else None
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -97,7 +113,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
 
     # item_max_dist = max(max_dist[cat] for cat in item['cats'])
-    item_max_dist = 4  # FIXME
+    item_max_dist = get_max_dist_from_criteria(item.tags) or default_max_dist
 
     hstore = item.hstore_query
     if not hstore:
