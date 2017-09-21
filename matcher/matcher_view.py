@@ -157,31 +157,6 @@ def load_ready(place_id):
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
-@matcher_blueprint.route('/load/<int:place_id>/match', methods=['POST', 'GET'])
-def load_match(place_id):
-    place = Place.query.get(place_id)
-    if not place:
-        abort(404)
-
-    conn = database.session.bind.raw_connection()
-    cur = conn.cursor()
-
-    cat_to_ending = matcher.build_cat_to_ending()
-
-    q = place.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-    for item in q:
-        candidates = matcher.find_item_matches(cur, item, cat_to_ending, place.prefix)
-        for i in (candidates or []):
-            c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
-            if not c:
-                c = ItemCandidate(**i, item=item)
-                database.session.add(c)
-    place.state = 'ready'
-    database.session.commit()
-
-    conn.close()
-    return Response('done', mimetype='text/plain')
-
 @matcher_blueprint.route('/overpass/<int:place_id>', methods=['POST'])
 def post_overpass(place_id):
     place = Place.query.get(place_id)

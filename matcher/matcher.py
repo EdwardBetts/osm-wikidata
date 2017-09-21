@@ -74,22 +74,6 @@ def build_cat_map():
             cat_to_entity[lc_cat] = i
     return cat_to_entity
 
-def build_cat_to_ending():  # unused?
-    global cat_to_ending
-
-    if cat_to_ending:
-        return cat_to_ending
-
-    for i in load_entity_types():
-        trim = {x.replace(' ', '').lower() for x in i['trim']}
-        for c in i['cats']:
-            lc_cat = c.lower()
-            if ' by ' in lc_cat:
-                lc_cat = lc_cat[:lc_cat.find(' by ')]
-            cat_to_ending[lc_cat] = trim
-
-    return cat_to_ending
-
 def get_ending_from_criteria(tags):
     global entity_types
 
