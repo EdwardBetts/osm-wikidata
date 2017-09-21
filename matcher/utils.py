@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, request
 from itertools import islice
 import os.path
 import json
@@ -25,3 +25,11 @@ def cache_filename(filename):
 
 def load_from_cache(filename):
     return json.load(open(cache_filename(filename)))
+
+def get_radius(default=1000):
+    arg_radius = request.args.get('radius')
+    return int(arg_radius) if arg_radius and arg_radius.isdigit() else default
+
+def get_int_arg(name):
+    if name in request.args and request.args[name].isdigit():
+        return int(request.args[name])

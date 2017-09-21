@@ -1,11 +1,10 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
-from .utils import cache_filename
+from .utils import cache_filename, get_radius, get_int_arg
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, Base
 from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
-from .language import get_language_label
 
 from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
 from flask_login import current_user, logout_user, LoginManager, login_required
@@ -993,49 +992,57 @@ def sort_link(order):
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
+def update_search_results(results):
+    need_commit = False
+    for hit in results:
+        if not ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit):
+            continue
+        p = Place.query.filter_by(osm_type=hit['osm_type'],
+                                  osm_id=hit['osm_id']).one_or_none()
+        if p and p.place_id != hit['place_id']:
+            p.update_from_nominatim(hit)
+            need_commit = True
+        elif not p:
+            p = Place.query.get(hit['place_id'])
+            if p:
+                p.update_from_nominatim(hit)
+            else:
+                p = Place.from_nominatim(hit)
+                database.session.add(p)
+            need_commit = True
+    if need_commit:
+        database.session.commit()
+
+def add_hit_place_detail(hit):
+    if not ('osm_type' in hit and 'osm_id' in hit):
+        return
+    p = Place.query.filter_by(osm_type=hit['osm_type'],
+                              osm_id=hit['osm_id']).one_or_none()
+    if p:
+        hit['place'] = p
+        if p.area:
+            hit['area'] = p.area_in_sq_km
+
 @app.route("/search")
 def search_results():
     q = request.args.get('q') or ''
-    if q:
-        m = re_qid.match(q)
-        if m:
-            return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
-        try:
-            results = nominatim.lookup(q)
-        except nominatim.SearchError:
-            message = 'nominatim API search error'
-            return render_template('error_page.html', message=message)
-        need_commit = False
-        for hit in results:
-            if not ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit):
-                continue
-            p = Place.query.filter_by(osm_type=hit['osm_type'],
-                                      osm_id=hit['osm_id']).one_or_none()
-            if p and p.place_id != hit['place_id']:
-                p.update_from_nominatim(hit)
-                need_commit = True
-            elif not p:
-                p = Place.query.get(hit['place_id'])
-                if p:
-                    p.update_from_nominatim(hit)
-                else:
-                    p = Place.from_nominatim(hit)
-                    database.session.add(p)
-                need_commit = True
-        if need_commit:
-            database.session.commit()
-
-        for hit in results:
-            if not ('osm_type' in hit and 'osm_id' in hit):
-                continue
-            p = Place.query.filter_by(osm_type=hit['osm_type'],
-                                      osm_id=hit['osm_id']).one_or_none()
-            if p:
-                if p.area:
-                    hit['area'] = p.area_in_sq_km
-                hit['place'] = p
     if not q:
-        results = []
+        return render_template('results_page.html', results=[], q=q)
+
+    m = re_qid.match(q.strip())
+    if m:
+        return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
+
+    try:
+        results = nominatim.lookup(q)
+    except nominatim.SearchError:
+        message = 'nominatim API search error'
+        return render_template('error_page.html', message=message)
+
+    update_search_results(results)
+
+    for hit in results:
+        add_hit_place_detail(hit)
 
     return render_template('results_page.html', results=results, q=q)
 
@@ -1115,14 +1122,6 @@ def saved_places():
 @app.route("/documentation")
 def documentation():
     return redirect('https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md')
-
-def get_radius(default=1000):
-    arg_radius = request.args.get('radius')
-    return int(arg_radius) if arg_radius and arg_radius.isdigit() else default
-
-def get_int_arg(name):
-    if name in request.args and request.args[name].isdigit():
-        return int(request.args[name])
 
 @app.route('/changes')
 def changesets():
@@ -1303,7 +1302,7 @@ def match_detail(item_id, osm_type, osm_id):
                         .filter_by(item_id=item_id, osm_type=osm_type, osm_id=osm_id)
                         .one_or_none())
     if not osm:
-        return abort(404)
+        abort(404)
 
     item = osm.item
 
@@ -1312,15 +1311,10 @@ def match_detail(item_id, osm_type, osm_id):
     lat, lon = item.coords()
     assert lat is not None and lon is not None
 
-    if item.categories:
-        category_map = matcher.categories_to_tags_map(item.categories)
-    else:
-        category_map = None
-
     return render_template('match_detail.html',
                            item=item,
                            osm=osm,
-                           category_map=category_map,
+                           category_map=item.category_map,
                            qid=qid,
                            lat=lat,
                            lon=lon,
@@ -1346,21 +1340,7 @@ def item_page(wikidata_id):
         entity.trim_location_from_names(wikidata_names)
     entity.report_broken_wikidata_osm_tags()
 
-    sitelinks = []
-    for key, value in entity.sitelinks.items():
-        if len(key) != 6 or not key.endswith('wiki'):
-            continue
-        lang = key[:2]
-        url = 'https://{}.wikipedia.org/wiki/{}'.format(lang, value['title'].replace(' ', '_'))
-        sitelinks.append({
-            'code': lang,
-            'lang': get_language_label(lang),
-            'url': url,
-            'title': value['title'],
-        })
-
-    sitelinks.sort(key=lambda i: i['lang'])
-
+    sitelinks = entity.get_sitelinks()
     lat, lon = entity.coords
 
     osm_keys = entity.osm_keys
@@ -1371,11 +1351,6 @@ def item_page(wikidata_id):
 
     if item:  # add criteria from the Item object
         criteria |= item.criteria
-
-    if item and item.categories:
-        category_map = matcher.categories_to_tags_map(item.categories)
-    else:
-        category_map = None
 
     if item and item.candidates:
         filtered = {item.item_id: candidate
@@ -1392,7 +1367,7 @@ def item_page(wikidata_id):
                                wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
-                               category_map=category_map,
+                               category_map=item.category_map,
                                sitelinks=sitelinks,
                                filtered=filtered,
                                qid=qid,

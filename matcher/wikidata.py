@@ -2,8 +2,9 @@ from flask import render_template_string
 from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start
-import requests
+from .language import get_language_label
 from . import user_agent_headers, overpass, mail, language
+import requests
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -359,6 +360,24 @@ class WikidataItem:
     @property
     def sitelinks(self):
         return self.entity.get('sitelinks', {})
+
+    def get_sitelinks(self):
+        '''List of sitelinks with language names in English.'''
+        sitelinks = []
+        for key, value in self.sitelinks.items():
+            if len(key) != 6 or not key.endswith('wiki'):
+                continue
+            lang = key[:2]
+            url = 'https://{}.wikipedia.org/wiki/{}'.format(lang, value['title'].replace(' ', '_'))
+            sitelinks.append({
+                'code': lang,
+                'lang': get_language_label(lang),
+                'url': url,
+                'title': value['title'],
+            })
+
+        sitelinks.sort(key=lambda i: i['lang'])
+        return sitelinks
 
     def remove_badges(self):
         if 'sitelinks' not in self.entity:
