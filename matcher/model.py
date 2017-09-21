@@ -155,6 +155,10 @@ class Item(Base):
             found += [item_cat for i in words if i in lc_item_cat]
         return found
 
+    @property
+    def criteria(self):
+        return {('Tag:' if '=' in t else 'Key:') + t for t in self.tags or []}
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 
