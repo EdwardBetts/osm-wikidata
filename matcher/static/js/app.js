@@ -2,7 +2,7 @@
 
 $(function() {
 
-  $('.all-tags').hide();
+  $('.hide-all-tags').hide();
   $('.bad-match').hide();
   $('.bad-reported').hide();
   $('#oql').hide();

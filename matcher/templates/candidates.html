@@ -8,9 +8,14 @@
 {% macro candidate_item(item) %}
   <p>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
+  {% if upload_okay and picked %}
+      {% set checked = (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
+  {% else %}
+      {% set checked = false %}
+  {% endif %}
   {% if upload_okay %}
       {% if picked %}
-        {% if (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
+        {% if checked %}
             <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
         {% else %}
             <input type="checkbox" name="include" value="{{ item.qid }}">
@@ -47,7 +52,7 @@
   <ul>
   {% for c in item.candidates %}
     {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
-    {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad) }}
+    {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad, show_tags=not checked) }}
   {% endfor %}
   </ul>
 {% endmacro %}
