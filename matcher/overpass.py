@@ -4,10 +4,9 @@ import requests
 import os.path
 import json
 import simplejson
-from .mail import error_mail
 from flask import current_app
 from time import sleep
-from . import user_agent_headers
+from . import user_agent_headers, mail
 from collections import defaultdict
 
 re_slot_available = re.compile('^Slot available after: ([^,]+), in (\d+) seconds?\.$')
@@ -157,6 +156,9 @@ def parse_status(status):
         if not line.startswith('Slot available after:'):
             break
         m = re_slot_available.match(line)
+        if not m:
+            subject = 'error parsing overpass status'
+            mail.send_mail(subject, status)
         slots.append(int(m.group(2)))
 
     next_line = lines[i]
@@ -202,17 +204,17 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        error_mail('item query: overpass rate limit', oql, r)
+        mail.error_mail('item query: overpass rate limit', oql, r)
         raise RateLimited
 
     if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
-        error_mail('item query: overpass 504 gateway timeout', oql, r)
+        mail.error_mail('item query: overpass 504 gateway timeout', oql, r)
         raise Timeout
 
     try:
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
-        error_mail('item overpass query error', oql, r)
+        mail.error_mail('item overpass query error', oql, r)
         raise
 
     json.dump(data, open(filename, 'w'))
@@ -233,17 +235,17 @@ out qt center tags;
     r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        error_mail('get existing: overpass rate limit', oql, r)
+        mail.error_mail('get existing: overpass rate limit', oql, r)
         raise RateLimited
 
     if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
-        error_mail('item query: overpass 504 gateway timeout', oql, r)
+        mail.error_mail('item query: overpass 504 gateway timeout', oql, r)
         raise Timeout
 
     try:
         data = r.json()
     except simplejson.scanner.JSONDecodeError:
-        error_mail('item overpass query error', oql, r)
+        mail.error_mail('item overpass query error', oql, r)
         raise
 
     json.dump(data, open(filename, 'w'))
@@ -276,7 +278,7 @@ def items_as_xml(items):
                       headers=user_agent_headers())
 
     if r.status_code == 429 and 'rate_limited' in r.text:
-        error_mail('items_as_xml: overpass rate limit', oql, r)
+        mail.error_mail('items_as_xml: overpass rate limit', oql, r)
         raise RateLimited
 
     return r.content
