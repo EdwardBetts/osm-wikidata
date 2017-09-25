@@ -178,11 +178,10 @@ def add_wikidata_tag():
     user = g.user
     assert user.is_authenticated
 
-    social_user = user.social_auth.one()
-    osm_backend = social_user.get_backend_instance()
-    auth = osm_backend.oauth_auth(social_user.access_token)
+    osm_backend, auth = get_backend_and_auth()
 
-    r = requests.get(osm.url, params=social_user.access_token)
+    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
+    r = requests.get(url, headers=user_agent_headers())
     root = etree.fromstring(r.content)
 
     if root.find('.//tag[@k="wikidata"]'):
@@ -206,7 +205,7 @@ def add_wikidata_tag():
     element_data = etree.tostring(root).decode('utf-8')
 
     try:
-        r = osm_backend.request(osm.url,
+        r = osm_backend.request(url,
                                 method='PUT',
                                 data=element_data,
                                 auth=auth,
@@ -342,7 +341,7 @@ def close_changeset(osm_type, osm_id):
 
         database.session.commit()
 
-        mail.announce_change(change)
+        # mail.announce_change(change)
 
     return Response('done', mimetype='text/plain')
 
@@ -356,7 +355,7 @@ def open_changeset(osm_type, osm_id):
     changeset = new_changeset(comment)
 
     if not really_save:
-        return Response(changeset_id, mimetype='text/plain')
+        return Response(changeset.id, mimetype='text/plain')
 
     try:
         r = osm_backend.request(osm_api_base + '/changeset/create',
@@ -1170,6 +1169,7 @@ def item_page(wikidata_id):
     else:
         filtered = {}
 
+    category_map = item.category_map if item else None
     if lat is None or lon is None or not criteria:
 
         return render_template('item_page.html',
@@ -1179,7 +1179,7 @@ def item_page(wikidata_id):
                                wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
-                               category_map=item.category_map,
+                               category_map=category_map,
                                sitelinks=sitelinks,
                                filtered=filtered,
                                qid=qid,
@@ -1222,6 +1222,8 @@ def item_page(wikidata_id):
         elif found:
             upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 
+    category_map = item.category_map if item else None
+
     return render_template('item_page.html',
                            item=item,
                            wikidata_names=wikidata_names,
@@ -1229,7 +1231,7 @@ def item_page(wikidata_id):
                            entity=entity,
                            wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
-                           category_map=item.category_map,
+                           category_map=category_map,
                            criteria=criteria,
                            sitelinks=sitelinks,
                            upload_option=upload_option,
