@@ -6,11 +6,10 @@ import simplejson
 class SearchError(Exception):
     pass
 
-def lookup(q):
+def lookup_with_params(**kwargs):
     url = 'http://nominatim.openstreetmap.org/search'
 
     params = {
-        'q': q,
         'format': 'jsonv2',
         'addressdetails': 1,
         'email': current_app.config['ADMIN_EMAIL'],
@@ -20,6 +19,7 @@ def lookup(q):
         'accept-language': 'en',
         'polygon_text': 1,
     }
+    params.update(kwargs)
     r = requests.get(url, params=params, headers=user_agent_headers())
     if r.status_code == 500:
         raise SearchError
@@ -28,3 +28,6 @@ def lookup(q):
         return r.json()
     except simplejson.scanner.JSONDecodeError:
         raise SearchError
+
+def lookup(q):
+    return lookup_with_params(q=q)
