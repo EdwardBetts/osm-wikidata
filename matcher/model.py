@@ -12,6 +12,7 @@ from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match
 from .overpass import oql_from_tag
+from collections import defaultdict
 
 Base = declarative_base()
 Base.query = session.query_property()
