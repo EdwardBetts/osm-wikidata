@@ -324,9 +324,9 @@ def parse_osm_keys(rows):
         items[qid]['tags'].add(tag)
     return items
 
-def next_level_places(qid):
+def next_level_places(qid, name=None):
     rows = []
-    for row in run_query(next_level_query.replace('QID', qid)):
+    for row in run_query(next_level_query.replace('QID', qid), name=name):
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
         i = {
