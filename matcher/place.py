@@ -6,10 +6,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.ext.hybrid import hybrid_property
-from .database import session
-from . import wikidata, matcher, wikipedia
+from .database import session, get_tables
+from . import wikidata, matcher, wikipedia, overpass, mail
 from collections import Counter
-from .overpass import oql_for_area, oql_from_tag
+from .overpass import oql_from_tag
 
 import subprocess
 import os.path
@@ -125,6 +125,23 @@ class Place(Base):   # assume all places are relations
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
         return cls(**n)
+
+    @classmethod
+    def get_or_add_place(cls, hit):
+        place = cls.query.filter_by(osm_type=hit['osm_type'],
+                                    osm_id=hit['osm_id']).one_or_none()
+
+        if place and place.place_id != hit['place_id']:
+            place.update_from_nominatim(hit)
+        elif not place:
+            place = Place.query.get(hit['place_id'])
+            if place:
+                place.update_from_nominatim(hit)
+            else:
+                place = cls.from_nominatim(hit)
+                session.add(place)
+        session.commit()
+        return place
 
     @property
     def match_ratio(self):
@@ -334,11 +351,11 @@ class Place(Base):   # assume all places are relations
         else:
             buildings = None
 
-        return oql_for_area(self.overpass_type,
-                            self.osm_id,
-                            tags,
-                            bbox,
-                            buildings)
+        return overpass.oql_for_area(self.overpass_type,
+                                     self.osm_id,
+                                     tags,
+                                     bbox,
+                                     buildings)
 
         large_area = self.area > 3000 * 1000 * 1000
 
@@ -436,15 +453,17 @@ class Place(Base):   # assume all places are relations
                 session.delete(link)
         session.commit()
 
-    def load_extracts(self):
+    def load_extracts(self, debug=False):
         by_title = {item.enwiki: item for item in self.items if item.enwiki}
 
         for title, extract in wikipedia.get_extracts(by_title.keys()):
             item = by_title[title]
+            if debug:
+                print(title)
             item.extract = extract
             item.extract_names = wikipedia.html_names(extract)
 
-    def wbgetentities(self):
+    def wbgetentities(self, debug=False):
         sub = (session.query(Item.item_id)
                       .join(ItemTag)
                       .group_by(Item.item_id)
@@ -454,6 +473,8 @@ class Place(Base):   # assume all places are relations
         items = {i.qid: i for i in q}
 
         for qid, entity in wikidata.entity_iter(items.keys()):
+            if debug:
+                print(qid)
             items[qid].entity = entity
 
     def most_common_language(self):
@@ -467,4 +488,86 @@ class Place(Base):   # assume all places are relations
         except IndexError:
             return None
 
+    def database_loaded(self):
+        tables = get_tables()
+        expect = [self.prefix + '_' + t for t in ('line', 'point', 'polygon')]
+        if not all(t in tables for t in expect):
+            return
 
+    def run_matcher(self, debug=False):
+        conn = session.bind.raw_connection()
+        cur = conn.cursor()
+
+        items = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
+        if debug:
+            print(items.count())
+        for item in items:
+            candidates = matcher.find_item_matches(cur, item, self.prefix, debug=False)
+            if debug:
+                print(len(candidates), item.label())
+            as_set = {(i['osm_type'], i['osm_id']) for i in candidates}
+            for c in item.candidates[:]:
+                if (c.osm_type, c.osm_id) not in as_set:
+                    c.bad_matches.delete()
+                    session.delete(c)
+                    session.commit()
+
+            if not candidates:
+                continue
+
+            for i in candidates:
+                c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
+                if not c:
+                    c = ItemCandidate(**i, item=item)
+                    session.add(c)
+
+        self.state = 'ready'
+        self.item_count = self.items.count()
+        self.candidate_count = self.items_with_candidates_count()
+        session.commit()
+
+        conn.close()
+
+    def do_match(self, debug=True):
+        if self.state == 'ready':  # already done
+            return
+
+        if not self.state or self.state == 'refresh':
+            print('load items')
+            self.load_items()
+            self.state = 'wikipedia'
+
+        if self.state == 'wikipedia':
+            print('add tags')
+            self.add_tags_to_items()
+            self.state = 'tags'
+            session.commit()
+
+        if self.state == 'tags':
+            print('wbgetentities')
+            self.wbgetentities(debug=debug)
+            print('load extracts')
+            self.load_extracts(debug=debug)
+            self.state = 'wbgetentities'
+            session.commit()
+
+        if self.state == 'wbgetentities':
+            oql = self.get_oql()
+            r = overpass.run_query_persistent(oql)
+            assert r
+            self.save_overpass(r.content)
+            self.state = 'postgis'
+            session.commit()
+
+        if self.state == 'postgis':
+            print('running osm2pgsql')
+            self.load_into_pgsql(capture_stderr=False)
+            self.state = 'osm2pgsql'
+            session.commit()
+
+        if self.state == 'osm2pgsql':
+            print('run matcher')
+            self.run_matcher(debug=debug)
+            print('ready')
+            self.state = 'ready'
+            session.commit()
