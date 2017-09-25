@@ -1,10 +1,12 @@
 from flask import render_template_string
 from urllib.parse import unquote
 from collections import defaultdict
-from .utils import chunk, drop_start
+from .utils import chunk, drop_start, cache_filename
 from .language import get_language_label
 from . import user_agent_headers, overpass, mail, language
 import requests
+import os
+import json
 
 page_size = 50
 wd_entity = 'http://www.wikidata.org/entity/Q'
@@ -152,13 +154,20 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
-def run_query(query):
+def run_query(query, name=None):
+    if name:
+        filename = cache_filename(name + '.json')
+        if os.path.exists(filename):
+            return json.load(open(filename))['results']['bindings']
+
     r = requests.get(wikidata_query_api_url,
                      params={'query': query, 'format': 'json'},
                      headers=user_agent_headers())
     if r.status_code != 200:
         mail.error_mail('wikidata query error', query, r)
         raise QueryError(query, r)
+    if name:
+        open(filename, 'wb').write(r.content)
     return r.json()['results']['bindings']
 
 def flatten_criteria(items):
