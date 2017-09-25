@@ -1242,3 +1242,45 @@ def item_page(wikidata_id):
                            lon=lon,
                            found=found,
                            osm_keys=osm_keys)
+
+@app.route('/space')
+def space():
+    overpass_dir = app.config['OVERPASS_DIR']
+    files = [{'file': f, 'size': f.stat().st_size} for f in os.scandir(overpass_dir) if '_' not in f.name and f.name.endswith('.xml')]
+    files.sort(key=lambda f: f['size'], reverse=True)
+    files = files[:100]
+
+    place_lookup = {int(f['file'].name[:-4]): f for f in files}
+    # q = Place.query.outerjoin(Changeset).filter(Place.place_id.in_(place_lookup.keys())).add_columns(func.count(Changeset.id))
+    q = (database.session.query(Place, func.count(Changeset.id))
+                         .outerjoin(Changeset)
+                         .filter(Place.place_id.in_(place_lookup.keys()))
+                         .options(load_only(Place.place_id, Place.display_name, Place.state))
+                         .group_by(Place.place_id, Place.display_name, Place.state))
+    for place, num in q:
+        place_id = place.place_id
+        place_lookup[place_id]['place'] = place
+        place_lookup[place_id]['changesets'] = num
+
+    return render_template('space.html', files=files)
+
+@app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
+@login_required
+def delete_place(place_id):
+    overpass_dir = app.config['OVERPASS_DIR']
+    place = Place.query.get(place_id)
+
+    engine = database.session.bind
+    for t in database.get_tables():
+        if not t.startswith(place.prefix):
+            continue
+        engine.execute('drop table if exists {}'.format(t))
+    engine.execute('commit')
+
+    for f in os.listdir(overpass_dir):
+        if not any(f.startswith(str(place_id) + end) for end in ('_', '.')):
+            continue
+        os.remove(os.path.join(overpass_dir, f))
+
+    flash('{} deleted'.format(place.display_name))
+    return redirect(url_for('space'))
