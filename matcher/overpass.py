@@ -265,6 +265,30 @@ out qt tags;
 
     return r.json()['elements']
 
+def run_query(oql):
+    return requests.post(overpass_url,
+                         data=oql,
+                         headers=user_agent_headers())
+
+def run_query_persistent(oql, attempts=3):
+    for attempt in range(attempts):
+        wait_for_slot()
+        print('calling overpass')
+        r = run_query(oql)
+        if len(r.content) < 2000 and b'<remark> runtime error:' in r.content:
+            msg = 'runtime error'
+            mail.error_mail(msg, oql, r, via_web=False)
+            print(msg)
+            continue  # retry
+
+        if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
+            msg = 'overpass timeout'
+            mail.error_mail(msg, oql, r, via_web=False)
+            print(msg)
+            continue  # retry
+
+        return r
+
 def items_as_xml(items):
     assert items
     union = ''
