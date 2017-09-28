@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.engine import reflection
 from social.apps.flask_app.default.models import init_social
@@ -22,3 +22,18 @@ def init_app(app, echo=False):
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         session.remove()
+
+def get_big_table_list():
+    sql_big_polygon_tables = '''
+select place.place_id, size, display_name, state, count(changeset.id)
+from place left outer join changeset ON changeset.place_id = place.place_id, (
+    SELECT cast(substring(relname from '\d+') as integer) as place_id, pg_relation_size(C.oid) AS "size"
+    FROM pg_class C
+    WHERE relname like 'osm%polygon'
+    ORDER BY pg_relation_size(C.oid) DESC
+    LIMIT 100) a
+where a.place_id = place.place_id group by place.place_id, display_name, state, size order by size desc;'''
+
+    engine = session.bind
+
+    return engine.execute(text(sql_big_polygon_tables))

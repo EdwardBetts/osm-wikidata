@@ -2,6 +2,7 @@ from .view import app
 from .model import Changeset
 from . import database, mail
 from datetime import datetime, timedelta
+from tabulate import tabulate
 
 @app.cli.command()
 def mail_recent():
@@ -43,3 +44,25 @@ https://www.openstreetmap.org/changeset/{change.id}
         mail.send_mail(subject.format(q.count(), total_items), body)
 
     ctx.pop()
+
+@app.cli.command()
+def show_big_tables():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    for row in database.get_big_table_list():
+        print(row)
+
+@app.cli.command()
+def recent():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    q = (Changeset.query.filter(Changeset.update_count > 0)
+                        .order_by(Changeset.id.desc()))
+
+    rows = [(obj.created.strftime('%F %T'),
+             obj.user.username,
+             obj.update_count,
+             obj.place.name_for_changeset) for obj in q.limit(25)]
+    print(tabulate(rows,
+                   headers=['when', 'who', '#', 'where'],
+                   tablefmt='simple'))
