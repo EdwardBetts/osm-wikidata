@@ -32,14 +32,14 @@ def lookup_with_params(**kwargs):
 def lookup(q):
     return lookup_with_params(q=q)
 
-def get_us_county(name, state):
-    if ' ' not in name and 'county' not in name:
-        name += ' county'
-    results = lookup(q='{}, {}'.format(name, state))
+def get_us_county(county, state):
+    if ' ' not in county and 'county' not in county:
+        county += ' county'
+    results = lookup(q='{}, {}'.format(county, state))
 
     def pred(hit):
-        return (hit['osm_type'] != 'node' and
-                'county' in hit['display_name'].lower())
+        return ('osm_type' in hit and hit['osm_type'] != 'node' and
+                county in hit['display_name'].lower())
     return next(filter(pred, results), None)
 
 def get_us_city(name, state):
