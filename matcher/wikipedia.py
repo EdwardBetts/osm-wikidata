@@ -2,7 +2,7 @@ import requests
 import lxml.html
 import simplejson
 from .utils import chunk, drop_start
-from . import user_agent_headers
+from . import user_agent_headers, mail
 
 page_size = 50
 extracts_page_size = 20
@@ -23,7 +23,16 @@ def run_query(titles, params, language_code='en'):
     url = query_url.format(language_code)
     r = requests.get(url, params=p, headers=user_agent_headers())
     expect = 'application/json; charset=utf-8'
-    assert r.status_code == 200 and r.headers['content-type'] == expect
+    success = True
+    if r.status_code != 200:
+        print('status code: {r.status_code}'.format(r=r))
+        success = False
+    if r.headers['content-type'] != expect:
+        print('content-type: {r.headers[content-type]}'.format(r=r))
+        success = False
+    if not success:
+        mail.error_mail('wikipedia error', p, r)
+    assert success
     json_reply = r.json()
     return json_reply['query']['pages']
 
