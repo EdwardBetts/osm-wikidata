@@ -270,20 +270,23 @@ def run_query(oql):
                          data=oql,
                          headers=user_agent_headers())
 
-def run_query_persistent(oql, attempts=3):
+def run_query_persistent(oql, attempts=3, via_web=True):
     for attempt in range(attempts):
         wait_for_slot()
         print('calling overpass')
         r = run_query(oql)
         if len(r.content) < 2000 and b'<remark> runtime error:' in r.content:
+
             msg = 'runtime error'
-            mail.error_mail(msg, oql, r, via_web=False)
+            mail.error_mail(msg, oql, r, via_web=via_web)
             print(msg)
+            if b'<remark> runtime error: Query run out of memory' in r.content:
+                return
             continue  # retry
 
         if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
             msg = 'overpass timeout'
-            mail.error_mail(msg, oql, r, via_web=False)
+            mail.error_mail(msg, oql, r, via_web=via_web)
             print(msg)
             continue  # retry
 
