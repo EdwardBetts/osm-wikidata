@@ -43,6 +43,9 @@ status code: {r.status_code}
 request data:
 {data}
 
+status code: {r.status_code}
+content-type: {r.headers[content-type]}
+
 reply:
 {r.text}
 '''.format(r=r, data=data)
