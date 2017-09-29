@@ -25,7 +25,7 @@
 <tr>
 <td class="text-nowrap text-right">
     <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
-        {{- obj.created.strftime('%H:%M %a, %d %b %Y') if obj.created else obj.id -}}
+        {{- obj.created.strftime('%H:%M:%S %a, %d %b %Y') if obj.created else obj.id -}}
     </a>
 </td>
 <td class="text-nowrap"><a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a></td>
