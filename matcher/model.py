@@ -332,3 +332,10 @@ class Timing(Base):
     path = Column(String, nullable=False)
     name = Column(String, nullable=False)
     seconds = Column(Float, nullable=False)
+
+def get_bad(items):
+    if not items:
+        return {}
+    q = (session.query(BadMatch.item_id)
+                .filter(BadMatch.item_id.in_([i.item_id for i in items])))
+    return {item_id for item_id, in q}

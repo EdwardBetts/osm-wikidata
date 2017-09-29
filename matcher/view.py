@@ -1,6 +1,6 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .utils import cache_filename, get_radius, get_int_arg
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
 from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -241,13 +241,6 @@ def add_wikidata_tag():
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-def get_bad(items):
-    if not items:
-        return {}
-    q = (database.session.query(BadMatch.item_id)
-                         .filter(BadMatch.item_id.in_([i.item_id for i in items])))
-    return {item_id for item_id, in q}
-
 @app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
 def export_osm(osm_type, osm_id, name):
     place = Place.get_or_abort(osm_type, osm_id)
@@ -432,7 +425,6 @@ def post_tag(osm_type, osm_id, item_id):
         if existing is not None and really_save:
             osm.tags['wikidata'] = existing.get('v')
             flag_modified(osm, 'tags')
-            database.session.commit()
         database.session.commit()
         return Response('already tagged', mimetype='text/plain')
 
@@ -616,23 +608,17 @@ def get_bad_matches(place):
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = (Place.query
-                  .filter_by(osm_type=osm_type, osm_id=osm_id)
-                  .one_or_none())
-    if not place:
-        abort(404)
+    place = Place.get_or_abort(osm_type, osm_id)
     multiple_only = bool(request.args.get('multiple'))
-
-    if place.state != 'ready':
-        return redirect_to_matcher(place)
 
     if place.state == 'overpass_error':
         error = open(place.overpass_filename).read()
         return render_template('candidates.html',
                                overpass_error=error,
                                place=place)
+
+    if place.state != 'ready':
+        return redirect_to_matcher(place)
 
     multiple_match_count = place.items_with_multiple_candidates().count()
 
@@ -1248,7 +1234,7 @@ def space():
     overpass_dir = app.config['OVERPASS_DIR']
     files = [{'file': f, 'size': f.stat().st_size} for f in os.scandir(overpass_dir) if '_' not in f.name and f.name.endswith('.xml')]
     files.sort(key=lambda f: f['size'], reverse=True)
-    files = files[:100]
+    files = files[:200]
 
     place_lookup = {int(f['file'].name[:-4]): f for f in files}
     # q = Place.query.outerjoin(Changeset).filter(Place.place_id.in_(place_lookup.keys())).add_columns(func.count(Changeset.id))
@@ -1264,10 +1250,26 @@ def space():
 
     return render_template('space.html', files=files)
 
+@app.route('/db_space')
+def db_space():
+    rows = database.get_big_table_list()
+    items = []
+    for place_id, size, display_name, state, changeset_count in rows:
+        items.append({
+            'place_id': place_id,
+            'size': size,
+            'display_name': display_name,
+            'state': state,
+            'changesets': changeset_count
+        })
+
+    return render_template('db_space.html', items=items)
+
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
 @login_required
 def delete_place(place_id):
     overpass_dir = app.config['OVERPASS_DIR']
+    to_next = request.args.get('next', 'space')
     place = Place.query.get(place_id)
 
     engine = database.session.bind
@@ -1283,4 +1285,4 @@ def delete_place(place_id):
         os.remove(os.path.join(overpass_dir, f))
 
     flash('{} deleted'.format(place.display_name))
-    return redirect(url_for('space'))
+    return redirect(url_for(to_next))
