@@ -1,13 +1,13 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, osm_type_enum
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
 from sqlalchemy.schema import Column
-from sqlalchemy import func, select
+from sqlalchemy import func, select, cast
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred
-from geoalchemy2 import Geography  # noqa: F401
+from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
-from . import wikidata, matcher, wikipedia, overpass, mail
+from . import wikidata, matcher, wikipedia, overpass
 from collections import Counter
 from .overpass import oql_from_tag
 
@@ -72,9 +72,13 @@ class Place(Base):   # assume all places are relations
                          backref=backref('places', lazy='dynamic'))
 
     @classmethod
+    def get_by_osm(cls, osm_type, osm_id):
+        return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+
+    @classmethod
     def get_or_abort(cls, osm_type, osm_id):
         if osm_type in {'way', 'relation'}:
-            place = cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+            place = cls.get_by_osm(osm_type, osm_id)
             if place:
                 return place
         abort(404)
@@ -88,6 +92,11 @@ class Place(Base):   # assume all places are relations
                 'place_rank', 'icon', 'extratags', 'address', 'namedetails')
         for n in keys:
             setattr(self, n, hit.get(n))
+
+    def change_comment(self, item_count):
+        if item_count == 1:
+            return 'add wikidata tag'
+        return 'add wikidata tags within ' + self.name_for_change_comment
 
     @property
     def name_for_changeset(self):
@@ -273,6 +282,9 @@ class Place(Base):   # assume all places are relations
         return self.name.replace(':', '').replace(' ', '_')
 
     def load_into_pgsql(self, capture_stderr=True):
+        if os.stat(self.overpass_filename).st_size == 0:
+            return 'no data from overpass to load with osm2pgsql'
+
         cmd = ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
@@ -294,7 +306,7 @@ class Place(Base):   # assume all places are relations
             if b'Out of memory' in p.stderr:
                 return 'out of memory'
             else:
-                return p.stderr
+                return p.stderr.decode('utf-8')
 
     def save_overpass(self, content):
         with open(self.overpass_filename, 'wb') as out:
@@ -470,7 +482,11 @@ class Place(Base):   # assume all places are relations
                       .subquery())
         q = self.items.filter(Item.item_id == sub.c.item_id)
 
+        if debug:
+            print('running wbgetentities query')
         items = {i.qid: i for i in q}
+        if debug:
+            print('{} items'.format(len(items)))
 
         for qid, entity in wikidata.entity_iter(items.keys()):
             if debug:
@@ -553,9 +569,12 @@ class Place(Base):   # assume all places are relations
 
         if self.state == 'wbgetentities':
             oql = self.get_oql()
-            r = overpass.run_query_persistent(oql)
-            assert r
-            self.save_overpass(r.content)
+            if self.area_in_sq_km < 1000:
+                r = overpass.run_query_persistent(oql)
+                assert r
+                self.save_overpass(r.content)
+            else:
+                self.chunk()
             self.state = 'postgis'
             session.commit()
 
@@ -571,3 +590,130 @@ class Place(Base):   # assume all places are relations
             print('ready')
             self.state = 'ready'
             session.commit()
+
+    def get_items(self):
+        items = [item for item in self.items_with_candidates()
+                 if all('wikidata' not in c.tags for c in item.candidates)]
+
+        filter_list = matcher.filter_candidates_more(items, bad=get_bad(items))
+        add_tags = []
+        for item, match in filter_list:
+            picked = match.get('candidate')
+            if not picked:
+                continue
+            dist = picked.dist
+            intersection = set()
+            for k, v in picked.tags.items():
+                tag = k + '=' + v
+                if k in item.tags or tag in item.tags:
+                    intersection.add(tag)
+            if dist < 400:
+                symbol = '+'
+            elif dist < 4000 and intersection == {'place=island'}:
+                symbol = '+'
+            elif dist < 3000 and intersection == {'natural=wetland'}:
+                symbol = '+'
+            elif dist < 2000 and intersection == {'natural=beach'}:
+                symbol = '+'
+            elif dist < 2000 and intersection == {'natural=bay'}:
+                symbol = '+'
+            elif dist < 2000 and intersection == {'aeroway=aerodrome'}:
+                symbol = '+'
+            elif dist < 1000 and intersection == {'amenity=school'}:
+                symbol = '+'
+            elif dist < 800 and intersection == {'leisure=park'}:
+                symbol = '+'
+            elif dist < 2000 and intersection == {'landuse=reservoir'}:
+                symbol = '+'
+            elif dist < 3000 and item.tags == {'place', 'admin_level'}:
+                symbol = '+'
+            elif dist < 3000 and item.tags == {'place', 'place=town', 'admin_level'}:
+                symbol = '+'
+            elif dist < 3000 and item.tags == {'admin_level', 'place', 'place=neighbourhood'} and 'place' in picked.tags:
+                symbol = '+'
+            else:
+                symbol = '?'
+
+            print('{:1s}  {:9s}  {:5.0f}  {!r}  {!r}'.format(symbol, item.qid, picked.dist, item.tags, intersection))
+            if symbol == '+':
+                add_tags.append((item, picked))
+        return add_tags
+
+    def chunk4(self):
+        print('chunk4')
+        n = {}
+        (n['south'], n['north'], n['west'], n['east']) = self.bbox
+        ns = (n['north'] - n['south']) / 2
+        ew = (n['east'] - n['west']) / 2
+
+        chunks = [
+            {'name': 'south west', 'bbox': (n['south'], n['south'] + ns, n['west'], n['west'] + ew)},
+            {'name': 'south east', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew, n['east'])},
+            {'name': 'north west', 'bbox': (n['south'] + ns, n['north'], n['west'], n['west'] + ew)},
+            {'name': 'north east', 'bbox': (n['south'] + ns, n['north'], n['west'] + ew, n['east'])},
+        ]
+
+        return chunks
+
+    def chunk9(self):
+        print('chunk9')
+        n = {}
+        (n['south'], n['north'], n['west'], n['east']) = self.bbox
+        ns = (n['north'] - n['south']) / 3
+        ew = (n['east'] - n['west']) / 3
+
+        chunks = [
+            {'name': 'south west', 'bbox': (n['south'], n['south'] + ns, n['west'], n['west'] + ew)},
+            {'name': 'south     ', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew, n['west'] + ew * 2)},
+            {'name': 'south east', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew * 2, n['east'])},
+
+            {'name': 'west  ', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'], n['west'] + ew)},
+            {'name': 'centre', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'] + ew, n['west'] + ew * 2)},
+            {'name': 'east  ', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'] + ew * 2, n['east'])},
+
+            {'name': 'north west', 'bbox': (n['south'] + ns * 2, n['north'], n['west'], n['west'] + ew)},
+            {'name': 'north     ', 'bbox': (n['south'] + ns * 2, n['north'], n['west'] + ew, n['west'] + ew * 2)},
+            {'name': 'north east', 'bbox': (n['south'] + ns * 2, n['north'], n['west'] + ew * 2, n['east'])},
+        ]
+
+        return chunks
+
+    def chunk(self):
+        chunks = self.chunk4() if self.area_in_sq_km < 10000 else self.chunk9()
+
+        files = []
+
+        for chunk in chunks:
+            bbox = chunk['bbox']
+            quad = ''.join(i[0] for i in chunk['name'].strip().split())
+            ymin, ymax, xmin, xmax = bbox
+            q = self.items
+            q = q.filter(cast(Item.location, Geometry).contained(func.ST_MakeEnvelope(xmin, ymin, xmax, ymax)))
+            # place.load_items(bbox=chunk['bbox'], debug=True)
+
+            tags = set()
+            for item in q:
+                tags |= set(item.tags)
+            tags.difference_update(skip_tags)
+            tags = matcher.simplify_tags(tags)
+            filename = '{}_{}.xml'.format(self.place_id, quad)
+            print(chunk['name'], q.count(), quad, len(tags), filename)
+            full = os.path.join('overpass', filename)
+            files.append(full)
+            if os.path.exists(full):
+                continue
+
+            oql_bbox = '{:f},{:f},{:f},{:f}'.format(ymin, xmin, ymax, xmax)
+
+            oql = overpass.oql_for_area(self.overpass_type,
+                                        self.osm_id,
+                                        tags,
+                                        oql_bbox, None)
+            # print(oql)
+
+            r = overpass.run_query_persistent(oql, attempts=3)
+            open(full, 'wb').write(r.content)
+
+        cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
+        print(' '.join(cmd))
+        subprocess.run(cmd)
