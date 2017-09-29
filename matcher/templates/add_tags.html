@@ -26,9 +26,7 @@
 
   <div class="form-inline">
     <label for="comment">change comment:</label>
-    {% set comment = 'add wikidata tag'
-        if table | length == 1
-        else ('add wikidata tags within ' + place.name_for_change_comment) %}
+    {% set comment = place.change_comment(table | length) %}
     <input class="form-control m-2"
            id="comment"
            name="comment"
