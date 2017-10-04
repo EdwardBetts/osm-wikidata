@@ -1,4 +1,4 @@
-from .view import app
+from .view import app, get_top_existing
 from .model import Changeset
 from . import database, mail
 from datetime import datetime, timedelta
@@ -65,4 +65,29 @@ def recent():
              obj.place.name_for_changeset) for obj in q.limit(25)]
     print(tabulate(rows,
                    headers=['when', 'who', '#', 'where'],
+                   tablefmt='simple'))
+
+@app.cli.command()
+def top():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    top_places = get_top_existing()
+    headers = ['id', 'name', 'area', 'state', 'candidates', 'items',
+               'changesets']
+
+    places = []
+    for p, changeset_count in top_places:
+        name = p.display_name
+        if len(name) > 60:
+            name = name[:56] + ' ...'
+        places.append((p.place_id,
+                       name,
+                       p.area,
+                       p.state,
+                       p.candidate_count,
+                       p.item_count,
+                       changeset_count))
+
+    print(tabulate(places,
+                   headers=headers,
                    tablefmt='simple'))
