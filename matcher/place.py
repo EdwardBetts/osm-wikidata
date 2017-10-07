@@ -282,6 +282,9 @@ class Place(Base):   # assume all places are relations
         return self.name.replace(':', '').replace(' ', '_')
 
     def load_into_pgsql(self, capture_stderr=True):
+        if not os.path.exists(self.overpass_filename):
+            return 'no data from overpass to load with osm2pgsql'
+
         if os.stat(self.overpass_filename).st_size == 0:
             return 'no data from overpass to load with osm2pgsql'
 
