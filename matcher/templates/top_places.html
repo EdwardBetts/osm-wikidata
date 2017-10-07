@@ -1,5 +1,5 @@
   <div class="card-columns">
-  {% for place, changeset_count in existing %}
+  {% for place in existing %}
     <div class="card">
       <h5 class="card-header">
         {% if place.address.country_code == 'us' %}
@@ -24,9 +24,11 @@
             ({{ '{:.1%}'.format(place.match_ratio) }})
           </li>
         {% endif %}
+        {#
         {% if changeset_count != 0 %}
         <span class="badge badge-success">tags uploaded</span>
         {% endif %}
+        #}
         </p>
       </div>
     </div>

@@ -590,7 +590,7 @@ def add_tags(osm_type, osm_id):
 
 @app.route('/places/<name>')
 def place_redirect(name):
-    place = Place.query.filter(Place.state == 'ready',
+    place = Place.query.filter(Place.state.in_('ready', 'complete'),
                                Place.display_name.ilike(name + '%')).first()
     if not place:
         abort(404)
@@ -617,7 +617,7 @@ def candidates(osm_type, osm_id):
                                overpass_error=error,
                                place=place)
 
-    if place.state != 'ready':
+    if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
     multiple_match_count = place.items_with_multiple_candidates().count()
@@ -661,14 +661,9 @@ def candidates(osm_type, osm_id):
 def get_place(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
 
-    if place.state != 'ready':
+    if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
-    if place.state == 'overpass_error':
-        error = open(place.overpass_filename).read()
-        return render_template('candidates.html',
-                               overpass_error=error,
-                               place=place)
     return place
 
 @app.route('/no_match/<osm_type>/<int:osm_id>')
@@ -728,7 +723,7 @@ def refresh_place(osm_type, osm_id):
     place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
     if not place:
         abort(404)
-    if place.state != 'ready':
+    if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
     if request.method != 'POST':  # confirm
@@ -773,6 +768,7 @@ def get_existing(sort, name_filter):
 def get_top_existing():
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,
             Place.candidate_count, Place.item_count]
+    c = func.count(Changeset.place_id)
 
     q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
                             Place.area > 0,
@@ -780,7 +776,7 @@ def get_top_existing():
                     .options(load_only(*cols))
                     .outerjoin(Changeset)
                     .group_by(*cols)
-                    .add_columns(func.count(Changeset.id))
+                    .having(c == 0)
                     .order_by((Place.item_count / Place.area).desc()))
     return q[:30]
 
