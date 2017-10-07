@@ -271,7 +271,7 @@ class Changeset(Base):
     __tablename__ = 'changeset'
     id = Column(BigInteger, primary_key=True)
     created = Column(DateTime)
-    place_id = Column(BigInteger, ForeignKey('place.place_id'))
+    place_id = Column(BigInteger, ForeignKey('place.place_id'), index=True)
     item_id = Column(Integer)
     comment = Column(String)
     user_id = Column(Integer, ForeignKey(User.id))
