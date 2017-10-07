@@ -1,9 +1,9 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, osm_type_enum, get_bad
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
 from sqlalchemy.schema import Column
 from sqlalchemy import func, select, cast
-from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred
+from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -720,3 +720,18 @@ class Place(Base):   # assume all places are relations
         cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
         print(' '.join(cmd))
         subprocess.run(cmd)
+
+def get_top_existing(limit=30):
+    cols = [Place.place_id, Place.display_name, Place.area, Place.state,
+            Place.candidate_count, Place.item_count]
+    c = func.count(Changeset.place_id)
+
+    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
+                            Place.area > 0,
+                            Place.candidate_count > 4)
+                    .options(load_only(*cols))
+                    .outerjoin(Changeset)
+                    .group_by(*cols)
+                    .having(c == 0)
+                    .order_by((Place.item_count / Place.area).desc()))
+    return q[:limit]

@@ -1,7 +1,7 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
 from .utils import cache_filename, get_radius, get_int_arg
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
-from .place import Place
+from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
@@ -764,21 +764,6 @@ def get_existing(sort, name_filter):
         return sorted(existing, key=lambda p: p.items.count())
 
     return q
-
-def get_top_existing():
-    cols = [Place.place_id, Place.display_name, Place.area, Place.state,
-            Place.candidate_count, Place.item_count]
-    c = func.count(Changeset.place_id)
-
-    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
-                            Place.area > 0,
-                            Place.candidate_count > 4)
-                    .options(load_only(*cols))
-                    .outerjoin(Changeset)
-                    .group_by(*cols)
-                    .having(c == 0)
-                    .order_by((Place.item_count / Place.area).desc()))
-    return q[:30]
 
 def sort_link(order):
     args = request.view_args.copy()

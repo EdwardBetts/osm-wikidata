@@ -8,7 +8,7 @@ interactions:
       User-Agent: ['osm-wikidata/0.1 (https://github.com/EdwardBetts/osm-wikidata;
           edward@4angle.com)']
     method: GET
-    uri: https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=%0ASELECT+%3Fplace+%3FplaceLabel+%28SAMPLE%28%3Flocation%29+AS+%3Flocation%29+%3Farticle+WHERE+%7B%0A++++SERVICE+wikibase%3Abox+%7B%0A++++++++%3Fplace+wdt%3AP625+%3Flocation+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerWest+%22Point%28-2.6318114+51.4478819%29%22%5E%5Egeo%3AwktLiteral+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerEast+%22Point%28-2.6078598+51.4660988%29%22%5E%5Egeo%3AwktLiteral+.%0A++++%7D%0A++++%3Farticle+schema%3Aabout+%3Fplace+.%0A++++%3Farticle+schema%3AinLanguage+%22en%22+.%0A++++%3Farticle+schema%3AisPartOf+%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E+.%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ18340550+%7D+.+++++%23+ignore+timeline+articles%0A++++SERVICE+wikibase%3Alabel+%7B+bd%3AserviceParam+wikibase%3Alanguage+%22en%22+%7D%0A%7D%0AGROUP+BY+%3Fplace+%3FplaceLabel+%3Farticle
+    uri: https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=%0ASELECT+%3Fplace+%3FplaceLabel+%28SAMPLE%28%3Flocation%29+AS+%3Flocation%29+%3Farticle+WHERE+%7B%0A++++SERVICE+wikibase%3Abox+%7B%0A++++++++%3Fplace+wdt%3AP625+%3Flocation+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerWest+%22Point%28-2.6318114+51.4478819%29%22%5E%5Egeo%3AwktLiteral+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerEast+%22Point%28-2.6078598+51.4660988%29%22%5E%5Egeo%3AwktLiteral+.%0A++++%7D%0A++++%3Farticle+schema%3Aabout+%3Fplace+.%0A++++%3Farticle+schema%3AinLanguage+%22en%22+.%0A++++%3Farticle+schema%3AisPartOf+%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E+.%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ18340550+%7D+.+++++%23+ignore+timeline+articles%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ13406463+%7D+.+++++%23+ignore+list+articles%0A++++SERVICE+wikibase%3Alabel+%7B+bd%3AserviceParam+wikibase%3Alanguage+%22en%22+%7D%0A%7D%0AGROUP+BY+%3Fplace+%3FplaceLabel+%3Farticle&format=json
   response:
     body: {string: "{\n  \"head\" : {\n    \"vars\" : [ \"place\", \"placeLabel\",
         \"location\", \"article\" ]\n  },\n  \"results\" : {\n    \"bindings\" : [
@@ -19,12 +19,12 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6248 51.448)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q28913001\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q26503775\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Church of All Saints, Clifton\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"Church of All Saints\"\n      },\n      \"article\" : {\n        \"type\"
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Church_of_All_Saints,_Clifton\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6161 51.4623)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.616217 51.462356)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q28913013\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -80,7 +80,7 @@ interactions:
         : \"Everyman Bristol\"\n      },\n      \"article\" : {\n        \"type\"
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Whiteladies_Picture_House\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6117 51.4652)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.609533 51.463056)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q4835009\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -136,7 +136,7 @@ interactions:
         : \"Buckingham Baptist Chapel\"\n      },\n      \"article\" : {\n        \"type\"
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Buckingham_Baptist_Chapel\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61431 51.4566)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61429 51.4565)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q4834859\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -248,7 +248,7 @@ interactions:
         : \"Observatory, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Observatory\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62657 51.4567)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6265 51.4566)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7375007\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -283,7 +283,7 @@ interactions:
         : \"Pump House, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Pump_House,_Bristol\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61774 51.4483)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.618 51.448337)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7270308\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -439,20 +439,21 @@ interactions:
       Cache-Control: ['public, max-age=300']
       Connection: [keep-alive]
       Content-Type: [application/sparql-results+json]
-      Date: ['Fri, 15 Sep 2017 18:11:05 GMT']
-      Server: [nginx/1.11.13]
-      Set-Cookie: ['WMF-Last-Access=15-Sep-2017;Path=/;HttpOnly;secure;Expires=Tue,
-          17 Oct 2017 12:00:00 GMT', 'WMF-Last-Access-Global=15-Sep-2017;Path=/;Domain=.wikidata.org;HttpOnly;secure;Expires=Tue,
-          17 Oct 2017 12:00:00 GMT']
+      Date: ['Fri, 06 Oct 2017 10:16:30 GMT']
+      Server: [nginx/1.11.6]
+      Set-Cookie: ['WMF-Last-Access=06-Oct-2017;Path=/;HttpOnly;secure;Expires=Tue,
+          07 Nov 2017 00:00:00 GMT', 'WMF-Last-Access-Global=06-Oct-2017;Path=/;Domain=.wikidata.org;HttpOnly;secure;Expires=Tue,
+          07 Nov 2017 00:00:00 GMT']
       Strict-Transport-Security: [max-age=106384710; includeSubDomains; preload]
+      Transfer-Encoding: [chunked]
       Vary: ['Accept, Accept-Encoding']
       Via: ['1.1 varnish-v4, 1.1 varnish-v4, 1.1 varnish-v4']
       X-Analytics: [https=1;nocookies=1]
-      X-Cache: ['cp1061 miss, cp3010 miss, cp3007 miss']
+      X-Cache: ['cp1058 pass, cp3010 miss, cp3008 pass']
       X-Cache-Status: [miss]
       X-Client-IP: [82.8.134.195]
-      X-Served-By: [wdqs1005]
-      X-Varnish: ['140430650, 40732985, 81202857']
-      content-length: ['32841']
+      X-Served-By: [wdqs1003]
+      X-Varnish: ['27801600, 31446994, 151537352']
+      content-length: ['32839']
     status: {code: 200, message: OK}
 version: 1

@@ -183,6 +183,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
     FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .     # ignore timeline articles
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .     # ignore list articles
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article'''
