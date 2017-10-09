@@ -35,17 +35,7 @@ skip_tags = {'route:road',
              'addr:street',
              'type=associatedStreet'}
 
-# class Address(Base):
-#     __tablename__ = 'address'
-#     place_id = Column(BigInteger,
-#                       ForeignKey('place.place_id'),
-#                       primary_key=True)
-#     position = Column(Integer, primary_key=True)
-#     type = Column(String, nullable=False)
-#     name = Column(String, nullable=False)
-
-
-class Place(Base):   # assume all places are relations
+class Place(Base):
     __tablename__ = 'place'
     place_id = Column(BigInteger, primary_key=True, autoincrement=False)
     osm_type = Column(osm_type_enum, nullable=False)
@@ -79,11 +69,6 @@ class Place(Base):   # assume all places are relations
                          secondary='place_item',
                          lazy='dynamic',
                          backref=backref('places', lazy='dynamic'))
-
-    # address_details = relationship('Address',
-    #                                order_by='Address.position',
-    #                                collection_class=ordering_list('position'),
-    #                                backref='place')
 
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
