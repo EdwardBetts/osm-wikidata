@@ -1,11 +1,12 @@
 from .view import app, get_top_existing
 from .model import Changeset, get_bad
 from .place import Place
-from . import database, mail, matcher
+from . import database, mail, matcher, nominatim
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
-from time import time
+from time import time, sleep
+import json
 import click
 
 @app.cli.command()
@@ -170,3 +171,42 @@ def mark_as_complete():
             print(len(filtered), p.display_name, '(updated)')
         else:
             print(len(filtered), p.display_name)
+
+@app.cli.command()
+@click.argument('q')
+def nominatim_lookup(q):
+    app.config.from_object('config.default')  # need the admin email address
+    # result = nominatim.lookup_with_params(q=q, polygon_text=0)
+    result = nominatim.lookup_with_params(q=q)
+    print(json.dumps(result, indent=2))
+
+@app.cli.command()
+def refresh_address():
+    app.config.from_object('config.default')  # need the admin email address
+    database.init_app(app)
+
+    for place in Place.query.filter(Place.state == 'ready'):
+        if isinstance(place.address, list):
+            continue
+
+        print(place.display_name)
+        print(place.address)
+
+        results = nominatim.lookup(q=place.display_name)
+        for hit in results:
+            place_id = hit['place_id']
+            place = Place.query.get(place_id)
+            if not place:
+                place = (Place.query
+                              .filter_by(osm_type=hit['osm_type'], osm_id=hit['osm_id'])
+                              .one_or_none())
+            if not place:
+                print('not found: {hit[place_id]}  {hit[display_name]}'.format(hit=hit))
+                continue
+            place.update_from_nominatim(hit)
+
+            print(hit['place_id'], list(hit['address'].items()))
+        database.session.commit()
+
+        print()
+        sleep(2)

@@ -1,7 +1,9 @@
 from flask import current_app
-import requests
+from collections import OrderedDict
 from . import user_agent_headers
-import simplejson
+
+import json
+import requests
 
 class SearchError(Exception):
     pass
@@ -25,8 +27,8 @@ def lookup_with_params(**kwargs):
         raise SearchError
 
     try:
-        return r.json()
-    except simplejson.scanner.JSONDecodeError:
+        return json.loads(r.text, object_pairs_hook=OrderedDict)
+    except json.decoder.JSONDecodeError:
         raise SearchError
 
 def lookup(q):

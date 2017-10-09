@@ -35,6 +35,15 @@ skip_tags = {'route:road',
              'addr:street',
              'type=associatedStreet'}
 
+# class Address(Base):
+#     __tablename__ = 'address'
+#     place_id = Column(BigInteger,
+#                       ForeignKey('place.place_id'),
+#                       primary_key=True)
+#     position = Column(Integer, primary_key=True)
+#     type = Column(String, nullable=False)
+#     name = Column(String, nullable=False)
+
 
 class Place(Base):   # assume all places are relations
     __tablename__ = 'place'
@@ -71,6 +80,11 @@ class Place(Base):   # assume all places are relations
                          lazy='dynamic',
                          backref=backref('places', lazy='dynamic'))
 
+    # address_details = relationship('Address',
+    #                                order_by='Address.position',
+    #                                collection_class=ordering_list('position'),
+    #                                backref='place')
+
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
@@ -88,10 +102,11 @@ class Place(Base):   # assume all places are relations
         return self.area / (1000 * 1000)
 
     def update_from_nominatim(self, hit):
-        keys = ('display_name', 'category', 'type',
-                'place_rank', 'icon', 'extratags', 'address', 'namedetails')
+        keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
+                'extratags', 'namedetails')
         for n in keys:
             setattr(self, n, hit.get(n))
+        self.address = [dict(name=n, type=t) for t, n in hit['address'].items()]
 
     def change_comment(self, item_count):
         if item_count == 1:
@@ -124,15 +139,16 @@ class Place(Base):   # assume all places are relations
 
     @classmethod
     def from_nominatim(cls, hit):
-        keys = ('osm_id', 'osm_type', 'display_name', 'category', 'type',
-                'place_id', 'place_rank', 'icon', 'extratags', 'address',
-                'namedetails', 'lat', 'lon')
+        keys = ('place_id', 'osm_type', 'osm_id', 'lat', 'lon', 'display_name',
+                'place_rank', 'category', 'type', 'icon', 'extratags',
+                'namedetails')
         n = {k: hit[k] for k in keys if k in hit}
         if hit['osm_type'] == 'node':
             n['radius'] = 1000   # 1km
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
+        n['address'] = [dict(name=n, type=t) for t, n in hit['address'].items()]
         return cls(**n)
 
     @classmethod
