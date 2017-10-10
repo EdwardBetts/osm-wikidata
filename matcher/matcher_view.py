@@ -135,11 +135,17 @@ def load_individual_match(place_id, item_id):
 
     item = Item.query.get(item_id)
     candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
+    confirmed = set()
     for i in (candidates or []):
         c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
         if not c:
             c = ItemCandidate(**i, item=item)
             database.session.add(c)
+            confirmed.add((c.item_id, c.osm_id, c.osm_type))
+    for c in item.candidates:
+        if ((c.item_id, c.osm_id, c.osm_type) not in confirmed and
+                not c.bad_matches.count()):
+            database.session.delete(c)
     database.session.commit()
 
     conn.close()
