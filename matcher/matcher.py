@@ -314,6 +314,26 @@ def filter_schools(candidates):
             return
     return match
 
+def filter_churches(candidates):
+    if len(candidates) < 2:
+        return
+    if all('amenity=place_of_worship' not in c.matching_tags() for c in candidates):
+        return
+
+    # use the one thing tagged amenity=place_of_worship
+    # check everything else is tagged religion=christian
+
+    match = None
+    for c in candidates:
+        tags = c.matching_tags()
+        if 'amenity=place_of_worship' in tags:
+            if match:
+                return
+            match = c
+        elif tags != ['religion=christian']:
+            return
+    return match
+
 def filter_station(candidates):
     if len(candidates) < 2:
         return
@@ -376,6 +396,10 @@ def filter_candidates_more(items, bad=None):
             station = filter_station(candidates)
             if station:
                 candidates = [station]
+
+            church = filter_churches(candidates)
+            if church:
+                candidates = [church]
 
         if len(candidates) != 1:
             yield (item, {'note': 'more than one candidate found'})
