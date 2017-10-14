@@ -1,125 +1,103 @@
-from matcher import wikidata
+from matcher import wikidata, place
 import pytest
 import vcr
+
+test_entity = {
+    'labels': {
+        'fr': { 'language': 'fr', 'value': 'tour Eiffel' },
+        'de': { 'language': 'de', 'value': 'Eiffelturm' },
+        'en': { 'language': 'en', 'value': 'Eiffel Tower' },
+    },
+    'sitelinks': {
+        'enwiki': {'site': 'enwiki', 'title': 'Eiffel Tower', 'badges': []},
+        'frwiki': {'site': 'frwiki', 'title': 'Tour Eiffel', 'badges': []},
+        'dewiki': {'site': 'dewiki', 'title': 'Eiffelturm', 'badges': [ 'Q17437796' ]},
+
+    },
+    'claims': {
+        'P31': [
+            {
+                'mainsnak': {
+                    'property': 'P31',
+                    'datavalue': {
+                        'value': {'entity-type': 'item', 'id': 'Q1440476', 'numeric-id': 1440476},
+                        'type': 'wikibase-entityid'
+                    },
+                    'snaktype': 'value',
+                    'datatype': 'wikibase-item'
+                },
+                'rank': 'normal',
+                'id': 'Q243$2eb349bf-4089-fd98-7bd5-263a4b363fba',
+                'type': 'statement'
+            },
+            {
+                'mainsnak': {
+                    'property': 'P31',
+                    'datavalue': {
+                        'value': {'entity-type': 'item', 'id': 'Q1440300', 'numeric-id': 1440300},
+                        'type': 'wikibase-entityid'
+                    },
+                    'snaktype': 'value',
+                    'datatype': 'wikibase-item'
+                },
+                'rank': 'preferred',
+                'id': 'Q243$1EB6EF73-DC08-4192-A2FC-C2E9C7F7F9E9',
+                'type': 'statement'
+            },
+            {
+                'mainsnak': {
+                    'property': 'P31',
+                    'datavalue': {
+                        'value': {'entity-type': 'item', 'id': 'Q2319498', 'numeric-id': 2319498},
+                        'type': 'wikibase-entityid'
+                    },
+                    'snaktype': 'value',
+                    'datatype': 'wikibase-item'
+                },
+                'rank': 'normal',
+                'id': 'Q243$f5add39b-4ea4-f936-b9af-ac5c57440287',
+                'type': 'statement'
+            }
+        ],
+        'P373': [{
+            'mainsnak': {
+                'snaktype': 'value',
+                'property': 'P373',
+                'hash': 'a132d2636fb4c3b7181fb0a4fb947691301fc03d',
+                'datavalue': {'value': 'Eiffel Tower', 'type': 'string'},
+                'datatype': 'string'
+            },
+            'type': 'statement',
+            'id': 'q243$ed81c2ec-4645-7468-130c-f1aed6577093',
+            'rank': 'normal'
+        }],
+        'P625': [{
+            'mainsnak': {
+                'property': 'P625',
+                'datavalue': {
+                    'value': {
+                        'latitude': 48.8583,
+                        'longitude': 2.2944,
+                        'globe': 'http://www.wikidata.org/entity/Q2',
+                        'altitude': None,
+                    },
+                    'type': 'globecoordinate'
+                },
+                'snaktype': 'value',
+                'datatype': 'globe-coordinate'
+            },
+            'rank': 'normal',
+            'id': 'q243$39A2814F-32C8-415B-A7A6-1DDF4A7D1FFC',
+            'type': 'statement',
+        }]
+    }
+}
 
 def test_wikidata():
     with pytest.raises(AssertionError):
         wikidata.WikidataItem('Q1', {})
 
-    entity = {
-        'labels': {
-            'fr': {
-                'language': 'fr',
-                'value': 'tour Eiffel'
-            },
-            'de': {
-                'language': 'de',
-                'value': 'Eiffelturm'
-            },
-            'en': {
-                'language': 'en',
-                'value': 'Eiffel Tower'
-            },
-        },
-        'sitelinks': {
-            'enwiki': {
-                'site': 'enwiki',
-                'title': 'Eiffel Tower',
-                'badges': []
-            },
-            'frwiki': {
-                'site': 'frwiki',
-                'title': 'Tour Eiffel',
-                'badges': []
-            },
-            'dewiki': {
-                'site': 'dewiki',
-                'title': 'Eiffelturm',
-                'badges': [
-                    'Q17437796'
-                ]
-            },
-
-        },
-        'claims': {
-            'P31': [
-                {
-                    'mainsnak': {
-                        'property': 'P31',
-                        'datavalue': {
-                            'value': {
-                                'entity-type': 'item',
-                                'id': 'Q1440476',
-                                'numeric-id': 1440476
-                            },
-                            'type': 'wikibase-entityid'
-                        },
-                        'snaktype': 'value',
-                        'datatype': 'wikibase-item'
-                    },
-                    'rank': 'normal',
-                    'id': 'Q243$2eb349bf-4089-fd98-7bd5-263a4b363fba',
-                    'type': 'statement'
-                },
-                {
-                    'mainsnak': {
-                        'property': 'P31',
-                        'datavalue': {
-                            'value': {
-                                'entity-type': 'item',
-                                'id': 'Q1440300',
-                                'numeric-id': 1440300
-                            },
-                            'type': 'wikibase-entityid'
-                        },
-                        'snaktype': 'value',
-                        'datatype': 'wikibase-item'
-                    },
-                    'rank': 'preferred',
-                    'id': 'Q243$1EB6EF73-DC08-4192-A2FC-C2E9C7F7F9E9',
-                    'type': 'statement'
-                },
-                {
-                    'mainsnak': {
-                        'property': 'P31',
-                        'datavalue': {
-                            'value': {
-                                'entity-type': 'item',
-                                'id': 'Q2319498',
-                                'numeric-id': 2319498
-                            },
-                            'type': 'wikibase-entityid'
-                        },
-                        'snaktype': 'value',
-                        'datatype': 'wikibase-item'
-                    },
-                    'rank': 'normal',
-                    'id': 'Q243$f5add39b-4ea4-f936-b9af-ac5c57440287',
-                    'type': 'statement'
-                }
-            ],
-            'P625': [{
-                'mainsnak': {
-                    'property': 'P625',
-                    'datavalue': {
-                        'value': {
-                            'longitude': 2.2944,
-                            'globe': 'http://www.wikidata.org/entity/Q2',
-                            'altitude': None,
-                            'latitude': 48.8583,
-                        },
-                        'type': 'globecoordinate'
-                    },
-                    'snaktype': 'value',
-                    'datatype': 'globe-coordinate'
-                },
-                'rank': 'normal',
-                'id': 'q243$39A2814F-32C8-415B-A7A6-1DDF4A7D1FFC',
-                'type': 'statement',
-            }]
-        }
-    }
-    item = wikidata.WikidataItem('Q1', entity)
+    item = wikidata.WikidataItem('Q1', test_entity)
     assert item.has_coords
     assert item.has_earth_coords
 
@@ -158,7 +136,9 @@ out center tags;'''.strip()
     assert item.is_a == ['Q1440476', 'Q1440300', 'Q2319498']
 
     expect = {
-        'Eiffel Tower': [('label', 'en'), ('sitelink', 'enwiki')],
+        'Eiffel Tower': [('label', 'en'),
+                         ('sitelink', 'enwiki'),
+                         ('commonscat', None)],
         'Eiffelturm': [('label', 'de'), ('sitelink', 'dewiki')],
         'Tour Eiffel': [('sitelink', 'frwiki')],
         'tour Eiffel': [('label', 'fr')]
@@ -367,3 +347,17 @@ def test_non_english_label():
 
     entity = wikidata.WikidataItem('Q1889816', entity_data)
     assert entity.label() == 'Natuurmuseum Brabant'
+
+def test_names_from_entity():
+    names = wikidata.names_from_entity(test_entity)
+
+    expect = {
+        'Eiffel Tower': [('label', 'en'),
+                         ('sitelink', 'enwiki'),
+                         ('commonscat', None)],
+        'Eiffelturm': [('label', 'de'), ('sitelink', 'dewiki')],
+        'Tour Eiffel': [('sitelink', 'frwiki')],
+        'tour Eiffel': [('label', 'fr')]
+    }
+
+    assert dict(names) == expect

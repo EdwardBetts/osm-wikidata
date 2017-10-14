@@ -305,6 +305,11 @@ def names_from_entity(entity, skip_lang=None):
         for name in value_list:
             ret[name['value']].append(('alias', lang))
 
+    commonscats = entity.get('claims', {}).get('P373', [])
+    for i in commonscats:
+        value = i['mainsnak']['datavalue']['value']
+        ret[value].append(('commonscat', None))
+
     return ret
 
 def parse_osm_keys(rows):
