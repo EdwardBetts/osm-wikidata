@@ -29,7 +29,7 @@ def lookup_with_params(**kwargs):
     try:
         return json.loads(r.text, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError:
-        raise SearchError
+        raise SearchError(r)
 
 def lookup(q):
     return lookup_with_params(q=q)
