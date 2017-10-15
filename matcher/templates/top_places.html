@@ -12,8 +12,8 @@
           ({{ '{:,.1f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
       </h5>
       <div class="card-block">
-        {% if place.address.country_code != 'us' and place.address.country != place.name %}
-            <p class="card-text">{{ place.address.country }}</p>
+        {% if place.country_code != 'us' and place.country != place.name %}
+            <p class="card-text">{{ place.country }}</p>
         {% endif %}
         <ul class="card-text list-unstyled">
         {% if place.item_count is number %}
