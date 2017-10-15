@@ -74,13 +74,18 @@ class Place(Base):
     def get_by_osm(cls, osm_type, osm_id):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
+    def get_address_key(self, key):
+        for line in self.address or []:
+            if line['type'] == key:
+                return line['name']
+
     @property
     def country_code(self):
-        if not self.address:
-            return
-        for line in self.address:
-            if line['type'] == 'country_code':
-                return line['name']
+        return self.get_address_key('country_code')
+
+    @property
+    def country(self):
+        return self.get_address_key('country')
 
     @classmethod
     def get_or_abort(cls, osm_type, osm_id):
