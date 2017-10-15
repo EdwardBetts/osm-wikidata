@@ -102,24 +102,38 @@ class Place(Base):
     def name_for_changeset(self):
         address = self.address
         n = self.name
-        if address and address.get('country_code') == 'us':
-            state = address.get('state')
+        if not address:
+            return self.name
+        if isinstance(address, list):
+            d = {a['type']: a['name'] for a in address}
+        elif isinstance(address, dict):
+            d = address
+
+        if d.get('country_code') == 'us':
+            state = d.get('state')
             if state and n != state:
                 return n + ', ' + state
 
-        country = address.get('country')
+        country = d.get('country')
         if country and self.name != country:
             return '{} ({})'.format(self.name, country)
+
         return self.name
 
     @property
     def name_for_change_comment(self):
-        address = self.address
         n = self.name
-        if address and address.get('country_code') == 'us':
-            state = address.get('state')
-            if state and n != state:
-                return n + ', ' + state
+
+        if self.address:
+            if isinstance(self.address, list):
+                address = {a['type']: a['name'] for a in self.address}
+            elif isinstance(self.address, dict):
+                address = self.address
+
+            if address.get('country_code') == 'us':
+                state = address.get('state')
+                if state and n != state:
+                    return n + ', ' + state
         return 'the ' + n if ' of ' in n else n
 
     @classmethod
@@ -571,7 +585,8 @@ class Place(Base):
             self.state = 'wbgetentities'
             session.commit()
 
-        if self.state == 'wbgetentities':
+        if self.state in ('wbgetentities', 'overpass_error', 'overpass_timeout'):
+            print('loading_overpass')
             oql = self.get_oql()
             if self.area_in_sq_km < 1000:
                 r = overpass.run_query_persistent(oql)
