@@ -75,6 +75,8 @@ class Place(Base):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     def get_address_key(self, key):
+        if isinstance(self.address, dict):
+            return self.address[key]
         for line in self.address or []:
             if line['type'] == key:
                 return line['name']
