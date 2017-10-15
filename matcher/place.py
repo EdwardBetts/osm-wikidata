@@ -75,6 +75,8 @@ class Place(Base):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     def get_address_key(self, key):
+        if isinstance(self.address, dict):
+            return self.address[key]
         for line in self.address or []:
             if line['type'] == key:
                 return line['name']
@@ -248,6 +250,22 @@ class Place(Base):
         if not os.path.exists(filename):
             return
         shutil.move(filename, self.overpass_backup)
+
+    def clean_up(self):
+        place_id = self.id
+
+        engine = session.bind
+        for t in get_tables():
+            if not t.startswith(self.prefix):
+                continue
+            engine.execute('drop table if exists {}'.format(t))
+        engine.execute('commit')
+
+        overpass_dir = current_app.config['OVERPASS_DIR']
+        for f in os.listdir(overpass_dir):
+            if not any(f.startswith(str(place_id) + end) for end in ('_', '.')):
+                continue
+            os.remove(os.path.join(overpass_dir, f))
 
     @property
     def overpass_done(self):
