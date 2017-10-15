@@ -189,13 +189,31 @@ def refresh_address():
         if isinstance(place.address, list):
             continue
 
-        print(place.display_name)
-        print(place.address)
+        if not place.address.get('country'):
+            print('country missing:', place.display_name)
+            continue
 
-        results = nominatim.lookup(q=place.display_name)
+        print(place.place_id, place.display_name)
+        continue
+        print('http://nominatim.openstreetmap.org/details.php?osmtype={}&osmid={}'.format(place.osm_type[0].upper(), place.osm_id))
+        first_parts = place.display_name.split(', ', 1)[:-1]
+        print(place.address)
+        # q = ', '.join(first_parts + [place.address['country']])
+        q = ', '.join(first_parts)
+        print(q)
+        # print()
+
+        try:
+            results = nominatim.lookup(q=q)
+        except nominatim.SearchError as e:
+            print(e.text)
+            raise
         for hit in results:
             place_id = hit['place_id']
             place = Place.query.get(place_id)
+            if 'osm_type' not in hit or 'osm_id' not in hit:
+                continue
+
             if not place:
                 place = (Place.query
                               .filter_by(osm_type=hit['osm_type'], osm_id=hit['osm_id'])
@@ -209,4 +227,23 @@ def refresh_address():
         database.session.commit()
 
         print()
-        sleep(2)
+        sleep(10)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def run_matcher(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    print(place_identifier)
+    if place_identifier.isdigit():
+        place = Place.query.get(place_identifier)
+    else:
+        osm_type, osm_id = place_identifier.split('/')
+        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+
+    print(place.display_name)
+    print(place.state)
+
+    print('do match')
+    place.do_match()
