@@ -746,6 +746,7 @@ class Place(Base):
             # print(oql)
 
             r = overpass.run_query_persistent(oql, attempts=3)
+            assert r
             open(full, 'wb').write(r.content)
 
         cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
