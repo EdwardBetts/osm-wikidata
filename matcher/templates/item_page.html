@@ -269,7 +269,7 @@
     {% if item and item.category_map %}
     <h3 class="mt-2">Search criteria from categories</h3>
     <table class="table table-responsive table-hover table-sm">
-    {% for cat, tags in category_map | dictsort %}
+    {% for cat, tags in item.category_map | dictsort %}
       <tr>
         <td>
           <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>

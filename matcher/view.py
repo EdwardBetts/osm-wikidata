@@ -1155,7 +1155,7 @@ def item_page(wikidata_id):
             return render_template('error_page.html',
                                    message='Overpass timeout')
 
-    found = overpass.parse_item_query(entity, criteria, overpass_reply)
+    found = entity.parse_item_query(criteria, overpass_reply)
 
     upload_option = False
     if g.user.is_authenticated:
