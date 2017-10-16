@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, backref, column_property, object_sessio
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
-from . import wikidata, matcher, wikipedia, overpass
+from . import wikidata, matcher, wikipedia, overpass, utils
 from collections import Counter
 from .overpass import oql_from_tag
 
@@ -689,7 +689,7 @@ class Place(Base):
                 add_tags.append((item, picked))
         return add_tags
 
-    def chunk4(self):
+    def chunk4(self):  # this code is unused
         print('chunk4')
         n = {}
         (n['south'], n['north'], n['west'], n['east']) = self.bbox
@@ -705,7 +705,7 @@ class Place(Base):
 
         return chunks
 
-    def chunk9(self):
+    def chunk9(self):  # this code is unused
         print('chunk9')
         n = {}
         (n['south'], n['north'], n['west'], n['east']) = self.bbox
@@ -728,26 +728,36 @@ class Place(Base):
 
         return chunks
 
+    def chunk_n(self, n):
+        (south, north, west, east) = self.bbox
+        ns = (north - south) / n
+        ew = (east - west) / n
+
+        chunks = []
+        for row in range(n):
+            chunks += [(south + ns * row, south + ns * (row + 1),
+                         west + ew * col, west + ew * (col + 1)) for col in range(n)]
+
+        return chunks
+
     def chunk(self):
-        chunks = self.chunk4() if self.area_in_sq_km < 10000 else self.chunk9()
+        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
+        chunks = self.chunk_n(chunk_size)
 
         files = []
 
-        for chunk in chunks:
-            bbox = chunk['bbox']
-            quad = ''.join(i[0] for i in chunk['name'].strip().split())
-            ymin, ymax, xmin, xmax = bbox
+        for chunk_num, (ymin, ymax, xmin, xmax) in enumerate(chunks):
             q = self.items
+            # note: different order for coordinates, xmin first, not ymin
             q = q.filter(cast(Item.location, Geometry).contained(func.ST_MakeEnvelope(xmin, ymin, xmax, ymax)))
-            # place.load_items(bbox=chunk['bbox'], debug=True)
 
             tags = set()
             for item in q:
                 tags |= set(item.tags)
             tags.difference_update(skip_tags)
             tags = matcher.simplify_tags(tags)
-            filename = '{}_{}.xml'.format(self.place_id, quad)
-            print(chunk['name'], q.count(), quad, len(tags), filename)
+            filename = '{}_{:3d}.xml'.format(self.place_id, chunk_num)
+            print(chunk_num, q.count(), len(tags), filename)
             full = os.path.join('overpass', filename)
             files.append(full)
             if os.path.exists(full):
@@ -759,8 +769,6 @@ class Place(Base):
                                         self.osm_id,
                                         tags,
                                         oql_bbox, None)
-            # print(oql)
-
             r = overpass.run_query_persistent(oql, attempts=3)
             assert r
             open(full, 'wb').write(r.content)
