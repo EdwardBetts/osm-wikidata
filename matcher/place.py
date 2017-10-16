@@ -76,7 +76,7 @@ class Place(Base):
 
     def get_address_key(self, key):
         if isinstance(self.address, dict):
-            return self.address[key]
+            return self.address.get(key)
         for line in self.address or []:
             if line['type'] == key:
                 return line['name']
