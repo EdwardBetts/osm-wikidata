@@ -2,6 +2,7 @@ from flask import current_app, request
 from itertools import islice
 import os.path
 import json
+import math
 
 def chunk(it, size):
     it = iter(it)
@@ -33,3 +34,7 @@ def get_radius(default=1000):
 def get_int_arg(name):
     if name in request.args and request.args[name].isdigit():
         return int(request.args[name])
+
+def calc_chunk_size(area_in_sq_km):
+    side = math.sqrt(area_in_sq_km)
+    return math.ceil(side / 32)
