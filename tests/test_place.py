@@ -50,3 +50,4 @@ def test_place_country_code(app):
                      'country': 'USA',
                      'country_code': 'us'}
     assert place.country_code == 'us'
+    assert place.get_address_key('missing key') is None
