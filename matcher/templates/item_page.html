@@ -2,6 +2,7 @@
 {% extends "base.html" %}
 
 {% set label = entity.label() or '[no label]' %}
+{% set lat, lon = entity.coords %}
 
 {% block title %}{{ label }} ({{ qid }}){% endblock %}
 
@@ -58,6 +59,7 @@
       <li>no coordinates for item</li>
       {% endif %}
 
+      {% set sitelinks = entity.get_sitelinks() %}
       {% if sitelinks %}
       <li>Wikipedia:
           {% for link in sitelinks %}<a href="{{ link.url }}">{{ link.lang }}</a>
@@ -98,22 +100,6 @@
     <div id="mapid"></div>
 
     {% endif %}
-
-    {#
-
-    <h3>labels</h3>
-    <pre>{{ entity['labels'] | pprint }}</pre>
-    {% if entity.aliases %}
-      <h3>aliases</h3>
-      <pre>{{ entity.aliases | pprint }}</pre>
-    {% endif %}
-    <h3>site links</h3>
-    <pre>{{ entity.sitelinks | pprint }}</pre>
-
-    <h3>wikidata names</h3>
-    <pre>{{ wikidata_names | pprint }}</pre>
-
-    #}
 
     {% if overpass_reply and not found %}
         <h3>overpass result</h3>
@@ -280,7 +266,7 @@
 
     {% endif %}
 
-    {% if category_map %}
+    {% if item and item.category_map %}
     <h3 class="mt-2">Search criteria from categories</h3>
     <table class="table table-responsive table-hover table-sm">
     {% for cat, tags in category_map | dictsort %}

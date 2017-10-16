@@ -44,3 +44,9 @@ def test_place_country_code(app):
                      {'type': 'country', 'name': 'USA'},
                      {'type': 'country_code', 'name': 'us'}]
     assert place.country_code == 'us'
+
+    place = simple_place()
+    place.address = {'state': 'New York',
+                     'country': 'USA',
+                     'country_code': 'us'}
+    assert place.country_code == 'us'

@@ -1112,14 +1112,7 @@ def item_page(wikidata_id):
     if not entity:
         abort(404)
 
-    wikidata_names = entity.names
-
-    if not item:
-        entity.trim_location_from_names(wikidata_names)
     entity.report_broken_wikidata_osm_tags()
-
-    sitelinks = entity.get_sitelinks()
-    lat, lon = entity.coords
 
     osm_keys = entity.osm_keys
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
@@ -1136,23 +1129,15 @@ def item_page(wikidata_id):
     else:
         filtered = {}
 
-    category_map = item.category_map if item else None
-    if lat is None or lon is None or not criteria:
-
+    if not entity.has_coords or not criteria:
         return render_template('item_page.html',
                                item=item,
                                entity=entity,
-                               wikidata_names=wikidata_names,
                                wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
-                               category_map=category_map,
-                               sitelinks=sitelinks,
                                filtered=filtered,
-                               qid=qid,
-                               lat=lat,
-                               lon=lon,
-                               osm_keys=osm_keys)
+                               qid=qid)
 
     criteria = wikidata.flatten_criteria(criteria)
 
@@ -1170,43 +1155,29 @@ def item_page(wikidata_id):
             return render_template('error_page.html',
                                    message='Overpass timeout')
 
-    endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
-
-    found = []
-    for element in overpass_reply:
-        m = check_for_match(element['tags'], wikidata_names, endings=endings)
-        if m:
-            element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
-            found.append((element, m))
+    found = overpass.parse_item_query(entity, criteria, overpass_reply)
 
     upload_option = False
     if g.user.is_authenticated:
         if item:
             upload_option = any(not c.wikidata_tag for c in item.candidates)
-            q = database.session.query(BadMatch.item_id).filter(BadMatch.item_id == item.item_id)
+            q = (database.session.query(BadMatch.item_id)
+                                 .filter(BadMatch.item_id == item.item_id))
             if q.count():
                 upload_option = False
         elif found:
             upload_option = any('wikidata' not in c['tags'] for c, _ in found)
 
-    category_map = item.category_map if item else None
-
     return render_template('item_page.html',
                            item=item,
-                           wikidata_names=wikidata_names,
                            wikidata_query=entity.osm_key_query(),
                            entity=entity,
                            wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
-                           category_map=category_map,
-                           criteria=criteria,
-                           sitelinks=sitelinks,
                            upload_option=upload_option,
                            filtered=filtered,
                            oql=oql,
                            qid=qid,
-                           lat=lat,
-                           lon=lon,
                            found=found,
                            osm_keys=osm_keys)
 
@@ -1234,36 +1205,22 @@ def space():
 @app.route('/db_space')
 def db_space():
     rows = database.get_big_table_list()
-    items = []
-    for place_id, size, display_name, state, changeset_count in rows:
-        items.append({
-            'place_id': place_id,
-            'size': size,
-            'display_name': display_name,
-            'state': state,
-            'changesets': changeset_count
-        })
+    items = [{
+        'place_id': place_id,
+        'size': size,
+        'display_name': display_name,
+        'state': state,
+        'changesets': changeset_count
+    } for place_id, size, display_name, state, changeset_count in rows]
 
     return render_template('db_space.html', items=items)
 
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
 @login_required
 def delete_place(place_id):
-    overpass_dir = app.config['OVERPASS_DIR']
-    to_next = request.args.get('next', 'space')
     place = Place.query.get(place_id)
-
-    engine = database.session.bind
-    for t in database.get_tables():
-        if not t.startswith(place.prefix):
-            continue
-        engine.execute('drop table if exists {}'.format(t))
-    engine.execute('commit')
-
-    for f in os.listdir(overpass_dir):
-        if not any(f.startswith(str(place_id) + end) for end in ('_', '.')):
-            continue
-        os.remove(os.path.join(overpass_dir, f))
+    place.clean_up()
 
     flash('{} deleted'.format(place.display_name))
+    to_next = request.args.get('next', 'space')
     return redirect(url_for(to_next))

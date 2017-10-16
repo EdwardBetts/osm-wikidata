@@ -3,7 +3,7 @@ from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start, cache_filename
 from .language import get_language_label
-from . import user_agent_headers, overpass, mail, language
+from . import user_agent_headers, overpass, mail, language, match, matcher
 import requests
 import os
 import json
@@ -114,8 +114,11 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 '''
 
+# Q15893266 == former entity
+# Q56061 == administrative territorial entity
+
 next_level_query = '''
-SELECT DISTINCT ?item ?itemLabel ?startLabel ?pop ?area WHERE {
+SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
   VALUES ?start { wd:QID } .
   ?start wdt:P31/wdt:P279* ?subclass .
   ?subclass wdt:P150 ?nextlevel .
@@ -128,6 +131,27 @@ SELECT DISTINCT ?item ?itemLabel ?startLabel ?pop ?area WHERE {
   OPTIONAL { ?item wdt:P2046 ?area } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 } ORDER BY ?area
+'''
+
+# administrative territorial entity of a single country (Q15916867)
+
+admin_area_map = {
+    'Q21': ['Q1136601',    # England  -> unitary authority of England
+            'Q349084'],    # England  -> district of England
+    'Q22': ['Q15060255'],  # Scotland -> council area
+    'Q25': ['Q15979307'],  # Wales    -> principal area of Wales
+}
+
+next_level_query2 = '''
+SELECT DISTINCT ?item ?itemLabel ?startLabel ?area WHERE {
+  VALUES ?start { wd:QID } .
+  ?item wdt:P31/wdt:P279* wd:TYPE
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+} ORDER BY ?itemLabel
 '''
 
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
@@ -333,7 +357,11 @@ def parse_osm_keys(rows):
 
 def next_level_places(qid, name=None):
     rows = []
-    for row in run_query(next_level_query.replace('QID', qid), name=name):
+    if qid in admin_area_map:
+        query = next_level_query2.replace('TYPE', admin_area_map[qid])
+    else:
+        query = next_level_query
+    for row in run_query(query.replace('QID', qid), name=name):
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
         i = {
@@ -554,3 +582,16 @@ SELECT DISTINCT ?code WHERE {
             if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
                 body = 'qid: {}\nrow: {}\n'.format(self.qid, repr(row))
                 mail.send_mail('broken OSM tag in Wikidata', body)
+
+    def parse_item_query(self, criteria, overpass_reply):
+        wikidata_names = self.names
+        self.trim_location_from_names(wikidata_names)
+        endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
+
+        found = []
+        for element in overpass_reply:
+            m = match.check_for_match(element['tags'], wikidata_names, endings=endings)
+            if m:
+                element['key'] = '{0[type]:s}_{0[id]:d}'.format(element)
+                found.append((element, m))
+        return found
