@@ -248,6 +248,8 @@ def run_matcher(place_identifier):
 
     print('do match')
     place.do_match()
+    print(place.state, place.display_name)
+    print('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
 
 @app.cli.command()
 @click.argument('place_identifier')

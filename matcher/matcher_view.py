@@ -40,14 +40,20 @@ def matcher_progress(osm_type, osm_id):
         user = 'not authenticated'
         subject = 'matcher: {} (no auth)'.format(place.name)
 
+    user_agent = request.headers.get('User-Agent', '[header missing]')
+
     template = '''
 user: {}
+IP: {}
+agent: {}
 name: {}
 page: {}
 area: {}
 '''
 
     body = template.format(user,
+                           request.remote_addr,
+                           user_agent,
                            place.display_name,
                            place.candidates_url(_external=True),
                            mail.get_area(place))
