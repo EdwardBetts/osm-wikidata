@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
 from time import time, sleep
+from pprint import pprint
 import json
 import click
 
@@ -247,3 +248,25 @@ def run_matcher(place_identifier):
 
     print('do match')
     place.do_match()
+
+@app.cli.command()
+@click.argument('place_identifier')
+@click.argument('chunk_count')
+def show_chunks(place_identifier, chunk_count):
+    app.config.from_object('config.default')
+    database.init_app(app)
+    chunk_count = int(chunk_count)
+
+    print(place_identifier)
+    if place_identifier.isdigit():
+        place = Place.query.get(place_identifier)
+    else:
+        osm_type, osm_id = place_identifier.split('/')
+        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+
+    pprint(place.chunk_n(chunk_count))
+
+    if chunk_count == 2:
+        pprint([i['bbox'] for i in place.chunk4()])
+    if chunk_count == 3:
+        pprint([i['bbox'] for i in place.chunk9()])
