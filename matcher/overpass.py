@@ -30,7 +30,7 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
-def oql_for_area(overpass_type, osm_id, tags, bbox, buildings):
+def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True):
     union = []
 
     for key, values in sorted(group_tags(tags).items()):
@@ -50,6 +50,8 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings):
     else:
         oql_building = ''
 
+    self = '    {}({});'.format(overpass_type, osm_id) if include_self else ''
+
     oql_template = '''
 [timeout:300][out:xml][bbox:{}];
 area({}) -> .a;
@@ -57,7 +59,7 @@ area({}) -> .a;
 {}
 ) -> .b;
 (
-    {}({});
+{}
     node.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     way.b[~"^(addr:housenumber|.*name.*)$"~".",i];
     rel.b[~"^(addr:housenumber|.*name.*)$"~".",i];
@@ -65,7 +67,7 @@ area({}) -> .a;
 );
 (._;>;);
 out;'''
-    return oql_template.format(bbox, area_id, '\n'.join(union), overpass_type, osm_id, oql_building)
+    return oql_template.format(bbox, area_id, '\n'.join(union), self, oql_building)
 
 def group_tags(tags):
     '''given a list of keys and tags return a dict group by key'''
@@ -275,6 +277,11 @@ def run_query_persistent(oql, attempts=3, via_web=True):
         wait_for_slot()
         print('calling overpass')
         r = run_query(oql)
+        if r is None:
+            seconds = 30
+            print('retrying, waiting {} seconds'.format(seconds))
+            sleep(seconds)
+            continue
         if len(r.content) < 2000 and b'<remark> runtime error:' in r.content:
 
             msg = 'runtime error'

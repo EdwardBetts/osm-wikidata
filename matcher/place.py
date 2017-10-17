@@ -15,6 +15,7 @@ import subprocess
 import os.path
 import re
 import shutil
+import time
 
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
@@ -485,7 +486,7 @@ class Place(Base):
 
         seen = set()
         for qid, v in items.items():
-            wikidata_id = qid[1:]
+            wikidata_id = int(qid[1:])
             item = Item.query.get(wikidata_id)
             if item:
                 item.location = v['location']
@@ -501,7 +502,10 @@ class Place(Base):
                 tags.remove('building')
 
             item.tags = tags
-            seen.add(int(item.item_id))
+            if wikidata_id in seen:
+                continue
+
+            seen.add(wikidata_id)
 
             existing = PlaceItem.query.filter_by(item=item, place=self).one_or_none()
             if not existing:
@@ -619,7 +623,7 @@ class Place(Base):
         if self.state in ('wbgetentities', 'overpass_error', 'overpass_timeout'):
             print('loading_overpass')
             oql = self.get_oql()
-            if self.area_in_sq_km < 1000:
+            if self.area_in_sq_km < 800:
                 r = overpass.run_query_persistent(oql)
                 assert r
                 self.save_overpass(r.content)
@@ -744,8 +748,11 @@ class Place(Base):
         chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
         chunks = self.chunk_n(chunk_size)
 
+        print('chunk size:', chunk_size)
+
         files = []
 
+        need_pause = False
         for chunk_num, (ymin, ymax, xmin, xmax) in enumerate(chunks):
             q = self.items
             # note: different order for coordinates, xmin first, not ymin
@@ -756,22 +763,37 @@ class Place(Base):
                 tags |= set(item.tags)
             tags.difference_update(skip_tags)
             tags = matcher.simplify_tags(tags)
-            filename = '{}_{:3d}.xml'.format(self.place_id, chunk_num)
-            print(chunk_num, q.count(), len(tags), filename)
+            filename = '{}_{:03d}_{:03d}.xml'.format(self.place_id, chunk_num, len(chunks))
+            print(chunk_num, q.count(), len(tags), filename, list(tags))
             full = os.path.join('overpass', filename)
+            if not(tags):
+                print('no tags, skipping')
+                continue
+
+            if not(tags):
+                continue
             files.append(full)
             if os.path.exists(full):
                 continue
 
             oql_bbox = '{:f},{:f},{:f},{:f}'.format(ymin, xmin, ymax, xmax)
 
+            if need_pause:
+                seconds = 2
+                print('waiting {:d} seconds'.format(seconds))
+                time.sleep(seconds)
+
             oql = overpass.oql_for_area(self.overpass_type,
                                         self.osm_id,
                                         tags,
-                                        oql_bbox, None)
-            r = overpass.run_query_persistent(oql, attempts=3)
+                                        oql_bbox, None,
+                                        include_self=(chunk_num == 0))
+            r = overpass.run_query_persistent(oql)
+            if not r:
+                print(oql)
             assert r
             open(full, 'wb').write(r.content)
+            need_pause = True
 
         cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
         print(' '.join(cmd))
