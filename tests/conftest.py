@@ -2,7 +2,8 @@ import pytest
 from flask import Flask
 from testing.postgresql import Postgresql
 from matcher import database
-from matcher.model import Base, Item
+from matcher.place import Place  # noqa: F401
+from matcher.model import Base, Item  # noqa: F401
 
 @pytest.fixture(scope='session')
 def postgresql(request):
