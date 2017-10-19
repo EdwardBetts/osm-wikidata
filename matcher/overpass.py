@@ -9,7 +9,7 @@ from time import sleep
 from . import user_agent_headers, mail
 from collections import defaultdict
 
-re_slot_available = re.compile('^Slot available after: ([^,]+), in (\d+) seconds?\.$')
+re_slot_available = re.compile('^Slot available after: ([^,]+), in (-?\d+) seconds?\.$')
 re_available_now = re.compile('^\d+ slots available now.$')
 
 name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
@@ -30,6 +30,13 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
+def name_only(t):
+    return (t in name_only_tag or
+            ('=' in t and any(t.startswith(key + '=') for key in name_only_key)))
+
+def get_name_filter(tags):
+    return '[name]' if all(name_only(t) for t in tags) else '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+
 def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True):
     union = []
 
@@ -40,6 +47,8 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
 
     offset = {'way': 2400000000, 'rel': 3600000000}
     area_id = offset[overpass_type] + int(osm_id)
+
+    name_filter = get_name_filter(tags)
 
     if buildings:
         oql_building = '''
@@ -53,21 +62,26 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
     self = '    {}({});'.format(overpass_type, osm_id) if include_self else ''
 
     oql_template = '''
-[timeout:300][out:xml][bbox:{}];
-area({}) -> .a;
+[timeout:300][out:xml][bbox:{bbox}];
+area({area_id}) -> .a;
 (
-{}
+{tags}
 ) -> .b;
 (
-{}
-    node.b[~"^(addr:housenumber|.*name.*)$"~".",i];
-    way.b[~"^(addr:housenumber|.*name.*)$"~".",i];
-    rel.b[~"^(addr:housenumber|.*name.*)$"~".",i];
-{}
+{self}
+    node.b{name_filter};
+    way.b{name_filter};
+    rel.b{name_filter};
+{oql_building}
 );
 (._;>;);
 out;'''
-    return oql_template.format(bbox, area_id, '\n'.join(union), self, oql_building)
+    return oql_template.format(bbox=bbox,
+                               area_id=area_id,
+                               tags='\n'.join(union),
+                               self=self,
+                               name_filter=name_filter,
+                               oql_building=oql_building)
 
 def group_tags(tags):
     '''given a list of keys and tags return a dict group by key'''
@@ -95,15 +109,14 @@ def oql_element_filter(key, values, filters='area.a'):
     return ['{}({})[{}];'.format(t, filters, tag)
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
 
-def oql_from_tag(tag, large_area, filters='area.a'):
+def oql_from_tag(tag, filters='area.a'):
     if tag == 'highway':
         return []
     # optimisation: we only expect route, type or site on relations
     relation_only = tag == 'site'
-    if large_area or tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
-        name_filter = '[name]'
-    else:
-        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+
+    name_filter = get_name_filter([tag])
+
     if '=' in tag:
         k, _, v = tag.partition('=')
         if tag == 'type=waterway' or k == 'route' or tag == 'type=route':
@@ -128,10 +141,8 @@ def oql_from_wikidata_tag_or_key(tag_or_key, filters):
 
     relation_only = tag == 'site'
 
-    if tag in name_only_tag or any(tag.startswith(k) for k in name_only_key):
-        name_filter = '[name]'
-    else:
-        name_filter = '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+    name_filter = get_name_filter([tag])
+
     if osm_type == 'tag':
         k, _, v = tag.partition('=')
         if k in {'site', 'type', 'route'}:
@@ -161,6 +172,7 @@ def parse_status(status):
         if not m:
             subject = 'error parsing overpass status'
             mail.send_mail(subject, status)
+            print(status)
         slots.append(int(m.group(2)))
 
     next_line = lines[i]

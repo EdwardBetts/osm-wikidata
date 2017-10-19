@@ -253,7 +253,7 @@ class Place(Base):
         shutil.move(filename, self.overpass_backup)
 
     def clean_up(self):
-        place_id = self.id
+        place_id = self.place_id
 
         engine = session.bind
         for t in get_tables():
@@ -419,14 +419,12 @@ class Place(Base):
                                      bbox,
                                      buildings)
 
-        large_area = self.area > 3000 * 1000 * 1000
-
         union = ['{}({});'.format(self.overpass_type, self.osm_id)]
 
         for tag in self.all_tags:
-            u = (oql_from_tag(tag, large_area, filters=self.overpass_filter)
+            u = (oql_from_tag(tag, filters=self.overpass_filter)
                  if self.osm_type == 'node'
-                 else oql_from_tag(tag, large_area))
+                 else oql_from_tag(tag))
             if u:
                 union += u
 
