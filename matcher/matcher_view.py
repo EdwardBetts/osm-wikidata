@@ -1,6 +1,6 @@
 from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request
 from . import database, wikidata, matcher, mail
-from .model import Item, ItemCandidate
+from .model import Item
 from .place import Place
 
 import requests
@@ -136,25 +136,9 @@ def load_individual_match(place_id, item_id):
     if not place:
         abort(404)
 
-    conn = database.session.bind.raw_connection()
-    cur = conn.cursor()
-
     item = Item.query.get(item_id)
-    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
-    confirmed = set()
-    for i in (candidates or []):
-        c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
-        if not c:
-            c = ItemCandidate(**i, item=item)
-            database.session.add(c)
-        confirmed.add((c.item_id, c.osm_id, c.osm_type))
-    for c in item.candidates:
-        if ((c.item_id, c.osm_id, c.osm_type) not in confirmed and
-                not c.bad_matches.count()):
-            database.session.delete(c)
-    database.session.commit()
-
-    conn.close()
+    candidates = matcher.run_individual_match(place, item)
+    matcher.save_individual_matches(place, item, candidates)
     return Response('done', mimetype='text/plain')
 
 @matcher_blueprint.route('/load/<int:place_id>/ready', methods=['POST', 'GET'])

@@ -1,5 +1,6 @@
 from flask import current_app
 from collections import Counter, defaultdict
+from .model import ItemCandidate
 from . import match, database
 
 import os.path
@@ -178,6 +179,29 @@ def find_item_matches(cur, item, prefix, debug=False):
         }
         candidates.append(candidate)
     return candidates
+
+def run_individual_match(place, item):
+    conn = database.session.bind.raw_connection()
+    cur = conn.cursor()
+
+    candidates = find_item_matches(cur, item, place.prefix, debug=False)
+    conn.close()
+
+    return candidates
+
+def save_individual_matches(place, item, candidates):
+    confirmed = set()
+    for i in (candidates or []):
+        c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
+        if not c:
+            c = ItemCandidate(**i, item=item)
+            database.session.add(c)
+        confirmed.add((c.item_id, c.osm_id, c.osm_type))
+    for c in item.candidates:
+        if ((c.item_id, c.osm_id, c.osm_type) not in confirmed and
+                not c.bad_matches.count()):
+            database.session.delete(c)
+    database.session.commit()
 
 def get_osm_id_and_type(source_type, source_id):
     if source_type == 'point':
