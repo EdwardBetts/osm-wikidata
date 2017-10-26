@@ -13,7 +13,7 @@ def matcher_progress(osm_type, osm_id):
     if place.state == 'ready':
         return redirect(place.candidates_url())
 
-    if osm_type != 'node' and place.area and place.area_in_sq_km > 90000:
+    if osm_type != 'node' and place.area and place.area_in_sq_km > 2000:
         message = '{}: area is too large for matcher'.format(place.name)
         return render_template('error_page.html', message=message)
 
