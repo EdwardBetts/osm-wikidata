@@ -2,64 +2,45 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, wikidata, matcher, mail
 from .model import Item, ItemCandidate
 from .place import Place
-
 import requests
+import re
+
+re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
 
 matcher_blueprint = Blueprint('matcher', __name__)
 
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
-    if place.state == 'ready':
-        return redirect(place.candidates_url())
 
-    if osm_type != 'node' and place.area and place.area_in_sq_km > 90000:
-        message = '{}: area is too large for matcher'.format(place.name)
-        return render_template('error_page.html', message=message)
+    # would be nice to tell the user how the place is tagged on OSM
+    # for example: civil parish or french department
 
-    if not place.state or place.state == 'refresh':
-        try:
-            place.load_items()
-        except wikidata.QueryError as e:
-            return render_template('wikidata_query_error.html',
-                                   query=e.query,
-                                   place=place,
-                                   reply=e.r.text)
+    return render_template('matcher.html', place=place)
 
-        place.state = 'wikipedia'
+@matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/query_wikidata')
+def query_wikidata(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
 
-    if place.state == 'wikipedia':
-        place.add_tags_to_items()
-        place.state = 'tags'
-        database.session.commit()
-
-    if g.user.is_authenticated:
-        user = g.user.username
-        subject = 'matcher: {} (user: {})'.format(place.name, user)
-    else:
-        user = 'not authenticated'
-        subject = 'matcher: {} (no auth)'.format(place.name)
-
-    user_agent = request.headers.get('User-Agent', '[header missing]')
-
-    template = '''
-user: {}
-IP: {}
-agent: {}
-name: {}
-page: {}
-area: {}
-'''
-
-    body = template.format(user,
-                           request.remote_addr,
-                           user_agent,
-                           place.display_name,
-                           place.candidates_url(_external=True),
-                           mail.get_area(place))
-    mail.send_mail(subject, body)
-
-    return render_template('wikidata_items.html', place=place)
+    wikidata_items = place.items_from_wikidata(place.bbox)
+    items = []
+    for qid, v in wikidata_items.items():
+        v['qid'] = qid
+        label = v.pop('query_label')
+        enwiki = v.get('enwiki')
+        if enwiki:
+            del v['enwiki']
+            if not enwiki.startswith(label + ','):
+                label = enwiki
+        v['label'] = label
+        location = v.pop('location')
+        lon, lat = re_point.match(location).groups()
+        v['lat'] = lat
+        v['lon'] = lon
+        if 'tags' in v:
+            v['tags'] = list(v['tags'])
+        items.append(v)
+    return jsonify(items=items)
 
 @matcher_blueprint.route('/load/<int:place_id>/wbgetentities', methods=['POST'])
 def load_wikidata(place_id):

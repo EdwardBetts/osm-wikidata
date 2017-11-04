@@ -21,6 +21,9 @@ from dogpile.cache import make_region
 from dukpy.webassets import BabelJS
 
 from .matcher_view import matcher_blueprint
+from .websocket import ws
+
+from flask_sockets import Sockets
 
 import json
 import flask_assets
@@ -37,6 +40,8 @@ re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
+sockets = Sockets(app)
+sockets.register_blueprint(ws)
 init_pager(app)
 env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
@@ -718,11 +723,7 @@ out bb tags;
 
 @app.route('/refresh/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 def refresh_place(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = Place.get_or_abort(osm_type, osm_id)
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 

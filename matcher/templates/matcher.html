@@ -1,0 +1,45 @@
+{% from "macro.html" import place_box %}
+{% extends "base.html" %}
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#mapid { height: 300px; border: black 1px solid }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="container my-2">
+    <h1>{{ place.name }}</h1>
+    {{ place_box(place) }}
+
+    <div id="mapid"></div>
+
+    <div>current: <span id="current"></span></div>
+
+    <div id="messages"></div>
+
+
+  </div>
+{% endblock %}
+
+{% block script %}
+
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+
+<script>
+var osm_type = {{ place.osm_type | tojson }};
+var osm_id = {{ place.osm_id | tojson }};
+var wikidata_json_url = {{ url_for('.query_wikidata',
+                                   osm_type=place.osm_type,
+                                   osm_id=place.osm_id) | tojson }};
+var chunk_geojson = [{{ place.geojson_chunks() | join(',') | safe }}];
+var candidates_url = {{ place.candidates_url() | tojson }};
+var empty_layers = [];
+</script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ws.js') }}"></script>
+
+{% endblock %}
