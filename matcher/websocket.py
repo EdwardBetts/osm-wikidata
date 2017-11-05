@@ -9,6 +9,7 @@ import os.path
 
 ws = Blueprint('ws', __name__)
 re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
+max_pin_count = 300
 
 # TODO: different coloured icons
 # - has enwiki article
@@ -29,7 +30,7 @@ def build_item_list(items):
         item_list.append(item)
     return item_list
 
-def overpass_request(place, chunks, status):
+def overpass_request(ws_sock, place, chunks, status):
     host, port = 'localhost', 6020
     sock = socket.create_connection((host, port))
     sock.setblocking(True)
@@ -42,109 +43,157 @@ def overpass_request(place, chunks, status):
 
     netstring.write(sock, json.dumps(msg))
     reply = netstring.read(sock)
-    status(reply)
+    status(ws_sock, reply)
     while True:
         from_network = netstring.read(sock)
         if from_network is None:
             break
-        status('from network: ' + from_network)
+        status(ws_sock, 'from network: ' + from_network)
         netstring.write(sock, 'ack')
-    status('socket closed')
+    status(ws_sock, 'socket closed')
+
+def send(socket, data):
+    socket.send(json.dumps(data))
+
+def status(socket, msg):
+    if not msg:
+        return
+    send(socket, {'msg': msg})
+
+def item_line(socket, msg):
+    if not msg:
+        return
+    send(socket, {'type': 'item', 'msg': msg})
+
+def get_items(place):
+    wikidata_items = place.items_from_wikidata(place.bbox)
+    pins = build_item_list(wikidata_items)
+
+    status('loading enwiki categories')
+    wikipedia.add_enwiki_categories(wikidata_items)
+    status('enwiki categories loaded')
+    place.save_items(wikidata_items)
+    status('items saved to database')
+
+    place.state = 'tags'
+    database.session.commit()
+
+    return pins
+
+def get_pins(place):
+    if place.items.count() > max_pin_count:
+        return []
+    pins = []
+    for item in place.items:
+        lat, lon = item.coords()
+        pin = {
+            'qid': item.qid,
+            'lat': lat,
+            'lon': lon,
+            'label': item.label(),
+        }
+        if item.tags:
+            pin['tags'] = list(item.tags)
+        pins.append(pin)
+    return pins
+
+def merge_chunks(ws_sock, place, chunks):
+    files = [os.path.join('overpass', chunk['filename'])
+             for chunk in chunks
+             if chunk.get('oql')]
+
+    cmd = ['osmium', 'merge'] + files + ['-o', place.overpass_filename]
+    # status(' '.join(cmd))
+    p = subprocess.run(cmd,
+                       encoding='utf-8',
+                       universal_newlines=True,
+                       stderr=subprocess.PIPE,
+                       stdout=subprocess.PIPE)
+    status(ws_sock, p.stdout if p.returncode == 0 else p.stderr)
+
+def run_osm2pgsql(place):
+    cmd = place.osm2pgsql_cmd()
+    env = {'PGPASSWORD': current_app.config['DB_PASS']}
+    subprocess.run(cmd, env=env, check=True)
+    # could echo osm2pgsql output via websocket
 
 @ws.route('/matcher/<osm_type>/<int:osm_id>/run')
-def ws_matcher(socket, osm_type, osm_id):
+def ws_matcher(ws_sock, osm_type, osm_id):
+    # idea: catch exceptions, then pass to pass to web page as status update
+    # also e-mail them
 
-    def send(data):
-        socket.send(json.dumps(data))
+    place = Place.get_by_osm(osm_type, osm_id)
+    # place.state = 'tags'
 
-    def status(msg, echo=True):
-        if not msg:
-            return
-        if echo:
-            print(msg)
-        send({'msg': msg})
+    if not place:
+        status(ws_sock, 'error: place not found')
+        # FIXME - send error mail
+        return
 
-    place = Place.get_or_abort(osm_type, osm_id)
-    # status('place found')
+    if place.state == 'ready':
+        status(ws_sock, 'error: place already ready')
+        # FIXME - send error mail
+        return
 
-    items = place.items_from_wikidata(place.bbox)
-    if len(items) < 300:
-        send({'pins': build_item_list(items)})
-        status('{:,d} Wikidata items found, pins shown on map'.format(len(items)))
+    if not place.state or place.state == 'refresh':
+        pins = get_items(place)
     else:
-        status('{:,d} Wikidata items found, too many to show on map'.format(len(items)))
+        pins = get_pins(place)
 
-    if False:
-        status('loading enwiki categories')
-        wikipedia.add_enwiki_categories(items)
-        status('enwiki categories loaded')
-        db_items = place.save_items(items, debug=status)
-        status('items saved to database')
+    db_items = {item.qid: item for item in place.items}
 
+    item_count = len(db_items)
+
+    item_count_msg = '{:,d} Wikidata items found'.format(item_count)
+    send_pins = item_count < max_pin_count
+    if send_pins:
+        send(ws_sock, {'pins': pins})
+    status(ws_sock, item_count_msg + (', pins shown on map' if send_pins else ', too many to show on map'))
+
+    def extracts_progress(item):
+        msg = 'load extracts: ' + item.label_and_qid()
+        item_line(ws_sock, msg)
+
+    if place.state == 'tags':
+        status(ws_sock, 'getting wikidata item details')
         for qid, entity in wikidata.entity_iter(db_items.keys()):
-            db_items[qid].entity = entity
+            item = db_items[qid]
+            item.entity = entity
+            item_line(ws_sock, 'load entity: ' + item.label_and_qid())
+        item_line(ws_sock, 'wikidata entities loaded')
 
-    place.state = 'wbgetentities'
-    database.session.commit()
+        status(ws_sock, 'loading wikipedia extracts')
+        place.load_extracts(progress=extracts_progress)
+        item_line(ws_sock, 'extracts loaded')
+
+        place.state = 'wbgetentities'
+        database.session.commit()
 
     chunks = place.get_chunks()
 
     empty = [chunk['num'] for chunk in chunks if not chunk['oql']]
     if empty:
-        send({'empty': empty})
+        send(ws_sock, {'empty': empty})
 
     if place.overpass_done:
-        status('using existing overpass data')
+        status(ws_sock, 'using existing overpass data')
     else:
-        status('downloading data from overpass')
-        overpass_request(place, chunks, status)
+        status(ws_sock, 'downloading data from overpass')
+        overpass_request(ws_sock, place, chunks, status)
+        merge_chunks(ws_sock, place, chunks)
 
-        files = [os.path.join('overpass', chunk['filename'])
-                 for chunk in chunks
-                 if chunk.get('oql')]
-
-        cmd = ['osmium', 'merge'] + files + ['-o', place.overpass_filename]
-        # status(' '.join(cmd))
-        p = subprocess.run(cmd,
-                           encoding='utf-8',
-                           universal_newlines=True,
-                           stderr=subprocess.PIPE,
-                           stdout=subprocess.PIPE)
-        if p.returncode == 0:
-            status(p.stdout)
-        else:
-            status(p.stderr)
-
-    if False:
-        status('running osm2pgsql')
-        cmd = place.osm2pgsql_cmd()
-        env = {'PGPASSWORD': current_app.config['DB_PASS']}
-
-        p = subprocess.Popen(cmd,
-                             env=env,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT,
-                             universal_newlines=True)
-        for line in p.stdout:
-            if line.endswith('\n'):
-                line = line[:-1]
-            # status(line, echo=False)
-
-        status('osm2pgsql done')
+    if True:
+        status(ws_sock, 'running osm2pgsql')
+        run_osm2pgsql(place)
+        status(ws_sock, 'osm2pgsql done')
 
     def progress(candidates, item):
-        msg = {
-            'type': 'match',
-            'candidate_count': len(candidates),
-            'qid': item.qid,
-            'enwiki': item.enwiki,
-            'categories': item.categories,
-            'query_label': item.query_label,
-            'extract_names': item.extract_names,
-            'wikidata_uri': item.wikidata_uri,
-        }
-        socket.send(json.dumps(msg))
+        num = len(candidates)
+        noun = 'candidate' if num == 1 else 'candidates'
+        count = ': {num} {noun} found'.format(num=num, noun=noun)
+        item_line(ws_sock, item.label_and_qid() + count)
 
     place.run_matcher(progress=progress)
 
-    socket.send(json.dumps({'type': 'done'}))
+    item_line(ws_sock, 'finished')
+    send(ws_sock, {'type': 'done'})

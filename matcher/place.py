@@ -550,7 +550,7 @@ class Place(Base):
 
         session.commit()
 
-    def load_extracts(self, debug=False):
+    def load_extracts(self, debug=False, progress=None):
         by_title = {item.enwiki: item for item in self.items if item.enwiki}
 
         for title, extract in wikipedia.get_extracts(by_title.keys()):
@@ -559,6 +559,7 @@ class Place(Base):
                 print(title)
             item.extract = extract
             item.extract_names = wikipedia.html_names(extract)
+            progress(item)
 
     def wbgetentities(self, debug=False):
         sub = (session.query(Item.item_id)
@@ -637,7 +638,7 @@ class Place(Base):
 
         if not self.state or self.state == 'refresh':
             print('load items')
-            self.load_items()
+            self.load_items()  # includes categories
             self.state = 'tags'
             session.commit()
 

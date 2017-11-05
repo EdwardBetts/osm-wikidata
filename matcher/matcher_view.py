@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request
-from . import database, wikidata, matcher, mail
+from . import database, matcher, mail
 from .model import Item, ItemCandidate
 from .place import Place
 import requests
@@ -9,12 +9,43 @@ re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
 
 matcher_blueprint = Blueprint('matcher', __name__)
 
+def announce_matcher_progress(place):
+    if g.user.is_authenticated:
+        user = g.user.username
+        subject = 'matcher: {} (user: {})'.format(place.name, user)
+    else:
+        user = 'not authenticated'
+        subject = 'matcher: {} (no auth)'.format(place.name)
+
+    user_agent = request.headers.get('User-Agent', '[header missing]')
+
+    template = '''
+user: {}
+IP: {}
+agent: {}
+name: {}
+page: {}
+area: {}
+'''
+
+    body = template.format(user,
+                           request.remote_addr,
+                           user_agent,
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           mail.get_area(place))
+    mail.send_mail(subject, body)
+
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
+    # if place.state == 'ready':
+    #     return redirect(place.candidates_url())
 
     # would be nice to tell the user how the place is tagged on OSM
     # for example: civil parish or french department
+
+    # announce_matcher_progress(place)
 
     return render_template('matcher.html', place=place)
 

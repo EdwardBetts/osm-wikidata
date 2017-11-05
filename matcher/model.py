@@ -77,6 +77,10 @@ class Item(Base):
         elif labels:
             return list(labels.values())[0]['value']
 
+    def label_and_qid(self, lang='en'):
+        label = self.label(lang=lang)
+        return '{label} ({item.qid})'.format(label=label, item=self)
+
     @property
     def wikidata_uri(self):
         return 'https://www.wikidata.org/wiki/Q{}'.format(self.item_id)

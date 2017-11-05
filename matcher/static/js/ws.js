@@ -27,17 +27,16 @@ function post_message(msg) {
 // Log messages from the server
 connection.onmessage = function (e) {
   var data = JSON.parse(e.data);
-  if (data['type'] == 'match') {
-      var num = data['candidate_count'];
-      var line = (data['query_label'] + ' (' + data['qid'] + '): ' +
-                  num + ' ' +
-                  (num == 1 ? 'candidate' : 'candidates') + ' found');
-      current.textContent = line;
+  if (data['type'] == 'item') {
+      console.log(data);
+      current.textContent = data['msg'];
+      return;
   }
+
   if (data['type'] == 'done') {
-      current.textContent = 'finished';
       window.location = candidates_url;
   }
+
   if ('empty' in data) {
     var chunk_layers = layer.getLayers();
     $.each(data['empty'], function(i, item) {
