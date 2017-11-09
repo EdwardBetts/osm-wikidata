@@ -180,7 +180,8 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     else:
         status(ws_sock, 'downloading data from overpass')
         overpass_request(ws_sock, place, chunks, status)
-        merge_chunks(ws_sock, place, chunks)
+        if len(chunks) > 1:
+            merge_chunks(ws_sock, place, chunks)
 
     if True:
         status(ws_sock, 'running osm2pgsql')
