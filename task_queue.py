@@ -4,13 +4,36 @@ from gevent.server import StreamServer
 from gevent.queue import Queue
 from gevent.event import Event
 from gevent import monkey, spawn, sleep
+from gevent.lock import Semaphore
 monkey.patch_all()
 
 from matcher import overpass, netstring
 import json
 import os.path
 
+class Counter(object):
+    def __init__(self, start=0):
+        self.semaphore = Semaphore()
+        self.value = start
+
+    def add(self, other):
+        self.semaphore.acquire()
+        self.value += other
+        self.semaphore.release()
+
+    def sub(self, other):
+        self.semaphore.acquire()
+        self.value -= other
+        self.semaphore.release()
+
+    def get_value(self):
+        return self.value
+
+
+chunk_count = Counter()
 task_queue = Queue()
+# how many chunks ahead of this socket in the queue
+chunk_count_sock = {}
 sockets = {}
 
 listen_host, port = 'localhost', 6020
@@ -20,6 +43,7 @@ listen_host, port = 'localhost', 6020
 # tell client the length of the rate limit pause
 
 def queue_update(msg_type, msg, request_address=None):
+    chunk_count.sub(1)
     items = sockets.items()
     for address, sock in list(items):
         if address not in sockets:
@@ -35,16 +59,6 @@ def queue_update(msg_type, msg, request_address=None):
         reply = netstring.read(sock)
         print('reply:', reply)
         assert reply == 'ack'
-
-        if msg_type == 'done' and address == request_address:
-            to_send = 'request complete'
-            print(to_send)
-            netstring.write(sock, to_send)
-            reply = netstring.read(sock)
-            print('reply:', reply)
-            assert reply == 'ack'
-            sock.close()
-            del sockets[address]
 
 def wait_for_slot():
     status = overpass.get_status()
@@ -79,7 +93,7 @@ def process_queue():
                 with open(filename, 'wb') as out:
                     out.write(r.content)
             queue_update('chunk', msg, address)
-        queue_update('done', {'place': place}, address)
+        item['done'].set()
 
 def handle(sock, address):
     print('New connection from %s:%s' % address)
@@ -90,17 +104,33 @@ def handle(sock, address):
         sock.close()
         return
 
+    queued_chunks = chunk_count.get_value()
+    chunk_count_sock[address] = queued_chunks
+
+    done = Event()
+
     # print(msg)
     task_queue.put({
         'place': msg['place'],
         'address': address,
         'chunks': msg['chunks'],
+        'done': Event(),
     })
-    netstring.write(sock, 'connected')
+    chunk_count.add(len(msg['chunks']))
+    msg = {'type': 'connected', 'queued_chunks': queued_chunks}
+    netstring.write(sock, json.dumps(msg))
 
     sockets[address] = sock
-    # end of function closes the socket
-    Event().wait()
+    done.wait()  # end of function closes the socket
+
+    to_send = 'request complete'
+    print(to_send)
+    netstring.write(sock, to_send)
+    reply = netstring.read(sock)
+    print('reply:', reply)
+    assert reply == 'ack'
+    sock.close()
+    del sockets[address]
 
 def main():
     spawn(process_queue)

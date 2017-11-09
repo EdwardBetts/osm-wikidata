@@ -793,6 +793,8 @@ class Place(Base):
         return chunks
 
     def chunk_filename(self, num, chunks):
+        if len(chunks) == 1:
+            return '{}.xml'.format(self.place_id)
         return '{}_{:03d}_{:03d}.xml'.format(self.place_id, num, len(chunks))
 
     def chunk(self):
