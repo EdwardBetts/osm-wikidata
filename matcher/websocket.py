@@ -181,11 +181,15 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         status(ws_sock, 'downloading data from overpass')
         overpass_request(ws_sock, place, chunks, status)
         merge_chunks(ws_sock, place, chunks)
+        place.state = 'postgis'
+        database.session.commit()
 
-    if True:
+    if place.state == 'postgis':
         status(ws_sock, 'running osm2pgsql')
         run_osm2pgsql(place)
         status(ws_sock, 'osm2pgsql done')
+        place.state = 'osm2pgsql'
+        database.session.commit()
 
     def progress(candidates, item):
         num = len(candidates)
@@ -193,7 +197,8 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         count = ': {num} {noun} found'.format(num=num, noun=noun)
         item_line(ws_sock, item.label_and_qid() + count)
 
-    place.run_matcher(progress=progress)
+    if place.state == 'osm2pgsql':
+        place.run_matcher(progress=progress)
 
     item_line(ws_sock, 'finished')
     send(ws_sock, {'type': 'done'})
