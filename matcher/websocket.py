@@ -58,6 +58,7 @@ def send(socket, data):
 def status(socket, msg):
     if not msg:
         return
+    print(msg)
     send(socket, {'msg': msg})
 
 def item_line(socket, msg):
@@ -65,15 +66,15 @@ def item_line(socket, msg):
         return
     send(socket, {'type': 'item', 'msg': msg})
 
-def get_items(place):
+def get_items(ws_sock, place):
     wikidata_items = place.items_from_wikidata(place.bbox)
     pins = build_item_list(wikidata_items)
 
-    status('loading enwiki categories')
+    status(ws_sock, 'loading enwiki categories')
     wikipedia.add_enwiki_categories(wikidata_items)
-    status('enwiki categories loaded')
+    status(ws_sock, 'enwiki categories loaded')
     place.save_items(wikidata_items)
-    status('items saved to database')
+    status(ws_sock, 'items saved to database')
 
     place.state = 'tags'
     database.session.commit()
@@ -135,8 +136,10 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         # FIXME - send error mail
         return
 
+    print('state:', place.state)
+
     if not place.state or place.state == 'refresh':
-        pins = get_items(place)
+        pins = get_items(ws_sock, place)
     else:
         pins = get_pins(place)
 
@@ -170,6 +173,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         database.session.commit()
 
     chunks = place.get_chunks()
+    print('{} chunks'.format(len(chunks)))
 
     empty = [chunk['num'] for chunk in chunks if not chunk['oql']]
     if empty:
@@ -202,4 +206,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         place.run_matcher(progress=progress)
 
     item_line(ws_sock, 'finished')
+    place.state = 'ready'
+    database.session.commit()
+    print('done')
     send(ws_sock, {'type': 'done'})
