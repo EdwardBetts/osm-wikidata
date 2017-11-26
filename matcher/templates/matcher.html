@@ -4,6 +4,8 @@
 
 {% block style %}
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.Default.css') }}">
 <style>
 #mapid { height: 300px; border: black 1px solid }
 </style>
@@ -27,6 +29,7 @@
 {% block script %}
 
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
 
 <script>
 var osm_type = {{ place.osm_type | tojson }};
