@@ -82,6 +82,7 @@ def get_items(ws_sock, place):
     return pins
 
 def get_pins(place):
+    ''' Build pins from items in database. '''
     if place.items.count() > max_pin_count:
         return []
     pins = []
@@ -118,6 +119,13 @@ def run_osm2pgsql(place):
     subprocess.run(cmd, env=env, check=True)
     # could echo osm2pgsql output via websocket
 
+def send_pins(ws_sock, place, pins, item_count):
+    item_count_msg = '{:,d} Wikidata items found'.format(item_count)
+    do_send = item_count < max_pin_count
+    if do_send:
+        send(ws_sock, {'pins': pins})
+    status(ws_sock, item_count_msg + (', pins shown on map' if do_send else ', too many to show on map'))
+
 @ws.route('/matcher/<osm_type>/<int:osm_id>/run')
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
@@ -132,6 +140,8 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         return
 
     if place.state == 'ready':
+        pins = get_pins(place)
+        send_pins(ws_sock, place, pins, place.items.count())
         status(ws_sock, 'error: place already ready')
         # FIXME - send error mail
         return
@@ -144,14 +154,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         pins = get_pins(place)
 
     db_items = {item.qid: item for item in place.items}
-
-    item_count = len(db_items)
-
-    item_count_msg = '{:,d} Wikidata items found'.format(item_count)
-    send_pins = item_count < max_pin_count
-    if send_pins:
-        send(ws_sock, {'pins': pins})
-    status(ws_sock, item_count_msg + (', pins shown on map' if send_pins else ', too many to show on map'))
+    send_pins(ws_sock, place, pins, len(db_items))
 
     def extracts_progress(item):
         msg = 'load extracts: ' + item.label_and_qid()
