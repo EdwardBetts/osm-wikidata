@@ -47,9 +47,13 @@ connection.onmessage = function (e) {
   }
   if ('pins' in data) {
     // post_message('pins added to map');
+    var markers = L.markerClusterGroup();
+
     $.each(data['pins'], function(i, item) {
-      add_pin(item);
+      var marker = add_pin(item);
+      markers.addLayer(marker);
     });
+    map.addLayer(markers);
   }
   if ('msg' in data) {
     post_message(data['msg']);

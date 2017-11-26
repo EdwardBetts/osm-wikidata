@@ -1,5 +1,3 @@
-var layer;
-
 function highlightFeature(e) {
     var layer = e.target;
 
@@ -36,7 +34,8 @@ function onEachFeature(feature, layer) {
 }
 
 var map = L.map('mapid');
-// var place_layer = L.geoJSON(place_geojson);
+
+var layer;
 
 if (chunk_geojson.length == 1) {
   layer = L.geoJSON(chunk_geojson);
@@ -46,10 +45,12 @@ if (chunk_geojson.length == 1) {
 
 layer.addTo(map);
 map.fitBounds(layer.getBounds());
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+tiles.addTo(map);
 
 function add_pin(item) {
-  var marker = L.marker([item.lat, item.lon]).addTo(map);
+  var marker = L.marker([item.lat, item.lon]);
+
   var label = document.createElement('div');
   var link = document.createElement('a');
   link.setAttribute('href', 'https://www.wikidata.org/wiki/' + item.qid)
@@ -57,6 +58,7 @@ function add_pin(item) {
   label.appendChild(link)
   label.appendChild(document.createTextNode(" (" + item.qid + ")"))
   marker.bindPopup(label);
+  return marker;
 }
 
 function load_wikidata_pins() {
