@@ -1106,10 +1106,7 @@ def match_detail(item_id, osm_type, osm_id):
                            wikidata_names=wikidata_names,
                            entity=item.entity)
 
-@app.route('/Q<int:wikidata_id>')
-def item_page(wikidata_id):
-    item = Item.query.get(wikidata_id)
-
+def build_item_page(wikidata_id, item):
     qid = 'Q' + str(wikidata_id)
     if item and item.entity:
         entity = wikidata.WikidataItem(qid, item.entity)
@@ -1187,6 +1184,16 @@ def item_page(wikidata_id):
                            qid=qid,
                            found=found,
                            osm_keys=osm_keys)
+
+@app.route('/Q<int:wikidata_id>')
+def item_page(wikidata_id):
+    item = Item.query.get(wikidata_id)
+    try:
+        return build_item_page(wikidata_id, item)
+    except wikidata.QueryError:
+        return render_template('error_page.html',
+                               message="query.wikidata.org isn't working")
+
 
 @app.route('/space')
 def space():
