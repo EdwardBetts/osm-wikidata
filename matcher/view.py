@@ -16,7 +16,7 @@ from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
-from time import time
+from time import time, sleep
 from dogpile.cache import make_region
 from dukpy.webassets import BabelJS
 
@@ -113,6 +113,13 @@ def filter_urls():
 @app.before_request
 def global_user():
     g.user = current_user._get_current_object()
+
+@app.before_request
+def slow_crawl():
+    user_agent = request.headers.get('User-Agent')
+    bots = {'AhrefsBot', 'YandexBot', 'Googlebot'}
+    if user_agent and any(bot in user_agent for bot in bots):
+        sleep(5)
 
 @login_manager.user_loader
 def load_user(user_id):
