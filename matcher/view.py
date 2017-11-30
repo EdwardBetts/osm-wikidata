@@ -1,5 +1,5 @@
 from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
-from .utils import cache_filename, get_radius, get_int_arg
+from .utils import cache_filename, get_radius, get_int_arg, is_bot
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
@@ -103,7 +103,8 @@ def filter_urls():
     name_filter = g.get('filter')
     try:
         if name_filter:
-            url = url_for('saved_with_filter', name_filter=name_filter.replace(' ', '_'))
+            url = url_for('saved_with_filter',
+                          name_filter=name_filter.replace(' ', '_'))
         else:
             url = url_for('saved_places')
     except RuntimeError:
@@ -116,9 +117,7 @@ def global_user():
 
 @app.before_request
 def slow_crawl():
-    user_agent = request.headers.get('User-Agent')
-    bots = {'AhrefsBot', 'YandexBot', 'Googlebot'}
-    if user_agent and any(bot in user_agent for bot in bots):
+    if is_bot():
         sleep(5)
 
 @login_manager.user_loader
@@ -128,7 +127,8 @@ def load_user(user_id):
 @app.context_processor
 def navbar():
     try:
-        return dict(navbar_pages=navbar_pages, active=request.endpoint)
+        return dict(navbar_pages=navbar_pages,
+                    active=request.endpoint)
     except RuntimeError:
         return {}  # maybe we don't care
 

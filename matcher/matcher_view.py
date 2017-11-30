@@ -2,10 +2,41 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, wikidata, matcher, mail
 from .model import Item
 from .place import Place
+from .utils import is_bot
 
 import requests
 
 matcher_blueprint = Blueprint('matcher', __name__)
+
+def announce_matcher(place):
+    ''' Send mail to announce somebody is trying the matcher. '''
+
+    if g.user.is_authenticated:
+        user = g.user.username
+        subject = 'matcher: {} (user: {})'.format(place.name, user)
+    elif is_bot():
+        return  # don't announce bots
+    else:
+        user = 'not authenticated'
+        subject = 'matcher: {} (no auth)'.format(place.name)
+
+    user_agent = request.headers.get('User-Agent', '[header missing]')
+    template = '''
+user: {}
+IP: {}
+agent: {}
+name: {}
+page: {}
+area: {}
+'''
+
+    body = template.format(user,
+                           request.remote_addr,
+                           user_agent,
+                           place.display_name,
+                           place.candidates_url(_external=True),
+                           mail.get_area(place))
+    mail.send_mail(subject, body)
 
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>')
 def matcher_progress(osm_type, osm_id):
@@ -33,31 +64,7 @@ def matcher_progress(osm_type, osm_id):
         place.state = 'tags'
         database.session.commit()
 
-    if g.user.is_authenticated:
-        user = g.user.username
-        subject = 'matcher: {} (user: {})'.format(place.name, user)
-    else:
-        user = 'not authenticated'
-        subject = 'matcher: {} (no auth)'.format(place.name)
-
-    user_agent = request.headers.get('User-Agent', '[header missing]')
-
-    template = '''
-user: {}
-IP: {}
-agent: {}
-name: {}
-page: {}
-area: {}
-'''
-
-    body = template.format(user,
-                           request.remote_addr,
-                           user_agent,
-                           place.display_name,
-                           place.candidates_url(_external=True),
-                           mail.get_area(place))
-    mail.send_mail(subject, body)
+    announce_matcher(place)
 
     return render_template('wikidata_items.html', place=place)
 

@@ -3,6 +3,7 @@ from itertools import islice
 import os.path
 import json
 import math
+import user_agents
 
 def chunk(it, size):
     it = iter(it)
@@ -42,3 +43,7 @@ def calc_chunk_size(area_in_sq_km):
 def file_missing_or_empty(filename):
     return (os.path.exists(filename) or
         os.stat(filename).st_size == 0)
+
+def is_bot():
+    ua = request.headers.get('User-Agent')
+    return ua and user_agents.parse(ua).is_bot
