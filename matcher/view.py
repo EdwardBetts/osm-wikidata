@@ -33,6 +33,7 @@ import sys
 import requests
 import os.path
 import re
+import random
 
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
@@ -64,6 +65,7 @@ navbar_pages = {
     'tag_list': 'Search tags',
     'documentation': 'Documentation',
     'changesets': 'Recent changes',
+    'random_city': 'Random',
 }
 
 tab_pages = [
@@ -801,6 +803,13 @@ def add_hit_place_detail(hit):
         hit['place'] = p
         if p.area:
             hit['area'] = p.area_in_sq_km
+
+@app.route("/random")
+def random_city():
+    cities = json.load(open('city_list.json'))
+    city, country = random.choice(cities)
+    q = city + ', ' + country
+    return redirect(url_for('search_results', q=q))
 
 @app.route("/search")
 def search_results():
