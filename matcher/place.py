@@ -845,6 +845,9 @@ class Place(Base):
                                     include_self=include_self)
         return oql
 
+    def chunk_count(self):
+        return len(self.chunk_n(utils.calc_chunk_size(self.area_in_sq_km)))
+
     def geojson_chunks(self):
         chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
         chunks = []
