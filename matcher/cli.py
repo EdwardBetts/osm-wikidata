@@ -340,3 +340,15 @@ def add_to_queue(place_identifier):
             break
         netstring.write(sock, 'ack')
     print('socket closed')
+
+@app.cli.command()
+def queue_sample_items():
+
+    host, port = 'localhost', 6020
+    sock = socket.create_connection((host, port))
+    sock.setblocking(True)
+
+    chunks = list(range(5))
+    msg = {'place': {}, 'chunks': chunks, 'sample': True}
+
+    netstring.write(sock, json.dumps(msg))
