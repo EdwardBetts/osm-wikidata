@@ -18,9 +18,6 @@ re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
 # - match found
 # - match not found
 
-log_location = '/home/edward/src/2017/clean/osm-wikidata/logs'
-good_location = os.path.join(log_location, 'complete')
-
 class MatcherSocket(object):
     def __init__(self, socket, place):
         self.socket = socket
@@ -29,10 +26,17 @@ class MatcherSocket(object):
 
         start = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
         self.log_filename = '{}_{}.log'.format(place.place_id, start)
-        self.log_full_path = os.path.join(log_location, self.log_filename)
+        self.log_full_path = os.path.join(self.log_location,
+                                          self.log_filename)
         self.log = open(self.log_full_path, 'w')
 
         self.task_host, self.task_port = 'localhost', 6020
+
+    def log_location(self):
+        return current_app.config['log_location']
+
+    def good_location(self):
+        return os.path.join(self.log_location, 'complete')
 
     def mark_log_good(self):
         self.log.close()
