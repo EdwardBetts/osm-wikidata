@@ -55,7 +55,7 @@ connection.onmessage = function (e) {
     'load_cat': 'loading categories from English language Wikipedia',
     'load_cat_done': 'categories loaded',
     'items_saved': 'items saved to database',
-    'overpass_done': 'overpass queries complete'
+    'overpass_done': 'overpass queries complete',
     'overpass_error': 'error retrieving data from overpass',
   }
 
@@ -72,7 +72,11 @@ connection.onmessage = function (e) {
       current.textContent = data['msg'];
       break;
     case 'done':
-      window.location = candidates_url;
+      if (replay_log) {
+          post_message('replay complete');
+      } else {
+          window.location = candidates_url;
+      }
       break;
     case 'get_chunk':
       post_message('requesting chunk ' + (data['chunk_num'] + 1))
@@ -91,6 +95,7 @@ connection.onmessage = function (e) {
         var marker = add_pin(item);
         markers.addLayer(marker);
       });
+      map.addLayer(markers);
       break;
   }
 };

@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app
 from time import time, sleep
 from .place import Place
-from . import wikipedia, database, wikidata, netstring
+from . import wikipedia, database, wikidata, netstring, utils
 from datetime import datetime
 import re
 import json
@@ -26,21 +26,15 @@ class MatcherSocket(object):
 
         start = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
         self.log_filename = '{}_{}.log'.format(place.place_id, start)
-        self.log_full_path = os.path.join(self.log_location,
+        self.log_full_path = os.path.join(utils.log_location(),
                                           self.log_filename)
         self.log = open(self.log_full_path, 'w')
 
         self.task_host, self.task_port = 'localhost', 6020
 
-    def log_location(self):
-        return current_app.config['log_location']
-
-    def good_location(self):
-        return os.path.join(self.log_location, 'complete')
-
     def mark_log_good(self):
         self.log.close()
-        shutil.move(self.log_full_path, good_location)
+        shutil.move(self.log_full_path, utils.good_location())
 
     def send(self, msg_type, **data):
         data['time'] = time() - self.t0
@@ -194,7 +188,6 @@ class MatcherSocket(object):
 
         self.place.run_matcher(progress=progress)
 
-
 def build_item_list(items):
     item_list = []
     for qid, v in items.items():
@@ -225,12 +218,6 @@ def get_pins(place):
         pins.append(pin)
     return pins
 
-def find_log_file(place):
-    start = '{}_'.format(place.place_id)
-    for f in os.scandir(good_location):
-        if f.name.startswith(start):
-            return f.path
-
 def replay_log(ws_sock, log_filename):
     prev_time = 0
     include_delay = True
@@ -249,7 +236,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     # also e-mail them
 
     place = Place.get_by_osm(osm_type, osm_id)
-    log_filename = find_log_file(place)
+    log_filename = utils.find_log_file(place)
     if log_filename:
         print('replaying log:', log_filename)
         replay_log(ws_sock, log_filename)

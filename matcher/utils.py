@@ -38,3 +38,15 @@ def get_int_arg(name):
 def calc_chunk_size(area_in_sq_km):
     side = math.sqrt(area_in_sq_km)
     return math.ceil(side / 22)
+
+def log_location():
+    return current_app.config['LOG_DIR']
+
+def good_location():
+    return os.path.join(log_location(), 'complete')
+
+def find_log_file(place):
+    start = '{}_'.format(place.place_id)
+    for f in os.scandir(good_location()):
+        if f.name.startswith(start):
+            return f.path

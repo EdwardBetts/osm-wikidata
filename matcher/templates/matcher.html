@@ -73,6 +73,7 @@ nav { margin-left: -15px; margin-right: -15px; }
 <script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
 
 <script>
+var replay_log = {{ replay_log | tojson }};
 var osm_type = {{ place.osm_type | tojson }};
 var osm_id = {{ place.osm_id | tojson }};
 var wikidata_json_url = {{ url_for('.query_wikidata',

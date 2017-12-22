@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request
-from . import database, matcher, mail
+from . import database, matcher, mail, utils
 from .model import Item, ItemCandidate
 from .place import Place
 import requests
@@ -47,7 +47,11 @@ def matcher_progress(osm_type, osm_id):
 
     # announce_matcher_progress(place)
 
-    return render_template('matcher.html', place=place)
+    replay_log = bool(utils.find_log_file(place))
+
+    return render_template('matcher.html',
+                           place=place,
+                           replay_log=replay_log)
 
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/query_wikidata')
 def query_wikidata(osm_type, osm_id):
