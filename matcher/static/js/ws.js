@@ -1,10 +1,7 @@
 'use strict';
 
-var address = location.host;
-// var n = address.indexOf(':');
-// var host = address.substring(0, n == -1 ? address.length : n);
-
-var connection = new WebSocket('ws://' + address + '/matcher/' + osm_type + '/' + osm_id + '/run');
+var url = 'ws://' + location.host + '/matcher/' + osm_type + '/' + osm_id + '/run';
+var connection = new WebSocket(url);
 
 var messages = document.getElementById('messages');
 var current = document.getElementById('current');
@@ -28,16 +25,34 @@ function post_message(msg) {
 connection.onmessage = function (e) {
   var data = JSON.parse(e.data);
   if (data['type'] == 'item') {
-      console.log(data);
       current.textContent = data['msg'];
       return;
   }
 
   if (data['type'] == 'done') {
-      window.location = candidates_url;
+    console.log('done');
+    // window.location = candidates_url;
+  }
+  if (data['type'] == 'connected') {
+    post_message('connected to task queue');
+    return;
   }
 
   if ('empty' in data) {
+    var empty_count = data['empty'].length;
+    if (!empty_count) {
+      return;
+    }
+    // document.getElementById('empty-msg').style.display = 'block';
+    document.getElementById('empty-msg').className = '';
+    document.getElementById('chunk-msg').className = 'd-none';
+
+    var span = document.getElementById('empty-count');
+    while (span.firstChild) {
+        span.removeChild( span.firstChild );
+    }
+    span.appendChild(document.createTextNode(empty_count));
+
     var chunk_layers = layer.getLayers();
     $.each(data['empty'], function(i, item) {
       var chunk = chunk_layers[item];

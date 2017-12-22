@@ -1,32 +1,73 @@
-{% from "macro.html" import place_box %}
-{% extends "base.html" %}
-{% block title %}{{ place.display_name }}:{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>
+    {{ place.display_name }}: OSM ↔ Wikidata
+  </title>
 
-{% block style %}
+  {% assets "style" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.Default.css') }}">
 <style>
-#mapid { height: 300px; border: black 1px solid }
+html, body { height: 100%; padding: 0; }
+body { overflow: hidden; }
+nav { margin-left: -15px; margin-right: -15px; }
+
+	.top {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+	}
+
+  #mapid { height: 100%; }
+  /* #wrapper { overflow:hidden; height: 100%; } */
+  /* #wrapper { overflow-y:auto; height:100% } */
+  .message-col {
+      overflow-y: auto;
+  }
+
 </style>
-{% endblock %}
 
-{% block content %}
-  <div class="container my-2">
-    <h1>{{ place.name }}</h1>
-    {{ place_box(place) }}
+</head>
 
-    <div id="mapid"></div>
+{% from "navbar.html" import navbar_inner with context %}
 
-    <div>current: <span id="current"></span></div>
+<body>
+<div class="container-fluid top">
 
-    <div id="messages"></div>
+  <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
+    {{ navbar_inner() }}
+  </nav>
 
+  <div class="row" style="flex: 1;">
+    <div class="col-md-8 pl-0">
+      <div id="mapid"></div>
+    </div>
+    <div class="col-md-4 mt-3 message-col">
+      <div id="wrapper">
+        <div id="messages">
+          <h1>{{ place.name }}</h1>
+          <p>{{ place.name_extra_detail }}</p>
+          <p id="chunk-msg">
+            Split into {{ place.chunk_count() }} chunks.
+          </p>
+          <p id="empty-msg" class="d-none">
+            Split into {{ place.chunk_count() }} chunks, of which <span id="empty-count"></span> are empty.
+          </p>
 
+          <div>current: <span id="current"></span></div>
+
+          <div id="messages"></div>
+        </div>
+      </div>
+    </div>
   </div>
-{% endblock %}
-
-{% block script %}
+</div>
 
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
 <script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
@@ -45,4 +86,9 @@ var empty_layers = [];
 <script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ws.js') }}"></script>
 
-{% endblock %}
+  {% assets "js" %}
+  <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  {% block script %}{% endblock %}
+</body>
+</html>
