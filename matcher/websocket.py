@@ -38,46 +38,44 @@ class MatcherSocket(object):
         self.log.close()
         shutil.move(self.log_full_path, good_location)
 
-    def send(self, data):
+    def send(self, msg_type, **data):
         data['time'] = time() - self.t0
+        data['type'] = msg_type
         json_msg = json.dumps(data)
         self.log.write(json_msg + "\n")
         self.log.flush()
         return self.socket.send(json_msg)
 
     def status(self, msg):
-        if not msg:
-            return
-        print(msg)
-        self.send({'msg': msg})
+        if msg:
+            self.send('msg', msg=msg)
 
     def item_line(self, msg):
-        if not msg:
-            return
-        self.send({'type': 'item', 'msg': msg})
+        if msg:
+            self.send('item', msg=msg)
 
     def report_empty_chunks(self, chunks):
         empty = [chunk['num'] for chunk in chunks if not chunk['oql']]
         if empty:
-            self.send({'empty': empty})
+            self.send('empty', empty=empty)
 
     def already_done(self):
         pins = get_pins(self.place)
         self.send_pins(pins, self.place.items.count())
         self.report_empty_chunks(self.place.get_chunks())
-        self.status('error: place already ready')
+        self.send('already_done')
         # FIXME - send error mail
 
     def get_items(self):
-        self.status('retrieving items from wikidata')
+        self.send('get_wikidata_items')
         wikidata_items = self.place.items_from_wikidata(self.place.bbox)
         pins = build_item_list(wikidata_items)
 
-        self.status('loading categories from English language Wikipedia')
+        self.send('load_cat')
         wikipedia.add_enwiki_categories(wikidata_items)
-        self.status('enwiki categories loaded')
+        self.send('load_cat_done')
         self.place.save_items(wikidata_items)
-        self.status('items saved to database')
+        self.send('items_saved')
 
         self.place.state = 'tags'
         database.session.commit()
@@ -114,6 +112,7 @@ class MatcherSocket(object):
         }
 
         netstring.write(sock, json.dumps(msg))
+        complete = False
         while True:
             print('read')
             from_network = netstring.read(sock)
@@ -125,22 +124,20 @@ class MatcherSocket(object):
             print('message type {}'.format(repr(msg['type'])))
             if msg['type'] == 'connected':
                 print('task runnner connected')
-                self.send(msg)
+                self.send('connected')
             elif msg['type'] == 'run_query':
                 chunk_num = msg['num']
-                update = 'requesting chunk {}'.format(chunk_num)
-                self.status(update)
+                self.send('get_chunk', chunk_num=chunk_num)
             elif msg['type'] == 'chunk':
                 chunk_num = msg['num']
-                update = 'chunk {} downloaded'.format(chunk_num)
-                self.status(update)
+                self.send('chunk_done', chunk_num=chunk_num)
             elif msg['type'] == 'done':
-                self.status('overpass queries complete')
+                complete = True
+                self.send('overpass_done')
             else:
                 self.status('from network: ' + from_network)
             netstring.write(sock, 'ack')
-        print('socket closed')
-        self.status('socket closed')
+        return complete
 
     def merge_chunks(self, chunks):
         files = [os.path.join('overpass', chunk['filename'])
@@ -157,7 +154,7 @@ class MatcherSocket(object):
         self.status(p.stdout if p.returncode == 0 else p.stderr)
 
     def send_pins(self, pins, item_count):
-        self.send({'pins': pins})
+        self.send('pins', pins=pins)
         self.status('{:,d} Wikidata items found'.format(item_count))
 
     def get_item_detail(self, db_items):
@@ -295,10 +292,14 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     else:
         m.status('downloading data from overpass')
         try:
-            m.overpass_request(chunks)
+            overpass_good = m.overpass_request(chunks)
         except ConnectionRefusedError:
             m.status("error: unable to connect to task queue")
             database.session.commit()
+            return
+        if not overpass_good:
+            m.send('overpass_error')
+            # FIXME: e-mail admin
             return
         if len(chunks) > 1:
             m.merge_chunks(chunks)
@@ -317,5 +318,5 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     place.state = 'ready'
     database.session.commit()
     print('done')
-    m.send({'type': 'done'})
+    m.send('done')
     m.mark_log_good()
