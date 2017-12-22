@@ -37,4 +37,4 @@ def get_int_arg(name):
 
 def calc_chunk_size(area_in_sq_km):
     side = math.sqrt(area_in_sq_km)
-    return math.ceil(side / 20)
+    return math.ceil(side / 22)
