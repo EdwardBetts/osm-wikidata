@@ -77,6 +77,11 @@ class Item(Base):
         elif labels:
             return list(labels.values())[0]['value']
 
+    @classmethod
+    def get_by_qid(cls, qid):
+        if qid and len(qid) > 1 and qid[0].upper() == 'Q' and qid[1:].isdigit():
+            return cls.query.get(qid[1:])
+
     @property
     def wikidata_uri(self):
         return 'https://www.wikidata.org/wiki/Q{}'.format(self.item_id)
