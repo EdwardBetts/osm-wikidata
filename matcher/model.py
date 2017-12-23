@@ -95,14 +95,16 @@ class Item(Base):
         params = (zoom, lat, lon)
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
-    @property
-    def hstore_query(self):
+    def hstore_query(self, ignore_tags=None):
         '''hstore query for use with osm2pgsql database'''
         if not self.tags:
             return
+        tags = set(self.tags) - set(ignore_tags or [])
+        print('ignore:', ignore_tags)
+        print('tags:', tags)
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
-                else "(tags ? '{}')".format(tag) for tag in self.tags)
+                else "(tags ? '{}')".format(tag) for tag in tags)
         return ' or '.join(cond)
 
     def instanceof(self):

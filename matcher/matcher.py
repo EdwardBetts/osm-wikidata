@@ -105,20 +105,13 @@ def get_max_dist_from_criteria(tags):
 
     return max(max_dists) if max_dists else None
 
-def find_item_matches(cur, item, prefix, debug=False):
-    if not item or not item.entity:
-        return []
-    cats = item.categories or []
-
-    # point = "ST_GeomFromEWKT('{}')".format(item.ewkt)
+def item_match_sql(item, prefix, ignore_tags=None):
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
-
-    # item_max_dist = max(max_dist[cat] for cat in item['cats'])
     item_max_dist = get_max_dist_from_criteria(item.tags) or default_max_dist
 
-    hstore = item.hstore_query
+    hstore = item.hstore_query(ignore_tags=ignore_tags)
     if not hstore:
-        return []
+        return
 
     sql_list = []
     for obj_type in 'point', 'line', 'polygon':
@@ -127,13 +120,33 @@ def find_item_matches(cur, item, prefix, debug=False):
                    'from {}_{} '
                    'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, prefix, obj_type, point, item_max_dist)
         sql_list.append(obj_sql)
-    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist'.format(hstore)
+    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist limit 50'.format(hstore)
+    return sql
 
+def run_sql(cur, sql, debug=False):
     if debug:
         print(sql)
 
     cur.execute(sql)
-    rows = cur.fetchall()
+    return cur.fetchall()
+
+def find_item_matches(cur, item, prefix, debug=False):
+    if not item or not item.entity:
+        return []
+    cats = item.categories or []
+
+    # point = "ST_GeomFromEWKT('{}')".format(item.ewkt)
+
+    # item_max_dist = max(max_dist[cat] for cat in item['cats'])
+
+    sql = item_match_sql(item, prefix)
+    if not sql:
+        return []
+    rows = run_sql(cur, sql, debug)
+
+    if debug:
+        print('row count:', len(rows))
+        print()
     seen = set()
 
     endings = get_ending_from_criteria(item.tags)
@@ -143,11 +156,11 @@ def find_item_matches(cur, item, prefix, debug=False):
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
-        if (obj_type, osm_id) in seen:
+        if (osm_type, osm_id) in seen:
             continue
         if debug:
             print((osm_type, osm_id, osm_name, osm_tags, dist))
-        seen.add((obj_type, osm_id))
+        seen.add((osm_type, osm_id))
 
         if osm_tags.get('locality') == 'townland' and 'locality=townland' not in item.tags:
             continue  # only match townlands when specifically searching for one
