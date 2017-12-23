@@ -1,6 +1,6 @@
 'use strict';
 
-var url = 'ws://' + location.host + '/matcher/' + osm_type + '/' + osm_id + '/run';
+var url = 'wss://' + location.host + '/websocket/matcher/' + osm_type + '/' + osm_id;
 var connection = new WebSocket(url);
 
 var messages = document.getElementById('messages');
