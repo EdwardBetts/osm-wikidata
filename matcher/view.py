@@ -21,6 +21,9 @@ from dogpile.cache import make_region
 from dukpy.webassets import BabelJS
 
 from .matcher_view import matcher_blueprint
+from .websocket import ws
+
+from flask_sockets import Sockets
 
 import json
 import flask_assets
@@ -30,6 +33,7 @@ import sys
 import requests
 import os.path
 import re
+import random
 
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
@@ -37,6 +41,8 @@ re_qid = re.compile('^(Q\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
+sockets = Sockets(app)
+sockets.register_blueprint(ws)
 init_pager(app)
 env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
@@ -59,6 +65,7 @@ navbar_pages = {
     'tag_list': 'Search tags',
     'documentation': 'Documentation',
     'changesets': 'Recent changes',
+    'random_city': 'Random',
 }
 
 tab_pages = [
@@ -725,11 +732,7 @@ out bb tags;
 
 @app.route('/refresh/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 def refresh_place(osm_type, osm_id):
-    if osm_type not in {'way', 'relation'}:
-        abort(404)
-    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
-    if not place:
-        abort(404)
+    place = Place.get_or_abort(osm_type, osm_id)
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
@@ -807,6 +810,13 @@ def add_hit_place_detail(hit):
         hit['place'] = p
         if p.area:
             hit['area'] = p.area_in_sq_km
+
+@app.route("/random")
+def random_city():
+    cities = json.load(open('city_list.json'))
+    city, country = random.choice(cities)
+    q = city + ', ' + country
+    return redirect(url_for('search_results', q=q))
 
 @app.route("/search")
 def search_results():

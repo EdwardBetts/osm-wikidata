@@ -82,6 +82,10 @@ class Item(Base):
         if qid and len(qid) > 1 and qid[0].upper() == 'Q' and qid[1:].isdigit():
             return cls.query.get(qid[1:])
 
+    def label_and_qid(self, lang='en'):
+        label = self.label(lang=lang)
+        return '{label} ({item.qid})'.format(label=label, item=self)
+
     @property
     def wikidata_uri(self):
         return 'https://www.wikidata.org/wiki/Q{}'.format(self.item_id)

@@ -8,9 +8,7 @@
     <a class="dropdown-item" href="{{ url_for(name) }}">{{ navbar_pages[name] }}</a>
 {% endmacro %}
 
-
-<nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
-<div class="container">
+{% macro navbar_inner(name) %}
   <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -37,6 +35,9 @@
           {{ dropdown_item('criteria_page') }}
         </div>
       </li>
+      {% if g.user.is_authenticated and g.user.username == 'Edward' %}
+          {{ nav_item('random_city') }}
+      {% endif %}
     </ul>
     </ul>
     <ul class="navbar-nav">
@@ -55,7 +56,10 @@
         {% endif %}
     </ul>
   </div>
+{% endmacro %}
 
-
-</div>
+{% macro navbar() %}
+<nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
+  {{ navbar_inner() }}
 </nav>
+{% endmacro %}

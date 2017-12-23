@@ -38,7 +38,7 @@ def get_int_arg(name):
 
 def calc_chunk_size(area_in_sq_km):
     side = math.sqrt(area_in_sq_km)
-    return math.ceil(side / 32)
+    return math.ceil(side / 22)
 
 def file_missing_or_empty(filename):
     return (os.path.exists(filename) or
@@ -47,3 +47,15 @@ def file_missing_or_empty(filename):
 def is_bot():
     ua = request.headers.get('User-Agent')
     return ua and user_agents.parse(ua).is_bot
+
+def log_location():
+    return current_app.config['LOG_DIR']
+
+def good_location():
+    return os.path.join(log_location(), 'complete')
+
+def find_log_file(place):
+    start = '{}_'.format(place.place_id)
+    for f in os.scandir(good_location()):
+        if f.name.startswith(start):
+            return f.path

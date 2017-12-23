@@ -1,20 +1,20 @@
 from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request
-from . import database, wikidata, matcher, mail
+from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place
-from .utils import is_bot
-
 import requests
+import re
+
+re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
 
 matcher_blueprint = Blueprint('matcher', __name__)
 
-def announce_matcher(place):
+def announce_matcher_progress(place):
     ''' Send mail to announce somebody is trying the matcher. '''
-
     if g.user.is_authenticated:
         user = g.user.username
         subject = 'matcher: {} (user: {})'.format(place.name, user)
-    elif is_bot():
+    elif utils.is_bot():
         return  # don't announce bots
     else:
         user = 'not authenticated'
@@ -44,29 +44,36 @@ def matcher_progress(osm_type, osm_id):
     if place.state == 'ready':
         return redirect(place.candidates_url())
 
-    if osm_type != 'node' and place.area and place.area_in_sq_km > 2000:
-        message = '{}: area is too large for matcher'.format(place.name)
-        return render_template('error_page.html', message=message)
+    announce_matcher_progress(place)
+    replay_log = bool(utils.find_log_file(place))
 
-    if not place.state or place.state == 'refresh':
-        try:
-            place.load_items()
-        except wikidata.QueryError as e:
-            return render_template('wikidata_query_error.html',
-                                   query=e.query,
-                                   place=place,
-                                   reply=e.r.text)
+    return render_template('matcher.html',
+                           place=place,
+                           replay_log=replay_log)
 
-        place.state = 'wikipedia'
+@matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/query_wikidata')
+def query_wikidata(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
 
-    if place.state == 'wikipedia':
-        place.add_tags_to_items()
-        place.state = 'tags'
-        database.session.commit()
-
-    announce_matcher(place)
-
-    return render_template('wikidata_items.html', place=place)
+    wikidata_items = place.items_from_wikidata(place.bbox)
+    items = []
+    for qid, v in wikidata_items.items():
+        v['qid'] = qid
+        label = v.pop('query_label')
+        enwiki = v.get('enwiki')
+        if enwiki:
+            del v['enwiki']
+            if not enwiki.startswith(label + ','):
+                label = enwiki
+        v['label'] = label
+        location = v.pop('location')
+        lon, lat = re_point.match(location).groups()
+        v['lat'] = lat
+        v['lon'] = lon
+        if 'tags' in v:
+            v['tags'] = list(v['tags'])
+        items.append(v)
+    return jsonify(items=items)
 
 @matcher_blueprint.route('/load/<int:place_id>/wbgetentities', methods=['POST'])
 def load_wikidata(place_id):

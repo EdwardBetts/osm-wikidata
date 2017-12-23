@@ -2,7 +2,7 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import Item, Changeset, get_bad
 from .place import Place
-from . import database, mail, matcher, nominatim, wikidata
+from . import database, mail, matcher, nominatim, utils, netstring, wikidata
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
@@ -10,6 +10,14 @@ from time import time, sleep
 from pprint import pprint
 import json
 import click
+import socket
+
+def get_place(place_identifier):
+    if place_identifier.isdigit():
+        return Place.query.get(place_identifier)
+    else:
+        osm_type, osm_id = place_identifier.split('/')
+        return Place.get_by_osm(osm_type, osm_id)
 
 @app.cli.command()
 def mail_recent():
@@ -121,11 +129,7 @@ def place(place_identifier):
     app.config.from_object('config.default')
     database.init_app(app)
 
-    if place_identifier.isdigit():
-        place = Place.query.get(place_identifier)
-    else:
-        osm_type, osm_id = place_identifier.split('/')
-        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+    place = get_place(place_identifier)
 
     fields = ['place_id', 'osm_type', 'osm_id', 'display_name',
               'category', 'type', 'place_rank', 'icon', 'south', 'west',
@@ -240,11 +244,7 @@ def run_matcher(place_identifier):
     database.init_app(app)
 
     print(place_identifier)
-    if place_identifier.isdigit():
-        place = Place.query.get(place_identifier)
-    else:
-        osm_type, osm_id = place_identifier.split('/')
-        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+    place = get_place(place_identifier)
 
     print(place.display_name)
     print(place.state)
@@ -263,11 +263,7 @@ def show_chunks(place_identifier, chunk_count):
     chunk_count = int(chunk_count)
 
     print(place_identifier)
-    if place_identifier.isdigit():
-        place = Place.query.get(place_identifier)
-    else:
-        osm_type, osm_id = place_identifier.split('/')
-        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+    place = get_place(place_identifier)
 
     pprint(place.chunk_n(chunk_count))
 
@@ -323,3 +319,87 @@ def place_page():
         seconds = time() - t0
         print('took: {:.0f} seconds'.format(seconds))
         # open('place_tbody.html', 'w').write(tbody)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def polygons(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    print(place_identifier)
+    place = get_place(place_identifier)
+
+    chunk_size = utils.calc_chunk_size(place.area_in_sq_km)
+    place_geojson = (database.session.query(func.ST_AsGeoJSON(Place.geom, 4))
+                                     .filter(Place.place_id == place.place_id)
+                                     .scalar())
+    # print(place_geojson)
+    for chunk in place.chunk_n(chunk_size):
+        print(', '.join('{:.3f}'.format(i) for i in chunk))
+
+        (ymin, ymax, xmin, xmax) = chunk
+
+        clip = func.ST_Intersection(Place.geom,
+                                    func.ST_MakeEnvelope(xmin, ymin, xmax, ymax))
+
+        chunk_geojson = (database.session
+                                 .query(func.ST_AsGeoJSON(clip, 4))
+                                 .filter(Place.place_id == place.place_id)
+                                 .scalar())
+
+        print(chunk_geojson)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def srid(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    print(place_identifier)
+    place = get_place(place_identifier)
+
+    print(place.srid)
+
+
+@app.cli.command()
+@click.argument('place_identifier')
+def add_to_queue(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    place = get_place(place_identifier)
+
+    host, port = 'localhost', 6020
+    sock = socket.create_connection((host, port))
+    sock.setblocking(True)
+
+    chunks = place.get_chunks()
+
+    fields = ['place_id', 'osm_id', 'osm_type']
+    msg = {
+        'place': {f: getattr(place, f) for f in fields},
+        'chunks': chunks,
+    }
+
+    netstring.write(sock, json.dumps(msg))
+    reply = netstring.read(sock)
+    print(reply)
+    while True:
+        from_network = netstring.read(sock)
+        print('from network:', from_network)
+        if from_network is None:
+            break
+        netstring.write(sock, 'ack')
+    print('socket closed')
+
+@app.cli.command()
+def queue_sample_items():
+
+    host, port = 'localhost', 6020
+    sock = socket.create_connection((host, port))
+    sock.setblocking(True)
+
+    chunks = list(range(5))
+    msg = {'place': {}, 'chunks': chunks, 'sample': True}
+
+    netstring.write(sock, json.dumps(msg))

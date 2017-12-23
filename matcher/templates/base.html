@@ -13,10 +13,13 @@
   {% block style %}
   {% endblock %}
 </head>
+{% from "navbar.html" import navbar with context %}
 
 <body>
-  {% include 'navbar.html' %}
+  <div class="container-fluid p-0">
+  {{ navbar() }}
   {% block content %}{% endblock %}
+  </div>
 
   {% assets "js" %}
   <script src="{{ ASSET_URL }}"></script>
