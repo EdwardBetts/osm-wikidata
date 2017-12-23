@@ -531,15 +531,18 @@ class Place(Base):
                       .join(ItemTag)
                       .group_by(Item.item_id)
                       .subquery())
-        q = self.items.filter(Item.item_id == sub.c.item_id)
+        q = (self.items.filter(Item.item_id == sub.c.item_id)
+                       .options(load_only(Item.qid)))
 
         if debug:
             print('running wbgetentities query')
+            print(q)
+            print(q.count())
         items = {i.qid: i for i in q}
         if debug:
             print('{} items'.format(len(items)))
 
-        for qid, entity in wikidata.entity_iter(items.keys()):
+        for qid, entity in wikidata.entity_iter(items.keys(), debug=debug):
             if debug:
                 print(qid)
             items[qid].entity = entity
@@ -797,7 +800,7 @@ class Place(Base):
         print(' '.join(cmd))
         subprocess.run(cmd)
 
-def get_top_existing(limit=30):
+def get_top_existing(limit=39):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,
             Place.candidate_count, Place.item_count]
     c = func.count(Changeset.place_id)
