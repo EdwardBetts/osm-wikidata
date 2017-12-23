@@ -57,22 +57,13 @@ listen_host, port = 'localhost', 6020
 # should give status update as each chunk is loaded.
 # tell client the length of the rate limit pause
 
-def queue_update(msg_type, msg, request_address=None):
+def queue_update(msg_type, msg):
     items = sockets.items()
-    for address, sock in list(items):
+    msg['type'] = msg_type
+    for address, send_queue in list(items):
         if address not in sockets:
             continue
-        try:
-            msg['type'] = msg_type
-            netstring.write(sock, json.dumps(msg))
-        except BrokenPipeError:
-            print('socket closed')
-            sock.close()
-            del sockets[address]
-            return
-        reply = netstring.read(sock)
-        print('reply:', reply)
-        assert reply == 'ack'
+        send_queue.put(msg)
 
 def wait_for_slot():
     print('get status')
@@ -103,7 +94,7 @@ def process_queue():
             }
             if not os.path.exists(filename):
                 wait_for_slot()
-                queue_update('run_query', msg, address)
+                queue_update('run_query', msg)
                 print('run query')
                 r = overpass.run_query(oql)
                 print('query complete')
@@ -111,11 +102,9 @@ def process_queue():
                     out.write(r.content)
             print(msg)
             chunk_count.sub(1)
-            queue_update('chunk', msg, address)
+            queue_update('chunk', msg)
         print('item complete')
-        print(item['done'])
-        item['done'].set()
-        print(item['done'])
+        item['queue'].put(None)
 
 def handle(sock, address):
     print('New connection from %s:%s' % address)
@@ -135,14 +124,13 @@ def handle(sock, address):
     queued_chunks = chunk_count.get_value()
     chunk_count_sock[address] = queued_chunks
 
-    done = Event()
-
     # print(msg)
+    send_queue = Queue()
     task_queue.put({
         'place': msg['place'],
         'address': address,
         'chunks': msg['chunks'],
-        'done': done,
+        'queue': send_queue,
     })
     chunk_count.add(len(msg['chunks']))
     msg = {'type': 'connected', 'queued_chunks': queued_chunks}
@@ -151,9 +139,22 @@ def handle(sock, address):
     print('reply:', reply)
     assert reply == 'ack'
 
-    sockets[address] = sock
-    print('wait')
-    done.wait()  # end of function closes the socket
+    sockets[address] = send_queue
+    to_send = send_queue.get()
+    while to_send:
+        try:
+            netstring.write(sock, json.dumps(to_send))
+            reply = netstring.read(sock)
+            print('reply:', reply)
+            assert reply == 'ack'
+
+        except BrokenPipeError:
+            print('socket closed')
+            sock.close()
+            del sockets[address]
+            break
+
+        to_send = send_queue.get()
 
     print('request complete')
     to_send = json.dumps({'type': 'done'})
