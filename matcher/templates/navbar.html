@@ -23,7 +23,7 @@
     <ul class="navbar-nav mr-auto">
       {{ nav_item('changesets') }}
       {{ nav_item('tag_list') }}
-      {{ nav_item('saved_places') }}
+      {# {{ nav_item('saved_places') }} #}
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           About
@@ -33,7 +33,9 @@
           {{ dropdown_item('criteria_page') }}
         </div>
       </li>
-      {{ nav_item('random_city') }}
+      {% if g.user.is_authenticated and g.user.username == 'Edward' %}
+          {{ nav_item('random_city') }}
+      {% endif %}
     </ul>
     </ul>
     <ul class="navbar-nav">
