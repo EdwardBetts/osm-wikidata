@@ -250,14 +250,17 @@ def parse_item_tag_query(rows, items):
                     items[qid][k] = row[k]['value']
         items[qid]['tags'].add(tag_or_key)
 
-def entity_iter(ids):
+def entity_iter(ids, debug=False):
     wikidata_url = 'https://www.wikidata.org/w/api.php'
     params = {
         'format': 'json',
         'formatversion': 2,
         'action': 'wbgetentities',
     }
-    for cur in chunk(ids, page_size):
+    print('entity_iter')
+    for num, cur in enumerate(chunk(ids, page_size)):
+        if debug:
+            print('entity_iter: {}/{}'.format(num * page_size, len(ids)))
         params['ids'] = '|'.join(cur)
         r = requests.get(wikidata_url,
                          params=params,
