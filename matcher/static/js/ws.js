@@ -83,6 +83,7 @@ connection.onmessage = function (e) {
       break;
     case 'chunk_done':
       post_message('chunk ' + (data['chunk_num'] + 1) + ' downloaded')
+      break;
     case 'connected':
       post_message('connected to task queue');
       break;
