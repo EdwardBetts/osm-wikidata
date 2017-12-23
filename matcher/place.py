@@ -266,7 +266,7 @@ class Place(Base):
         shutil.move(filename, self.overpass_backup)
 
     def clean_up(self):
-        place_id = self.id
+        place_id = self.place_id
 
         engine = session.bind
         for t in get_tables():
