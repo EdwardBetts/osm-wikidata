@@ -930,7 +930,7 @@
 {
     "name": "Districts",
     "cats": ["Districts", "Populated places", "Populated coastal places"],
-    "exclude_cats": ["Parishes united into districts"],
+    "exclude_cats": ["Parishes united into districts", "Shopping districts", "Restaurant districts"],
     "tags": ["place", "admin_level", "boundary=administrative", "landuse=residential"],
     "trim": [],
     "dist": 8
