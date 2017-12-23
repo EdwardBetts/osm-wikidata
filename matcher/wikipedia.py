@@ -52,6 +52,13 @@ def page_category_iter(titles):
                     for cat in page['categories']]
             yield (page['title'], cats)
 
+def add_enwiki_categories(items):
+    enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
+
+    page_cats = page_category_iter(enwiki_to_item.keys())
+    for title, cats in page_cats:
+        enwiki_to_item[title]['categories'] = cats
+
 def get_items_with_cats(items):
     assert isinstance(items, dict)
     for cur in chunk(items.keys(), page_size):

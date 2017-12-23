@@ -48,6 +48,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:isPartOf <https://en.wikipedia.org/> .
     FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .     # ignore timeline articles
     FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .     # ignore list articles
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article
@@ -109,6 +110,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
     OPTIONAL { ?place wdt:P669 ?street } .
     FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } . # ignore timeline articles
     FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } . # ignore list articles
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag

@@ -10,12 +10,12 @@ from .database import session, get_tables
 from . import wikidata, matcher, wikipedia, overpass, utils
 from collections import Counter
 from .overpass import oql_from_tag
+from pprint import pprint
 
 import subprocess
 import os.path
 import re
 import shutil
-import time
 
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
@@ -29,12 +29,16 @@ skip_tags = {'route:road',
              'highway',
              'tunnel',
              'name',
-             'tunnel'
              'website',
              'type=waterway',
              'waterway=river'
              'addr:street',
              'type=associatedStreet'}
+
+def envelope(bbox):
+    # note: different order for coordinates, xmin first, not ymin
+    ymin, ymax, xmin, xmax = bbox
+    return func.ST_MakeEnvelope(xmin, ymin, xmax, ymax, 4326)
 
 class Place(Base):
     __tablename__ = 'place'
@@ -64,6 +68,8 @@ class Place(Base):
     added = Column(DateTime, default=func.now())
 
     area = column_property(func.ST_Area(geom))
+    geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
+    srid = column_property(func.ST_SRID(geom))
     # match_ratio = column_property(candidate_count / item_count)
 
     items = relationship('Item',
@@ -206,6 +212,10 @@ class Place(Base):
     def items_from_wikidata(self, bbox=None):
         if bbox is None:
             bbox = self.bbox
+
+        filename = 'cache/wikidata_{}_{}'.format(self.osm_type, self.osm_id)
+        if os.path.exists(filename):
+            return eval(open(filename).read())
         q = wikidata.get_enwiki_query(*bbox)
         rows = wikidata.run_query(q)
 
@@ -215,9 +225,12 @@ class Place(Base):
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
 
-        return {k: v
-                for k, v in items.items()
-                if self.osm_type == 'node' or self.covers(v)}
+        # would be nice to include chunk information with each item
+        # not doing it at this point because it means lots of queries
+        # easier once the items are loaded into the database
+        result = {k: v for k, v in items.items() if self.covers(v)}
+        pprint(result, stream=open(filename, 'w'))
+        return result
 
     def covers(self, item):
         return object_session(self).scalar(
@@ -328,14 +341,8 @@ class Place(Base):
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
 
-    def load_into_pgsql(self, capture_stderr=True):
-        if not os.path.exists(self.overpass_filename):
-            return 'no data from overpass to load with osm2pgsql'
-
-        if os.stat(self.overpass_filename).st_size == 0:
-            return 'no data from overpass to load with osm2pgsql'
-
-        cmd = ['osm2pgsql', '--create', '--drop', '--slim',
+    def osm2pgsql_cmd(self):
+        return ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
                 '--cache', '1000',
@@ -344,6 +351,15 @@ class Place(Base):
                 '--username', current_app.config['DB_USER'],
                 '--database', current_app.config['DB_NAME'],
                 self.overpass_filename]
+
+    def load_into_pgsql(self, capture_stderr=True):
+        if not os.path.exists(self.overpass_filename):
+            return 'no data from overpass to load with osm2pgsql'
+
+        if os.stat(self.overpass_filename).st_size == 0:
+            return 'no data from overpass to load with osm2pgsql'
+
+        cmd = self.osm2pgsql_cmd()
 
         if not capture_stderr:
             p = subprocess.run(cmd,
@@ -469,23 +485,16 @@ class Place(Base):
         return [{'id': i.item_id, 'name': i.label(lang=lang)}
                 for i in q]
 
-    def load_items(self, bbox=None, debug=False):
-        if bbox is None:
-            bbox = self.bbox
-
-        items = self.items_from_wikidata(bbox)
-        if debug:
-            print('{:d} items'.format(len(items)))
-
-        enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
-
-        for title, cats in wikipedia.page_category_iter(enwiki_to_item.keys()):
-            enwiki_to_item[title]['categories'] = cats
-
-        seen = set()
+    def save_items(self, items, debug=None):
+        if debug is None:
+            def debug(msg):
+                pass
+        debug('save items')
+        seen = {}
         for qid, v in items.items():
             wikidata_id = int(qid[1:])
             item = Item.query.get(wikidata_id)
+
             if item:
                 item.location = v['location']
             else:
@@ -496,14 +505,20 @@ class Place(Base):
                     setattr(item, k, v[k])
 
             tags = set(v['tags'])
+            # if wikidata says this is a place then adding tags
+            # from wikipedia can just confuse things
+            if 'categories' in v and not any(t.startswith('place') for t in tags):
+                for t in matcher.categories_to_tags(v['categories']):
+                    tags.add(t)
+
             if 'building' in tags and len(tags) > 1:
                 tags.remove('building')
 
             item.tags = tags
-            if wikidata_id in seen:
+            if qid in seen:
                 continue
 
-            seen.add(wikidata_id)
+            seen[qid] = item
 
             existing = PlaceItem.query.filter_by(item=item, place=self).one_or_none()
             if not existing:
@@ -511,12 +526,29 @@ class Place(Base):
                 session.add(place_item)
 
         for item in self.items:
-            if int(item.item_id) not in seen:
-                link = PlaceItem.query.filter_by(item=item, place=self).one()
-                session.delete(link)
+            if item.qid in seen:
+                continue
+            link = PlaceItem.query.filter_by(item=item, place=self).one()
+            session.delete(link)
+        debug('done')
+
+        return seen
+
+    def load_items(self, bbox=None, debug=False):
+        if bbox is None:
+            bbox = self.bbox
+
+        items = self.items_from_wikidata(bbox)
+        if debug:
+            print('{:d} items'.format(len(items)))
+
+        wikipedia.add_enwiki_categories(items)
+
+        self.save_items(items)
+
         session.commit()
 
-    def load_extracts(self, debug=False):
+    def load_extracts(self, debug=False, progress=None):
         by_title = {item.enwiki: item for item in self.items if item.enwiki}
 
         for title, extract in wikipedia.get_extracts(by_title.keys()):
@@ -525,6 +557,7 @@ class Place(Base):
                 print(title)
             item.extract = extract
             item.extract_names = wikipedia.html_names(extract)
+            progress(item)
 
     def wbgetentities(self, debug=False):
         sub = (session.query(Item.item_id)
@@ -561,17 +594,19 @@ class Place(Base):
         if not all(t in tables for t in expect):
             return
 
-    def run_matcher(self, debug=False):
+    def run_matcher(self, debug=False, progress=None):
+        if progress is None:
+            def progress(msg):
+                pass
         conn = session.bind.raw_connection()
         cur = conn.cursor()
 
         items = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-        if debug:
-            print(items.count())
         for item in items:
             candidates = matcher.find_item_matches(cur, item, self.prefix, debug=False)
             if debug:
-                print(len(candidates), item.label())
+                print('{}: {}'.format(len(candidates), item.label()))
+            progress(candidates, item)
             as_set = {(i['osm_type'], i['osm_id']) for i in candidates}
             for c in item.candidates[:]:
                 if (c.osm_type, c.osm_id) not in as_set:
@@ -601,12 +636,7 @@ class Place(Base):
 
         if not self.state or self.state == 'refresh':
             print('load items')
-            self.load_items()
-            self.state = 'wikipedia'
-
-        if self.state == 'wikipedia':
-            print('add tags')
-            self.add_tags_to_items()
+            self.load_items()  # includes categories
             self.state = 'tags'
             session.commit()
 
@@ -620,13 +650,7 @@ class Place(Base):
 
         if self.state in ('wbgetentities', 'overpass_error', 'overpass_timeout'):
             print('loading_overpass')
-            oql = self.get_oql()
-            if self.area_in_sq_km < 800:
-                r = overpass.run_query_persistent(oql)
-                assert r
-                self.save_overpass(r.content)
-            else:
-                self.chunk()
+            self.get_overpass()
             self.state = 'postgis'
             session.commit()
 
@@ -642,6 +666,15 @@ class Place(Base):
             print('ready')
             self.state = 'ready'
             session.commit()
+
+    def get_overpass(self):
+        oql = self.get_oql()
+        if self.area_in_sq_km < 800:
+            r = overpass.run_query_persistent(oql)
+            assert r
+            self.save_overpass(r.content)
+        else:
+            self.chunk()
 
     def get_items(self):
         items = [item for item in self.items_with_candidates()
@@ -742,6 +775,26 @@ class Place(Base):
 
         return chunks
 
+    def get_chunks(self):
+        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
+        bbox_chunks = self.chunk_n(chunk_size)
+
+        chunks = []
+        for num, chunk in enumerate(bbox_chunks):
+            filename = self.chunk_filename(num, bbox_chunks)
+            oql = self.oql_for_chunk(chunk, include_self=(num == 0))
+            chunks.append({
+                'num': num,
+                'oql': oql,
+                'filename': filename,
+            })
+        return chunks
+
+    def chunk_filename(self, num, chunks):
+        if len(chunks) == 1:
+            return '{}.xml'.format(self.place_id)
+        return '{}_{:03d}_{:03d}.xml'.format(self.place_id, num, len(chunks))
+
     def chunk(self):
         chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
         chunks = self.chunk_n(chunk_size)
@@ -749,53 +802,63 @@ class Place(Base):
         print('chunk size:', chunk_size)
 
         files = []
-
-        need_pause = False
-        for chunk_num, (ymin, ymax, xmin, xmax) in enumerate(chunks):
-            q = self.items
-            # note: different order for coordinates, xmin first, not ymin
-            q = q.filter(cast(Item.location, Geometry).contained(func.ST_MakeEnvelope(xmin, ymin, xmax, ymax)))
-
-            tags = set()
-            for item in q:
-                tags |= set(item.tags)
-            tags.difference_update(skip_tags)
-            tags = matcher.simplify_tags(tags)
-            filename = '{}_{:03d}_{:03d}.xml'.format(self.place_id, chunk_num, len(chunks))
-            print(chunk_num, q.count(), len(tags), filename, list(tags))
+        for num, chunk in enumerate(chunks):
+            filename = self.chunk_filename(num, len(chunks))
+            # print(num, q.count(), len(tags), filename, list(tags))
             full = os.path.join('overpass', filename)
-            if not(tags):
-                print('no tags, skipping')
-                continue
-
-            if not(tags):
-                continue
             files.append(full)
             if os.path.exists(full):
                 continue
+            oql = self.oql_for_chunk(chunk, include_self=(num == 0))
 
-            oql_bbox = '{:f},{:f},{:f},{:f}'.format(ymin, xmin, ymax, xmax)
-
-            if need_pause:
-                seconds = 2
-                print('waiting {:d} seconds'.format(seconds))
-                time.sleep(seconds)
-
-            oql = overpass.oql_for_area(self.overpass_type,
-                                        self.osm_id,
-                                        tags,
-                                        oql_bbox, None,
-                                        include_self=(chunk_num == 0))
             r = overpass.run_query_persistent(oql)
             if not r:
                 print(oql)
             assert r
             open(full, 'wb').write(r.content)
-            need_pause = True
 
         cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
         print(' '.join(cmd))
         subprocess.run(cmd)
+
+    def oql_for_chunk(self, chunk, include_self=False):
+        q = self.items.filter(cast(Item.location, Geometry).contained(envelope(chunk)))
+
+        tags = set()
+        for item in q:
+            tags |= set(item.tags)
+        tags.difference_update(skip_tags)
+        tags = matcher.simplify_tags(tags)
+        if not(tags):
+            print('no tags, skipping')
+            return
+
+        ymin, ymax, xmin, xmax = chunk
+        bbox = '{:f},{:f},{:f},{:f}'.format(ymin, xmin, ymax, xmax)
+
+        oql = overpass.oql_for_area(self.overpass_type,
+                                    self.osm_id,
+                                    tags,
+                                    bbox, None,
+                                    include_self=include_self)
+        return oql
+
+    def chunk_count(self):
+        return len(self.chunk_n(utils.calc_chunk_size(self.area_in_sq_km)))
+
+    def geojson_chunks(self):
+        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
+        chunks = []
+        for chunk in self.chunk_n(chunk_size):
+            clip = func.ST_Intersection(Place.geom, envelope(chunk))
+
+            geojson = (session.query(func.ST_AsGeoJSON(clip, 4))
+                              .filter(Place.place_id == self.place_id)
+                              .scalar())
+
+            chunks.append(geojson)
+        return chunks
+
 
 def get_top_existing(limit=30):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,

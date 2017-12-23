@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>
+    {{ place.display_name }}: OSM ↔ Wikidata
+  </title>
+
+  {% assets "style" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.Default.css') }}">
+<style>
+
+body, html {
+  height: 100%; margin: 0; padding: 0;
+  overflow: hidden;
+}
+.col {
+  position: absolute;
+  height: 100%;
+  flex: 1;
+  padding: 0px;
+  margin: 0;
+}
+
+.col1 {
+  left: 0;
+  width: 70%;
+  left: 30%;
+}
+
+.col2 {
+  overflow-y: auto;
+  width: 30%;
+}
+
+
+  #mapid { height: 100%; }
+
+</style>
+
+</head>
+
+{% from "navbar.html" import navbar_inner with context %}
+
+<body>
+<div>
+
+  <nav class="navbar navbar-toggleable-md navbar-inverse bg-primary">
+    {{ navbar_inner() }}
+  </nav>
+
+  <div>
+    <div class="col col2 p-3">
+      <div id="wrapper">
+        <div id="messages">
+          <h1>{{ place.name }}</h1>
+          <p>{{ place.name_extra_detail }}</p>
+          <p id="chunk-msg">
+            Split into {{ place.chunk_count() }} chunks.
+          </p>
+          <p id="empty-msg" class="d-none">
+            Split into {{ place.chunk_count() }} chunks, of which <span id="empty-count"></span> are empty.
+          </p>
+
+          <div>current: <span id="current"></span></div>
+
+          <div id="messages"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col col1">
+      <div id="mapid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
+
+<script>
+var replay_log = {{ replay_log | tojson }};
+var osm_type = {{ place.osm_type | tojson }};
+var osm_id = {{ place.osm_id | tojson }};
+var wikidata_json_url = {{ url_for('.query_wikidata',
+                                   osm_type=place.osm_type,
+                                   osm_id=place.osm_id) | tojson }};
+var chunk_geojson = [{{ place.geojson_chunks() | join(',') | safe }}];
+var candidates_url = {{ place.candidates_url() | tojson }};
+var empty_layers = [];
+</script>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/ws.js') }}"></script>
+
+  {% assets "js" %}
+  <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  {% block script %}{% endblock %}
+</body>
+</html>
