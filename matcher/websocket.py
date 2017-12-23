@@ -9,6 +9,7 @@ import socket
 import subprocess
 import os.path
 import shutil
+import geventwebsocket.exceptions
 
 ws = Blueprint('ws', __name__)
 re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
@@ -184,7 +185,9 @@ class MatcherSocket(object):
             num = len(candidates)
             noun = 'candidate' if num == 1 else 'candidates'
             count = ': {num} {noun} found'.format(num=num, noun=noun)
-            self.item_line(item.label_and_qid() + count)
+            msg = item.label_and_qid() + count
+            print(msg)
+            self.item_line(msg)
 
         self.place.run_matcher(progress=progress)
 
@@ -230,22 +233,7 @@ def replay_log(ws_sock, log_filename):
         ws_sock.send(line[:-1])
         prev_time = t
 
-@ws.route('/matcher/<osm_type>/<int:osm_id>/run')
-def ws_matcher(ws_sock, osm_type, osm_id):
-    # idea: catch exceptions, then pass to pass to web page as status update
-    # also e-mail them
-
-    place = Place.get_by_osm(osm_type, osm_id)
-    log_filename = utils.find_log_file(place)
-    if log_filename:
-        print('replaying log:', log_filename)
-        replay_log(ws_sock, log_filename)
-        return
-
-    m = MatcherSocket(ws_sock, place)
-    # place.state = 'tags'
-    print('{} chunks'.format(place.chunk_count()))
-
+def run_matcher(place, m):
     running = m.check_task_queue_running()
     if not running:
         m.status("error: unable to connect to task queue")
@@ -311,3 +299,26 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     print('done')
     m.send('done')
     m.mark_log_good()
+
+@ws.route('/websocket/matcher/<osm_type>/<int:osm_id>')
+def ws_matcher(ws_sock, osm_type, osm_id):
+    # idea: catch exceptions, then pass to pass to web page as status update
+    # also e-mail them
+
+    print('websocket')
+
+    place = Place.get_by_osm(osm_type, osm_id)
+    log_filename = utils.find_log_file(place)
+    if log_filename:
+        print('replaying log:', log_filename)
+        replay_log(ws_sock, log_filename)
+        return
+
+    m = MatcherSocket(ws_sock, place)
+    # place.state = 'tags'
+    print('{} chunks'.format(place.chunk_count()))
+
+    try:
+        return run_matcher(place, m)
+    except geventwebsocket.exceptions.WebSocketError:
+        pass
