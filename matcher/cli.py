@@ -1,7 +1,8 @@
-from .view import app, get_top_existing
-from .model import Changeset, get_bad
+from flask import render_template
+from .view import app, get_top_existing, get_existing
+from .model import Item, Changeset, get_bad
 from .place import Place
-from . import database, mail, matcher, nominatim
+from . import database, mail, matcher, nominatim, wikidata
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
@@ -41,6 +42,8 @@ https://www.openstreetmap.org/changeset/{change.id}
     body = ''
     for change in q:
         place = change.place
+        if not place:
+            continue
         url = place.candidates_url(_external=True, _scheme='https')
         body += template.format(name=place.display_name, url=url, change=change)
         total_items += change.update_count
@@ -272,3 +275,51 @@ def show_chunks(place_identifier, chunk_count):
         pprint([i['bbox'] for i in place.chunk4()])
     if chunk_count == 3:
         pprint([i['bbox'] for i in place.chunk9()])
+
+@app.cli.command()
+@click.argument('place_identifier')
+@click.argument('qid')
+def individual_match(place_identifier, qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    if place_identifier.isdigit():
+        place = Place.query.get(place_identifier)
+    else:
+        osm_type, osm_id = place_identifier.split('/')
+        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+
+    item = Item.get_by_qid(qid)
+    # entity = wikidata.WikidataItem(qid, item.entity)
+
+    candidates = matcher.run_individual_match(place, item)
+    pprint(candidates)
+
+@app.cli.command()
+@click.argument('since')
+def match_since(since):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Place.query.filter(~Place.state.is_(None), Place.added > since)
+    print(q.count(), 'places')
+    for place in q:
+        print(place.state, place.display_name)
+        place.do_match()
+        print(place.state, place.display_name)
+        print('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
+        print()
+
+@app.cli.command()
+def place_page():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    with app.test_request_context('/'):
+        sort = 'name'
+        t0 = time()
+        existing = get_existing(sort, None)
+        tbody = render_template('place_tbody.html', existing=existing)
+        seconds = time() - t0
+        print('took: {:.0f} seconds'.format(seconds))
+        # open('place_tbody.html', 'w').write(tbody)
