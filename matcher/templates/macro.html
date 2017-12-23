@@ -30,7 +30,11 @@
          <span class="badge badge-info">best match</span>
        {% endif %}
 
-     <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
+     {% if show_tags %}
+	 <a href="#" class="show-tags-link" data-key="{{ c.key }}">[hide tags]</a>
+     {% else %}
+         <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
+     {% endif %}
      {% if not is_bad and g.user.is_authenticated %}
          <a href="#" class="bad-match-link" id="report-link-{{ c.key }}" data-key="{{ c.key }}">[report bad match]</a>
      {% endif %}
