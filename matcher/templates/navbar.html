@@ -23,9 +23,11 @@
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
     <ul class="navbar-nav mr-auto">
-      {{ nav_item('changesets') }}
+      {% if g.user.is_authenticated %}
+        {{ nav_item('changesets') }}
+      {% endif %}
       {{ nav_item('tag_list') }}
-      {{ nav_item('saved_places') }}
+      {# {{ nav_item('saved_places') }} #}
       <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="http://example.com" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           About
