@@ -886,6 +886,7 @@ def get_place_tbody(sort):
 
 @app.route('/places')
 def saved_places():
+    abort(404)
     if 'filter' in request.args:
         arg_filter = request.args['filter'].strip().replace(' ', '_')
         if arg_filter:
