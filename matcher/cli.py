@@ -360,7 +360,6 @@ def srid(place_identifier):
 
     print(place.srid)
 
-
 @app.cli.command()
 @click.argument('place_identifier')
 def add_to_queue(place_identifier):
@@ -403,3 +402,15 @@ def queue_sample_items():
     msg = {'place': {}, 'chunks': chunks, 'sample': True}
 
     netstring.write(sock, json.dumps(msg))
+
+@app.cli.command()
+@click.argument('place_identifier')
+def get_items_from_wikidata(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    place = get_place(place_identifier)
+
+    items = place.items_from_wikidata()
+
+    print(len(items))
