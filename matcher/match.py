@@ -15,6 +15,9 @@ MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim
 bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
                    'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
+def no_alpha(s):
+    return all(not c.isalpha() for c in s)
+
 class Match(object):
     def __init__(self, match_type):
         self.match_type = match_type
@@ -62,6 +65,9 @@ def match_with_words_removed(osm, wd, words):
                for word in words)
 
 def name_match_main(osm, wd, endings=None, debug=False):
+    if wd == osm:
+        return Match(MatchType.good)
+
     wd_lc = wd.lower()
     osm_lc = osm.lower()
     if not wd or not osm:
@@ -71,7 +77,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if m:
         return m
 
-    if re_strip_non_chars.sub('', wd_lc) == re_strip_non_chars.sub('', osm_lc):
+    wc_stripped = re_strip_non_chars.sub('', wd_lc)
+    osm_stripped = re_strip_non_chars.sub('', osm_lc)
+    if wc_stripped and osm_stripped and wc_stripped == osm_stripped:
         return Match(MatchType.good)
 
     wd_lc = tidy_name(wd_lc)
