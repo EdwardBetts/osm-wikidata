@@ -539,7 +539,7 @@
 {
     "cats": ["Nature reserves", "reserves"],
     "tags": ["leisure=nature_reserve"],
-    "trim": ["local"],
+    "trim": ["local", "local nature reserve"],
     "area": true,
     "dist": 10
 },
@@ -565,7 +565,7 @@
 },
 {
     "cats": ["Universities by country", "University"],
-    "exclude_cats": ["History of", "Sport at"],
+    "exclude_cats": ["History of", "Sport at", "Streets associated with"],
     "tags": ["amenity=university", "type=site", "site=university", "building=university"],
     "trim": ["university", "school", "college"],
     "area": true,
