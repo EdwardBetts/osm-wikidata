@@ -54,6 +54,24 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
 GROUP BY ?place ?placeLabel ?article
 '''
 
+# search for items in bounding box that have an English Wikipedia article
+# look for coordinates in the headquarters location (P159)
+wikidata_enwiki_hq_query = '''
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
+    ?place p:P159 ?statement .
+    SERVICE wikibase:box {
+        ?statement pq:P625 ?location .
+        bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
+    }
+    ?article schema:about ?place .
+    ?article schema:inLanguage "en" .
+    ?article schema:isPartOf <https://en.wikipedia.org/> .
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?article
+'''
+
 wikidata_point_query = '''
 SELECT ?place (SAMPLE(?location) AS ?location) ?article WHERE {
     SERVICE wikibase:around {
@@ -101,6 +119,28 @@ wikidata_item_tags = '''
 SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?item ?itemLabel ?tag WHERE {
     SERVICE wikibase:box {
         ?place wdt:P625 ?location .
+        bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
+    }
+    ?place wdt:P31/wdt:P279* ?item .
+    ?item wdt:P1282 ?tag .
+    OPTIONAL { ?place wdt:P969 ?address } .
+    OPTIONAL { ?place wdt:P669 ?street } .
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } . # ignore timeline articles
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } . # ignore list articles
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
+'''
+
+# search for items in bounding box that have OSM tags in the subclass tree
+# look for coordinates in the headquarters location (P159)
+wikidata_hq_item_tags = '''
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?item ?itemLabel ?tag WHERE {
+    ?place p:P159 ?statement .
+    SERVICE wikibase:box {
+        ?statement pq:P625 ?location .
         bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
@@ -173,8 +213,14 @@ def get_query(q, south, north, west, east):
 def get_enwiki_query(*args):
     return get_query(wikidata_enwiki_query, *args)
 
+def get_enwiki_hq_query(*args):
+    return get_query(wikidata_enwiki_hq_query, *args)
+
 def get_item_tag_query(*args):
     return get_query(wikidata_item_tags, *args)
+
+def get_hq_item_tag_query(*args):
+    return get_query(wikidata_hq_item_tags, *args)
 
 def get_point_query(lat, lon, radius):
     return render_template_string(wikidata_point_query,

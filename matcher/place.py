@@ -11,6 +11,7 @@ from . import wikidata, matcher, wikipedia, overpass, utils
 from collections import Counter
 from .overpass import oql_from_tag
 from pprint import pprint
+from time import time
 
 import subprocess
 import os.path
@@ -221,9 +222,22 @@ class Place(Base):
 
         items = wikidata.parse_enwiki_query(rows)
 
+        try:  # add items with the coordinates in the HQ field
+            q = wikidata.get_enwiki_hq_query(*bbox)
+            items.update(wikidata.parse_enwiki_query(rows))
+        except wikidata.QueryError:
+            pass  # HQ query timeout isn't fatal
+
         q = wikidata.get_item_tag_query(*bbox)
         rows = wikidata.run_query(q)
         wikidata.parse_item_tag_query(rows, items)
+
+        try:  # add items with the coordinates in the HQ field
+            q = wikidata.get_hq_item_tag_query(*bbox)
+            rows = wikidata.run_query(q)
+            wikidata.parse_item_tag_query(rows, items)
+        except wikidata.QueryError:
+            pass  # HQ query timeout isn't fatal
 
         # would be nice to include chunk information with each item
         # not doing it at this point because it means lots of queries
@@ -599,17 +613,24 @@ class Place(Base):
 
     def run_matcher(self, debug=False, progress=None):
         if progress is None:
-            def progress(msg):
+            def progress(candidates, item):
                 pass
         conn = session.bind.raw_connection()
         cur = conn.cursor()
 
         items = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
         for item in items:
-            candidates = matcher.find_item_matches(cur, item, self.prefix, debug=False)
             if debug:
+                print('searching for', item.label())
+                print(item.tags)
+            t0 = time()
+            candidates = matcher.find_item_matches(cur, item, self.prefix, debug=debug)
+            seconds = time() - t0
+            if debug:
+                print('find_item_matches took {:.1f}'.format(seconds))
                 print('{}: {}'.format(len(candidates), item.label()))
             progress(candidates, item)
+
             as_set = {(i['osm_type'], i['osm_id']) for i in candidates}
             for c in item.candidates[:]:
                 if (c.osm_type, c.osm_id) not in as_set:
