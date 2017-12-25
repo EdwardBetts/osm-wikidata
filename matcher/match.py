@@ -148,7 +148,7 @@ def normalize_name(name):
     return re_strip_non_chars.sub('', name.lower())
 
 def check_name_matches_address(osm_tags, wikidata_names):
-    if not any('addr' + part in osm_tags for part in ('housenumber', 'full')):
+    if not any('addr:' + part in osm_tags for part in ('housenumber', 'full')):
         return
     # if 'addr:housenumber' not in osm_tags or 'addr:street' not in osm_tags:
     #     return

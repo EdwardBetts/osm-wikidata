@@ -445,3 +445,28 @@ def print_create_table(tables):
 
         sql = str(CreateTable(cls.__table__).compile(engine))
         click.echo(sql.strip() + ';')
+
+@app.cli.command()
+@click.argument('place_identifier')
+@click.argument('qid')
+def find_item_matches(place_identifier, qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    place = get_place(place_identifier)
+    print(place.name_for_changeset)
+
+    conn = database.session.bind.raw_connection()
+    cur = conn.cursor()
+    item_id = int(qid[1:])
+    item = Item.query.get(item_id)
+    print(item.label())
+    print(item.tags)
+    print(item.get_extra_tags())
+    print(item.hstore_query())
+    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
+    print('candidate count:', len(candidates))
+
+    for c in candidates:
+        pprint(c)
+        print()
