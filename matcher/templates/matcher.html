@@ -83,6 +83,7 @@ body, html {
 <script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
 
 <script>
+var ws_scheme = {{ ws_scheme | tojson }};
 var replay_log = {{ replay_log | tojson }};
 var osm_type = {{ place.osm_type | tojson }};
 var osm_id = {{ place.osm_id | tojson }};
