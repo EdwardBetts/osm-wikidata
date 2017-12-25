@@ -45,7 +45,7 @@ def matcher_progress(osm_type, osm_id):
         return redirect(place.candidates_url())
 
     announce_matcher_progress(place)
-    replay_log = bool(utils.find_log_file(place))
+    replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
     return render_template('matcher.html',
                            place=place,
