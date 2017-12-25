@@ -48,13 +48,13 @@ class Item(Base):
 
     item_id = Column(Integer, primary_key=True)
     location = Column(Geography('POINT', spatial_index=True), nullable=False)
-    enwiki = Column(String)
+    enwiki = Column(String, index=True)
     entity = Column(JSON)
     categories = Column(postgresql.ARRAY(String))
     old_tags = Column(postgresql.ARRAY(String))
     qid = column_property('Q' + cast(item_id, String))
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
-    query_label = Column(String)
+    query_label = Column(String, index=True)
     extract = Column(String)
     extract_names = Column(postgresql.ARRAY(String))
 
@@ -95,13 +95,19 @@ class Item(Base):
         params = (zoom, lat, lon)
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
+    def get_extra_tags(self):
+        return {tag[4:] for tag in (wikidata.extra_keys.get('Q{:d}'.format(item_id))
+                                for item_id in self.instanceof()) if tag}
+
+    @property
+    def ref_keys(self):
+        return {'ref:nrhp'} if self.ref_nrhp() else set()
+
     def hstore_query(self, ignore_tags=None):
         '''hstore query for use with osm2pgsql database'''
+        tags = (self.get_extra_tags() | set(self.tags) | self.ref_keys) - set(ignore_tags or [])
         if not self.tags:
             return
-        tags = set(self.tags) - set(ignore_tags or [])
-        print('ignore:', ignore_tags)
-        print('tags:', tags)
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
                 else "(tags ? '{}')".format(tag) for tag in tags)
@@ -111,6 +117,11 @@ class Item(Base):
         if self.entity:
             return [i['mainsnak']['datavalue']['value']['numeric-id']
                     for i in self.entity['claims'].get('P31', [])]
+
+    def ref_nrhp(self):
+        if self.entity:
+            return [i['mainsnak']['datavalue']['value']
+                    for i in self.entity['claims'].get('P649', [])]
 
     def names(self):
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
