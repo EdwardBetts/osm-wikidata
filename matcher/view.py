@@ -742,7 +742,7 @@ def refresh_place(osm_type, osm_id):
     refresh_type = request.form['type']
 
     if refresh_type == 'matcher':
-        place.state == 'osm2pgsql'
+        place.state = 'osm2pgsql'
         database.session.commit()
         return redirect_to_matcher(place)
 
