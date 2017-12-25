@@ -2,6 +2,7 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place
+import os
 import requests
 import re
 
@@ -47,8 +48,12 @@ def matcher_progress(osm_type, osm_id):
     announce_matcher_progress(place)
     replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
+    url_scheme = os.environ.get('wsgi.url_scheme')
+    ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
+
     return render_template('matcher.html',
                            place=place,
+                           ws_scheme=ws_scheme,
                            replay_log=replay_log)
 
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/query_wikidata')
