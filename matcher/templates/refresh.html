@@ -14,7 +14,13 @@
   <h3 class="my-3">Do you want to refresh this place?</h3>
 
   <form method="POST">
+  <input type="hidden" name="type" value="full">
   <button class="btn btn-primary">Yes, refresh place</button>
+  </form>
+
+  <form method="POST">
+  <input type="hidden" name="type" value="matcher">
+  <button class="btn btn-secondary">Just rerun matcher</button>
   </form>
 
 </div>

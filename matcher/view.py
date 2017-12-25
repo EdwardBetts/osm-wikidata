@@ -739,6 +739,14 @@ def refresh_place(osm_type, osm_id):
     if request.method != 'POST':  # confirm
         return render_template('refresh.html', place=place)
 
+    refresh_type = request.form['type']
+
+    if refresh_type == 'matcher':
+        place.state == 'osm2pgsql'
+        database.session.commit()
+        return redirect_to_matcher(place)
+
+    assert refresh_type == 'full'
     place.move_overpass_to_backup()
     place.state = 'refresh'
 
