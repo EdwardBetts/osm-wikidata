@@ -2,12 +2,15 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import Item, Changeset, get_bad
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring, wikidata
+from . import database, mail, matcher, nominatim, utils, netstring
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
 from time import time, sleep
 from pprint import pprint
+from sqlalchemy.types import Enum
+from sqlalchemy.schema import CreateTable, CreateIndex
+from sqlalchemy.dialects.postgresql.base import CreateEnumType
 import json
 import click
 import socket
@@ -414,3 +417,31 @@ def get_items_from_wikidata(place_identifier):
     items = place.items_from_wikidata()
 
     print(len(items))
+
+def get_class(class_name):
+    return globals()[class_name]
+
+@app.cli.command()
+@click.argument('tables', nargs=-1)
+def print_create_table(tables):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    engine = database.session.get_bind()
+
+    for class_name in tables:
+        cls = get_class(class_name)
+
+        for c in cls.__table__.columns:
+            if not isinstance(c.type, Enum):
+                continue
+            t = c.type
+            sql = str(CreateEnumType(t).compile(engine))
+            click.echo(sql.strip() + ';')
+
+        for index in cls.__table__.indexes:
+            sql = str(CreateIndex(index).compile(engine))
+            click.echo(sql.strip() + ';')
+
+        sql = str(CreateTable(cls.__table__).compile(engine))
+        click.echo(sql.strip() + ';')
