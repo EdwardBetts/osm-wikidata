@@ -114,38 +114,38 @@
 },
 {
     "cats": ["Places of worship by country", "Churches"],
-    "tags": ["amenity=place_of_worship", "building=church", "man_made=tower"],
-    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church"],
+    "tags": ["amenity=place_of_worship", "building=church", "man_made=tower", "disused:amenity=place_of_worship"],
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of"],
     "check_housename": true,
-    "dist": 1.5
+    "dist": 1
 },
 {
     "cats": ["Hindu temples"],
     "tags": ["amenity=place_of_worship"],
     "trim": ["temple"],
     "check_housename": true,
-    "dist": 2
+    "dist": 1
 },
 {
     "cats": ["Chapels by country"],
     "tags": ["building=chapel", "amenity=place_of_worship"],
     "trim": ["chapel"],
     "check_housename": true,
-    "dist": 2
+    "dist": 1
 },
 {
     "cats": ["Mosques by country"],
     "tags": ["building=mosque", "amenity=place_of_worship"],
     "trim": ["mosque"],
     "check_housename": true,
-    "dist": 2
+    "dist": 1
 },
 {
     "cats": ["Synagogues by country"],
     "tags": ["building=synagogue", "amenity=place_of_worship"],
     "trim": ["temple", "synagogue"],
     "check_housename": true,
-    "dist": 2
+    "dist": 1
 },
 {
     "cats": ["Restaurants by country"],
@@ -159,7 +159,7 @@
     "tags": ["tourism=hotel", "building=hotel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
-    "dist": 5
+    "dist": 2
 },
 {
     "cats": ["Motels"],
@@ -331,7 +331,7 @@
     "tags": ["amenity=cinema"],
     "trim": ["cinema", "picture house", "theater", "theatre"],
     "check_housename": true,
-    "dist": 5
+    "dist": 1
 },
 {
     "cats": ["Arts centres"],
@@ -597,7 +597,7 @@
     "tags": ["man_made=communications_tower", "tower:type=communication", "man_made=mast", "man_made=tower"],
     "trim": ["tower"],
     "check_housename": true,
-    "dist": 5
+    "dist": 2
 },
 {
     "cats": ["Zoos by country"],
