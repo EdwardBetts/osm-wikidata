@@ -214,9 +214,6 @@ class Place(Base):
         if bbox is None:
             bbox = self.bbox
 
-        filename = 'cache/wikidata_{}_{}'.format(self.osm_type, self.osm_id)
-        if os.path.exists(filename):
-            return eval(open(filename).read())
         q = wikidata.get_enwiki_query(*bbox)
         rows = wikidata.run_query(q)
 
@@ -239,12 +236,10 @@ class Place(Base):
         except wikidata.QueryError:
             pass  # HQ query timeout isn't fatal
 
-        # would be nice to include chunk information with each item
-        # not doing it at this point because it means lots of queries
-        # easier once the items are loaded into the database
-        result = {k: v for k, v in items.items() if self.covers(v)}
-        pprint(result, stream=open(filename, 'w'))
-        return result
+        # would be nice to include OSM chunk information with each
+        # item not doing it at this point because it means lots
+        # of queries easier once the items are loaded into the database
+        return {k: v for k, v in items.items() if self.covers(v)}
 
     def covers(self, item):
         return object_session(self).scalar(
