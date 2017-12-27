@@ -45,12 +45,13 @@ class MatcherSocket(object):
         return self.socket.send(json_msg)
 
     def status(self, msg):
-        if msg:
-            self.send('msg', msg=msg)
+        self.send('msg', msg=msg)
 
     def item_line(self, msg):
-        if msg:
-            self.send('item', msg=msg)
+        self.send('item', msg=msg)
+
+    def error(self, msg):
+        self.send('error', msg=msg)
 
     def report_empty_chunks(self, chunks):
         empty = [chunk['num'] for chunk in chunks if not chunk['oql']]
@@ -67,7 +68,11 @@ class MatcherSocket(object):
     def get_items(self):
         self.send('get_wikidata_items')
         print('items from wikidata')
-        wikidata_items = self.place.items_from_wikidata(self.place.bbox)
+        try:
+            wikidata_items = self.place.items_from_wikidata(self.place.bbox)
+        except wikidata.QueryError:
+            self.error('wikidata query error')
+            return
         print('done')
         pins = build_item_list(wikidata_items)
         print('send pins: ', len(pins))

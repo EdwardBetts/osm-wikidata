@@ -1,6 +1,6 @@
 'use strict';
 
-var url = 'wss://' + location.host + '/websocket/matcher/' + osm_type + '/' + osm_id;
+var url = ws_scheme + '://' + location.host + '/websocket/matcher/' + osm_type + '/' + osm_id;
 var connection = new WebSocket(url);
 
 var messages = document.getElementById('messages');
@@ -18,6 +18,13 @@ connection.onerror = function (error) {
 function post_message(msg) {
   var msg_div = document.createElement('div');
   msg_div.appendChild(document.createTextNode(msg));
+  messages.appendChild(msg_div);
+}
+
+function post_error(msg) {
+  var msg_div = document.createElement('div');
+  msg_div.appendChild(document.createTextNode(msg));
+  msg_div.className = 'error';
   messages.appendChild(msg_div);
 }
 
@@ -67,6 +74,9 @@ connection.onmessage = function (e) {
   switch(data['type']) {
     case 'msg':
       post_message(data['msg']);
+      break;
+    case 'error':
+      post_error(data['msg']);
       break;
     case 'item':
       current.textContent = data['msg'];
