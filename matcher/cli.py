@@ -475,3 +475,20 @@ def find_item_matches(place_identifier, qid):
     for c in candidates:
         pprint(c)
         print()
+
+@app.cli.command()
+@click.argument('place_identifier')
+def area(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    place = get_place(place_identifier)
+    print(place.name_for_changeset)
+    print('{:,.0f} km²'.format(place.area_in_sq_km))
+
+    chunk_size = utils.calc_chunk_size(place.area_in_sq_km, size=64)
+    print(chunk_size)
+
+    bbox_chunks = place.chunk_n(chunk_size)
+    for num, chunk in enumerate(bbox_chunks):
+        print(num, chunk)
