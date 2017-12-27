@@ -65,10 +65,31 @@ class MatcherSocket(object):
         self.send('already_done')
         # FIXME - send error mail
 
+    def wikidata_chunked(self, chunks):
+        items = {}
+        for num, bbox in enumerate(chunks):
+            msg = 'requesting wikidata chunk {}'.format(num + 1)
+            print(msg)
+            self.status(msg)
+            items.update(self.place.items_from_wikidata(bbox))
+        return items
+
     def get_items(self):
         self.send('get_wikidata_items')
         print('items from wikidata')
-        wikidata_items = self.place.items_from_wikidata(self.place.bbox)
+        place = self.place
+        if place.area_in_sq_km < 10000:
+            print('wikidata unchunked')
+            wikidata_items = place.items_from_wikidata()
+        else:
+
+            chunk_size = utils.calc_chunk_size(place.area_in_sq_km, size=64)
+            chunks = list(place.chunk_n(chunk_size))
+
+            msg = 'downloading wikidata in {} chunks'.format(len(chunks))
+            self.status(msg)
+            wikidata_items = self.wikidata_chunked(chunks)
+        self.status('wikidata query complete')
         print('done')
         pins = build_item_list(wikidata_items)
         print('send pins: ', len(pins))

@@ -36,9 +36,9 @@ def get_int_arg(name):
     if name in request.args and request.args[name].isdigit():
         return int(request.args[name])
 
-def calc_chunk_size(area_in_sq_km):
+def calc_chunk_size(area_in_sq_km, size=22):
     side = math.sqrt(area_in_sq_km)
-    return math.ceil(side / 22)
+    return math.ceil(side / size)
 
 def file_missing_or_empty(filename):
     return (os.path.exists(filename) or
