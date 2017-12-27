@@ -7,7 +7,7 @@ import re
 
 from enum import Enum
 
-re_strip_non_chars = re.compile(r'[^@\w]', re.U)
+re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
@@ -166,7 +166,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
             return Match(MatchType.address)
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
-        if any(name in osm_address for name in number_start):
+        if any(osm_address.startswith(name) for name in number_start):
             return Match(MatchType.address)
 
 def get_wikidata_names(item):
