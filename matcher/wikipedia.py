@@ -1,6 +1,5 @@
 import requests
 import lxml.html
-import simplejson
 from .utils import chunk, drop_start
 from . import user_agent_headers, mail
 
@@ -75,7 +74,8 @@ def html_names(article):
     root = lxml.html.fromstring(article)
     # avoid picking pronunciation guide bold text
     # <small title="English pronunciation respelling"><i><b>MAWD</b>-lin</i></small>
-    return [b.text_content() for b in root.xpath('.//b[not(ancestor::small)]')]
+    names = [b.text_content() for b in root.xpath('.//b[not(ancestor::small)]')]
+    return [n for n in names if len(n) > 1]
 
 def extracts_query(titles, language_code='en'):
     params = {
