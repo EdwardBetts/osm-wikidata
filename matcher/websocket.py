@@ -45,13 +45,16 @@ class MatcherSocket(object):
         return self.socket.send(json_msg)
 
     def status(self, msg):
-        self.send('msg', msg=msg)
+        if msg:
+            self.send('msg', msg=msg)
 
     def item_line(self, msg):
-        self.send('item', msg=msg)
+        if msg:
+            self.send('item', msg=msg)
 
     def error(self, msg):
-        self.send('error', msg=msg)
+        if msg:
+            self.send('error', msg=msg)
 
     def report_empty_chunks(self, chunks):
         empty = [chunk['num'] for chunk in chunks if not chunk['oql']]
@@ -177,7 +180,9 @@ class MatcherSocket(object):
                            universal_newlines=True,
                            stderr=subprocess.PIPE,
                            stdout=subprocess.PIPE)
-        self.status(p.stdout if p.returncode == 0 else p.stderr)
+        msg = p.stdout if p.returncode == 0 else p.stderr
+        if msg:
+            self.status(msg)
 
     def send_pins(self, pins, item_count):
         self.send('pins', pins=pins)
