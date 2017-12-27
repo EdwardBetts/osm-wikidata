@@ -10,7 +10,7 @@ from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
 from .database import session
 from flask_login import UserMixin
-from . import wikidata, matcher, match
+from . import wikidata, matcher, match, wikipedia
 from .overpass import oql_from_tag
 from collections import defaultdict
 
@@ -129,6 +129,9 @@ class Item(Base):
             d[name].append(('extract', 'enwiki'))
         return d or None
 
+    def refresh_extract_names(self):
+        self.extract_names = wikipedia.html_names(self.extract)
+
     def get_oql(self):
         lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
         union = []
@@ -231,6 +234,12 @@ class ItemCandidate(Base):
                 continue
 
         return tags
+
+    def update(self, candidate):
+        for k, v in candidate.items():
+            if k in {'osm_id', 'osm_type'}:
+                continue
+            setattr(self, k, v)
 
     @property
     def wikidata_tag(self):

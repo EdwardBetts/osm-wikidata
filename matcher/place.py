@@ -626,19 +626,21 @@ class Place(Base):
                 print('{}: {}'.format(len(candidates), item.label()))
             progress(candidates, item)
 
+            # if this is a refresh we remove candidates that no longer match
             as_set = {(i['osm_type'], i['osm_id']) for i in candidates}
             for c in item.candidates[:]:
                 if (c.osm_type, c.osm_id) not in as_set:
                     c.bad_matches.delete()
                     session.delete(c)
-                    session.commit()
 
             if not candidates:
                 continue
 
             for i in candidates:
                 c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
-                if not c:
+                if c:
+                    c.update(i)
+                else:
                     c = ItemCandidate(**i, item=item)
                     session.add(c)
 
