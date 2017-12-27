@@ -68,11 +68,7 @@ class MatcherSocket(object):
     def get_items(self):
         self.send('get_wikidata_items')
         print('items from wikidata')
-        try:
-            wikidata_items = self.place.items_from_wikidata(self.place.bbox)
-        except wikidata.QueryError:
-            self.error('wikidata query error')
-            return
+        wikidata_items = self.place.items_from_wikidata(self.place.bbox)
         print('done')
         pins = build_item_list(wikidata_items)
         print('send pins: ', len(pins))
@@ -269,7 +265,11 @@ def run_matcher(place, m):
 
     if not place.state or place.state == 'refresh':
         print('get items')
-        m.get_items()
+        try:
+            m.get_items()
+        except wikidata.QueryError:
+            self.error('wikidata query error')
+            return
         place.state = 'tags'
         database.session.commit()
     else:
