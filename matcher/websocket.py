@@ -268,7 +268,8 @@ def run_matcher(place, m):
         try:
             m.get_items()
         except wikidata.QueryError:
-            self.error('wikidata query error')
+            print('wikidata query error')
+            m.error('wikidata query error')
             return
         place.state = 'tags'
         database.session.commit()
@@ -327,6 +328,8 @@ def run_matcher(place, m):
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
     # also e-mail them
+
+    print('websocket')
 
     place = Place.get_by_osm(osm_type, osm_id)
     if place.state == 'ready':
