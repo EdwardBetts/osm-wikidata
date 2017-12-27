@@ -32,7 +32,10 @@ extra_keys = {
     'Q1021290': 'Tag:amenity=college',  # music school
     'Q5167149': 'Tag:amenity=college',  # cooking school
     'Q383092': 'Tag:amenity=college',   # film school
-    'Q11303': 'Key:height'              # skyscraper
+    'Q11303': 'Key:height',             # skyscraper
+    'Q18142': 'Key:height',             # high-rise building
+    'Q33673393': 'Key:height',          # multi-storey building
+    'Q641226': 'Tag:leisure=stadium',       # arena
 }
 
 # search for items in bounding box that have an English Wikipedia article
