@@ -45,6 +45,9 @@ def matcher_progress(osm_type, osm_id):
     if place.state == 'ready':
         return redirect(place.candidates_url())
 
+    if place.too_big:
+        return render_template('too_big.html', place=place)
+
     announce_matcher_progress(place)
     replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
