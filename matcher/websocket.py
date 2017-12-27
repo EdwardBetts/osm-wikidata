@@ -9,10 +9,9 @@ import socket
 import subprocess
 import os.path
 import shutil
-import geventwebsocket.exceptions
 
 ws = Blueprint('ws', __name__)
-re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
+re_point = re.compile('^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
 
 # TODO: different coloured icons
 # - has enwiki article
@@ -67,19 +66,25 @@ class MatcherSocket(object):
 
     def get_items(self):
         self.send('get_wikidata_items')
+        print('items from wikidata')
         wikidata_items = self.place.items_from_wikidata(self.place.bbox)
+        print('done')
         pins = build_item_list(wikidata_items)
+        print('send pins: ', len(pins))
+        self.send('pins', pins=pins)
+        print('sent')
 
+        print('load categories')
         self.send('load_cat')
         wikipedia.add_enwiki_categories(wikidata_items)
+        print('done')
         self.send('load_cat_done')
-        self.place.save_items(wikidata_items)
+
+        def print_msg(msg):
+            print(msg)
+        self.place.save_items(wikidata_items, debug=print_msg)
+        print('items saved')
         self.send('items_saved')
-
-        self.place.state = 'tags'
-        database.session.commit()
-
-        return pins
 
     def task_queue_address(self):
         return (self.task_host, self.task_port)
@@ -161,12 +166,16 @@ class MatcherSocket(object):
             msg = 'load extracts: ' + item.label_and_qid()
             self.item_line(msg)
 
+        print('getting wikidata item details')
         self.status('getting wikidata item details')
         for qid, entity in wikidata.entity_iter(db_items.keys()):
             item = db_items[qid]
             item.entity = entity
-            self.item_line('load entity: ' + item.label_and_qid())
+            msg = 'load entity: ' + item.label_and_qid()
+            print(msg)
+            self.item_line(msg)
         self.item_line('wikidata entities loaded')
+        print('done')
 
         self.status('loading wikipedia extracts')
         self.place.load_extracts(progress=extracts_progress)
@@ -177,6 +186,7 @@ class MatcherSocket(object):
         cmd = self.place.osm2pgsql_cmd()
         env = {'PGPASSWORD': current_app.config['DB_PASS']}
         subprocess.run(cmd, env=env, check=True)
+        print('osm2pgsql done')
         self.status('osm2pgsql done')
         # could echo osm2pgsql output via websocket
 
@@ -186,7 +196,6 @@ class MatcherSocket(object):
             noun = 'candidate' if num == 1 else 'candidates'
             count = ': {num} {noun} found'.format(num=num, noun=noun)
             msg = item.label_and_qid() + count
-            print(msg)
             self.item_line(msg)
 
         self.place.run_matcher(progress=progress)
@@ -198,7 +207,10 @@ def build_item_list(items):
         enwiki = v.get('enwiki')
         if enwiki and not enwiki.startswith(label + ','):
             label = enwiki
-        lon, lat = re_point.match(v['location']).groups()
+        m = re_point.match(v['location'])
+        if not m:
+            print(qid, label, enwiki, v['location'])
+        lon, lat = map(float, m.groups())
         item = {'qid': qid, 'label': label, 'lat': lat, 'lon': lon}
         if 'tags' in v:
             item['tags'] = list(v['tags'])
@@ -251,12 +263,18 @@ def run_matcher(place, m):
     print('state:', place.state)
 
     if not place.state or place.state == 'refresh':
-        pins = m.get_items()
+        print('get items')
+        m.get_items()
+        place.state = 'tags'
+        database.session.commit()
     else:
+        print('get pins')
         pins = get_pins(place)
+        m.send('pins', pins=pins)
 
     db_items = {item.qid: item for item in place.items}
-    m.send_pins(pins, len(db_items))
+    item_count = len(db_items)
+    m.status('{:,d} Wikidata items found'.format(item_count))
 
     if place.state == 'tags':
         m.get_item_detail(db_items)
@@ -305,20 +323,13 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
     # also e-mail them
 
-    print('websocket')
-
     place = Place.get_by_osm(osm_type, osm_id)
-    log_filename = utils.find_log_file(place)
-    if log_filename:
-        print('replaying log:', log_filename)
-        replay_log(ws_sock, log_filename)
-        return
+    if place.state == 'ready':
+        log_filename = utils.find_log_file(place)
+        if log_filename:
+            print('replaying log:', log_filename)
+            replay_log(ws_sock, log_filename)
+            return
 
     m = MatcherSocket(ws_sock, place)
-    # place.state = 'tags'
-    print('{} chunks'.format(place.chunk_count()))
-
-    try:
-        return run_matcher(place, m)
-    except geventwebsocket.exceptions.WebSocketError:
-        pass
+    return run_matcher(place, m)
