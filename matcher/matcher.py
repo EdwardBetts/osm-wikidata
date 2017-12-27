@@ -99,7 +99,7 @@ def get_max_dist_from_criteria(tags):
 
     max_dists = []
     for t in entity_types:
-        type_max_dist = t.get('max_dist')
+        type_max_dist = t.get('dist')
         if type_max_dist and tags & set(t['tags']):
             max_dists.append(type_max_dist)
 
