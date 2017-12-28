@@ -81,12 +81,11 @@ class MatcherSocket(object):
         self.send('get_wikidata_items')
         print('items from wikidata')
         place = self.place
-        if place.area_in_sq_km < 10000:
+        chunk_size = place.wikidata_chunk_size()
+        if chunk_size == 1:
             print('wikidata unchunked')
             wikidata_items = place.items_from_wikidata()
         else:
-
-            chunk_size = utils.calc_chunk_size(place.area_in_sq_km, size=64)
             chunks = list(place.chunk_n(chunk_size))
 
             msg = 'downloading wikidata in {} chunks'.format(len(chunks))

@@ -1,6 +1,6 @@
 from flask import current_app, url_for, g, abort
 from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, osm_type_enum, get_bad
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime
+from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy.schema import Column
 from sqlalchemy import func, select, cast
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
@@ -67,6 +67,7 @@ class Place(Base):
     lat = Column(Float)
     lon = Column(Float)
     added = Column(DateTime, default=func.now())
+    wikidata_query_timeout = Column(Boolean, default=False)
 
     area = column_property(func.ST_Area(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
@@ -879,6 +880,13 @@ class Place(Base):
 
             chunks.append(geojson)
         return chunks
+
+    def wikidata_chunk_size(self):
+        area = self.area_in_sq_km
+        if area < 10000:
+            return 2 if self.wikidata_query_timeout else 1
+        else:
+            return utils.calc_chunk_size(area, size=32)
 
 def get_top_existing(limit=39):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,
