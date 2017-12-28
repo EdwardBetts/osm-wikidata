@@ -492,3 +492,18 @@ def area(place_identifier):
     bbox_chunks = place.chunk_n(chunk_size)
     for num, chunk in enumerate(bbox_chunks):
         print(num, chunk)
+
+@app.cli.command()
+def find_ceb():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Item.query.filter(Item.entity.isnot(None))
+    for item in q:
+        sitelinks = item.sitelinks()
+        if not sitelinks or 'cebwiki' not in sitelinks or 'enwiki' in sitelinks:
+            assert not item.cebwiki_only()
+            continue
+        print(item.qid, item.label(), item.cebwiki_only())
+        for k, v in sitelinks.items():
+            print('  ', (k, v['title']))
