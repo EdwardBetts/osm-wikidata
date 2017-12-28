@@ -623,14 +623,17 @@ class Place(Base):
             if debug:
                 print('searching for', item.label())
                 print(item.tags)
+
             if item.skip_item_during_match():
-                continue
-            t0 = time()
-            candidates = matcher.find_item_matches(cur, item, self.prefix, debug=debug)
-            seconds = time() - t0
-            if debug:
-                print('find_item_matches took {:.1f}'.format(seconds))
-                print('{}: {}'.format(len(candidates), item.label()))
+                candidates = []
+            else:
+                t0 = time()
+                candidates = matcher.find_item_matches(cur, item, self.prefix, debug=debug)
+                seconds = time() - t0
+                if debug:
+                    print('find_item_matches took {:.1f}'.format(seconds))
+                    print('{}: {}'.format(len(candidates), item.label()))
+
             progress(candidates, item)
 
             # if this is a refresh we remove candidates that no longer match
