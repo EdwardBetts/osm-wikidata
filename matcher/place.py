@@ -623,6 +623,8 @@ class Place(Base):
             if debug:
                 print('searching for', item.label())
                 print(item.tags)
+            if item.cebwiki_only(self):
+                continue
             t0 = time()
             candidates = matcher.find_item_matches(cur, item, self.prefix, debug=debug)
             seconds = time() - t0
