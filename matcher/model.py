@@ -175,11 +175,17 @@ class Item(Base):
         if self.entity:
             return self.entity.get('sitelinks')
 
-    def cebwiki_only(self):
+    def skip_item_during_match(self):
+        ''' cebwiki and svwiki contain lots of poor quality stubs
+        best to skip items that are only cebwiki or cebwiki + svwiki
+        '''
         if not self.entity:
             return False
         sitelinks = self.entity.get('sitelinks')
-        return sitelinks and set(sitelinks.keys()) == {'cebwiki'}
+        if not sitelinks:
+            return False
+        sites = set(sitelinks.keys())
+        return sites == {'cebwiki'} or sites == {'cebwiki', 'svwiki'}
 
     def get_names(self):
         item = self.entity
