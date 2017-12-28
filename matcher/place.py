@@ -110,6 +110,10 @@ class Place(Base):
     def area_in_sq_km(self):
         return self.area / (1000 * 1000)
 
+    @hybrid_property
+    def too_big(self):
+        return self.area_in_sq_km > 20000
+
     def update_from_nominatim(self, hit):
         keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
                 'extratags', 'namedetails')

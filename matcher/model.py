@@ -1,7 +1,7 @@
 # coding: utf-8
 from sqlalchemy import func
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, Boolean, DateTime, Text
+from sqlalchemy.types import BigInteger, Float, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from geoalchemy2 import Geography  # noqa: F401
@@ -49,7 +49,7 @@ class Item(Base):
     item_id = Column(Integer, primary_key=True)
     location = Column(Geography('POINT', spatial_index=True), nullable=False)
     enwiki = Column(String, index=True)
-    entity = Column(JSON)
+    entity = Column(postgresql.JSON)
     categories = Column(postgresql.ARRAY(String))
     old_tags = Column(postgresql.ARRAY(String))
     qid = column_property('Q' + cast(item_id, String))
@@ -171,6 +171,42 @@ class Item(Base):
         if self.categories:
             return matcher.categories_to_tags_map(self.categories)
 
+    def sitelinks(self):
+        if self.entity:
+            return self.entity.get('sitelinks')
+
+    def cebwiki_only(self):
+        if not self.entity:
+            return False
+        sitelinks = self.entity.get('sitelinks')
+        return sitelinks and set(sitelinks.keys()) == {'cebwiki'}
+
+    def get_names(self):
+        item = self.entity
+        if not item:
+            return
+
+        names = defaultdict(list)
+        skip_lang = {'ar', 'arc', 'pl'}
+        # only include aliases if there are less than 6 other names
+        if len(item.get('sitelinks', {})) < 6 and len(item['labels']) < 6:
+            for k, v in item.get('aliases', {}).items():
+                if k in skip_lang:
+                    continue
+                if len(v) > 3:
+                    continue
+                for name in v:
+                    names[name].append(('alias', k))
+        for k, v in item['labels'].items():
+            if k in skip_lang:
+                continue
+            names[v].append(('label', k))
+        for k, v in item.get('sitelinks', {}).items():
+            if k + 'wiki' in skip_lang:
+                continue
+            names[v].append(('sitelink', k))
+        return names
+
 
 class ItemTag(Base):
     __tablename__ = 'item_tag'
@@ -198,7 +234,7 @@ class ItemCandidate(Base):
     osm_type = Column(osm_type_enum, primary_key=True)
     name = Column(String)
     dist = Column(Float)
-    tags = Column(JSON)
+    tags = Column(postgresql.JSON)
     planet_table = Column(String)
     src_id = Column(BigInteger)
 

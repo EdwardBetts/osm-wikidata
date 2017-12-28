@@ -1,0 +1,22 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+{% extends "base.html" %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+{% include "flash_msg.html" %}
+<div class="row">
+<div class="col">
+  <h1>{{ place.name }}</h1>
+{% set q = place.display_name %}
+
+{{ place_box(place) }}
+
+<div>Area: {{ '{:,.0f}'.format( place.area_in_sq_km) }} km&sup2;</div>
+<div>This place is too big, try searching for a smaller place.</div>
+
+</div>
+</div>
+</div>
+{% endblock %}
