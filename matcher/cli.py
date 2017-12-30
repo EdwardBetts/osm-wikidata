@@ -503,6 +503,6 @@ def find_ceb():
         sitelinks = item.sitelinks()
         if not sitelinks or 'cebwiki' not in sitelinks or 'enwiki' in sitelinks:
             continue
-        print(item.qid, item.label(), item.cebwiki_only())
+        print(item.qid, item.label())
         for k, v in sitelinks.items():
             print('  ', (k, v['title']))
