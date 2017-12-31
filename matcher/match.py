@@ -200,6 +200,8 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)
 
     best = None
+    if not wikidata_names:
+        return
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
             m = name_match(o, w, endings)
