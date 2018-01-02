@@ -2,7 +2,6 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place
-import os
 import requests
 import re
 
