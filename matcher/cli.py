@@ -16,6 +16,9 @@ import click
 import socket
 
 def get_place(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
     if place_identifier.isdigit():
         return Place.query.get(place_identifier)
     else:
@@ -129,9 +132,6 @@ def dump():
 @app.cli.command()
 @click.argument('place_identifier')
 def place(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     fields = ['place_id', 'osm_type', 'osm_id', 'display_name',
@@ -243,10 +243,6 @@ def refresh_address():
 @app.cli.command()
 @click.argument('place_identifier')
 def run_matcher(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
     print(place.display_name)
@@ -261,11 +257,7 @@ def run_matcher(place_identifier):
 @click.argument('place_identifier')
 @click.argument('chunk_count')
 def show_chunks(place_identifier, chunk_count):
-    app.config.from_object('config.default')
-    database.init_app(app)
     chunk_count = int(chunk_count)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
     pprint(place.chunk_n(chunk_count))
@@ -326,10 +318,6 @@ def place_page():
 @app.cli.command()
 @click.argument('place_identifier')
 def polygons(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
     chunk_size = utils.calc_chunk_size(place.area_in_sq_km)
@@ -355,20 +343,11 @@ def polygons(place_identifier):
 @app.cli.command()
 @click.argument('place_identifier')
 def srid(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
-    place = get_place(place_identifier)
-
-    print(place.srid)
+    click.echo(get_place(place_identifier).srid)
 
 @app.cli.command()
 @click.argument('place_identifier')
 def add_to_queue(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     host, port = 'localhost', 6020
@@ -409,14 +388,11 @@ def queue_sample_items():
 @app.cli.command()
 @click.argument('place_identifier')
 def get_items_from_wikidata(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     items = place.items_from_wikidata()
 
-    print(len(items))
+    click.echo(len(items))
 
 def get_class(class_name):
     return globals()[class_name]
@@ -450,9 +426,6 @@ def print_create_table(tables):
 @click.argument('place_identifier')
 @click.argument('qid')
 def find_item_matches(place_identifier, qid):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
     print(place.name_for_changeset)
 
@@ -479,9 +452,6 @@ def find_item_matches(place_identifier, qid):
 @app.cli.command()
 @click.argument('place_identifier')
 def area(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
     print(place.name_for_changeset)
     print('{:,.0f} km²'.format(place.area_in_sq_km))
