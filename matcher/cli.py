@@ -201,23 +201,23 @@ def refresh_address():
             continue
 
         if not place.address.get('country'):
-            print('country missing:', place.display_name)
+            click.echo('country missing:', place.display_name)
             continue
 
-        print(place.place_id, place.display_name)
+        click.echo(place.place_id, place.display_name)
         continue
-        print('http://nominatim.openstreetmap.org/details.php?osmtype={}&osmid={}'.format(place.osm_type[0].upper(), place.osm_id))
+        click.echo('http://nominatim.openstreetmap.org/details.php?osmtype={}&osmid={}'.format(place.osm_type[0].upper(), place.osm_id))
         first_parts = place.display_name.split(', ', 1)[:-1]
-        print(place.address)
+        click.echo(place.address)
         # q = ', '.join(first_parts + [place.address['country']])
         q = ', '.join(first_parts)
-        print(q)
+        click.echo(q)
         # print()
 
         try:
             results = nominatim.lookup(q=q)
         except nominatim.SearchError as e:
-            print(e.text)
+            click.echo(e.text)
             raise
         for hit in results:
             place_id = hit['place_id']
@@ -230,14 +230,14 @@ def refresh_address():
                               .filter_by(osm_type=hit['osm_type'], osm_id=hit['osm_id'])
                               .one_or_none())
             if not place:
-                print('not found: {hit[place_id]}  {hit[display_name]}'.format(hit=hit))
+                click.echo('not found: {hit[place_id]}  {hit[display_name]}'.format(hit=hit))
                 continue
             place.update_from_nominatim(hit)
 
-            print(hit['place_id'], list(hit['address'].items()))
+            click.echo(hit['place_id'], list(hit['address'].items()))
         database.session.commit()
 
-        print()
+        click.echo()
         sleep(10)
 
 @app.cli.command()
@@ -245,13 +245,13 @@ def refresh_address():
 def run_matcher(place_identifier):
     place = get_place(place_identifier)
 
-    print(place.display_name)
-    print(place.state)
+    click.echo(place.display_name)
+    click.echo(place.state)
 
-    print('do match')
+    click.echo('do match')
     place.do_match()
-    print(place.state, place.display_name)
-    print('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
+    click.echo(place.state, place.display_name)
+    click.echo('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
 
 @app.cli.command()
 @click.argument('place_identifier')
