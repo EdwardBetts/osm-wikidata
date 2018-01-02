@@ -73,7 +73,7 @@ def show_big_tables():
     app.config.from_object('config.default')
     database.init_app(app)
     for row in database.get_big_table_list():
-        print(row)
+        click.echo(row)
 
 @app.cli.command()
 def recent():
@@ -86,9 +86,9 @@ def recent():
              obj.user.username,
              obj.update_count,
              obj.place.name_for_changeset) for obj in q.limit(25)]
-    print(tabulate(rows,
-                   headers=['when', 'who', '#', 'where'],
-                   tablefmt='simple'))
+    click.echo(tabulate(rows,
+                        headers=['when', 'who', '#', 'where'],
+                        tablefmt='simple'))
 
 @app.cli.command()
 def top():
@@ -108,9 +108,9 @@ def top():
                        p.item_count,
                        changeset_count))
 
-    print(tabulate(places,
-                   headers=headers,
-                   tablefmt='simple'))
+    click.echo(tabulate(places,
+                        headers=headers,
+                        tablefmt='simple'))
 
 def object_as_dict(obj):
     return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
@@ -127,7 +127,7 @@ def dump():
     for place, geom in q:
         d = object_as_dict(place)
         d['geom'] = geom
-        print(d)
+        click.echo(d)
 
 @app.cli.command()
 @click.argument('place_identifier')
@@ -151,12 +151,12 @@ def place(place_identifier):
     max_field_len = max(len(f) for f in fields)
 
     for f in fields:
-        print('{:{}s}  {}'.format(f + ':', max_field_len + 1, getattr(place, f)))
+        click.echo('{:{}s}  {}'.format(f + ':', max_field_len + 1, getattr(place, f)))
 
-    print()
-    print('filtered:', len(filtered))
+    click.echo()
+    click.echo('filtered:', len(filtered))
 
-    print('{:1f}'.format(time() - t0))
+    click.echo('{:1f}'.format(time() - t0))
 
 @app.cli.command()
 def mark_as_complete():
@@ -179,9 +179,9 @@ def mark_as_complete():
         if len(filtered) == 0:
             p.state = 'complete'
             database.session.commit()
-            print(len(filtered), p.display_name, '(updated)')
+            click.echo(len(filtered), p.display_name, '(updated)')
         else:
-            print(len(filtered), p.display_name)
+            click.echo(len(filtered), p.display_name)
 
 @app.cli.command()
 @click.argument('q')
@@ -189,7 +189,7 @@ def nominatim_lookup(q):
     app.config.from_object('config.default')  # need the admin email address
     # result = nominatim.lookup_with_params(q=q, polygon_text=0)
     result = nominatim.lookup_with_params(q=q)
-    print(json.dumps(result, indent=2))
+    click.echo(json.dumps(result, indent=2))
 
 @app.cli.command()
 def refresh_address():
@@ -473,6 +473,6 @@ def find_ceb():
         sitelinks = item.sitelinks()
         if not sitelinks or 'cebwiki' not in sitelinks or 'enwiki' in sitelinks:
             continue
-        print(item.qid, item.label())
+        click.echo(item.qid, item.label())
         for k, v in sitelinks.items():
-            print('  ', (k, v['title']))
+            click.echo('  ', (k, v['title']))
