@@ -247,8 +247,9 @@ class Place(Base):
         return {k: v for k, v in items.items() if self.covers(v)}
 
     def covers(self, item):
-        return object_session(self).scalar(
-                select([func.ST_Covers(Place.geom, item['location'])]).where(Place.place_id == self.place_id))
+        q = (select([func.ST_Covers(Place.geom, item['location'])])
+                .where(Place.place_id == self.place_id))
+        return object_session(self).scalar(q)
 
     def add_tags_to_items(self):
         for item in self.items.filter(Item.categories != '{}'):
