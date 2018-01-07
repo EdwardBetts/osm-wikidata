@@ -112,7 +112,7 @@ class Place(Base):
 
     @hybrid_property
     def too_big(self):
-        return self.area_in_sq_km > 20000
+        return self.area_in_sq_km > 39000
 
     def update_from_nominatim(self, hit):
         keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
@@ -269,16 +269,12 @@ class Place(Base):
         overpass_dir = current_app.config['OVERPASS_DIR']
         return os.path.join(overpass_dir, '{}.xml'.format(self.place_id))
 
-    @property
-    def overpass_backup(self):
+    def delete_overpass(self):
         overpass_dir = current_app.config['OVERPASS_DIR']
-        return os.path.join(overpass_dir, 'backup', '{}.xml'.format(self.place_id))
-
-    def move_overpass_to_backup(self):
-        filename = self.overpass_filename
-        if not os.path.exists(filename):
-            return
-        shutil.move(filename, self.overpass_backup)
+        place_id = str(self.place_id)
+        for f in os.listdir(overpass_dir):
+            if f == place_id + '.xml' or f.startswith(f + '_'):
+                os.remove(f)
 
     def clean_up(self):
         place_id = self.place_id
