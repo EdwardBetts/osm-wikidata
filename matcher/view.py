@@ -747,7 +747,7 @@ def refresh_place(osm_type, osm_id):
         return redirect_to_matcher(place)
 
     assert refresh_type == 'full'
-    place.move_overpass_to_backup()
+    place.delete_overpass()
     place.state = 'refresh'
 
     engine = database.session.bind
