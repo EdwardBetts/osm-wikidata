@@ -38,7 +38,7 @@ def get_int_arg(name):
 
 def calc_chunk_size(area_in_sq_km, size=22):
     side = math.sqrt(area_in_sq_km)
-    return math.ceil(side / size)
+    return max(1, math.ceil(side / size))
 
 def file_missing_or_empty(filename):
     return (os.path.exists(filename) or

@@ -16,6 +16,9 @@ import click
 import socket
 
 def get_place(place_identifier):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
     if place_identifier.isdigit():
         return Place.query.get(place_identifier)
     else:
@@ -70,7 +73,7 @@ def show_big_tables():
     app.config.from_object('config.default')
     database.init_app(app)
     for row in database.get_big_table_list():
-        print(row)
+        click.echo(row)
 
 @app.cli.command()
 def recent():
@@ -83,9 +86,9 @@ def recent():
              obj.user.username,
              obj.update_count,
              obj.place.name_for_changeset) for obj in q.limit(25)]
-    print(tabulate(rows,
-                   headers=['when', 'who', '#', 'where'],
-                   tablefmt='simple'))
+    click.echo(tabulate(rows,
+                        headers=['when', 'who', '#', 'where'],
+                        tablefmt='simple'))
 
 @app.cli.command()
 def top():
@@ -105,9 +108,9 @@ def top():
                        p.item_count,
                        changeset_count))
 
-    print(tabulate(places,
-                   headers=headers,
-                   tablefmt='simple'))
+    click.echo(tabulate(places,
+                        headers=headers,
+                        tablefmt='simple'))
 
 def object_as_dict(obj):
     return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
@@ -124,14 +127,11 @@ def dump():
     for place, geom in q:
         d = object_as_dict(place)
         d['geom'] = geom
-        print(d)
+        click.echo(d)
 
 @app.cli.command()
 @click.argument('place_identifier')
 def place(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     fields = ['place_id', 'osm_type', 'osm_id', 'display_name',
@@ -151,12 +151,12 @@ def place(place_identifier):
     max_field_len = max(len(f) for f in fields)
 
     for f in fields:
-        print('{:{}s}  {}'.format(f + ':', max_field_len + 1, getattr(place, f)))
+        click.echo('{:{}s}  {}'.format(f + ':', max_field_len + 1, getattr(place, f)))
 
-    print()
-    print('filtered:', len(filtered))
+    click.echo()
+    click.echo('filtered:', len(filtered))
 
-    print('{:1f}'.format(time() - t0))
+    click.echo('{:1f}'.format(time() - t0))
 
 @app.cli.command()
 def mark_as_complete():
@@ -179,9 +179,9 @@ def mark_as_complete():
         if len(filtered) == 0:
             p.state = 'complete'
             database.session.commit()
-            print(len(filtered), p.display_name, '(updated)')
+            click.echo(len(filtered), p.display_name, '(updated)')
         else:
-            print(len(filtered), p.display_name)
+            click.echo(len(filtered), p.display_name)
 
 @app.cli.command()
 @click.argument('q')
@@ -189,7 +189,7 @@ def nominatim_lookup(q):
     app.config.from_object('config.default')  # need the admin email address
     # result = nominatim.lookup_with_params(q=q, polygon_text=0)
     result = nominatim.lookup_with_params(q=q)
-    print(json.dumps(result, indent=2))
+    click.echo(json.dumps(result, indent=2))
 
 @app.cli.command()
 def refresh_address():
@@ -201,23 +201,23 @@ def refresh_address():
             continue
 
         if not place.address.get('country'):
-            print('country missing:', place.display_name)
+            click.echo('country missing:', place.display_name)
             continue
 
-        print(place.place_id, place.display_name)
+        click.echo(place.place_id, place.display_name)
         continue
-        print('http://nominatim.openstreetmap.org/details.php?osmtype={}&osmid={}'.format(place.osm_type[0].upper(), place.osm_id))
+        click.echo('http://nominatim.openstreetmap.org/details.php?osmtype={}&osmid={}'.format(place.osm_type[0].upper(), place.osm_id))
         first_parts = place.display_name.split(', ', 1)[:-1]
-        print(place.address)
+        click.echo(place.address)
         # q = ', '.join(first_parts + [place.address['country']])
         q = ', '.join(first_parts)
-        print(q)
+        click.echo(q)
         # print()
 
         try:
             results = nominatim.lookup(q=q)
         except nominatim.SearchError as e:
-            print(e.text)
+            click.echo(e.text)
             raise
         for hit in results:
             place_id = hit['place_id']
@@ -230,42 +230,34 @@ def refresh_address():
                               .filter_by(osm_type=hit['osm_type'], osm_id=hit['osm_id'])
                               .one_or_none())
             if not place:
-                print('not found: {hit[place_id]}  {hit[display_name]}'.format(hit=hit))
+                click.echo('not found: {hit[place_id]}  {hit[display_name]}'.format(hit=hit))
                 continue
             place.update_from_nominatim(hit)
 
-            print(hit['place_id'], list(hit['address'].items()))
+            click.echo(hit['place_id'], list(hit['address'].items()))
         database.session.commit()
 
-        print()
+        click.echo()
         sleep(10)
 
 @app.cli.command()
 @click.argument('place_identifier')
 def run_matcher(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
-    print(place.display_name)
-    print(place.state)
+    click.echo(place.display_name)
+    click.echo(place.state)
 
-    print('do match')
+    click.echo('do match')
     place.do_match()
-    print(place.state, place.display_name)
-    print('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
+    click.echo(place.state, place.display_name)
+    click.echo('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
 
 @app.cli.command()
 @click.argument('place_identifier')
 @click.argument('chunk_count')
 def show_chunks(place_identifier, chunk_count):
-    app.config.from_object('config.default')
-    database.init_app(app)
     chunk_count = int(chunk_count)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
     pprint(place.chunk_n(chunk_count))
@@ -326,10 +318,6 @@ def place_page():
 @app.cli.command()
 @click.argument('place_identifier')
 def polygons(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
     place = get_place(place_identifier)
 
     chunk_size = utils.calc_chunk_size(place.area_in_sq_km)
@@ -355,20 +343,11 @@ def polygons(place_identifier):
 @app.cli.command()
 @click.argument('place_identifier')
 def srid(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    print(place_identifier)
-    place = get_place(place_identifier)
-
-    print(place.srid)
+    click.echo(get_place(place_identifier).srid)
 
 @app.cli.command()
 @click.argument('place_identifier')
 def add_to_queue(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     host, port = 'localhost', 6020
@@ -409,14 +388,11 @@ def queue_sample_items():
 @app.cli.command()
 @click.argument('place_identifier')
 def get_items_from_wikidata(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
 
     items = place.items_from_wikidata()
 
-    print(len(items))
+    click.echo(len(items))
 
 def get_class(class_name):
     return globals()[class_name]
@@ -450,9 +426,6 @@ def print_create_table(tables):
 @click.argument('place_identifier')
 @click.argument('qid')
 def find_item_matches(place_identifier, qid):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
     print(place.name_for_changeset)
 
@@ -479,9 +452,6 @@ def find_item_matches(place_identifier, qid):
 @app.cli.command()
 @click.argument('place_identifier')
 def area(place_identifier):
-    app.config.from_object('config.default')
-    database.init_app(app)
-
     place = get_place(place_identifier)
     print(place.name_for_changeset)
     print('{:,.0f} km²'.format(place.area_in_sq_km))
@@ -503,6 +473,6 @@ def find_ceb():
         sitelinks = item.sitelinks()
         if not sitelinks or 'cebwiki' not in sitelinks or 'enwiki' in sitelinks:
             continue
-        print(item.qid, item.label())
+        click.echo(item.qid, item.label())
         for k, v in sitelinks.items():
-            print('  ', (k, v['title']))
+            click.echo('  ', (k, v['title']))

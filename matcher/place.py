@@ -795,6 +795,7 @@ class Place(Base):
         return chunks
 
     def chunk_n(self, n):
+        n = max(1, n)
         (south, north, west, east) = self.bbox
         ns = (north - south) / n
         ew = (east - west) / n

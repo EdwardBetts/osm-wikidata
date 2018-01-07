@@ -58,6 +58,19 @@ def matcher_progress(osm_type, osm_id):
                            ws_scheme=ws_scheme,
                            replay_log=replay_log)
 
+@matcher_blueprint.route('/replay/<osm_type>/<int:osm_id>')
+def replay(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+
+    replay_log = True
+    url_scheme = request.environ.get('wsgi.url_scheme')
+    ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
+
+    return render_template('matcher.html',
+                           place=place,
+                           ws_scheme=ws_scheme,
+                           replay_log=replay_log)
+
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/query_wikidata')
 def query_wikidata(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
