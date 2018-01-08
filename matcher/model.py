@@ -148,11 +148,12 @@ class Item(Base):
                 for i in self.entity['claims'].get('P18', [])]
 
     def defunct_cats(self):
-        words = {'demolish', 'disestablishment', 'defunct', 'abandon', 'decommission', 'former', 'dismantled',
-                 'disused', 'disassembled', 'abandoned', 'disband', 'scrapped', 'unused', 'closed', 'condemned',
-                 'mothballed'}
+        words = {'demolish', 'disestablishment', 'defunct', 'abandon', 'mothballed',
+                 'decommission', 'former', 'dismantled', 'disused', 'disassembled',
+                 'abandoned', 'disband', 'scrapped', 'unused', 'closed', 'condemned'}
 
-        exclude = {'Defunct baseball venues in the United States', 'Defunct National Football League venues'}
+        exclude = {'Defunct baseball venues in the United States',
+                   'Defunct National Football League venues'}
 
         found = []
         for item_cat in self.categories or []:
