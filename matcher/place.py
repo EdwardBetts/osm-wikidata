@@ -272,9 +272,10 @@ class Place(Base):
     def delete_overpass(self):
         overpass_dir = current_app.config['OVERPASS_DIR']
         place_id = str(self.place_id)
-        for f in os.listdir(overpass_dir):
-            if f == place_id + '.xml' or f.startswith(f + '_'):
-                os.remove(f)
+        for f in os.scandir(overpass_dir):
+            filename = f.name
+            if filename == place_id + '.xml' or filename.startswith(f + '_'):
+                os.remove(f.path)
 
     def clean_up(self):
         place_id = self.place_id
