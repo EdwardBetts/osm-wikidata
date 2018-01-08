@@ -271,7 +271,8 @@ class Place(Base):
 
     def is_overpass_filename(self, f):
         ''' Does the overpass filename belongs to this place. '''
-        return f == self.place_id + '.xml' or f.startswith(self.place_id + '_')
+        place_id = str(self.place_id)
+        return f == place_id + '.xml' or f.startswith(place_id + '_')
 
     def delete_overpass(self):
         for f in os.scandir(current_app.config['OVERPASS_DIR']):
