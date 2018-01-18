@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request
+from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request, flash
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place
@@ -47,6 +47,8 @@ def matcher_progress(osm_type, osm_id):
     if place.too_big:
         return render_template('too_big.html', place=place)
 
+    is_refresh = place.state == 'refresh'
+
     announce_matcher_progress(place)
     replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
@@ -55,8 +57,27 @@ def matcher_progress(osm_type, osm_id):
 
     return render_template('matcher.html',
                            place=place,
+                           is_refresh=is_refresh,
                            ws_scheme=ws_scheme,
                            replay_log=replay_log)
+
+@matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/done')
+def matcher_done(osm_type, osm_id):
+    refresh = request.args.get('refresh') == '1'
+    place = Place.get_or_abort(osm_type, osm_id)
+    if place.state == 'ready':
+        if refresh:
+            msg = 'Matcher refresh complete.'
+        else:
+            msg = 'The matcher has finished.'
+        flash(msg)
+        return redirect(place.candidates_url())
+
+    if place.too_big:
+        return render_template('too_big.html', place=place)
+
+    # place isn't ready so redirect to matcher progress
+    return redirect(place.matcher_progress_url())
 
 @matcher_blueprint.route('/replay/<osm_type>/<int:osm_id>')
 def replay(osm_type, osm_id):

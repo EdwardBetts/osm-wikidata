@@ -488,10 +488,20 @@ class Place(Base):
                        osm_id=self.osm_id,
                        **kwargs)
 
-    def matcher_progress_url(self):
-        return url_for('matcher.matcher_progress',
+    def place_url(self, endpoint, **kwargs):
+        return url_for(endpoint,
                        osm_type=self.osm_type,
-                       osm_id=self.osm_id)
+                       osm_id=self.osm_id,
+                       **kwargs)
+
+    def matcher_progress_url(self):
+        return self.place_url('matcher.matcher_progress')
+
+    def matcher_done_url(self):
+        return self.place_url('matcher.matcher_done')
+
+    def refresh_done_url(self):
+        return self.place_url('matcher.matcher_done', refresh=1)
 
     def item_list(self):
         lang = self.most_common_language() or 'en'

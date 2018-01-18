@@ -21,7 +21,7 @@ body, html {
 }
 .col {
   position: absolute;
-  height: 100%;
+  height: calc(100% - 70px);
   flex: 1;
   padding: 0px;
   margin: 0;
@@ -83,6 +83,8 @@ body, html {
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
 <script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
 
+{% set matcher_done_url = place.matcher_done_url() if is_refresh else place.refresh_done_url() %}
+
 <script>
 var ws_scheme = {{ ws_scheme | tojson }};
 var replay_log = {{ replay_log | tojson }};
@@ -92,7 +94,7 @@ var wikidata_json_url = {{ url_for('.query_wikidata',
                                    osm_type=place.osm_type,
                                    osm_id=place.osm_id) | tojson }};
 var chunk_geojson = [{{ place.geojson_chunks() | join(',') | safe }}];
-var candidates_url = {{ place.candidates_url() | tojson }};
+var matcher_done_url = {{ matcher_done_url | tojson }};
 var empty_layers = [];
 </script>
 

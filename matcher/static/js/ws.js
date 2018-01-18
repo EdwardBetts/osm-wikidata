@@ -85,7 +85,7 @@ connection.onmessage = function (e) {
       if (replay_log) {
           post_message('replay complete');
       } else {
-          window.location = candidates_url;
+          window.location = matcher_done_url;
       }
       break;
     case 'get_chunk':
