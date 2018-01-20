@@ -133,6 +133,10 @@ def run_sql(cur, sql, debug=False):
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
+    wikidata_names = item.names()
+    if not wikidata_names:
+        return []
+
     cats = item.categories or []
 
     # point = "ST_GeomFromEWKT('{}')".format(item.ewkt)
@@ -150,8 +154,6 @@ def find_item_matches(cur, item, prefix, debug=False):
     seen = set()
 
     endings = get_ending_from_criteria(item.tags)
-
-    wikidata_names = item.names()
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
