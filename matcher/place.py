@@ -10,13 +10,11 @@ from .database import session, get_tables
 from . import wikidata, matcher, wikipedia, overpass, utils
 from collections import Counter
 from .overpass import oql_from_tag
-from pprint import pprint
 from time import time
 
 import subprocess
 import os.path
 import re
-import shutil
 
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
