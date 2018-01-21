@@ -69,7 +69,7 @@ def get_items_with_cats(items):
             items[page['title']]['cats'] = cats
 
 def html_names(article):
-    if article.strip() == '':
+    if not article or article.strip() == '':
         return []
     root = lxml.html.fromstring(article)
     # avoid picking pronunciation guide bold text
