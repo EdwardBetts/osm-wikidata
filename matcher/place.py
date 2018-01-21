@@ -3,6 +3,7 @@ from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, osm
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy.schema import Column
 from sqlalchemy import func, select, cast
+from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -75,6 +76,10 @@ class Place(Base):
                          secondary='place_item',
                          lazy='dynamic',
                          backref=backref('places', lazy='dynamic'))
+
+    __table_args__ = (
+        UniqueConstraint('osm_type', 'osm_id'),
+    )
 
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
@@ -494,11 +499,10 @@ class Place(Base):
     def matcher_progress_url(self):
         return self.place_url('matcher.matcher_progress')
 
-    def matcher_done_url(self):
-        return self.place_url('matcher.matcher_done')
-
-    def refresh_done_url(self):
-        return self.place_url('matcher.matcher_done', refresh=1)
+    def matcher_done_url(self, start, refresh):
+        kwargs = {'refresh': 1} if refresh else {}
+        return self.place_url('matcher.matcher_done',
+                              start=start, **kwargs)
 
     def item_list(self):
         lang = self.most_common_language() or 'en'
@@ -904,6 +908,38 @@ class Place(Base):
             return 2 if self.wikidata_query_timeout else 1
         else:
             return utils.calc_chunk_size(area, size=32)
+
+class PlaceMatcher(Base):
+    __tablename__ = 'place_matcher'
+    start = Column(DateTime, default=func.now(), primary_key=True)
+    end = Column(DateTime)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    remote_addr = Column(String)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user_agent = Column(String)
+    is_refresh = Column(Boolean, nullable=False)
+
+    place = relationship('Place', uselist=False,
+                         backref=backref('matcher_runs', lazy='dynamic'))
+
+    user = relationship('User', uselist=False,
+                         backref=backref('matcher_runs', lazy='dynamic'))
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['osm_type', 'osm_id'],
+            ['place.osm_type', 'place.osm_id'],
+        ),
+    )
+
+    @hybrid_property
+    def duriation(self):
+        return self.end - self.start
+
+    def complete(self):
+        self.end = func.now()
+        session.commit()
 
 def get_top_existing(limit=39):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,
