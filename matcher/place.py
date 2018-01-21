@@ -909,6 +909,9 @@ class Place(Base):
         else:
             return utils.calc_chunk_size(area, size=32)
 
+    def latest_matcher_run(self):
+        return self.matcher_runs.order_by(PlaceMatcher.start.desc()).first()
+
 class PlaceMatcher(Base):
     __tablename__ = 'place_matcher'
     start = Column(DateTime, default=func.now(), primary_key=True)
@@ -921,10 +924,14 @@ class PlaceMatcher(Base):
     is_refresh = Column(Boolean, nullable=False)
 
     place = relationship('Place', uselist=False,
-                         backref=backref('matcher_runs', lazy='dynamic'))
+                         backref=backref('matcher_runs',
+                                         lazy='dynamic',
+                                         order_by='PlaceMatcher.start.desc()'))
 
     user = relationship('User', uselist=False,
-                         backref=backref('matcher_runs', lazy='dynamic'))
+                         backref=backref('matcher_runs',
+                                         lazy='dynamic',
+                                         order_by='PlaceMatcher.start.desc()'))
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -933,9 +940,9 @@ class PlaceMatcher(Base):
         ),
     )
 
-    @hybrid_property
-    def duriation(self):
-        return self.end - self.start
+    def duration(self):
+        if self.end:
+            return self.end - self.start
 
     def complete(self):
         self.end = func.now()

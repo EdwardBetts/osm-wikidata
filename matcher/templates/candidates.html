@@ -70,6 +70,11 @@
 
   {{ place_box(place) }}
 
+  {% set run = place.latest_matcher_run() %}
+  {% if run %}
+    <p>Latest matcher run: {{ run.start.strftime('%a, %d %b %Y %H:%S') }}</p>
+  {% endif %}
+
     {% if upload_okay %}
 <div id="notice" class="alert alert-danger" role="alert">
   <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
