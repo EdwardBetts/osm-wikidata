@@ -35,6 +35,8 @@ def tidy_name(n):
         n = n.replace('s ', ' ').replace("s' ", '')
     for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von':
         n = n.replace(' {} '.format(word), ' ')
+    if n.startswith('the '):
+        n = n[4:]
     n = n.replace('center', 'centre').replace('theater', 'theatre')
 
     decoded = unidecode(n).strip()
