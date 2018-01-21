@@ -47,7 +47,7 @@ init_pager(app)
 env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+login_manager.login_view = 'login_route'
 
 cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
@@ -138,6 +138,12 @@ def navbar():
                     active=request.endpoint)
     except RuntimeError:
         return {}  # maybe we don't care
+
+@app.route('/login')
+def login_route():
+    return redirect(url_for('social.auth',
+                            backend='openstreetmap',
+                            next=request.args.get('next')))
 
 @app.route('/logout')
 @login_required
@@ -666,6 +672,37 @@ def candidates(osm_type, osm_id):
                            upload_okay=upload_okay,
                            tab_pages=tab_pages,
                            multiple_only=multiple_only,
+                           filtered=filtered,
+                           bad_matches=bad_matches,
+                           full_count=full_count,
+                           multiple_match_count=multiple_match_count,
+                           candidates=items)
+
+@app.route('/test_candidates/<osm_type>/<int:osm_id>')
+def test_candidates(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+
+    multiple_match_count = place.items_with_multiple_candidates().count()
+
+    items = place.items_with_candidates()
+
+    full_count = items.count()
+    multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
+
+    filtered = {item.item_id: match
+                for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))}
+
+    filter_okay = any('candidate' in m for m in filtered.values())
+
+    upload_okay = any('candidate' in m for m in filtered.values())
+    bad_matches = get_bad_matches(place)
+
+    return render_template('test_candidates.html',
+                           place=place,
+                           osm_id=osm_id,
+                           filter_okay=filter_okay,
+                           upload_okay=upload_okay,
+                           tab_pages=tab_pages,
                            filtered=filtered,
                            bad_matches=bad_matches,
                            full_count=full_count,
@@ -1213,7 +1250,6 @@ def item_page(wikidata_id):
         return render_template('error_page.html',
                                message="query.wikidata.org isn't working")
 
-
 @app.route('/space')
 def space():
     overpass_dir = app.config['OVERPASS_DIR']
@@ -1257,3 +1293,27 @@ def delete_place(place_id):
     flash('{} deleted'.format(place.display_name))
     to_next = request.args.get('next', 'space')
     return redirect(url_for(to_next))
+
+@app.route('/user/<path:username>')
+def user_page(username):
+    user = User.query.filter(User.username.ilike(username)).one_or_none()
+    if not user:
+        abort(404)
+
+    return render_template('user_page.html', user=user)
+
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account_page():
+    return render_template('user/account.html', user=g.user)
+
+@app.route('/account/settings', methods=['GET', 'POST'])
+@login_required
+def account_settings_page():
+    form = AccountSettingsForm(obj=g.user)
+    if form.validate_on_submit():
+        form.populate_obj(current_user)
+        database.session.commit()
+        flash('Account details updated.')
+        return redirect(url_for(request.endpoint))
+    return render_template('user/account.html', form=form)
