@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+ 
+{% block title %}{{ user.username }}:{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+<div class="row">
+<div class="col">
+  <h1>{{ user.username }}</h1>
+
+  <h4>Changesets</h4>
+  <table class="table table-hover">
+  <thead>
+    <tr>
+      <th class="text-right">when</th>
+      <th class="text-right">#</th>
+      <th>place / item</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for obj in user.changesets.limit(20) %}
+<tr>
+<td class="text-nowrap text-right">
+    <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
+        {{- obj.created.strftime('%H:%M:%S %a, %d %b %Y') if obj.created else obj.id -}}
+    </a>
+</td>
+<td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
+<!-- <td>{{ obj.comment }}</td> -->
+<td>
+    {% if obj.place %}
+        {% set name = obj.place.name_for_changeset %}
+        <a href="{{ obj.place.candidates_url() }}">{{ name }}</a>
+    {% elif obj.item_id %}
+        {% set label = obj.item_label %}
+        <a href="{{ url_for('item_page', wikidata_id=obj.item_id) }}">
+            {% if label %}
+                {{ label }} (Q{{ obj.item_id}})
+            {% else %}
+                Q{{ obj.item_id }}
+            {% endif %}
+        </a>
+    {% else %}
+        unknown location
+    {% endif %}
+</td>
+</tr>
+
+  <tr>
+  </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+
+  <h4>Matcher runs</h4>
+
+  <table class="table table-hover">
+  <thead>
+  <tr>
+  <th>timestamp</th>
+  <th>place</th>
+  <th>duration</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for run in user.matcher_runs %}
+    {% set duration = run.duration() %}
+    <tr>
+    <td>{{ run.start.strftime('%a, %d %b %Y %H:%S') }}</td>
+    <td><a href="{{ run.place.candidates_url }}">{{ run.place.name_for_changeset }}</a></td>
+    <td>
+        {% if duration %}
+            {{ '{:.1f}'.format(duration.total_seconds() / 60) }} minutes
+        {% endif %}
+    </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  </table>
+
+</div>
+</div>
+</div>
+{% endblock %}
