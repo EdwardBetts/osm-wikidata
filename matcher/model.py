@@ -351,8 +351,14 @@ class Changeset(Base):
     user_id = Column(Integer, ForeignKey(User.id))
     update_count = Column(Integer, nullable=False)
 
-    user = relationship('User', backref=backref('changesets', lazy='dynamic'))
-    place = relationship('Place', backref=backref('changesets', lazy='dynamic'))
+    user = relationship('User',
+                        backref=backref('changesets',
+                                        lazy='dynamic',
+                                        order_by='Changeset.created.desc()'))
+    place = relationship('Place',
+                         backref=backref('changesets',
+                                        lazy='dynamic',
+                                        order_by='Changeset.created.desc()'))
 
     @property
     def item_label(self):
