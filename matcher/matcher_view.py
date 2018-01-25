@@ -204,6 +204,20 @@ def load_osm2pgsql(place_id):
     database.session.commit()
     return Response('done', mimetype='text/plain')
 
+def save_individual_matches(place, item, candidates):
+    confirmed = set()
+    for i in (candidates or []):
+        c = ItemCandidate.query.get((item.item_id, i['osm_id'], i['osm_type']))
+        if not c:
+            c = ItemCandidate(**i, item=item)
+            database.session.add(c)
+        confirmed.add((c.item_id, c.osm_id, c.osm_type))
+    for c in item.candidates:
+        if ((c.item_id, c.osm_id, c.osm_type) not in confirmed and
+                not c.bad_matches.count()):
+            database.session.delete(c)
+    database.session.commit()
+
 @matcher_blueprint.route('/load/<int:place_id>/match/Q<int:item_id>', methods=['POST', 'GET'])
 def load_individual_match(place_id, item_id):
     global cat_to_ending
@@ -214,7 +228,7 @@ def load_individual_match(place_id, item_id):
 
     item = Item.query.get(item_id)
     candidates = matcher.run_individual_match(place, item)
-    matcher.save_individual_matches(place, item, candidates)
+    save_individual_matches(place, item, candidates)
     return Response('done', mimetype='text/plain')
 
 @matcher_blueprint.route('/load/<int:place_id>/ready', methods=['POST', 'GET'])
