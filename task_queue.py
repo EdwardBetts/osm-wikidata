@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import better_exceptions  # noqa: F401
 from gevent.server import StreamServer
-from gevent.queue import Queue
-from gevent.event import Event
+from gevent.queue import PriorityQueue, Queue
+# from gevent.event import Event
 from gevent import monkey, spawn, sleep
 from gevent.lock import Semaphore
 monkey.patch_all()
@@ -22,34 +22,7 @@ import os.path
 #
 # We can tell the page was closed by checking a websocket heartbeat.
 
-class Counter(object):
-    def __init__(self, start=0):
-        self.semaphore = Semaphore()
-        self.value = start
-
-    def add(self, other):
-        self.semaphore.acquire()
-        print('add', self.value, other)
-        self.value += other
-        self.semaphore.release()
-        print('done')
-
-    def sub(self, other):
-        self.semaphore.acquire()
-        print('sub', self.value, other)
-        self.value -= other
-        self.semaphore.release()
-        print('done')
-
-    def get_value(self):
-        return self.value
-
-
-chunk_count = Counter()
-task_queue = Queue()
-# how many chunks ahead of this socket in the queue
-chunk_count_sock = {}
-sockets = {}
+task_queue = PriorityQueue()
 
 listen_host, port = 'localhost', 6020
 
@@ -57,15 +30,11 @@ listen_host, port = 'localhost', 6020
 # should give status update as each chunk is loaded.
 # tell client the length of the rate limit pause
 
-def queue_update(msg_type, msg):
-    items = sockets.items()
+def to_client(send_queue, msg_type, msg):
     msg['type'] = msg_type
-    for address, send_queue in list(items):
-        if address not in sockets:
-            continue
-        send_queue.put(msg)
+    send_queue.put(msg)
 
-def wait_for_slot():
+def wait_for_slot(send_queue):
     print('get status')
     status = overpass.get_status()
 
@@ -74,14 +43,14 @@ def wait_for_slot():
     secs = status['slots'][0]
     if secs <= 0:
         return
-    queue_update('status', {'wait': secs})
+    send_queue.put({'type': 'status', 'wait': secs})
     sleep(secs)
 
 def process_queue():
     while True:
-        item = task_queue.get()
+        area, item = task_queue.get()
         place = item['place']
-        address = item['address']
+        send_queue = item['queue']
         for num, chunk in enumerate(item['chunks']):
             oql = chunk.get('oql')
             if not oql:
@@ -93,82 +62,78 @@ def process_queue():
                 'place': place,
             }
             if not os.path.exists(filename):
-                wait_for_slot()
-                queue_update('run_query', msg)
+                wait_for_slot(send_queue)
+                to_client(send_queue, 'run_query', msg)
                 print('run query')
                 r = overpass.run_query(oql)
                 print('query complete')
                 with open(filename, 'wb') as out:
                     out.write(r.content)
             print(msg)
-            chunk_count.sub(1)
-            queue_update('chunk', msg)
+            to_client(send_queue, 'chunk', msg)
         print('item complete')
-        item['queue'].put(None)
+        send_queue.put(None)
 
-def handle(sock, address):
-    print('New connection from %s:%s' % address)
-    try:
-        msg = json.loads(netstring.read(sock))
-    except json.decoder.JSONDecodeError:
-        netstring.write(sock, 'invalid JSON')
-        sock.close()
-        return
+class Request:
+    def __init__(self, sock, address):
+        self.address = address
+        self.sock = sock
+        self.send_queue = None
 
-    if msg.get('type') == 'ping':
-        print('ping')
-        netstring.write(sock, json.dumps({'type': 'pong'}))
-        sock.close()
-        return
+    def send_msg(self, msg, check_ack=True):
+        netstring.write(self.sock, json.dumps(msg))
+        if check_ack:
+            msg = netstring.read(self.sock)
+            assert msg == 'ack'
 
-    queued_chunks = chunk_count.get_value()
-    chunk_count_sock[address] = queued_chunks
+    def reply_and_close(self, msg):
+        self.send_msg(msg, check_ack=False)
+        self.sock.close()
 
-    # print(msg)
-    send_queue = Queue()
-    task_queue.put({
-        'place': msg['place'],
-        'address': address,
-        'chunks': msg['chunks'],
-        'queue': send_queue,
-    })
-    chunk_count.add(len(msg['chunks']))
-    msg = {'type': 'connected', 'queued_chunks': queued_chunks}
-    netstring.write(sock, json.dumps(msg))
-    reply = netstring.read(sock)
-    print('reply:', reply)
-    assert reply == 'ack'
+    def new_place_request(self, msg):
+        self.send_queue = Queue()
+        task_queue.put((msg['place']['area'], {
+            'place': msg['place'],
+            'address': self.address,
+            'chunks': msg['chunks'],
+            'queue': self.send_queue,
+        }))
 
-    sockets[address] = send_queue
-    to_send = send_queue.get()
-    while to_send:
+        self.send_msg({'type': 'connected'})
+
+    def handle(self):
+        print('New connection from %s:%s' % self.address)
         try:
-            netstring.write(sock, json.dumps(to_send))
-            reply = netstring.read(sock)
-            print('reply:', reply)
-            assert reply == 'ack'
+            msg = json.loads(netstring.read(self.sock))
+        except json.decoder.JSONDecodeError:
+            msg = {'type': 'error', 'error': 'invalid JSON'}
+            return self.reply_and_close(msg)
 
+        if msg.get('type') == 'ping':
+            return self.reply_and_close({'type': 'pong'})
+
+        self.new_place_request(msg)
+        try:
+            to_send = self.send_queue.get()
+            while to_send:
+                self.send_msg(to_send)
+                to_send = self.send_queue.get()
         except BrokenPipeError:
             print('socket closed')
-            sock.close()
-            del sockets[address]
-            break
+        else:
+            print('request complete')
+            self.send_msg({'type': 'done'})
 
-        to_send = send_queue.get()
+        self.sock.close()
 
-    print('request complete')
-    to_send = json.dumps({'type': 'done'})
-    netstring.write(sock, to_send)
-    reply = netstring.read(sock)
-    print('reply:', reply)
-    assert reply == 'ack'
-    sock.close()
-    del sockets[address]
+def handle_request(sock, address):
+    r = Request(sock, address)
+    return r.handle()
 
 def main():
     spawn(process_queue)
     print('listening on port {}'.format(port))
-    server = StreamServer((listen_host, port), handle)
+    server = StreamServer((listen_host, port), handle_request)
     server.serve_forever()
 
 

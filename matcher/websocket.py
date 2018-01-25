@@ -133,7 +133,7 @@ class MatcherSocket(object):
     def overpass_request(self, chunks):
         sock = self.connect_to_task_queue()
 
-        fields = ['place_id', 'osm_id', 'osm_type']
+        fields = ['place_id', 'osm_id', 'osm_type', 'area']
         msg = {
             'place': {f: getattr(self.place, f) for f in fields},
             'chunks': chunks,
