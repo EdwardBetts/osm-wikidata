@@ -1,4 +1,5 @@
 from matcher import wikidata, place
+from pprint import pprint
 import pytest
 import vcr
 
@@ -121,14 +122,15 @@ def test_wikidata():
 
     expect = '''[timeout:300][out:json];
 (
-    node(around:1000,48.85830,2.29440)["admin_level"][name];
-    way(around:1000,48.85830,2.29440)["admin_level"][name];
-    rel(around:1000,48.85830,2.29440)["admin_level"][name];
+    node(around:1000,48.85830,2.29440)["admin_level"][~"^(addr:housenumber|.*name.*)$"~".",i];
+    way(around:1000,48.85830,2.29440)["admin_level"][~"^(addr:housenumber|.*name.*)$"~".",i];
+    rel(around:1000,48.85830,2.29440)["admin_level"][~"^(addr:housenumber|.*name.*)$"~".",i];
     node(around:1000,48.85830,2.29440)[place=country][name];
     way(around:1000,48.85830,2.29440)[place=country][name];
     rel(around:1000,48.85830,2.29440)[place=country][name];
 );
 out center tags;'''.strip()
+
     oql = item.get_oql(criteria, 1000)
     print(oql)
     assert oql == expect
@@ -162,13 +164,16 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .     # ignore timeline articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .     # ignore list articles
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline articles
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list articles
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated pages
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituencies
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article'''
 
     q = wikidata.get_enwiki_query(*bbox)
+
     assert q == expect
 
     rows = wikidata.run_query(q)

@@ -8,7 +8,7 @@ interactions:
       User-Agent: ['osm-wikidata/0.1 (https://github.com/EdwardBetts/osm-wikidata;
           edward@4angle.com)']
     method: GET
-    uri: https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=%0ASELECT+%3Fplace+%3FplaceLabel+%28SAMPLE%28%3Flocation%29+AS+%3Flocation%29+%3Farticle+WHERE+%7B%0A++++SERVICE+wikibase%3Abox+%7B%0A++++++++%3Fplace+wdt%3AP625+%3Flocation+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerWest+%22Point%28-2.6318114+51.4478819%29%22%5E%5Egeo%3AwktLiteral+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerEast+%22Point%28-2.6078598+51.4660988%29%22%5E%5Egeo%3AwktLiteral+.%0A++++%7D%0A++++%3Farticle+schema%3Aabout+%3Fplace+.%0A++++%3Farticle+schema%3AinLanguage+%22en%22+.%0A++++%3Farticle+schema%3AisPartOf+%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E+.%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ18340550+%7D+.+++++%23+ignore+timeline+articles%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ13406463+%7D+.+++++%23+ignore+list+articles%0A++++SERVICE+wikibase%3Alabel+%7B+bd%3AserviceParam+wikibase%3Alanguage+%22en%22+%7D%0A%7D%0AGROUP+BY+%3Fplace+%3FplaceLabel+%3Farticle&format=json
+    uri: https://query.wikidata.org/bigdata/namespace/wdq/sparql?query=%0ASELECT+%3Fplace+%3FplaceLabel+%28SAMPLE%28%3Flocation%29+AS+%3Flocation%29+%3Farticle+WHERE+%7B%0A++++SERVICE+wikibase%3Abox+%7B%0A++++++++%3Fplace+wdt%3AP625+%3Flocation+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerWest+%22Point%28-2.6318114+51.4478819%29%22%5E%5Egeo%3AwktLiteral+.%0A++++++++bd%3AserviceParam+wikibase%3AcornerEast+%22Point%28-2.6078598+51.4660988%29%22%5E%5Egeo%3AwktLiteral+.%0A++++%7D%0A++++%3Farticle+schema%3Aabout+%3Fplace+.%0A++++%3Farticle+schema%3AinLanguage+%22en%22+.%0A++++%3Farticle+schema%3AisPartOf+%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E+.%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ18340550+%7D+.++++++++++%23+ignore+timeline+articles%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ13406463+%7D+.++++++++++%23+ignore+list+articles%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31+wd%3AQ17362920+%7D+.++++++++++%23+ignore+Wikimedia+duplicated+pages%0A++++FILTER+NOT+EXISTS+%7B+%3Fplace+wdt%3AP31%2Fwdt%3AP279%2A+wd%3AQ192611+%7D+.++%23+ignore+constituencies%0A++++SERVICE+wikibase%3Alabel+%7B+bd%3AserviceParam+wikibase%3Alanguage+%22en%22+%7D%0A%7D%0AGROUP+BY+%3Fplace+%3FplaceLabel+%3Farticle&format=json
   response:
     body: {string: "{\n  \"head\" : {\n    \"vars\" : [ \"place\", \"placeLabel\",
         \"location\", \"article\" ]\n  },\n  \"results\" : {\n    \"bindings\" : [
@@ -19,26 +19,41 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6248 51.448)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q26503775\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q1189553\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Church of All Saints\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Church_of_All_Saints,_Clifton\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.616217 51.462356)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q28913013\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"The Victoria\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/The_Victoria\"\n      },\n
+        : \"Bristol Zoo\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Bristol_Zoo\"\n      },\n
         \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.611095 51.459651)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q586619\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"BBC Radio Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/BBC_Radio_Bristol\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.622222222
+        51.463333333)\"\n      }\n    }, {\n      \"place\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"http://www.wikidata.org/entity/Q4713691\"\n
+        \     },\n      \"placeLabel\" : {\n        \"xml:lang\" : \"en\",\n        \"type\"
+        : \"literal\",\n        \"value\" : \"Alderman Proctor's Drinking Fountain\"\n
+        \     },\n      \"article\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"https://en.wikipedia.org/wiki/Alderman_Proctor%27s_Drinking_Fountain\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.625837 51.461609)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q4998626\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Burgh Walls Camp\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Burgh_Walls_Camp\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6312 51.4542)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q162170\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton Suspension Bridge\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Suspension_Bridge\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62776 51.455)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q4250531\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Avon Gorge\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Avon_Gorge\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6279 51.4549)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q684520\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -54,82 +69,12 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4492)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4713691\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Alderman Proctor's Drinking Fountain\"\n      },\n      \"article\" :
-        {\n        \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Alderman_Proctor%27s_Drinking_Fountain\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.625837 51.461609)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q526650\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton Cathedral\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Cathedral\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6163 51.4597)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q1072698\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Bristol West\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Bristol_West_(UK_Parliament_constituency)\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.60827 51.463)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4650139\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Everyman Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Whiteladies_Picture_House\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.609533 51.463056)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4835009\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"BBC West\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/BBC_West\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q2376216\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
         : \"Clifton\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
         \       \"value\" : \"https://en.wikipedia.org/wiki/Clifton,_Bristol\"\n      },\n
         \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62 51.46)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q1189553\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Bristol Zoo\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Bristol_Zoo\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.622222222
-        51.463333333)\"\n      }\n    }, {\n      \"place\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"http://www.wikidata.org/entity/Q2462275\"\n
-        \     },\n      \"placeLabel\" : {\n        \"xml:lang\" : \"en\",\n        \"type\"
-        : \"literal\",\n        \"value\" : \"Clifton Down railway station\"\n      },\n
-        \     \"article\" : {\n        \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Down_railway_station\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6109 51.4646)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4250531\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Avon Gorge\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Avon_Gorge\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6279 51.4549)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4968948\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Bristol Marina\"\n      },\n      \"article\" : {\n        \"type\" :
-        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Bristol_Marina\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6079 51.4499)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q162170\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton Suspension Bridge\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Suspension_Bridge\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62776 51.455)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q3786424\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -145,33 +90,96 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.60801 51.461)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5108678\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q4835009\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Christ Church, Clifton Down\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Christ_Church,_Clifton_Down\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6182 51.4629)\"\n
+        : \"BBC West\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/BBC_West\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5133210\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q526650\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton East\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Clifton_East_(ward)\"\n
+        : \"Clifton Cathedral\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Cathedral\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6163 51.4597)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q2462275\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton Down railway station\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Down_railway_station\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6109 51.4646)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5133269\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q4650139\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton Lido and The Victoria Public House\"\n      },\n      \"article\"
-        : {\n        \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/The_Lido,_Bristol\"\n
+        : \"Everyman Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Whiteladies_Picture_House\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6117 51.4589)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.609533 51.463056)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q7246575\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q586619\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Pro-Cathedral of the Holy Apostles\"\n      },\n      \"article\" : {\n
-        \       \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Pro-Cathedral_of_the_Holy_Apostles\"\n
+        : \"BBC Radio Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/BBC_Radio_Bristol\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6098 51.4563)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q4968948\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Bristol Marina\"\n      },\n      \"article\" : {\n        \"type\" :
+        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Bristol_Marina\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6079 51.4499)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q4972141\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Broadcasting House\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Broadcasting_House,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q26503775\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Church of All Saints\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Church_of_All_Saints,_Clifton\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.616217 51.462356)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q28913013\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"The Victoria\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/The_Victoria\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.611095 51.459651)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5133243\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton Hill House\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Hill_House\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61326 51.4533)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5580261\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Goldney Hall\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Goldney_Hall\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6154 51.4523)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5912590\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Hotwells railway station\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Hotwells_railway_station\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6272 51.4559)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q6751333\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Manor Hall, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Manor_Hall,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.612 51.4545)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7723388\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -187,82 +195,26 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4569)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q7927014\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q8026135\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Victoria Rooms, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Victoria_Rooms,_Bristol\"\n
+        : \"Winston Theatre\"\n      },\n      \"article\" : {\n        \"type\" :
+        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Winston_Theatre\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6091 51.458)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4569)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4972141\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q5108678\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Broadcasting House\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Broadcasting_House,_Bristol\"\n
+        : \"Christ Church, Clifton Down\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Christ_Church,_Clifton_Down\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4611)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6182 51.4629)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5133243\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q5133307\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton Hill House\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Hill_House\"\n
+        : \"Clifton Rocks Railway\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Rocks_Railway\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61326 51.4533)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5193841\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Cumberland Basin\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Cumberland_Basin_(Bristol)\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61944 51.4481)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5899208\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Hope Chapel, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Hope_Chapel,_Bristol\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6216 51.4513)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q6751333\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Manor Hall, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Manor_Hall,_Bristol\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.612 51.4545)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q6789817\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Matthew\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Matthew_(ship)\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4494)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q6818367\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Merchant Hall\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Merchant_Hall\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62643 51.4594)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q7075453\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Observatory, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Observatory\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6265 51.4566)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q7375007\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Royal West of England Academy\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Royal_West_of_England_Academy\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4581)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q15210942\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton College Close Ground\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_College_Close_Ground\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6194 51.4613)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62547 51.454)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q6118230\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -278,12 +230,12 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61 51.453)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q7259802\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q6818367\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Pump House, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Pump_House,_Bristol\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.618 51.448337)\"\n
+        : \"Merchant Hall\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Merchant_Hall\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62643 51.4594)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7270308\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -291,6 +243,69 @@ interactions:
         : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Queen_Elizabeth%27s_Hospital\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.609 51.455)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q15071918\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Tower Belle\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Tower_Belle\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6194 51.448)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5019394\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Caledonia Place, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Caledonia_Place,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62273 51.4543)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5899208\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Hope Chapel, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Hope_Chapel,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6216 51.4513)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5912582\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Hotwells\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Hotwells\"\n      },\n
+        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62 51.45)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q12063816\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"New Cut (Bristol)\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/New_Cut,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.625 51.4481)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5133210\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton East\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Clifton_East_(ward)\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6109 51.4646)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5133269\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton Lido and The Victoria Public House\"\n      },\n      \"article\"
+        : {\n        \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/The_Lido,_Bristol\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6117 51.4589)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q5377916\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Engineers House\"\n      },\n      \"article\" : {\n        \"type\" :
+        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Engineers_House\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62643 51.4594)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q7375007\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Royal West of England Academy\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Royal_West_of_England_Academy\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4581)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7375040\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -327,13 +342,6 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.629 51.46)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5019394\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Caledonia Place, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Caledonia_Place,_Bristol\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62273 51.4543)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q5116904\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
         : \"Church of Holy Trinity, Hotwells\"\n      },\n      \"article\" : {\n
@@ -341,26 +349,12 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6187 51.4498)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5133307\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q5303648\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Clifton Rocks Railway\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Rocks_Railway\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62547 51.454)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5580261\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Goldney Hall\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Goldney_Hall\"\n      },\n
+        : \"Dowry Square\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Dowry_Square\"\n      },\n
         \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6154 51.4523)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5912582\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Hotwells\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Hotwells\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62 51.45)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6201 51.4511)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q7033834\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -376,33 +370,33 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62027778 51.45138889)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q8026135\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q7246575\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Winston Theatre\"\n      },\n      \"article\" : {\n        \"type\" :
-        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Winston_Theatre\"\n
+        : \"Pro-Cathedral of the Holy Apostles\"\n      },\n      \"article\" : {\n
+        \       \"type\" : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Pro-Cathedral_of_the_Holy_Apostles\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6084 51.4569)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6098 51.4563)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q12063816\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q7259802\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"New Cut (Bristol)\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/New_Cut,_Bristol\"\n
+        : \"Pump House, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Pump_House,_Bristol\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.625 51.4481)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.618 51.448337)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q15071918\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q7927014\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Tower Belle\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Tower_Belle\"\n      },\n
-        \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6194 51.448)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q4998626\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Burgh Walls Camp\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Burgh_Walls_Camp\"\n
+        : \"Victoria Rooms, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Victoria_Rooms,_Bristol\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6312 51.4542)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6091 51.458)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q15210942\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Clifton College Close Ground\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_College_Close_Ground\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6194 51.4613)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
         : \"http://www.wikidata.org/entity/Q5133190\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
@@ -411,26 +405,26 @@ interactions:
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
         \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6204 51.4623)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5303648\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q5193841\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Dowry Square\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
-        \       \"value\" : \"https://en.wikipedia.org/wiki/Dowry_Square\"\n      },\n
+        : \"Cumberland Basin\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Cumberland_Basin_(Bristol)\"\n
+        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.61944 51.4481)\"\n
+        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
+        : \"http://www.wikidata.org/entity/Q6789817\"\n      },\n      \"placeLabel\"
+        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
+        : \"Matthew\"\n      },\n      \"article\" : {\n        \"type\" : \"uri\",\n
+        \       \"value\" : \"https://en.wikipedia.org/wiki/Matthew_(ship)\"\n      },\n
         \     \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6201 51.4511)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.608 51.4494)\"\n
         \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5377916\"\n      },\n      \"placeLabel\"
+        : \"http://www.wikidata.org/entity/Q7075453\"\n      },\n      \"placeLabel\"
         : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Engineers House\"\n      },\n      \"article\" : {\n        \"type\" :
-        \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Engineers_House\"\n
+        : \"Observatory, Bristol\"\n      },\n      \"article\" : {\n        \"type\"
+        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Clifton_Observatory\"\n
         \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.62643 51.4594)\"\n
-        \     }\n    }, {\n      \"place\" : {\n        \"type\" : \"uri\",\n        \"value\"
-        : \"http://www.wikidata.org/entity/Q5912590\"\n      },\n      \"placeLabel\"
-        : {\n        \"xml:lang\" : \"en\",\n        \"type\" : \"literal\",\n        \"value\"
-        : \"Hotwells railway station\"\n      },\n      \"article\" : {\n        \"type\"
-        : \"uri\",\n        \"value\" : \"https://en.wikipedia.org/wiki/Hotwells_railway_station\"\n
-        \     },\n      \"location\" : {\n        \"datatype\" : \"http://www.opengis.net/ont/geosparql#wktLiteral\",\n
-        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6272 51.4559)\"\n
+        \       \"type\" : \"literal\",\n        \"value\" : \"Point(-2.6265 51.4566)\"\n
         \     }\n    } ]\n  }\n}"}
     headers:
       Accept-Ranges: [bytes]
@@ -439,21 +433,21 @@ interactions:
       Cache-Control: ['public, max-age=300']
       Connection: [keep-alive]
       Content-Type: [application/sparql-results+json]
-      Date: ['Fri, 06 Oct 2017 10:16:30 GMT']
+      Date: ['Mon, 22 Jan 2018 16:49:10 GMT']
       Server: [nginx/1.11.6]
-      Set-Cookie: ['WMF-Last-Access=06-Oct-2017;Path=/;HttpOnly;secure;Expires=Tue,
-          07 Nov 2017 00:00:00 GMT', 'WMF-Last-Access-Global=06-Oct-2017;Path=/;Domain=.wikidata.org;HttpOnly;secure;Expires=Tue,
-          07 Nov 2017 00:00:00 GMT']
+      Set-Cookie: ['WMF-Last-Access=22-Jan-2018;Path=/;HttpOnly;secure;Expires=Fri,
+          23 Feb 2018 12:00:00 GMT', 'WMF-Last-Access-Global=22-Jan-2018;Path=/;Domain=.wikidata.org;HttpOnly;secure;Expires=Fri,
+          23 Feb 2018 12:00:00 GMT']
       Strict-Transport-Security: [max-age=106384710; includeSubDomains; preload]
       Transfer-Encoding: [chunked]
       Vary: ['Accept, Accept-Encoding']
-      Via: ['1.1 varnish-v4, 1.1 varnish-v4, 1.1 varnish-v4']
+      Via: ['1.1 varnish (Varnish/5.1), 1.1 varnish (Varnish/5.1), 1.1 varnish (Varnish/5.1)']
       X-Analytics: [https=1;nocookies=1]
-      X-Cache: ['cp1058 pass, cp3010 miss, cp3008 pass']
+      X-Cache: ['cp1058 pass, cp3007 miss, cp3008 pass']
       X-Cache-Status: [miss]
       X-Client-IP: [82.8.134.195]
       X-Served-By: [wdqs1003]
-      X-Varnish: ['27801600, 31446994, 151537352']
-      content-length: ['32839']
+      X-Varnish: ['192170067, 42912952, 28362807']
+      content-length: ['32282']
     status: {code: 200, message: OK}
 version: 1
