@@ -153,8 +153,11 @@ def name_match(osm, wd, endings=None, debug=False):
 def normalize_name(name):
     return re_strip_non_chars.sub('', name.lower())
 
+def has_address(osm_tags):
+    return any('addr:' + part in osm_tags for part in ('housenumber', 'full'))
+
 def check_name_matches_address(osm_tags, wikidata_names):
-    if not any('addr:' + part in osm_tags for part in ('housenumber', 'full')):
+    if not has_address(osm_tags):
         return
     # if 'addr:housenumber' not in osm_tags or 'addr:street' not in osm_tags:
     #     return
@@ -169,11 +172,13 @@ def check_name_matches_address(osm_tags, wikidata_names):
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:housenumber'] + osm_tags['addr:street'])
         if any(name == osm_address for name in number_start):
-            return Match(MatchType.address)
+            return True
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
         if any(osm_address.startswith(name) for name in number_start):
-            return Match(MatchType.address)
+            return True
+
+    return False
 
 def get_wikidata_names(item):
     skip_lang = {'ar', 'arc', 'pl'}
@@ -208,6 +213,12 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
     best = None
     if not wikidata_names:
         return
+
+    address_match = check_name_matches_address(osm_tags, wikidata_names)
+
+    if address_match is not None:
+        return Match(MatchType.address) if address_match else None
+
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
             m = name_match(o, w, endings)
@@ -218,18 +229,13 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                 m.osm_key = osm_key
             if m and m.match_type == MatchType.good:
                 # print(source, '  match: {} == {}'.format(o, w))
+                print('match:', osm_tags)
+                print(address_match)
                 return m
             elif m and m.match_type == MatchType.trim:
                 best = m
 
-    address_match = check_name_matches_address(osm_tags, wikidata_names)
-    if address_match:
-        m = address_match
-        m.wikidata_name = w
-        m.wikidata_source = source
-        m.osm_name = o
-        m.osm_key = osm_key
-    return address_match or best
+    return best
 
 def get_all_matches(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)
