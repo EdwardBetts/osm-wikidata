@@ -232,6 +232,7 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
         if endings is None:
             endings = set()
         endings |= {
+            city,
             'in ' + city,  # English / German / Dutch
             'w ' + city,   # Polish
             'à ' + city,   # French
