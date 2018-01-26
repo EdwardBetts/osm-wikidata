@@ -12,7 +12,7 @@ re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
-bad_name_fields = {'tiger:name_base', 'old_name', 'name:right',
+bad_name_fields = {'tiger:name_base', 'name:right',
                    'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
 def no_alpha(s):
@@ -217,7 +217,14 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
     address_match = check_name_matches_address(osm_tags, wikidata_names)
 
     if address_match is not None:
-        return Match(MatchType.address) if address_match else None
+        if address_match:
+            m = Match(MatchType.address)
+            # FIXME: this just picks a random Wikidata name and OSM name
+            m.wikidata_name, m.wikidata_source = list(wikidata_names.items())[0]
+            m.osm_key, m.osm_name = list(names.items())[0]
+            return m
+        else:
+            return
 
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
@@ -229,8 +236,6 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                 m.osm_key = osm_key
             if m and m.match_type == MatchType.good:
                 # print(source, '  match: {} == {}'.format(o, w))
-                print('match:', osm_tags)
-                print(address_match)
                 return m
             elif m and m.match_type == MatchType.trim:
                 best = m
