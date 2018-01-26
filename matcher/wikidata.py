@@ -35,7 +35,8 @@ extra_keys = {
     'Q11303': 'Key:height',             # skyscraper
     'Q18142': 'Key:height',             # high-rise building
     'Q33673393': 'Key:height',          # multi-storey building
-    'Q641226': 'Tag:leisure=stadium',       # arena
+    'Q641226': 'Tag:leisure=stadium',   # arena
+    'Q2301048': 'Tag:aeroway=helipad',  # special airfield
 }
 
 # search for items in bounding box that have an English Wikipedia article
