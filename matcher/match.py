@@ -9,6 +9,7 @@ from enum import Enum
 
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
+re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d .*$)')
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
@@ -161,7 +162,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
         return
     # if 'addr:housenumber' not in osm_tags or 'addr:street' not in osm_tags:
     #     return
-    number_start = {name for name in wikidata_names if name[0].isdigit()}
+    number_start = {m.group(1) for m in (re_number_start.match(name) for name in wikidata_names) if m}
     if not number_start:
         return
     strip_comma = [name[:name.rfind(',')]
