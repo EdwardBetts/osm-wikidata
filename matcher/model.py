@@ -106,18 +106,20 @@ class Item(Base):
     def ref_keys(self):
         return {'ref:nrhp'} if self.ref_nrhp() else set()
 
+    def disused_tags(self):
+        tags = set()
+        for i in self.tags:
+            key = i.split('=')[0] if '=' in i else i
+            if key in disused_prefix_key:
+                tags.add('disused:' + i)
+        return tags
+
     def hstore_query(self, ignore_tags=None):
         '''hstore query for use with osm2pgsql database'''
-        tags = (self.get_extra_tags() | set(self.tags) | self.ref_keys) - set(ignore_tags or [])
+        tags = (self.get_extra_tags() | set(self.tags) | self.ref_keys | self.disused_tags()) - set(ignore_tags or [])
         if not tags:
             return
-        disused_tags = set()
-        for tag_or_key in tags:
-            key = tag_or_key.split('=')[0] if '=' in tag_or_key else tag_or_key
-            print('key:', key)
-            if key in disused_prefix_key:
-                disused_tags.add('disused:' + tag_or_key)
-        tags.update(disused_tags)
+
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
                 else "(tags ? '{}')".format(tag) for tag in tags)
