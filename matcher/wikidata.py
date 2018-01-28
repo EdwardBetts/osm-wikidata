@@ -35,7 +35,8 @@ extra_keys = {
     'Q11303': 'Key:height',             # skyscraper
     'Q18142': 'Key:height',             # high-rise building
     'Q33673393': 'Key:height',          # multi-storey building
-    'Q641226': 'Tag:leisure=stadium',       # arena
+    'Q641226': 'Tag:leisure=stadium',   # arena
+    'Q2301048': 'Tag:aeroway=helipad',  # special airfield
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -409,6 +410,16 @@ def names_from_entity(entity, skip_lang=None):
     for i in commonscats:
         value = i['mainsnak']['datavalue']['value']
         ret[value].append(('commonscat', None))
+
+    officialname = entity.get('claims', {}).get('P1448', [])
+    for i in officialname:
+        value = i['mainsnak']['datavalue']['value']
+        ret[value['text']].append(('officialname', value['language']))
+
+    nativelabel = entity.get('claims', {}).get('P1705', [])
+    for i in nativelabel:
+        value = i['mainsnak']['datavalue']['value']
+        ret[value['text']].append(('nativelabel', value['language']))
 
     return ret
 

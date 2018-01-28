@@ -34,7 +34,7 @@ def tidy_name(n):
         n = n[:-1]
     if not n.startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '')
-    for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von':
+    for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von', 'pw.':
         n = n.replace(' {} '.format(word), ' ')
     if n.startswith('the '):
         n = n[4:]
@@ -226,6 +226,22 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
             return m
         else:
             return
+
+    if 'addr:city' in osm_tags:
+        city = osm_tags['addr:city'].lower()
+        if endings is None:
+            endings = set()
+        endings |= {
+            city,
+            'in ' + city,  # English / German / Dutch
+            'w ' + city,   # Polish
+            'à ' + city,   # French
+            'en ' + city,  # Spanish
+            'em ' + city,  # Portuguese
+            'v ' + city,   # Czech
+            'i ' + city,   # Danish / Norwegian / Swedish
+            'a ' + city,   # Italian
+        }
 
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
