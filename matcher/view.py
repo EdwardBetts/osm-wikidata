@@ -839,6 +839,13 @@ def place_from_nominatim(hit):
     return p
 
 def qid_to_search_string(qid):
+    entity = wikidata.get_entity(qid)
+    isa = {i['mainsnak']['datavalue']['value']['id']
+           for i in entity.get('claims', {}).get('P31', [])}
+
+    if isa & {'Q3624078', 'Q6256'}:  # this is a country
+        return entity['labels']['en']['value']
+
     names = wikidata.up_one_level(qid)
     country = names['country_name'] or names['up_country_name']
 
@@ -1123,8 +1130,12 @@ def api_item_match(wikidata_id):
 def browse_page(item_id):
     qid = 'Q{}'.format(item_id)
 
+    place = (Place.query.filter_by(wikidata=qid).one_or_none() or
+             place_from_qid(qid))
+
     return render_template('browse.html',
                            qid=qid,
+                           place=place,
                            rows=wikidata.next_level_places(qid))
 
 @app.route('/matcher/Q<int:item_id>')
