@@ -487,3 +487,20 @@ def place_oql(place_identifier):
 def latest_matcher_run(place_identifier):
     place = get_place(place_identifier)
     print(place.latest_matcher_run().start)
+
+@app.cli.command()
+def add_place_wikidata():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    need_commit = False
+    for place in Place.query:
+        qid = place.extratags.get('wikidata')
+        if not qid:
+            continue
+        need_commit = True
+        print(qid, place.display_name)
+        place.wikidata = qid
+
+    if need_commit:
+        database.session.commit()
