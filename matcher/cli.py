@@ -476,3 +476,14 @@ def find_ceb():
         click.echo(item.qid, item.label())
         for k, v in sitelinks.items():
             click.echo('  ', (k, v['title']))
+
+@app.cli.command()
+@click.argument('place_identifier')
+def place_oql(place_identifier):
+    print(get_place(place_identifier).get_oql())
+
+@app.cli.command()
+@click.argument('place_identifier')
+def latest_matcher_run(place_identifier):
+    place = get_place(place_identifier)
+    print(place.latest_matcher_run().start)
