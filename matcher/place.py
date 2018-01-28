@@ -1,7 +1,6 @@
 from flask import current_app, url_for, g, abort
 from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
-from sqlalchemy.schema import Column
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
@@ -66,6 +65,7 @@ class Place(Base):
     lon = Column(Float)
     added = Column(DateTime, default=func.now())
     wikidata_query_timeout = Column(Boolean, default=False)
+    wikidata = Column(String)
 
     area = column_property(func.ST_Area(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
@@ -178,6 +178,8 @@ class Place(Base):
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
         n['address'] = [dict(name=n, type=t) for t, n in hit['address'].items()]
+        if 'extratags' in hit:
+            n['wikidata'] = hit['extratags'].get('wikidata')
         return cls(**n)
 
     @classmethod
