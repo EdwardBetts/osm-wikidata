@@ -175,7 +175,9 @@ SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE 
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
-} ORDER BY ?area
+}
+GROUP BY ?item ?itemLabel ?startLabel ?area
+ORDER BY ?itemLabel
 '''
 
 # administrative territorial entity of a single country (Q15916867)
@@ -197,6 +199,26 @@ SELECT DISTINCT ?item ?itemLabel ?startLabel ?area WHERE {
   OPTIONAL { ?item wdt:P2046 ?area } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 } ORDER BY ?itemLabel
+'''
+
+# walk place hierarchy grabbing labels and country names
+located_in_query = '''
+SELECT ?item ?itemLabel ?country ?countryLabel WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  VALUES ?start { wd:QID } .
+  ?start wdt:P131* ?item .
+  OPTIONAL { ?item wdt:P17 ?country.}
+}
+'''
+
+up_one_level_query = '''
+SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  VALUES ?start { wd:QID } .
+  OPTIONAL { ?start wdt:P17 ?country1 }
+  OPTIONAL { ?start wdt:P131 ?item }
+  OPTIONAL { ?item wdt:P17 ?country2 }
+}
 '''
 
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
@@ -408,6 +430,29 @@ def parse_osm_keys(rows):
             }
         items[qid]['tags'].add(tag)
     return items
+
+def get_location_hierarchy(qid, name=None):
+    # not currently in use
+    query = located_in_query.replace('QID', qid)
+    return [{
+        'qid': wd_uri_to_qid(row['item']['value']),
+        'label': row['itemLabel']['value'],
+        'country': row['countryLabel']['value'],
+    } for row in run_query(query, name=name)]
+
+def up_one_level(qid, name=None):
+    query = up_one_level_query.replace('QID', qid)
+    rows = run_query(query, name=name)
+    if rows:
+        row = rows[0]
+        return {
+            'name': row['startLabel']['value'],
+            'up': row['itemLabel']['value'],
+            'country_qid': wd_uri_to_qid(row['country1']['value']),
+            'country_name': row['country1Label']['value'],
+            'up_country_qid': wd_uri_to_qid(row['country2']['value']),
+            'up_country_name': row['country2Label']['value'],
+        }
 
 def next_level_places(qid, name=None):
     rows = []

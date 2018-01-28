@@ -825,6 +825,41 @@ def sort_link(order):
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
+def place_from_nominatim(hit):
+    if not ('osm_type' in hit and 'osm_id' in hit):
+        return
+    p = Place.query.filter_by(osm_type=hit['osm_type'],
+                              osm_id=hit['osm_id']).one_or_none()
+    if p:
+        p.update_from_nominatim(hit)
+    else:
+        p = Place.from_nominatim(hit)
+        database.session.add(p)
+    database.session.commit()
+    return p
+
+def qid_to_search_string(qid):
+    names = wikidata.up_one_level(qid)
+    country = names['country_name'] or names['up_country_name']
+
+    q = names['name']
+    if names['up']:
+        q += ', ' + names['up']
+    if country and country != names['up']:
+        q += ', ' + country
+    return q
+
+def place_from_qid(qid, q=None):
+    if q is None:
+        q = qid_to_search_string(qid)
+
+    hits = nominatim.lookup(q=q)
+    for hit in hits:
+        hit_qid = hit['extratags'].get('wikidata')
+        if hit_qid != qid:
+            continue
+        return place_from_nominatim(hit)
+
 def update_search_results(results):
     need_commit = False
     for hit in results:
@@ -1091,6 +1126,21 @@ def browse_page(item_id):
     return render_template('browse.html',
                            qid=qid,
                            rows=wikidata.next_level_places(qid))
+
+@app.route('/matcher/Q<int:item_id>')
+def matcher_wikidata(item_id):
+    qid = 'Q{}'.format(item_id)
+    place = Place.query.filter_by(wikidata=qid).one_or_none()
+    if place:  # already in the database
+        return redirect(place.matcher_progress_url())
+
+    q = qid_to_search_string(qid)
+    place = place_from_qid(qid, q=q)
+    if place:  # search using wikidata query and nominatim
+        return redirect(place.matcher_progress_url())
+
+    # give up and redirect to search page
+    return redirect(url_for('search_page', q=q))
 
 @region.cache_on_arguments()
 def get_tag_list(sort):
