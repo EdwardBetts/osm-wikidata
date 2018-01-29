@@ -191,16 +191,49 @@ admin_area_map = {
 }
 
 next_level_query2 = '''
-SELECT DISTINCT ?item ?itemLabel ?startLabel ?area WHERE {
+SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
   VALUES ?start { wd:QID } .
-  ?item wdt:P31/wdt:P279* wd:TYPE
+  TYPES
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
-} ORDER BY ?itemLabel
+}
+GROUP BY ?item ?itemLabel ?startLabel ?area
+ORDER BY ?itemLabel
 '''
+
+countries_in_continent_query = '''
+SELECT DISTINCT ?item
+                ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+WHERE {
+  VALUES ?start { wd:QID } .
+  {
+      ?item wdt:P31/wdt:P279* wd:Q3624078 .  # sovereign state
+  } UNION {
+      ?item wdt:P31/wdt:P279* wd:Q161243 .   # dependent territory
+  } UNION {
+      ?item wdt:P31/wdt:P279* wd:Q179164 .   # unitary state
+  } UNION {
+      ?item wdt:P31/wdt:P279* wd:Q1763527 .  # constituent country
+  }
+
+  ?item wdt:P30 ?start .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?item ?itemLabel ?startLabel
+ORDER BY ?itemLabel
+'''
+
+
 
 # walk place hierarchy grabbing labels and country names
 located_in_query = '''
@@ -254,7 +287,7 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
-def run_query(query, name=None):
+def run_query(query, name=None, timeout=None):
     if name:
         filename = cache_filename(name + '.json')
         if os.path.exists(filename):
@@ -262,6 +295,7 @@ def run_query(query, name=None):
 
     r = requests.get(wikidata_query_api_url,
                      params={'query': query, 'format': 'json'},
+                     timeout=timeout,
                      headers=user_agent_headers())
     if r.status_code != 200:
         mail.error_mail('wikidata query error', query, r)
@@ -453,7 +487,11 @@ def get_location_hierarchy(qid, name=None):
 
 def up_one_level(qid, name=None):
     query = up_one_level_query.replace('QID', qid)
-    rows = run_query(query, name=name)
+    try:
+        rows = run_query(query, name=name, timeout=2)
+    except requests.Timeout:
+        return
+
     if rows:
         row = rows[0]
         return {
@@ -465,12 +503,29 @@ def up_one_level(qid, name=None):
             'up_country_name': row['country2Label']['value'],
         }
 
-def next_level_places(qid, name=None):
+def next_level_types(types):
+    if len(types) == 1:
+        return '?item wdt:P31/wdt:P279* wd:' + types[0]
+    return ' union '.join('{ ?item wdt:P31/wdt:P279* wd:' + t + ' }' for t in types)
+
+def next_level_places(qid, entity=None, name=None):
+    isa = {i['mainsnak']['datavalue']['value']['id']
+           for i in entity.get('claims', {}).get('P31', [])}
+
+    isa_continent = {
+        'Q5107',     # continent
+        'Q855697',   # subcontinent
+    }
+
     rows = []
-    if qid in admin_area_map:
-        query = next_level_query2.replace('TYPE', admin_area_map[qid])
+    if isa & isa_continent:
+        query = countries_in_continent_query
+    elif qid in admin_area_map:
+        types = next_level_types(admin_area_map[qid])
+        query = next_level_query2.replace('TYPES', types)
     else:
         query = next_level_query
+
     for row in run_query(query.replace('QID', qid), name=name):
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)

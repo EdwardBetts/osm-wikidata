@@ -838,15 +838,28 @@ def place_from_nominatim(hit):
     database.session.commit()
     return p
 
-def qid_to_search_string(qid):
-    entity = wikidata.get_entity(qid)
+def qid_to_search_string(qid, entity):
     isa = {i['mainsnak']['datavalue']['value']['id']
            for i in entity.get('claims', {}).get('P31', [])}
 
-    if isa & {'Q3624078', 'Q6256'}:  # this is a country
-        return entity['labels']['en']['value']
+    en_label = entity['labels']['en']['value']
+
+    country_or_bigger = {
+        'Q5107',     # continent
+        'Q6256',     # country
+        'Q484652',   # international organization
+        'Q855697',   # subcontinent
+        'Q3624078',  # sovereign state
+        'Q1335818',  # supranational organisation
+        'Q4120211',  # regional organization
+    }
+
+    if isa & country_or_bigger:
+        return en_label
 
     names = wikidata.up_one_level(qid)
+    if not names:
+        return en_label
     country = names['country_name'] or names['up_country_name']
 
     q = names['name']
@@ -856,9 +869,11 @@ def qid_to_search_string(qid):
         q += ', ' + country
     return q
 
-def place_from_qid(qid, q=None):
+def place_from_qid(qid, q=None, entity=None):
     if q is None:
-        q = qid_to_search_string(qid)
+        if entity is None:
+            entity = wikidata.get_entity(qid)
+        q = qid_to_search_string(qid, entity)
 
     hits = nominatim.lookup(q=q)
     for hit in hits:
@@ -1130,13 +1145,23 @@ def api_item_match(wikidata_id):
 def browse_page(item_id):
     qid = 'Q{}'.format(item_id)
 
-    place = (Place.query.filter_by(wikidata=qid).one_or_none() or
-             place_from_qid(qid))
+    place = Place.query.filter_by(wikidata=qid).one_or_none()
+    entity = wikidata.get_entity(qid)
+
+    if not place:
+        place = place_from_qid(qid, entity=entity)
+        if not place:
+            name = entity['labels']['en']['value']
+    if place:
+        name = place.name
+
+    rows = wikidata.next_level_places(qid, entity=entity)
 
     return render_template('browse.html',
                            qid=qid,
                            place=place,
-                           rows=wikidata.next_level_places(qid))
+                           name=name,
+                           rows=rows)
 
 @app.route('/matcher/Q<int:item_id>')
 def matcher_wikidata(item_id):
@@ -1145,7 +1170,8 @@ def matcher_wikidata(item_id):
     if place:  # already in the database
         return redirect(place.matcher_progress_url())
 
-    q = qid_to_search_string(qid)
+    entity = wikidata.get_entity(qid)
+    q = qid_to_search_string(qid, entity)
     place = place_from_qid(qid, q=q)
     if place:  # search using wikidata query and nominatim
         return redirect(place.matcher_progress_url())

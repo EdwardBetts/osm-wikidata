@@ -1,18 +1,16 @@
 {% from "macro.html" import place_box %}
 {% extends "base.html" %}
 
-{% block title %}Browse {{ place.name }} ({{ qid }}){% endblock %}
+{% block title %}Browse {{ name }} ({{ qid }}){% endblock %}
 
 {% block content %}
 <div class="container my-2">
 <div class="row">
 <div class="col">
 
+<h1>{{ name }} <small>({{ qid }})</small></h1>
 {% if place %}
-  <h1>{{ place.name }} <small>({{ qid }})</small></h1>
   {{ place_box(place) }}
-{% else %}
-  <h1>{{ qid }}</h1>
 {% endif %}
 
 <table class="table">
