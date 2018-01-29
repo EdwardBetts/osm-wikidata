@@ -499,6 +499,10 @@ class Place(Base):
                        osm_id=self.osm_id,
                        **kwargs)
 
+    def browse_url(self):
+        if self.wikidata:
+            return url_for('browse_page', item_id=int(self.wikidata[1:]))
+
     def matcher_progress_url(self):
         return self.place_url('matcher.matcher_progress')
 
