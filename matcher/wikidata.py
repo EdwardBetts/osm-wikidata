@@ -183,9 +183,12 @@ ORDER BY ?itemLabel
 
 # administrative territorial entity of a single country (Q15916867)
 
+#           'Q349084'],    # England  -> district of England
 admin_area_map = {
     'Q21': ['Q1136601',    # England  -> unitary authority of England
-            'Q349084'],    # England  -> district of England
+            'Q211690',     # |           London borough
+            'Q1002812',    # |           metropolitan borough
+            'Q643815'],    # |           (non-)metropolitan county of England
     'Q22': ['Q15060255'],  # Scotland -> council area
     'Q25': ['Q15979307'],  # Wales    -> principal area of Wales
 }
@@ -194,6 +197,8 @@ next_level_query2 = '''
 SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
   VALUES ?start { wd:QID } .
   TYPES
+  FILTER NOT EXISTS { ?item wdt:P31 wd:Q9046617 } .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q19953632 } .
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
