@@ -189,8 +189,9 @@ admin_area_map = {
             'Q211690',     # |           London borough
             'Q1002812',    # |           metropolitan borough
             'Q643815'],    # |           (non-)metropolitan county of England
-    'Q22': ['Q15060255'],  # Scotland -> council area
-    'Q25': ['Q15979307'],  # Wales    -> principal area of Wales
+    'Q22': ['Q15060255'],  # Scotland          -> council area
+    'Q25': ['Q15979307'],  # Wales            -> principal area of Wales
+    'Q26': ['Q17364572'],  # Northern Ireland -> district of Northern Ireland
 }
 
 next_level_query2 = '''
