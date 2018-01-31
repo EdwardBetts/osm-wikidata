@@ -1,4 +1,5 @@
-from . import database, nominatim, wikidata, matcher, user_agent_headers, overpass, mail
+from . import (database, nominatim, wikidata, matcher, user_agent_headers,
+               overpass, mail, browse)
 from .utils import cache_filename, get_radius, get_int_arg, is_bot
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
 from .place import Place, get_top_existing
@@ -825,63 +826,6 @@ def sort_link(order):
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
-def place_from_nominatim(hit):
-    if not ('osm_type' in hit and 'osm_id' in hit):
-        return
-    p = Place.query.filter_by(osm_type=hit['osm_type'],
-                              osm_id=hit['osm_id']).one_or_none()
-    if p:
-        p.update_from_nominatim(hit)
-    else:
-        p = Place.from_nominatim(hit)
-        database.session.add(p)
-    database.session.commit()
-    return p
-
-def qid_to_search_string(qid, entity):
-    isa = {i['mainsnak']['datavalue']['value']['id']
-           for i in entity.get('claims', {}).get('P31', [])}
-
-    en_label = entity['labels']['en']['value']
-
-    country_or_bigger = {
-        'Q5107',     # continent
-        'Q6256',     # country
-        'Q484652',   # international organization
-        'Q855697',   # subcontinent
-        'Q3624078',  # sovereign state
-        'Q1335818',  # supranational organisation
-        'Q4120211',  # regional organization
-    }
-
-    if isa & country_or_bigger:
-        return en_label
-
-    names = wikidata.up_one_level(qid)
-    if not names:
-        return en_label
-    country = names['country_name'] or names['up_country_name']
-
-    q = names['name']
-    if names['up']:
-        q += ', ' + names['up']
-    if country and country != names['up']:
-        q += ', ' + country
-    return q
-
-def place_from_qid(qid, q=None, entity=None):
-    if q is None:
-        if entity is None:
-            entity = wikidata.get_entity(qid)
-        q = qid_to_search_string(qid, entity)
-
-    hits = nominatim.lookup(q=q)
-    for hit in hits:
-        hit_qid = hit['extratags'].get('wikidata')
-        if hit_qid != qid:
-            continue
-        return place_from_nominatim(hit)
-
 def update_search_results(results):
     need_commit = False
     for hit in results:
@@ -1149,13 +1093,13 @@ def browse_page(item_id):
     entity = wikidata.get_entity(qid)
 
     if not place:
-        place = place_from_qid(qid, entity=entity)
+        place = browse.place_from_qid(qid, entity=entity)
         if not place:
             name = entity['labels']['en']['value']
     if place:
         name = place.name
 
-    rows = wikidata.next_level_places(qid, entity=entity)
+    rows = wikidata.next_level_places(qid, entity)
 
     return render_template('browse.html',
                            qid=qid,
@@ -1171,8 +1115,8 @@ def matcher_wikidata(item_id):
         return redirect(place.matcher_progress_url())
 
     entity = wikidata.get_entity(qid)
-    q = qid_to_search_string(qid, entity)
-    place = place_from_qid(qid, q=q)
+    q = browse.qid_to_search_string(qid, entity)
+    place = browse.place_from_qid(qid, q=q)
     if place:  # search using wikidata query and nominatim
         return redirect(place.matcher_progress_url())
 
