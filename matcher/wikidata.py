@@ -197,6 +197,7 @@ next_level_query2 = '''
 SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
   VALUES ?start { wd:QID } .
   TYPES
+  # metropolitan borough of the County of London (old)
   FILTER NOT EXISTS { ?item wdt:P31 wd:Q9046617 } .
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q19953632 } .
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
@@ -238,8 +239,6 @@ GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
-
-
 # walk place hierarchy grabbing labels and country names
 located_in_query = '''
 SELECT ?item ?itemLabel ?country ?countryLabel WHERE {
@@ -258,6 +257,29 @@ SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label 
   OPTIONAL { ?start wdt:P131 ?item }
   OPTIONAL { ?item wdt:P17 ?country2 }
 }
+'''
+
+next_level_type_map = {
+    'Q48091': 'Q180673',  # English region -> ceremonial county of England
+}
+
+next_level_by_type = '''
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area) WHERE {
+  VALUES ?start { wd:QID } .
+  TYPES
+  ?item wdt:P131 ?start .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q19953632 } .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?item ?itemLabel ?startLabel
+ORDER BY ?itemLabel
 '''
 
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
@@ -370,7 +392,6 @@ def entity_iter(ids, debug=False):
         'formatversion': 2,
         'action': 'wbgetentities',
     }
-    print('entity_iter')
     for num, cur in enumerate(chunk(ids, page_size)):
         if debug:
             print('entity_iter: {}/{}'.format(num * page_size, len(ids)))
@@ -509,11 +530,18 @@ def up_one_level(qid, name=None):
         }
 
 def next_level_types(types):
+    types = list(types)
     if len(types) == 1:
-        return '?item wdt:P31/wdt:P279* wd:' + types[0]
+        return '?item wdt:P31/wdt:P279* wd:{} .'.format(types[0])
     return ' union '.join('{ ?item wdt:P31/wdt:P279* wd:' + t + ' }' for t in types)
 
-def next_level_places(qid, entity=None, name=None):
+def isa_list(types):
+    types = list(types)
+    if len(types) == 1:
+        return '?item wdt:P31 wd:{} .'.format(types[0])
+    return ' union '.join('{ ?item wdt:P31 wd:' + t + ' }' for t in types)
+
+def next_level_places(qid, entity, name=None):
     isa = {i['mainsnak']['datavalue']['value']['id']
            for i in entity.get('claims', {}).get('P31', [])}
 
@@ -522,8 +550,14 @@ def next_level_places(qid, entity=None, name=None):
         'Q855697',   # subcontinent
     }
 
+    types_from_isa = isa & next_level_type_map.keys()
+
     rows = []
-    if isa & isa_continent:
+    if types_from_isa:
+        # use first match in type map
+        types = isa_list(next_level_type_map[t] for t in types_from_isa)
+        query = next_level_by_type.replace('TYPES', types)
+    elif isa & isa_continent:
         query = countries_in_continent_query
     elif qid in admin_area_map:
         types = next_level_types(admin_area_map[qid])
