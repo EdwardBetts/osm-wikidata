@@ -79,7 +79,6 @@ tab_pages = [
 
 webassets.filter.register_filter(BabelJS)
 js_lib = webassets.Bundle('jquery/jquery.js',
-                          'js/tether.js',
                           'bootstrap4/js/bootstrap.js',
                           filters='jsmin')
 js_app = webassets.Bundle('js/app.js',
