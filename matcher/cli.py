@@ -15,6 +15,7 @@ import json
 import click
 import socket
 
+@app.cli.command()
 def create_db(place_identifier):
     app.config.from_object('config.default')
     database.init_app(app)
