@@ -85,7 +85,6 @@ js_lib = webassets.Bundle('jquery/jquery.js',
 js_app = webassets.Bundle('js/app.js',
                           filters='babeljs')
 
-env.cache = app.config['WEBASSET_CACHE']
 env.register('js', js_lib, js_app, output='gen/pack.js')
 
 env.register('style', 'css/style.css', 'bootstrap4/css/bootstrap.css',
