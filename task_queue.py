@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import better_exceptions  # noqa: F401
 from gevent.server import StreamServer
 from gevent.queue import PriorityQueue, Queue
 # from gevent.event import Event
