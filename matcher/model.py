@@ -99,8 +99,12 @@ class Item(Base):
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
     def get_extra_tags(self):
-        return {tag[4:] for tag in (wikidata.extra_keys.get('Q{:d}'.format(item_id))
-                                for item_id in self.instanceof()) if tag}
+        tags = set()
+        for item_id in self.instanceof:
+            for tag in wikidata.extra_keys.get('Q{:d}'.format(item_id), []):
+                if tag:
+                    tags.add(tag[4:])
+        return tags
 
     @property
     def ref_keys(self):
