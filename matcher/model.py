@@ -100,7 +100,7 @@ class Item(Base):
 
     def get_extra_tags(self):
         tags = set()
-        for item_id in self.instanceof:
+        for item_id in self.instanceof():
             for tag in wikidata.extra_keys.get('Q{:d}'.format(item_id), []):
                 if tag:
                     tags.add(tag[4:])
