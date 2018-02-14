@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 from gevent.server import StreamServer
 from gevent.queue import PriorityQueue, Queue
-# from gevent.event import Event
 from gevent import monkey, spawn, sleep
-from gevent.lock import Semaphore
 monkey.patch_all()
 
 from matcher import overpass, netstring
