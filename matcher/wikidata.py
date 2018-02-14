@@ -28,13 +28,13 @@ skip_tags = {'route:road',
              'type=waterway',
              'waterway=river'}
 
-college_or_university = ['Tag:amenity=college', 'Tag:amenity=university']
+edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school']
 
 extra_keys = {
-    'Q1021290': college_or_university,    # music school
-    'Q5167149': college_or_university,    # cooking school
-    'Q383092': college_or_university,     # film school
-    'Q2143781': college_or_university,    # drama school
+    'Q1021290': edu,                      # music school
+    'Q5167149': edu,                      # cooking school
+    'Q383092': edu,                       # film school
+    'Q2143781': edu,                      # drama school
     'Q11303': ['Key:height'],             # skyscraper
     'Q18142': ['Key:height'],             # high-rise building
     'Q33673393': ['Key:height'],          # multi-storey building
@@ -44,6 +44,7 @@ extra_keys = {
     'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],    # bar
     'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],    # hospital
     'Q330284': ['Tag:amenity=market'],    # marketplace
+    'Q2385804': edu,                      # educational institution
 }
 
 # search for items in bounding box that have an English Wikipedia article
