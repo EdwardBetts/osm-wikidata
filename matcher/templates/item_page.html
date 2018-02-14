@@ -110,6 +110,12 @@
         {% endif %}
     {% endif %}
 
+    {% if is_proposed %}
+      <div class="alert alert-info">
+      <strong>This Wikidata item is a proposed building or structure. Not looking for OpenStreetMap matches.</strong>
+      </div>
+    {% else %}
+
     <h3>matches</h3>
     {% if upload_option %}
     <form method="post" action="{{ url_for('add_wikidata_tag') }}">
@@ -127,7 +133,7 @@
       {% elif candidate_count == 1 %}
         <p>found a single match candidate</p>
       {% else %}
-        <p>found {{ candidate_count }} matches candidate</p>
+        <p>found {{ candidate_count }} match candidates</p>
       {% endif %}
 
       {% for c in item.candidates %}
@@ -239,6 +245,8 @@
 
       <button id='add-tag' class="btn btn-primary mb-2">add wikidata tag to OpenStreetMap</button>
       </form>
+    {% endif %}
+
     {% endif %}
 
     {% if wikidata_osm_tags %}

@@ -1219,7 +1219,9 @@ def build_item_page(wikidata_id, item):
     else:
         filtered = {}
 
-    if not entity.has_coords or not criteria:
+    is_proposed = item.is_proposed() if item else entity.is_proposed()
+
+    if not entity.has_coords or not criteria or is_proposed:
         return render_template('item_page.html',
                                item=item,
                                entity=entity,
@@ -1227,7 +1229,8 @@ def build_item_page(wikidata_id, item):
                                wikidata_osm_tags=wikidata_osm_tags,
                                criteria=criteria,
                                filtered=filtered,
-                               qid=qid)
+                               qid=qid,
+                               is_proposed=is_proposed)
 
     criteria = wikidata.flatten_criteria(criteria)
 

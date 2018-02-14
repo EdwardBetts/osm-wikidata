@@ -794,6 +794,10 @@ SELECT DISTINCT ?code WHERE {
         return [isa['mainsnak']['datavalue']['value']['id']
                 for isa in self.entity.get('claims', {}).get('P31', [])]
 
+    def is_proposed(self):
+        '''is this a proposed building or structure (Q811683)?'''
+        return 'Q811683' in self.is_a
+
     def criteria(self):
         items = {row['tag']['value'] for row in self.osm_keys}
         for is_a in self.is_a:
