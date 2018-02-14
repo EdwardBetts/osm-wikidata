@@ -502,7 +502,10 @@ def parse_osm_keys(rows):
         for i in 'Key:', 'Tag:':
             if tag.startswith(i):
                 tag = tag[4:]
-        if qid not in items:
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we ignore it.
+        if qid not in items and tag != 'amenity':
             items[qid] = {
                 'uri': uri,
                 'label': row['itemLabel']['value'],
