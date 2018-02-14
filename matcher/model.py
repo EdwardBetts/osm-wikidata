@@ -208,7 +208,7 @@ class Item(Base):
         if any(cat.startswith('Proposed ') for cat in cats):
             return True
         # proposed building or structure (Q811683)
-        return 'Q811683' in self.instanceof()
+        return 'Q811683' in (self.instanceof() or [])
 
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
