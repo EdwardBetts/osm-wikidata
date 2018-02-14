@@ -112,10 +112,11 @@ class Item(Base):
 
     def disused_tags(self):
         tags = set()
+        prefixes = ('disused', 'was', 'abandoned')
         for i in self.tags:
             key = i.split('=')[0] if '=' in i else i
             if key in disused_prefix_key:
-                tags.add('disused:' + i)
+                tags |= {prefix + ':' + i for prefix in prefixes}
         return tags
 
     def hstore_query(self, ignore_tags=None):
