@@ -201,10 +201,21 @@ class Item(Base):
         if self.entity:
             return self.entity.get('sitelinks')
 
+    def is_proposed(self):
+        '''is this item a proposed building or structure?'''
+
+        cats = self.categories or []
+        if any(cat.startswith('Proposed ') for cat in cats):
+            return True
+        # proposed building or structure (Q811683)
+        return 'Q811683' in self.instanceof()
+
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
         best to skip items that are only cebwiki or cebwiki + svwiki
         '''
+        if self.is_proposed():  # skip proposed building or structure
+            return True
         if not self.entity:
             return False
         sitelinks = self.entity.get('sitelinks')

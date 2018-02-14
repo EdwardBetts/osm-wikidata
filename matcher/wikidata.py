@@ -60,10 +60,11 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated pages
-    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituencies
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated page
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituency
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q811683 } .            # ignore proposed building or structure
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article
@@ -141,10 +142,11 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
     ?item wdt:P1282 ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
-    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline articles
-    FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } .           # ignore list articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated pages
-    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituencies
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline article
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } .           # ignore list article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated page
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituency
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q811683 } .            # ignore proposed building or structure
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
