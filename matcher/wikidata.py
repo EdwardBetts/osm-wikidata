@@ -789,6 +789,10 @@ SELECT DISTINCT ?code WHERE {
         items = {row['tag']['value'] for row in self.osm_keys}
         for is_a in self.is_a:
             items |= set(extra_keys.get(is_a, []))
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we discard it.
+        items.discard('Key:amenity')
         return items
 
     def report_broken_wikidata_osm_tags(self):

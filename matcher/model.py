@@ -120,7 +120,15 @@ class Item(Base):
 
     def hstore_query(self, ignore_tags=None):
         '''hstore query for use with osm2pgsql database'''
-        tags = (self.get_extra_tags() | set(self.tags) | self.ref_keys | self.disused_tags()) - set(ignore_tags or [])
+        ignore_tags = set(ignore_tags or [])
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we ignore it.
+        ignore_tags.add('amenity')
+        tags = (self.get_extra_tags() |
+                set(self.tags) |
+                self.ref_keys |
+                self.disused_tags()) - ignore_tags
         if not tags:
             return
 
