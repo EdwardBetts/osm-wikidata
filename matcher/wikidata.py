@@ -45,6 +45,8 @@ extra_keys = {
     'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],    # hospital
     'Q330284': ['Tag:amenity=market'],    # marketplace
     'Q2385804': edu,                      # educational institution
+                                          # drinking establishment
+    'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
 }
 
 # search for items in bounding box that have an English Wikipedia article
