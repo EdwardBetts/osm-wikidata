@@ -62,7 +62,7 @@ def process_queue():
                 'place': place,
             }
             if not os.path.exists(filename):
-                utils.check_free_space()
+                # utils.check_free_space()
                 wait_for_slot(send_queue)
                 to_client(send_queue, 'run_query', msg)
                 print('run query')
@@ -70,7 +70,7 @@ def process_queue():
                 print('query complete')
                 with open(filename, 'wb') as out:
                     out.write(r.content)
-                utils.check_free_space()
+                # utils.check_free_space()
             print(msg)
             to_client(send_queue, 'chunk', msg)
         print('item complete')
