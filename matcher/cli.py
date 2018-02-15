@@ -1,6 +1,6 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad
+from .model import Item, Changeset, get_bad, Base
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring
 from datetime import datetime, timedelta
@@ -14,6 +14,13 @@ from sqlalchemy.dialects.postgresql.base import CreateEnumType
 import json
 import click
 import socket
+
+@app.cli.command()
+def create_db():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    Base.metadata.create_all(database.session.get_bind())
 
 def get_place(place_identifier):
     app.config.from_object('config.default')

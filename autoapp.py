@@ -1,7 +1,8 @@
-from matcher.view import app
+from matcher.view import app, env
 from matcher import database
 from matcher.error_mail import setup_error_mail
 from flask import request_finished, request
+from werkzeug.contrib.fixers import ProxyFix
 import logging
 import termcolor
 import time
@@ -50,7 +51,8 @@ def log_response(sender, response, **extra):
 
 
 app.config.from_object('config.default')
-app.debug = False
+env.cache = app.config['WEBASSET_CACHE']
 database.init_app(app)
 setup_error_mail(app)
 request_finished.connect(log_response, app)
+app.wsgi_app = ProxyFix(app.wsgi_app)

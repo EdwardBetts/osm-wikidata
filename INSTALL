@@ -1,0 +1,69 @@
+Below is a list of the requirements for installing this software. These need to
+be installed for the system to function.
+
+    PostgreSQL - the database
+    PostGIS - for geographic objects in the database
+    osm2pgsql - for loading OSM data into the database
+    osmium-tool - for merging OSM files into a single file
+    memcached - caching for performance
+
+The tool expects to find an e-mail server running on localhost and accepting
+connection via SMTP. This is to send occasional e-mails to the administrator.
+
+Python requirements:
+
+    sqlalchemy
+    psycopg2
+    GeoAlchemy2
+    geopy
+    Flask
+    flask-login
+    python-Social-Auth
+    gevent
+    websockets
+    flask_sockets
+    gunicorn
+    humanize
+    unidecode
+    termcolor
+    dogpile.cache
+    pylibmc
+    lxml
+    requests
+    simplejson
+    ua-parser
+    user-agents
+    Flask-Assets
+    webassets
+    dupky
+    jsmin
+    cssmin
+
+The front-end libraries need to be installed in the matcher/static directory.
+This list is the expected directory name, and the software required:
+
+    jquery                 jQuery
+    bootstrap4             Bootstrap 4
+    leaflet                Leaflet
+    Leaflet.marketcluster  Leaflet.marketcluster
+
+A sample configuration file can be found in config/sample.py, this should be
+copied to config/default.py, then modified to include information like the
+database connection parameters and the name and e-mail address of the system
+administrator.
+
+The database can be created with this command:
+
+    FLASK_APP=matcher/cli.py flask create_db
+
+The system is designed to be served from gunicorn. It can be started like this:
+
+    gunicorn -k flask_sockets.worker autoapp:app -t 6000
+
+The task queue that handles communication with the Overpass API needs to be run
+separately. It is in the project root directory, this will start it:
+
+    python3 task_queue.py
+
+Currently in development is an ansible playbook for configuring a server to run
+this software. It should be available soon.

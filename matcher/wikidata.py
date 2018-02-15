@@ -28,15 +28,26 @@ skip_tags = {'route:road',
              'type=waterway',
              'waterway=river'}
 
+edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school']
+
 extra_keys = {
-    'Q1021290': 'Tag:amenity=college',  # music school
-    'Q5167149': 'Tag:amenity=college',  # cooking school
-    'Q383092': 'Tag:amenity=college',   # film school
-    'Q11303': 'Key:height',             # skyscraper
-    'Q18142': 'Key:height',             # high-rise building
-    'Q33673393': 'Key:height',          # multi-storey building
-    'Q641226': 'Tag:leisure=stadium',   # arena
-    'Q2301048': 'Tag:aeroway=helipad',  # special airfield
+    'Q1021290': edu,                      # music school
+    'Q5167149': edu,                      # cooking school
+    'Q383092': edu,                       # film school
+    'Q2143781': edu,                      # drama school
+    'Q11303': ['Key:height'],             # skyscraper
+    'Q18142': ['Key:height'],             # high-rise building
+    'Q33673393': ['Key:height'],          # multi-storey building
+    'Q641226': ['Tag:leisure=stadium'],   # arena
+    'Q2301048': ['Tag:aeroway=helipad'],  # special airfield
+    'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],  # nightclub
+    'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],    # bar
+    'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],    # hospital
+    'Q330284': ['Tag:amenity=market'],    # marketplace
+    'Q2385804': edu,                      # educational institution
+                                          # drinking establishment
+    'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
+    'Q875157': ['Tag:tourism=resort'],    # resort
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -50,10 +61,11 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
     ?article schema:about ?place .
     ?article schema:inLanguage "en" .
     ?article schema:isPartOf <https://en.wikipedia.org/> .
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated pages
-    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituencies
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated page
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituency
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q811683 } .            # ignore proposed building or structure
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?article
@@ -131,10 +143,11 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
     ?item wdt:P1282 ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
-    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline articles
-    FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } .           # ignore list articles
-    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated pages
-    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituencies
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline article
+    FILTER NOT EXISTS { ?item wdt:P31 wd:Q13406463 } .           # ignore list article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated page
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituency
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q811683 } .            # ignore proposed building or structure
     SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
@@ -494,6 +507,11 @@ def parse_osm_keys(rows):
         for i in 'Key:', 'Tag:':
             if tag.startswith(i):
                 tag = tag[4:]
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we ignore it.
+        if tag == 'amenity':
+            continue
         if qid not in items:
             items[qid] = {
                 'uri': uri,
@@ -777,9 +795,18 @@ SELECT DISTINCT ?code WHERE {
         return [isa['mainsnak']['datavalue']['value']['id']
                 for isa in self.entity.get('claims', {}).get('P31', [])]
 
+    def is_proposed(self):
+        '''is this a proposed building or structure (Q811683)?'''
+        return 'Q811683' in self.is_a
+
     def criteria(self):
         items = {row['tag']['value'] for row in self.osm_keys}
-        items |= {extra_keys[is_a] for is_a in self.is_a if is_a in extra_keys}
+        for is_a in self.is_a:
+            items |= set(extra_keys.get(is_a, []))
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we discard it.
+        items.discard('Key:amenity')
         return items
 
     def report_broken_wikidata_osm_tags(self):

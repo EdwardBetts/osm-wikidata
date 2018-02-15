@@ -24,7 +24,8 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
                                 metadata=Base.metadata)
 
 # also check for tags that start with 'disused:'
-disused_prefix_key = {'amenity', 'railway', 'leisure'}
+disused_prefix_key = {'amenity', 'railway', 'leisure', 'tourism',
+                      'man_made', 'shop', 'building'}
 
 class User(Base, UserMixin):
     __tablename__ = 'user'
@@ -99,8 +100,12 @@ class Item(Base):
         return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
 
     def get_extra_tags(self):
-        return {tag[4:] for tag in (wikidata.extra_keys.get('Q{:d}'.format(item_id))
-                                for item_id in self.instanceof()) if tag}
+        tags = set()
+        for item_id in self.instanceof():
+            for tag in wikidata.extra_keys.get('Q{:d}'.format(item_id), []):
+                if tag:
+                    tags.add(tag[4:])
+        return tags
 
     @property
     def ref_keys(self):
@@ -108,15 +113,24 @@ class Item(Base):
 
     def disused_tags(self):
         tags = set()
+        prefixes = ('disused', 'was', 'abandoned')
         for i in self.tags:
             key = i.split('=')[0] if '=' in i else i
             if key in disused_prefix_key:
-                tags.add('disused:' + i)
+                tags |= {prefix + ':' + i for prefix in prefixes}
         return tags
 
     def hstore_query(self, ignore_tags=None):
         '''hstore query for use with osm2pgsql database'''
-        tags = (self.get_extra_tags() | set(self.tags) | self.ref_keys | self.disused_tags()) - set(ignore_tags or [])
+        ignore_tags = set(ignore_tags or [])
+
+        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
+        # 'amenity'. This is too generic, so we ignore it.
+        ignore_tags.add('amenity')
+        tags = (self.get_extra_tags() |
+                set(self.tags) |
+                self.ref_keys |
+                self.disused_tags()) - ignore_tags
         if not tags:
             return
 
@@ -188,10 +202,21 @@ class Item(Base):
         if self.entity:
             return self.entity.get('sitelinks')
 
+    def is_proposed(self):
+        '''is this item a proposed building or structure?'''
+
+        cats = self.categories or []
+        if any(cat.startswith('Proposed ') for cat in cats):
+            return True
+        # proposed building or structure (Q811683)
+        return 'Q811683' in (self.instanceof() or [])
+
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
         best to skip items that are only cebwiki or cebwiki + svwiki
         '''
+        if self.is_proposed():  # skip proposed building or structure
+            return True
         if not self.entity:
             return False
         sitelinks = self.entity.get('sitelinks')

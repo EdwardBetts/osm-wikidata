@@ -210,7 +210,7 @@
 },
 {
     "cats": ["Commercial buildings by country", "Office buildings by country"],
-    "tags": ["building", "landuse=commercial"],
+    "tags": ["building", "landuse=commercial", "office"],
     "trim": ["building", "tower", "shopping centre", "shopping center"],
     "check_housename": true,
     "dist": 0.5
@@ -260,13 +260,13 @@
 },
 {
     "cats": ["Pubs by country", "Drinking establishments by country"],
-    "tags": ["amenity=pub", "amenity=bar", "amenity=restaurant", "amenity=nightclub"],
+    "tags": ["amenity=pub", "amenity=bar", "amenity=restaurant", "amenity=nightclub", "building=pub"],
     "trim": ["pub", "house", "public house", "inn", "lounge", "bar and grill"],
     "dist": 1
 },
 {
     "cats": ["Retail markets by country", "Bazaars"],
-    "tags": ["amenity=marketplace"],
+    "tags": ["amenity=marketplace", "amenity=market"],
     "trim": ["market", "market place", "bazaars"],
     "dist": 4
 },
@@ -342,7 +342,7 @@
 },
 {
     "cats": ["Music venues by country", "Nightclubs by country", "Jazz clubs", "Concert halls", "Opera houses"],
-    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall", "amenity=pub"],
+    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall", "amenity=pub", "amenity=music_venue"],
     "trim": ["music venue", "club", "night club", "lounge"],
     "check_housename": true,
     "dist": 1
@@ -1188,7 +1188,7 @@
 },
 {
     "cats": ["Food markets", "Wholesale markets"],
-    "tags": ["building", "landuse=industrial", "amenity=marketplace"],
+    "tags": ["building", "landuse=industrial", "amenity=marketplace", "amenity=market"],
     "trim": [],
     "check_housename": true,
     "dist": 1

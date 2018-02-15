@@ -1,5 +1,5 @@
 overpass
-config
+config/default.py
 cache
 matcher/static/bootstrap4
 __pycache__
