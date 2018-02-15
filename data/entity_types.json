@@ -210,7 +210,7 @@
 },
 {
     "cats": ["Commercial buildings by country", "Office buildings by country"],
-    "tags": ["building", "landuse=commercial"],
+    "tags": ["building", "landuse=commercial", "office"],
     "trim": ["building", "tower", "shopping centre", "shopping center"],
     "check_housename": true,
     "dist": 0.5
