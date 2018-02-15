@@ -686,7 +686,7 @@ class WikidataItem:
         try:
             nrhp = claim_value(self.claims['P649'][0])
         except (IndexError, KeyError):
-            pass
+            return
         if nrhp.isdigit():
             return nrhp
 
