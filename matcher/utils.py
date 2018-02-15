@@ -1,9 +1,11 @@
 from flask import current_app, request
 from itertools import islice
+from . import mail
 import os.path
 import json
 import math
 import user_agents
+import humanize
 
 def chunk(it, size):
     it = iter(it)
@@ -59,3 +61,29 @@ def find_log_file(place):
     for f in os.scandir(good_location()):
         if f.name.startswith(start):
             return f.path
+
+def check_free_space():
+    ''' Check how much disk space is free.
+        E-mail admin if free space is low. '''
+    min_free_space = current_app.config.get('MIN_FREE_SPACE')
+
+    if not min_free_space:  # not configured
+        return
+
+    s = os.statvfs('/')
+    free_space = s.f_bsize * s.f_bavail
+
+    if free_space > min_free_space:
+        return
+    readable = humanize.naturalsize(free_space)
+    subject = 'Low disk space: {} OSM/Wikidata matcher'.format(readable)
+
+    body = '''
+Warning
+
+The OSM/Wikidata matcher server is low on space.
+
+There is currently {} available.
+'''.format(readable)
+
+    mail.send_mail(subject, body)

@@ -4,7 +4,8 @@ from gevent.queue import PriorityQueue, Queue
 from gevent import monkey, spawn, sleep
 monkey.patch_all()
 
-from matcher import overpass, netstring
+from matcher import overpass, netstring, utils
+from matcher.view import app
 import json
 import os.path
 
@@ -18,6 +19,8 @@ import os.path
 # the queue if nobody else has made the same request.
 #
 # We can tell the page was closed by checking a websocket heartbeat.
+
+app.config.from_object('config.default')
 
 task_queue = PriorityQueue()
 
@@ -59,6 +62,7 @@ def process_queue():
                 'place': place,
             }
             if not os.path.exists(filename):
+                utils.check_free_space()
                 wait_for_slot(send_queue)
                 to_client(send_queue, 'run_query', msg)
                 print('run query')
@@ -66,6 +70,7 @@ def process_queue():
                 print('query complete')
                 with open(filename, 'wb') as out:
                     out.write(r.content)
+                utils.check_free_space()
             print(msg)
             to_client(send_queue, 'chunk', msg)
         print('item complete')
