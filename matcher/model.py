@@ -24,7 +24,8 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
                                 metadata=Base.metadata)
 
 # also check for tags that start with 'disused:'
-disused_prefix_key = {'amenity', 'railway', 'leisure'}
+disused_prefix_key = {'amenity', 'railway', 'leisure', 'tourism',
+                      'man_made', 'shop', 'building'}
 
 class User(Base, UserMixin):
     __tablename__ = 'user'
