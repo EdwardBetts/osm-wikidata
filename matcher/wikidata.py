@@ -47,6 +47,7 @@ extra_keys = {
     'Q2385804': edu,                      # educational institution
                                           # drinking establishment
     'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
+    'Q875157': ['Tag:tourism=resort'],    # resort
 }
 
 # search for items in bounding box that have an English Wikipedia article
