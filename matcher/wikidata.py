@@ -598,6 +598,9 @@ def next_level_places(qid, entity, name=None):
         rows.append(i)
     return rows
 
+def claim_value(claim):
+    return claim['mainsnak']['datavalue']['value']
+
 class WikidataItem:
     def __init__(self, qid, entity):
         assert entity
@@ -653,10 +656,13 @@ class WikidataItem:
             if 'badges' in v:
                 del v['badges']
 
+    def first_claim_value(self, key):
+        return claim_value(self.claims[key][0])
+
     @property
     def has_coords(self):
         try:
-            self.claims['P625'][0]['mainsnak']['datavalue']['value']
+            claim_value(self.claims['P625'][0])
         except (IndexError, KeyError):
             return False
         return True
@@ -665,17 +671,27 @@ class WikidataItem:
     def has_earth_coords(self):
         if not self.has_coords:
             return
-        globe = self.claims['P625'][0]['mainsnak']['datavalue']['value']['globe']
+        globe = claim_value(self.claims['P625'][0])['globe']
         return globe == 'http://www.wikidata.org/entity/Q2'
 
     @property
     def coords(self):
         if not self.has_coords:
             return None, None
-        c = self.claims['P625'][0]['mainsnak']['datavalue']['value']
+        c = claim_value(self.claims['P625'][0])
         return c['latitude'], c['longitude']
 
+    @property
+    def nrhp(self):
+        try:
+            nrhp = claim_value(self.claims['P649'][0])
+        except (IndexError, KeyError):
+            pass
+        if nrhp.isdigit():
+            return nrhp
+
     def get_oql(self, criteria, radius):
+        nrhp = self.nrhp
         if not criteria:
             return
         lat, lon = self.coords
@@ -687,6 +703,10 @@ class WikidataItem:
         union = []
         for tag_or_key in sorted(criteria):
             union += overpass.oql_from_wikidata_tag_or_key(tag_or_key, osm_filter)
+
+        if nrhp:
+            union += ['\n    {}({})["ref:nrhp"={}];'.format(t, osm_filter, nrhp)
+            for t in ('node', 'way', 'rel')]
 
         # FIXME extend oql to also check is_in
         # like this:
@@ -815,7 +835,20 @@ SELECT DISTINCT ?code WHERE {
                 body = 'qid: {}\nrow: {}\n'.format(self.qid, repr(row))
                 mail.send_mail('broken OSM tag in Wikidata', body)
 
+    def find_nrhp_match(self, overpass_reply):
+        nrhp = self.nrhp
+        if not nrhp:
+            return
+        osm = [e for e in overpass_reply
+               if e['tags'].get('ref:nrhp') == nrhp]
+        if len(osm) == 1:
+            return osm[0]
+
     def parse_item_query(self, criteria, overpass_reply):
+        nrhp_match = self.find_nrhp_match(overpass_reply)
+        if nrhp_match:
+            return [(nrhp_match, None)]
+
         wikidata_names = self.names
         self.trim_location_from_names(wikidata_names)
         endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
