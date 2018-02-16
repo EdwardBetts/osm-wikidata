@@ -372,7 +372,7 @@ class Place(Base):
                 '--database', current_app.config['DB_NAME'],
                 filename]
 
-    def load_into_pgsql(self, filename, capture_stderr=True):
+    def load_into_pgsql(self, filename=None, capture_stderr=True):
         if filename is None:
             filename = self.overpass_filename
 
