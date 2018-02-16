@@ -430,6 +430,13 @@ def print_create_table(tables):
         click.echo(sql.strip() + ';')
 
 @app.cli.command()
+@click.argument('qid')
+def hstore_query(qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+    print(Item.query.get(int(qid[1:])).hstore_query())
+
+@app.cli.command()
 @click.argument('place_identifier')
 @click.argument('qid')
 def find_item_matches(place_identifier, qid):
