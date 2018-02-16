@@ -1,4 +1,4 @@
-from flask import current_app, request
+from flask import current_app, request, has_app_context
 from itertools import islice
 from . import mail
 import os.path
@@ -62,10 +62,16 @@ def find_log_file(place):
         if f.name.startswith(start):
             return f.path
 
-def check_free_space():
+def check_free_space(config=None):
     ''' Check how much disk space is free.
         E-mail admin if free space is low. '''
-    min_free_space = current_app.config.get('MIN_FREE_SPACE')
+
+    if config is None:
+        if not has_app_context():
+            return
+        config = current_app.config
+
+    min_free_space = config.get('MIN_FREE_SPACE')
 
     if not min_free_space:  # not configured
         return
@@ -86,4 +92,4 @@ The OSM/Wikidata matcher server is low on space.
 There is currently {} available.
 '''.format(readable)
 
-    mail.send_mail(subject, body)
+    mail.send_mail(subject, body, config=config)

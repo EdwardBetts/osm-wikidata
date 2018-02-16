@@ -3,10 +3,12 @@ from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 import smtplib
 
-def send_mail(subject, body):
+def send_mail(subject, body, config=None):
+    if config is None:
+        config = current_app.config
 
-    mail_to = current_app.config['ADMIN_EMAIL']
-    mail_from = current_app.config['MAIL_FROM']
+    mail_to = config['ADMIN_EMAIL']
+    mail_from = config['MAIL_FROM']
     msg = MIMEText(body, 'plain', 'UTF-8')
 
     msg['Subject'] = subject
@@ -15,7 +17,7 @@ def send_mail(subject, body):
     msg['Date'] = formatdate()
     msg['Message-ID'] = make_msgid()
 
-    s = smtplib.SMTP(current_app.config['SMTP_HOST'])
+    s = smtplib.SMTP(config['SMTP_HOST'])
     s.sendmail(mail_from, [mail_to], msg.as_string())
     s.quit()
 

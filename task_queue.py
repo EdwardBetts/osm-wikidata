@@ -62,7 +62,7 @@ def process_queue():
                 'place': place,
             }
             if not os.path.exists(filename):
-                # utils.check_free_space()
+                utils.check_free_space(app.config)
                 wait_for_slot(send_queue)
                 to_client(send_queue, 'run_query', msg)
                 print('run query')
@@ -70,7 +70,7 @@ def process_queue():
                 print('query complete')
                 with open(filename, 'wb') as out:
                     out.write(r.content)
-                # utils.check_free_space()
+                utils.check_free_space(app.config)
             print(msg)
             to_client(send_queue, 'chunk', msg)
         print('item complete')
@@ -133,6 +133,7 @@ def handle_request(sock, address):
     return r.handle()
 
 def main():
+    utils.check_free_space(app.config)
     spawn(process_queue)
     print('listening on port {}'.format(port))
     server = StreamServer((listen_host, port), handle_request)
