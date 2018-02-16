@@ -114,7 +114,7 @@ class Place(Base):
 
     @hybrid_property
     def too_big(self):
-        return self.area_in_sq_km > 39000
+        return self.area_in_sq_km > 90000
 
     def update_from_nominatim(self, hit):
         keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
