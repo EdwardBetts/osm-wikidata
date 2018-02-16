@@ -359,7 +359,9 @@ class Place(Base):
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
 
-    def osm2pgsql_cmd(self):
+    def osm2pgsql_cmd(self, filename=None):
+        if filename is None:
+            filename = self.overpass_filename
         return ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
@@ -368,16 +370,19 @@ class Place(Base):
                 '--host', current_app.config['DB_HOST'],
                 '--username', current_app.config['DB_USER'],
                 '--database', current_app.config['DB_NAME'],
-                self.overpass_filename]
+                filename]
 
-    def load_into_pgsql(self, capture_stderr=True):
-        if not os.path.exists(self.overpass_filename):
+    def load_into_pgsql(self, filename, capture_stderr=True):
+        if filename is None:
+            filename = self.overpass_filename
+
+        if not os.path.exists(filename):
             return 'no data from overpass to load with osm2pgsql'
 
-        if os.stat(self.overpass_filename).st_size == 0:
+        if os.stat(filename).st_size == 0:
             return 'no data from overpass to load with osm2pgsql'
 
-        cmd = self.osm2pgsql_cmd()
+        cmd = self.osm2pgsql_cmd(filename)
 
         if not capture_stderr:
             p = subprocess.run(cmd,
@@ -589,7 +594,8 @@ class Place(Base):
                 print(title)
             item.extract = extract
             item.extract_names = wikipedia.html_names(extract)
-            progress(item)
+            if progress:
+                progress(item)
 
     def wbgetentities(self, debug=False):
         sub = (session.query(Item.item_id)
