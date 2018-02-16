@@ -129,6 +129,29 @@ def run_sql(cur, sql, debug=False):
     cur.execute(sql)
     return cur.fetchall()
 
+def find_nrhp_match(nrhp_numbers, rows):
+    nrhp_numbers = set(nrhp_numbers)
+    nrhp_match = []
+    for src_type, src_id, osm_name, osm_tags, dist in rows:
+        (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
+
+        if osm_tags.get('ref:nrhp') not in nrhp_numbers:
+            continue
+
+        candidate = {
+            'osm_type': osm_type,
+            'osm_id': osm_id,
+            'name': osm_name,
+            'tags': osm_tags,
+            'dist': dist,
+            'planet_table': src_type,
+            'src_id': src_id,
+        }
+        nrhp_match.append(candidate)
+
+    if len(nrhp_match) == 1:
+        return nrhp_match
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -151,6 +174,12 @@ def find_item_matches(cur, item, prefix, debug=False):
         print('row count:', len(rows))
         print()
     seen = set()
+
+    nrhp_numbers = item.ref_nrhp()
+    if nrhp_numbers:
+        found = find_nrhp_match(nrhp_numbers, rows)
+        if found:
+            return found
 
     endings = get_ending_from_criteria(item.tags)
 
