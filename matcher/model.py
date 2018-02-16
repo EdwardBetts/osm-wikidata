@@ -109,7 +109,7 @@ class Item(Base):
 
     @property
     def ref_keys(self):
-        return {'ref:nrhp'} if self.ref_nrhp() else set()
+        return {f'ref:nrhp={v}' for v in (self.ref_nrhp() or [])}
 
     def disused_tags(self):
         tags = set()
@@ -137,17 +137,21 @@ class Item(Base):
         cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
                 if '=' in tag
                 else "(tags ? '{}')".format(tag) for tag in tags)
-        return ' or '.join(cond)
+        return ' or\n '.join(cond)
 
     def instanceof(self):
         if self.entity:
             return [i['mainsnak']['datavalue']['value']['numeric-id']
                     for i in self.entity['claims'].get('P31', [])]
+        else:
+            return []
 
     def ref_nrhp(self):
         if self.entity:
             return [i['mainsnak']['datavalue']['value']
                     for i in self.entity['claims'].get('P649', [])]
+        else:
+            return []
 
     def names(self):
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
