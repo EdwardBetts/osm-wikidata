@@ -48,6 +48,7 @@ extra_keys = {
                                           # drinking establishment
     'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
     'Q875157': ['Tag:tourism=resort'],    # resort
+    'Q174782': ['Tag:leisure=park'],      # square
 }
 
 # search for items in bounding box that have an English Wikipedia article
