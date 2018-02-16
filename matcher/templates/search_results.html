@@ -15,7 +15,7 @@
         <a href="{{ hit_url }}">{{ hit.display_name }}</a>
       </b><br>
     {% else %}
-       {% if hit.place.wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
+       {% if hit.place and hit.place.wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
          <b><a href="{{ hit.place.browse_url() }}">{{ hit.display_name }}</a></b>
          (browse next level administrative subdivisions)
        {% else %}
