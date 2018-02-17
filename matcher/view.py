@@ -890,6 +890,12 @@ def search_results():
 def get_place_cards():
     return render_template('top_places.html', existing=get_top_existing())
 
+@app.route('/refresh_index')
+def refresh_index():
+    get_place_cards.refresh()
+    flash('Top place cards refreshed.')
+    return redirect(url_for('index'))
+
 @app.route('/')
 def index():
     q = request.args.get('q')
