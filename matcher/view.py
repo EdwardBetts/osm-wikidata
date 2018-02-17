@@ -1143,11 +1143,13 @@ def get_tag_list(sort):
 
 @app.route('/tags')
 def tag_list():
+    abort(404)
     q = get_tag_list(request.args.get('sort'))
     return render_template('tag_list.html', q=q)
 
 @app.route('/tags/<tag_or_key>')
 def tag_page(tag_or_key):
+    abort(404)
     sub = (database.session.query(Item.item_id)
               .join(ItemTag)
               .join(ItemCandidate)
