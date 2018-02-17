@@ -1,17 +1,17 @@
   <div class="card-columns">
   {% for place in existing %}
     <div class="card">
-      <h5 class="card-header">
-        {% if place.address.country_code == 'us' %}
-            {% set name = place.name ~ ', ' ~ place.address.state %}
-        {% else %}
-            {% set name = place.name %}
-        {% endif %}
-        <a href="{{ place.candidates_url() }}">{{ name }}</a>
-        <span class="text-muted small font-weight-normal">
-          ({{ '{:,.1f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
-      </h5>
-      <div class="card-block">
+      <div class="card-body">
+        <h5 class="card-title">
+          {% if place.address.country_code == 'us' %}
+              {% set name = place.name ~ ', ' ~ place.address.state %}
+          {% else %}
+              {% set name = place.name %}
+          {% endif %}
+          <a href="{{ place.candidates_url() }}">{{ name }}</a>
+          <span class="text-muted small font-weight-normal">
+            ({{ '{:,.1f}'.format(place.area_in_sq_km) }}km&sup2;)</span>
+        </h5>
         {% if place.country_code != 'us' and place.country != place.name %}
             <p class="card-text">{{ place.country }}</p>
         {% endif %}
@@ -23,6 +23,7 @@
           <li>{{ '{:,d}'.format(place.candidate_count) }} matches
             ({{ '{:.1%}'.format(place.match_ratio) }})
           </li>
+        </ul>
         {% endif %}
         {#
         {% if changeset_count != 0 %}
