@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block style %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/exception.css')}}" />
+{% endblock %}
+
+{% block content %}
+
+<div class="container my-2">
+<div class="row">
+<div class="col">
+
+<h1>Software error: {{ tb.exception_type }}</h1>
+<div>
+  <p>{{ tb.exception }}</p>
+</div>
+
+{% set body %}
+URL: {{ request.url }}
+
+{{ tb.plaintext | safe }}
+{% endset %}
+
+<p><a class="btn btn-primary btn-lg" role="button" href="https://github.com/EdwardBetts/osm-wikidata/issues/new?title={{ tb.exception | urlencode }}&body={{ body | urlencode }}">Submit as an issue on GitHub</a> (requires an accout with GitHub)</p>
+
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+{{ tb.render_summary(include_title=False) | safe }}
+
+</div>
+</div>
+</div>
+
+{% endblock %}

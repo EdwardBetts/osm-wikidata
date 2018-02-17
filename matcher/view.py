@@ -20,6 +20,7 @@ from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
 from dogpile.cache import make_region
 from dukpy.webassets import BabelJS
+from werkzeug.debug.tbtools import get_current_traceback
 
 from .matcher_view import matcher_blueprint
 from .websocket import ws
@@ -165,6 +166,9 @@ def reraise(tp, value, tb=None):
 
 @app.errorhandler(InternalServerError)
 def exception_handler(e):
+    tb = get_current_traceback()
+    return render_template('show_error.html', tb=tb), 500
+
     exc_type, exc_value, tb = sys.exc_info()
 
     if exc_value is e:
