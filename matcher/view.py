@@ -924,7 +924,7 @@ out tags;
             continue
         name_by_admin_level[int(admin_level)] = name
 
-    q = ', '.join(v for k, v in sorted(name_by_admin_level.items()))
+    q = ', '.join(v for k, v in sorted(name_by_admin_level.items(), reverse=True))
     return redirect(url_for('search_results', q=q))
 
     # county = name_by_admin_level[6]
