@@ -196,6 +196,18 @@ GROUP BY ?item ?itemLabel ?startLabel ?area
 ORDER BY ?itemLabel
 '''
 
+next_level_query3 = '''
+SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
+  VALUES ?start { wd:QID } .
+  VALUES (?item) { PLACES }
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?item ?itemLabel ?startLabel ?area
+ORDER BY ?itemLabel
+'''
+
 # administrative territorial entity of a single country (Q15916867)
 
 #           'Q349084'],    # England  -> district of England
@@ -563,8 +575,10 @@ def isa_list(types):
     return ' union '.join('{ ?item wdt:P31 wd:' + t + ' }' for t in types)
 
 def next_level_places(qid, entity, name=None):
+    claims = entity.get('claims', {})
+
     isa = {i['mainsnak']['datavalue']['value']['id']
-           for i in entity.get('claims', {}).get('P31', [])}
+           for i in claims.get('P31', [])}
 
     isa_continent = {
         'Q5107',     # continent
@@ -583,6 +597,10 @@ def next_level_places(qid, entity, name=None):
     elif qid in admin_area_map:
         types = next_level_types(admin_area_map[qid])
         query = next_level_query2.replace('TYPES', types)
+    elif 'P150' in claims:
+        places = [i['mainsnak']['datavalue']['value']['id'] for i in claims['P150']]
+        query_places = ' '.join(f'(wd:{qid})' for qid in places)
+        query = next_level_query3.replace('PLACES', query_places)
     else:
         query = next_level_query
 
