@@ -2,7 +2,7 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import Item, Changeset, get_bad, Base
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring
+from . import database, mail, matcher, nominatim, utils, netstring, wikidata
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
@@ -518,3 +518,17 @@ def add_place_wikidata():
 
     if need_commit:
         database.session.commit()
+
+@app.cli.command()
+@click.argument('qid')
+def next_level(qid):
+    app.config.from_object('config.default')
+    entity = wikidata.get_entity(qid)
+    rows = wikidata.next_level_places(qid, entity)
+    isa = {i['mainsnak']['datavalue']['value']['id']
+           for i in entity.get('claims', {}).get('P31', [])}
+
+    print(qid, entity['labels']['en']['value'], isa)
+
+    for row in rows:
+        print(row)
