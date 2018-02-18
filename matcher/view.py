@@ -900,6 +900,41 @@ def refresh_index():
     flash('Top place cards refreshed.')
     return redirect(url_for('index'))
 
+@app.route('/is_in/way/<way_id>')
+def is_in_way(way_id):
+
+    oql = f'''
+[out:json][timeout:5];
+way({way_id});>;
+is_in->.a;
+(way(pivot.a); rel(pivot.a););
+out tags;
+'''
+    elements = overpass.get_elements(oql)
+    osm_type = 'way'
+
+    name_by_admin_level = {}
+    for e in elements:
+        tags = e['tags']
+        name = tags.get('name')
+        admin_level = tags.get('admin_level')
+        if not name or not admin_level:
+            continue
+        if admin_level == '2':
+            continue
+        name_by_admin_level[int(admin_level)] = name
+
+    q = ', '.join(v for k, v in sorted(name_by_admin_level.items()))
+    return redirect(url_for('search_results', q=q))
+
+    # county = name_by_admin_level[6]
+    # state = name_by_admin_level[4]
+
+    return render_template('is_in.html',
+                           osm_type=osm_type,
+                           osm_id=way_id,
+                           is_in=elements)
+
 @app.route('/')
 def index():
     q = request.args.get('q')
