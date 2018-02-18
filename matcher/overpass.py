@@ -30,6 +30,10 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
+def get_elements(oql):
+    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
+    return r.json()['elements']
+
 def name_only(t):
     return (t in name_only_tag or
             ('=' in t and any(t.startswith(key + '=') for key in name_only_key)))
