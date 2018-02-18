@@ -918,22 +918,11 @@ out tags;
         tags = e['tags']
         name = tags.get('name')
         admin_level = tags.get('admin_level')
-        if not name or not admin_level:
-            continue
-        if admin_level == '2':
-            continue
-        name_by_admin_level[int(admin_level)] = name
+        if name and admin_level:
+            name_by_admin_level[int(admin_level)] = name
 
     q = ', '.join(v for k, v in sorted(name_by_admin_level.items(), reverse=True))
     return redirect(url_for('search_results', q=q))
-
-    # county = name_by_admin_level[6]
-    # state = name_by_admin_level[4]
-
-    return render_template('is_in.html',
-                           osm_type=osm_type,
-                           osm_id=way_id,
-                           is_in=elements)
 
 @app.route('/')
 def index():
