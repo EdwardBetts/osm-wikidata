@@ -375,7 +375,7 @@ class Place(Base):
         type_pairs = wikidata.find_superclasses(all_types)
         superclasses_dict = defaultdict(set)
         for a, b in type_pairs:
-            superclasses_dict[a].add(int(b[1:]))
+            superclasses_dict[a].add(b[1:])
 
         for qid, values in superclasses_dict.items():
             try:
