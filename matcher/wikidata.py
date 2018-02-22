@@ -641,6 +641,7 @@ def get_item_types(items, name=None):
         'Q1761072',   # state park
         'Q17343829',  # unincorporated community
         'Q358',       # heritage site
+        'Q486972',    # human settlement
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
