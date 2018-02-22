@@ -52,7 +52,7 @@ class IsA(Base):
     item_id = Column(Integer, primary_key=True, autoincrement=False)
     entity = Column(postgresql.JSON)
     qid = column_property('Q' + cast(item_id, String))
-    subclass_of = Column(postgresql.ARRAY(Integer))
+    subclass_of = Column(postgresql.ARRAY(String))
 
     def label(self, lang='en'):
         labels = self.entity['labels']

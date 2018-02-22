@@ -4,7 +4,6 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
-from sqlalchemy.dialects import postgresql
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -375,11 +374,11 @@ class Place(Base):
         type_pairs = wikidata.find_superclasses(all_types)
         superclasses_dict = defaultdict(set)
         for a, b in type_pairs:
-            superclasses_dict[a].add(int(b[1:]))
+            superclasses_dict[a].add(b)
 
         for qid, values in superclasses_dict.items():
             try:
-                IsA.query.get(qid[1:]).subclass_of = postgresql.array(values)
+                IsA.query.get(qid[1:]).subclass_of = list(values)
             except TypeError:
                 print(repr(values))
                 raise
@@ -413,7 +412,7 @@ class Place(Base):
         type_pairs = set()
         for isa in IsA.query:
             for subclass_of in isa.subclass_of or []:
-                type_pairs.add((isa.item_id, subclass_of))
+                type_pairs.add((isa.item_id, int(subclass_of[1:])))
 
         for item_qid in item_types.keys():
             values = item_types[item_qid]
