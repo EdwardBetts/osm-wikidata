@@ -31,28 +31,29 @@ skip_tags = {'route:road',
 edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school']
 
 extra_keys = {
-    'Q1021290': edu,                       # music school
-    'Q5167149': edu,                       # cooking school
-    'Q383092': edu,                        # film school
-    'Q2143781': edu,                       # drama school
-    'Q11303': ['Key:height'],              # skyscraper
-    'Q18142': ['Key:height'],              # high-rise building
-    'Q33673393': ['Key:height'],           # multi-storey building
-    'Q641226': ['Tag:leisure=stadium'],    # arena
-    'Q2301048': ['Tag:aeroway=helipad'],   # special airfield
-    'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],  # nightclub
-    'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],    # bar
-    'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],    # hospital
-    'Q330284': ['Tag:amenity=market'],     # marketplace
-    'Q2385804': edu,                       # educational institution
-                                           # drinking establishment
+    'Q1021290': edu,                          # music school
+    'Q5167149': edu,                          # cooking school
+    'Q383092': edu,                           # film school
+    'Q2143781': edu,                          # drama school
+    'Q11303': ['Key:height'],                 # skyscraper
+    'Q18142': ['Key:height'],                 # high-rise building
+    'Q33673393': ['Key:height'],              # multi-storey building
+    'Q641226': ['Tag:leisure=stadium'],       # arena
+    'Q2301048': ['Tag:aeroway=helipad'],      # special airfield
+    'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],     # nightclub
+    'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],       # bar
+    'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],       # hospital
+    'Q330284': ['Tag:amenity=market'],        # marketplace
+    'Q2385804': edu,                          # educational institution
+                                              # drinking establishment
     'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
-    'Q875157': ['Tag:tourism=resort'],     # resort
-    'Q174782': ['Tag:leisure=park'],       # square
-    'Q34627': ['Tag:religion=jewish'],     # synagogue
-    'Q16970': ['Tag:religion=christian'],  # church
-    'Q32815': ['Tag:religion=islam'],      # mosque
-    'Q811979': ['Key:building'],           # architectural structure
+    'Q875157': ['Tag:tourism=resort'],        # resort
+    'Q174782': ['Tag:leisure=park'],          # square
+    'Q34627': ['Tag:religion=jewish'],        # synagogue
+    'Q16970': ['Tag:religion=christian'],     # church
+    'Q32815': ['Tag:religion=islam'],         # mosque
+    'Q811979': ['Key:building'],              # architectural structure
+    'Q1329623': ['Tag:amenity=arts_centre'],  # cultural centre
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -659,6 +660,16 @@ def get_item_types(items, name=None):
         'Q1595639',   # local museum
         'Q17431399',  # national museum
         'Q1320830',   # covered passageway
+        'Q13866185',  # museum library
+        'Q2588070',   # residential project
+        'Q1329623',   # cultural centre
+        'Q2087181',   # historic house museum
+        'Q5773747',   # historic house
+        'Q1343246',   # English country house
+        'Q16884952',  # country house
+        'Q1802963',   # mansion
+        'Q3950',      # villa
+        'Q1030403',   # navigable aqueduct
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
