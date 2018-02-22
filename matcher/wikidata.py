@@ -57,6 +57,7 @@ extra_keys = {
     'Q32815': ['Tag:religion=islam'],         # mosque
     'Q811979': ['Key:building'],              # architectural structure
     'Q1329623': ['Tag:amenity=arts_centre'],  # cultural centre
+    'Q856584': ['Tag:amenity=library'],       # library building
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -683,6 +684,8 @@ def get_item_types(items, name=None):
         'Q41971160',  # subway tunnel
         'Q1311958',   # railway tunnel
         'Q2354973',   # road tunnel
+        'Q915063',    # sorting office
+        'Q853854',    # clock tower
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
