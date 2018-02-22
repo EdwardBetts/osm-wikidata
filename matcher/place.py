@@ -367,7 +367,7 @@ class Place(Base):
 
     def save_isa(self, not_in_db, all_types):
         for qid, entity in wikidata.entity_iter(not_in_db):
-            i = IsA(item_id=qid[1:], entity=entity)
+            i = IsA(item_id=int(qid[1:]), entity=entity)
             session.add(i)
         session.commit()
 
@@ -378,7 +378,7 @@ class Place(Base):
 
         for qid, values in superclasses_dict.items():
             try:
-                IsA.query.get(qid[1:]).subclass_of = list(values)
+                IsA.query.get(int(qid[1:])).subclass_of = list(values)
             except TypeError:
                 print(repr(values))
                 raise
