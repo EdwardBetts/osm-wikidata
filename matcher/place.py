@@ -1,5 +1,5 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, osm_type_enum, get_bad
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, ItemIsA, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
@@ -11,6 +11,7 @@ from . import wikidata, matcher, wikipedia, overpass, utils
 from collections import Counter
 from .overpass import oql_from_tag
 from time import time
+from collections import defaultdict
 
 import subprocess
 import os.path
@@ -66,6 +67,7 @@ class Place(Base):
     added = Column(DateTime, default=func.now())
     wikidata_query_timeout = Column(Boolean, default=False)
     wikidata = Column(String)
+    item_types_retrieved = Column(Boolean, default=False)
 
     area = column_property(func.ST_Area(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
@@ -105,6 +107,7 @@ class Place(Base):
         if osm_type in {'way', 'relation'}:
             place = cls.get_by_osm(osm_type, osm_id)
             if place:
+                place.ensure_item_types_retrieved()
                 return place
         abort(404)
 
@@ -358,6 +361,76 @@ class Place(Base):
     @property
     def export_name(self):
         return self.name.replace(':', '').replace(' ', '_')
+
+    def items_with_instanceof(self):
+        return [item for item in self.items if item.instanceof()]
+
+    def save_isa(self, not_in_db, all_types):
+        for qid, entity in wikidata.entity_iter(not_in_db):
+            i = IsA(item_id=qid[1:], entity=entity)
+            session.add(i)
+        session.commit()
+
+        type_pairs = wikidata.find_superclasses(all_types)
+        superclasses_dict = defaultdict(set)
+        for a, b in type_pairs:
+            superclasses_dict[a].add(int(b[1:]))
+
+        for qid, values in superclasses_dict.items():
+            try:
+                IsA.query.get(qid[1:]).subclass_of = list(values)
+            except TypeError:
+                print(repr(values))
+                raise
+        session.commit()
+
+    def ensure_item_types_retrieved(self):
+        if not self.item_types_retrieved:
+            self.get_item_types()
+
+    def get_item_types(self):
+        items = self.items_with_instanceof()
+        if not items:
+            return
+
+        pairs = wikidata.get_item_types([i.qid for i in items])
+        if not pairs:
+            return
+
+        item_types = defaultdict(set)
+        for item_qid, type_qid in pairs:
+            item_types[int(item_qid[1:])].add(int(type_qid[1:]))
+
+        all_types = {i for _, i in pairs}
+
+        not_in_db = {qid for qid in all_types
+                     if not IsA.query.get(qid[1:])}
+
+        if not_in_db:
+            self.save_isa(not_in_db, all_types)
+
+        type_pairs = set()
+        for isa in IsA.query:
+            for subclass_of in isa.subclass_of or []:
+                type_pairs.add((isa.item_id, subclass_of))
+
+        for item_qid in item_types.keys():
+            values = item_types[item_qid]
+            remove = set()
+            for a in values:
+                for b in values:
+                    if a != b and (a, b) in type_pairs:
+                        remove.add(b)
+            item_types[item_qid].difference_update(remove)
+
+        for item_id, types in item_types.items():
+            for type_id in types:
+                existing = ItemIsA.query.get((item_id, type_id))
+                if not existing:
+                    isa = ItemIsA(item_id=item_id, isa_id=type_id)
+                    session.add(isa)
+        self.item_types_retrieved = True
+        session.commit()
 
     def osm2pgsql_cmd(self, filename=None):
         if filename is None:

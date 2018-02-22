@@ -47,10 +47,40 @@ class User(Base, UserMixin):
 # states: wikipedia, tags, wbgetentities, overpass, postgis, osm2pgsql, ready
 # bad state: overpass_fail
 
+class IsA(Base):
+    __tablename__ = 'isa'
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
+    entity = Column(postgresql.JSON)
+    qid = column_property('Q' + cast(item_id, String))
+    subclass_of = Column(postgresql.ARRAY(Integer))
+
+    def label(self, lang='en'):
+        labels = self.entity['labels']
+        if lang in labels:
+            return labels[lang]['value']
+        elif lang != 'en' and 'en' in labels:
+            return labels['en']['value']
+        elif labels:
+            return list(labels.values())[0]['value']
+
+class ItemIsA(Base):
+    __tablename__ = 'item_isa'
+    item_id = Column(Integer,
+                     ForeignKey('item.item_id'),
+                     primary_key=True,
+                     autoincrement=False)
+    isa_id = Column(Integer,
+                     ForeignKey('isa.item_id'),
+                     primary_key=True,
+                     autoincrement=False)
+
+    item = relationship('Item')
+    isa = relationship('IsA')
+
 class Item(Base):
     __tablename__ = 'item'
 
-    item_id = Column(Integer, primary_key=True)
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
     location = Column(Geography('POINT', spatial_index=True), nullable=False)
     enwiki = Column(String, index=True)
     entity = Column(postgresql.JSON)
@@ -68,6 +98,8 @@ class Item(Base):
                            backref='item')
 
     tags = association_proxy('db_tags', 'tag_or_key')
+
+    isa = relationship('ItemIsA')
 
     def label(self, lang='en'):
         if not self.entity:
@@ -254,7 +286,6 @@ class Item(Base):
                 continue
             names[v].append(('sitelink', k))
         return names
-
 
 class ItemTag(Base):
     __tablename__ = 'item_tag'

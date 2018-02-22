@@ -27,11 +27,18 @@
   <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a>
 
   {% set search_tags = item.tags %}
+  {% set isa_list = item.isa %}
   {% if 'note' in filtered[item.item_id] %}
     {{ filtered[item.item_id]['note'] }}
+  {% elif isa_list %}
+    item type:
+    {% for isa in isa_list %}
+      {{ isa.isa.label() }}{% if not loop.last %} / {% endif %}
+    {% endfor %}
   {% else %}
     search tags: {{ ', '.join(search_tags | sort) }}
   {% endif %}
+
   {% set defunct_cats = item.defunct_cats() %}
   {% if defunct_cats %}
     <div class="alert alert-danger">

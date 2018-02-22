@@ -52,6 +52,7 @@ extra_keys = {
     'Q34627': ['Tag:religion=jewish'],     # synagogue
     'Q16970': ['Tag:religion=christian'],  # church
     'Q32815': ['Tag:religion=islam'],      # mosque
+    'Q811979': ['Key:building'],           # architectural structure
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -113,24 +114,12 @@ WHERE
 {
   {
     wd:{{qid}} wdt:P31/wdt:P279* ?item .
-    {
-        ?item wdt:P1282 ?tag .
-    }
-    UNION
-    {
-        ?item wdt:P641 ?sport .
-        ?sport wdt:P1282 ?tag
-    }
-    UNION
-    {
-        ?item wdt:P140 ?religion .
-        ?religion wdt:P1282 ?tag
-    }
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
   }
   UNION
   {
       wd:{{qid}} wdt:P1435 ?item .
-      ?item wdt:P1282 ?tag
+      ?item (p:P1282/ps:P1282) ?tag
   }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }'''
@@ -144,7 +133,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
     ?place wdt:P31/wdt:P279* ?item .
-    ?item wdt:P1282 ?tag .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
     FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline article
@@ -168,7 +157,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
     ?place wdt:P31/wdt:P279* ?item .
-    ?item wdt:P1282 ?tag .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
     FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
@@ -210,6 +199,31 @@ GROUP BY ?item ?itemLabel ?startLabel ?area
 ORDER BY ?itemLabel
 '''
 
+item_types = '''
+SELECT DISTINCT ?item ?type WHERE {
+  VALUES ?item { ITEMS }
+  {
+      ?item wdt:P31/wdt:P279* ?type .
+      ?type ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
+      FILTER(?tag != 'Key:amenity')
+  } UNION {
+      ?item wdt:P31 ?type .
+      VALUES (?type) { TYPES }
+  }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+'''
+
+subclasses = '''
+SELECT DISTINCT ?item ?itemLabel ?type ?typeLabel WHERE {
+  VALUES (?item) { ITEMS }
+  VALUES (?type) { ITEMS }
+  ?item wdt:P279* ?type .
+  FILTER (?item != ?type)
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+'''
+
 # administrative territorial entity of a single country (Q15916867)
 
 #           'Q349084'],    # England  -> district of England
@@ -248,14 +262,11 @@ SELECT DISTINCT ?item
                 (SAMPLE(?area) AS ?area)
 WHERE {
   VALUES ?start { wd:QID } .
-  {
-      ?item wdt:P31/wdt:P279* wd:Q3624078 .  # sovereign state
-  } UNION {
-      ?item wdt:P31/wdt:P279* wd:Q161243 .   # dependent territory
-  } UNION {
-      ?item wdt:P31/wdt:P279* wd:Q179164 .   # unitary state
-  } UNION {
-      ?item wdt:P31/wdt:P279* wd:Q1763527 .  # constituent country
+  VALUES (?country) {
+    (wd:Q3624078)  # sovereign state
+    (wd:Q161243)   # dependent territory
+    (wd:Q179164)   # unitary state
+    (wd:Q1763527)  # constituent country
   }
 
   ?item wdt:P30 ?start .
@@ -350,10 +361,10 @@ def run_query(query, name=None, timeout=None):
         if os.path.exists(filename):
             return json.load(open(filename))['results']['bindings']
 
-    r = requests.get(wikidata_query_api_url,
-                     params={'query': query, 'format': 'json'},
-                     timeout=timeout,
-                     headers=user_agent_headers())
+    r = requests.post(wikidata_query_api_url,
+                      data={'query': query, 'format': 'json'},
+                      timeout=timeout,
+                      headers=user_agent_headers())
     if r.status_code != 200:
         mail.error_mail('wikidata query error', query, r)
         raise QueryError(query, r)
@@ -619,6 +630,53 @@ def next_level_places(qid, entity, name=None):
         }
         rows.append(i)
     return rows
+
+def get_item_types(items, name=None):
+    extra_types = extra_keys.keys() | {
+        'Q102496',    # parish
+        'Q28564',     # public library
+        'Q856234',    # academic library
+        'Q19860854',  # former building or structure
+        'Q15893266',  # former entity
+        'Q1761072',   # state park
+        'Q17343829',  # unincorporated community
+    }
+    query_items = ' '.join(f'wd:{qid}' for qid in items)
+    query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
+    query = (item_types.replace('ITEMS', query_items)
+                       .replace('TYPES', query_types))
+
+    return {(wd_uri_to_qid(row['item']['value']),
+             wd_uri_to_qid(row['type']['value']))
+            for row in run_query(query, name=name)}
+
+    pairs = set()
+    for row in run_query(query, name=name):
+        item_qid = wd_uri_to_qid(row['item']['value'])
+        type_qid = wd_uri_to_qid(row['type']['value'])
+        # label = row['typeLabel']['value']
+        # tag = row['tag']['value'] if 'tag' in row else None
+        pairs.add((item_qid, type_qid))
+        # item_types[item_qid].add(type_qid)
+        # print(f'{item_qid:10s}  {type_qid:10s}  {label:30s}  {tag or "n/a":20s}')
+
+    return pairs
+
+def find_superclasses(items, name=None):
+    query_items = ' '.join(f'(wd:{qid})' for qid in items)
+    query = subclasses.replace('ITEMS', query_items)
+
+    pair = set()
+    for row in run_query(query, name=name):
+        item_qid = wd_uri_to_qid(row['item']['value'])
+        type_qid = wd_uri_to_qid(row['type']['value'])
+        # item_label = row['typeLabel']['value']
+        # type_label = row['typeLabel']['value']
+        # print(f'{item_qid:10s}  {item_label:30s}  {type_qid:10s}  {type_label:30s}')
+        # tree[item_qid].add(type_qid)
+        pair.add((item_qid, type_qid))
+
+    return pair
 
 def claim_value(claim):
     return claim['mainsnak']['datavalue']['value']
