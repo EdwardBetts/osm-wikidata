@@ -35,6 +35,10 @@ extra_keys = {
     'Q5167149': edu,                          # cooking school
     'Q383092': edu,                           # film school
     'Q2143781': edu,                          # drama school
+    'Q322563': edu,                           # vocational school
+    'Q2385804': edu,                          # educational institution
+    'Q47530379': edu,                         # agricultural college
+    'Q1469420': edu,                          # adult education centre
     'Q11303': ['Key:height'],                 # skyscraper
     'Q18142': ['Key:height'],                 # high-rise building
     'Q33673393': ['Key:height'],              # multi-storey building
@@ -44,7 +48,6 @@ extra_keys = {
     'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],       # bar
     'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],       # hospital
     'Q330284': ['Tag:amenity=market'],        # marketplace
-    'Q2385804': edu,                          # educational institution
                                               # drinking establishment
     'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
     'Q875157': ['Tag:tourism=resort'],        # resort
@@ -671,6 +674,15 @@ def get_item_types(items, name=None):
         'Q3950',      # villa
         'Q1030403',   # navigable aqueduct
         'Q256020',    # inn
+        'Q23002054',  # private not-for-profit educational institution
+        'Q23002042',  # private educational institution
+        'Q446901',    # nursing school
+        'Q38723',     # higher education institution
+        'Q1103285',   # clubhouse
+        'Q1236680',   # gentlemen's club
+        'Q41971160',  # subway tunnel
+        'Q1311958',   # railway tunnel
+        'Q2354973',   # road tunnel
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
