@@ -670,6 +670,7 @@ def get_item_types(items, name=None):
         'Q1802963',   # mansion
         'Q3950',      # villa
         'Q1030403',   # navigable aqueduct
+        'Q256020',    # inn
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
