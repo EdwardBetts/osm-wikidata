@@ -393,7 +393,10 @@ class Place(Base):
         if not items:
             return
 
-        pairs = wikidata.get_item_types([i.qid for i in items])
+        pairs = []
+        qid_list = [i.qid for i in items]
+        for cur in utils.chunk(qid_list, 1000):
+            pairs += wikidata.get_item_types(cur)
         if not pairs:
             return
 
