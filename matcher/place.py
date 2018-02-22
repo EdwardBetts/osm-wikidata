@@ -4,6 +4,7 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
+from sqlalchemy.dialects import postgresql
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -378,7 +379,7 @@ class Place(Base):
 
         for qid, values in superclasses_dict.items():
             try:
-                IsA.query.get(qid[1:]).subclass_of = list(values)
+                IsA.query.get(qid[1:]).subclass_of = postgresql.array(values)
             except TypeError:
                 print(repr(values))
                 raise
