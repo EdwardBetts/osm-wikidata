@@ -114,7 +114,7 @@ WHERE
 {
   {
     wd:{{qid}} wdt:P31/wdt:P279* ?item .
-    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
   }
   UNION
   {
@@ -133,7 +133,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
     ?place wdt:P31/wdt:P279* ?item .
-    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
     FILTER NOT EXISTS { ?item wdt:P31 wd:Q18340550 } .           # ignore timeline article
@@ -157,7 +157,7 @@ SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?ite
         bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
     }
     ?place wdt:P31/wdt:P279* ?item .
-    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
     OPTIONAL { ?place wdt:P969 ?address } .
     OPTIONAL { ?place wdt:P669 ?street } .
     FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
@@ -204,7 +204,7 @@ SELECT DISTINCT ?item ?type WHERE {
   VALUES ?item { ITEMS }
   {
       ?item wdt:P31/wdt:P279* ?type .
-      ?type ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)) ?tag .
+      ?type ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
       FILTER(?tag != 'Key:amenity')
   } UNION {
       ?item wdt:P31 ?type .
@@ -643,6 +643,21 @@ def get_item_types(items, name=None):
         'Q358',       # heritage site
         'Q486972',    # human settlement
         'Q7894959',   # University Technical College
+        'Q22746',     # urban park
+        'Q294440',    # public space
+        'Q253019',    # Ortsteil
+        'Q16895517',  # traction maintenance depot
+        'Q1076486',   # sports venue
+        'Q5435556',   # farm museum
+        'Q756102',    # open-air museum
+        'Q24699794',  # museum building
+        'Q2516357',   # transport museum
+        'Q2398990',   # technology museum
+        'Q588140',    # science museum
+        'Q1093436',   # computer museum
+        'Q16735822'   # history museum
+        'Q1595639',   # local museum
+        'Q17431399',  # national museum
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
