@@ -658,6 +658,7 @@ def get_item_types(items, name=None):
         'Q16735822'   # history museum
         'Q1595639',   # local museum
         'Q17431399',  # national museum
+        'Q1320830',   # covered passageway
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
