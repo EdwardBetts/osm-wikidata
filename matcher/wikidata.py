@@ -652,6 +652,7 @@ def get_item_types(items, name=None):
         'Q294440',    # public space
         'Q253019',    # Ortsteil
         'Q16895517',  # traction maintenance depot
+        'Q10283556'   # motive power depot
         'Q1076486',   # sports venue
         'Q5435556',   # farm museum
         'Q756102',    # open-air museum
@@ -686,6 +687,8 @@ def get_item_types(items, name=None):
         'Q2354973',   # road tunnel
         'Q915063',    # sorting office
         'Q853854',    # clock tower
+        'Q3457526',   # local nature reserve
+        'Q245016',    # military base
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
