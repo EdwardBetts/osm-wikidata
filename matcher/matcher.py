@@ -181,10 +181,13 @@ def find_item_matches(cur, item, prefix, debug=False):
         if found:
             return found
 
+    location_identifiers = item.get_location_identifiers()
+
     endings = get_ending_from_criteria(item.tags)
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
+        cur_match = False
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
             continue
@@ -202,14 +205,25 @@ def find_item_matches(cur, item, prefix, debug=False):
         names = {k: v for k, v in osm_tags.items()
                  if 'name' in k and k not in bad_name_fields}
 
-        if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
-            continue
-        if not names:
+        if location_identifiers:
+            for k, values in location_identifiers.items():
+                osm_value = osm_tags.get(k)
+                if osm_value and osm_value in values:
+                    cur_match = True
+                    break
+
+        if not cur_match:
+            if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
+                continue
+            if not names:
+                continue
+
+            if match.check_for_match(osm_tags, wikidata_names, endings):
+                cur_match = True
+
+        if not cur_match:
             continue
 
-        m = match.check_for_match(osm_tags, wikidata_names, endings)
-        if not m:
-            continue
         candidate = {
             'osm_type': osm_type,
             'osm_id': osm_id,
