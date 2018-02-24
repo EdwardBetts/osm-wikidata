@@ -1,6 +1,6 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base
+from .model import Item, Changeset, get_bad, Base, IsA, ItemIsA
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata
 from datetime import datetime, timedelta
@@ -532,3 +532,42 @@ def next_level(qid):
 
     for row in rows:
         print(row)
+
+@app.cli.command()
+def geojson_chunks():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Place.query.filter(Place.area > (1000 * 1000 * 1000),
+                           Place.area < (1000 * 1000 * 5000))
+
+    empty_json = '{"type":"GeometryCollection","geometries":[]}'
+
+    for place in q:
+        chunk_size = utils.calc_chunk_size(place.area_in_sq_km)
+        geo = place.geojson_chunks()
+        empty_count = geo.count(empty_json)
+        if empty_count == 0:
+            continue
+
+        print(f'{chunk_size ** 2:3d}  {empty_count:3d}  ' +
+              f'{place.area_in_sq_km:>10.0f}  ' +
+              f'{place.osm_type}/{place.osm_id} ' +
+              f'{place.display_name}')
+        continue
+        for chunk in place.geojson_chunks():
+            print(len(chunk), chunk[:100])
+
+@app.cli.command()
+@click.argument('place_identifier')
+def place_chunks(place_identifier):
+    place = get_place(place_identifier)
+
+    print(f'{place.chunk_count():3d}  ' +
+          f'{place.area_in_sq_km:>10.0f}  ' +
+          f'{place.osm_type}/{place.osm_id} ' +
+          f'{place.display_name}')
+
+    for chunk in place.geojson_chunks():
+        print(len(chunk), chunk[:100])
+
