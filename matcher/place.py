@@ -370,7 +370,7 @@ class Place(Base):
     def save_isa(self, not_in_db, all_types):
         for qid, entity in wikidata.entity_iter(not_in_db):
             item_id = int(qid[1:])
-            if IsA.get.query(item_id):
+            if IsA.query.get(item_id):
                 continue
             i = IsA(item_id=item_id, entity=entity)
             session.add(i)
