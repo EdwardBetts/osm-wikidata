@@ -859,45 +859,6 @@ class Place(Base):
                 add_tags.append((item, picked))
         return add_tags
 
-    def chunk4(self):  # this code is unused
-        print('chunk4')
-        n = {}
-        (n['south'], n['north'], n['west'], n['east']) = self.bbox
-        ns = (n['north'] - n['south']) / 2
-        ew = (n['east'] - n['west']) / 2
-
-        chunks = [
-            {'name': 'south west', 'bbox': (n['south'], n['south'] + ns, n['west'], n['west'] + ew)},
-            {'name': 'south east', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew, n['east'])},
-            {'name': 'north west', 'bbox': (n['south'] + ns, n['north'], n['west'], n['west'] + ew)},
-            {'name': 'north east', 'bbox': (n['south'] + ns, n['north'], n['west'] + ew, n['east'])},
-        ]
-
-        return chunks
-
-    def chunk9(self):  # this code is unused
-        print('chunk9')
-        n = {}
-        (n['south'], n['north'], n['west'], n['east']) = self.bbox
-        ns = (n['north'] - n['south']) / 3
-        ew = (n['east'] - n['west']) / 3
-
-        chunks = [
-            {'name': 'south west', 'bbox': (n['south'], n['south'] + ns, n['west'], n['west'] + ew)},
-            {'name': 'south     ', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew, n['west'] + ew * 2)},
-            {'name': 'south east', 'bbox': (n['south'], n['south'] + ns, n['west'] + ew * 2, n['east'])},
-
-            {'name': 'west  ', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'], n['west'] + ew)},
-            {'name': 'centre', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'] + ew, n['west'] + ew * 2)},
-            {'name': 'east  ', 'bbox': (n['south'] + ns, n['south'] + ns * 2, n['west'] + ew * 2, n['east'])},
-
-            {'name': 'north west', 'bbox': (n['south'] + ns * 2, n['north'], n['west'], n['west'] + ew)},
-            {'name': 'north     ', 'bbox': (n['south'] + ns * 2, n['north'], n['west'] + ew, n['west'] + ew * 2)},
-            {'name': 'north east', 'bbox': (n['south'] + ns * 2, n['north'], n['west'] + ew * 2, n['east'])},
-        ]
-
-        return chunks
-
     def chunk_n(self, n):
         n = max(1, n)
         (south, north, west, east) = self.bbox

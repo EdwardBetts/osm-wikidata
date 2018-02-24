@@ -262,20 +262,6 @@ def run_matcher(place_identifier):
 
 @app.cli.command()
 @click.argument('place_identifier')
-@click.argument('chunk_count')
-def show_chunks(place_identifier, chunk_count):
-    chunk_count = int(chunk_count)
-    place = get_place(place_identifier)
-
-    pprint(place.chunk_n(chunk_count))
-
-    if chunk_count == 2:
-        pprint([i['bbox'] for i in place.chunk4()])
-    if chunk_count == 3:
-        pprint([i['bbox'] for i in place.chunk9()])
-
-@app.cli.command()
-@click.argument('place_identifier')
 @click.argument('qid')
 def individual_match(place_identifier, qid):
     app.config.from_object('config.default')
