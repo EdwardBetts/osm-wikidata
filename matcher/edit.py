@@ -44,6 +44,6 @@ def close_changeset(changeset_id):
     return r
 
 def save_element(osm_type, osm_id, element_data):
-    r = osm_request(f'{osm_type}/{osm_id}', data=element_data)
+    r = osm_request(f'/{osm_type}/{osm_id}', data=element_data)
     assert(r.text.strip().isdigit())
     return r
