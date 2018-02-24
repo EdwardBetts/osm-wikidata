@@ -62,6 +62,7 @@ function upload_tags() {
     $('#status').text(item.description);
 
     $.post(item.post_tag_url, {'changeset_id': changeset_id}).done(function(data) {
+        $('#' + item.row_id).removeClass('table-active');
         if (data == 'done') {
             $('#' + item.row_id).addClass('table-success')
             update_count += 1;
