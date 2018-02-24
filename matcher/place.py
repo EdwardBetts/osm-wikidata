@@ -254,6 +254,7 @@ class Place(Base):
         return {k: v for k, v in items.items() if self.covers(v)}
 
     def covers(self, item):
+        ''' Is the given item within the geometry of this place. '''
         q = (select([func.ST_Covers(Place.geom, item['location'])])
                 .where(Place.place_id == self.place_id))
         return object_session(self).scalar(q)
@@ -905,8 +906,15 @@ class Place(Base):
 
         chunks = []
         for row in range(n):
-            chunks += [(south + ns * row, south + ns * (row + 1),
-                         west + ew * col, west + ew * (col + 1)) for col in range(n)]
+            for col in range(n):
+                chunk = (south + ns * row, south + ns * (row + 1),
+                        west + ew * col, west + ew * (col + 1))
+                want_chunk = func.ST_Intersects(Place.geom, envelope(chunk))
+                want = (session.query(want_chunk)
+                               .filter(Place.place_id == self.place_id)
+                               .scalar())
+                if want:
+                    chunks.append(chunk)
 
         return chunks
 
