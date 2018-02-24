@@ -900,6 +900,18 @@ def refresh_index():
     flash('Top place cards refreshed.')
     return redirect(url_for('index'))
 
+@app.route('/instance_of/Q<item_id>')
+def instance_of_page(item_id):
+    qid = f'Q{item_id}'
+    entity = wikidata.get_entity(qid)
+
+    en_label = entity['labels']['en']['value']
+
+    return render_template('instance_of.html',
+                           qid=qid,
+                           en_label=en_label,
+                           entity=entity)
+
 @app.route('/is_in/way/<way_id>')
 def is_in_way(way_id):
 
