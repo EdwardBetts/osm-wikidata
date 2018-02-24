@@ -115,9 +115,10 @@ class Place(Base):
     def area_in_sq_km(self):
         return self.area / (1000 * 1000)
 
-    @hybrid_property
+    @property
     def too_big(self):
-        return self.area_in_sq_km > 90000
+        max_area = current_app.config['PLACE_MAX_AREA']
+        return self.area_in_sq_km > max_area
 
     def update_from_nominatim(self, hit):
         keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
