@@ -1,5 +1,5 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
-               overpass, mail, browse)
+               overpass, mail, browse, edit)
 from .utils import cache_filename, get_radius, get_int_arg, is_bot
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
 from .place import Place, get_top_existing
@@ -176,15 +176,6 @@ def exception_handler(e):
     else:
         raise e
 
-def new_changeset(comment):
-    return '''
-<osm>
-  <changeset>
-    <tag k="created_by" v="https://osm.wikidata.link/"/>
-    <tag k="comment" v="{}"/>
-  </changeset>
-</osm>'''.format(comment)
-
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
     '''Add wikidata tags for a single item'''
@@ -202,8 +193,6 @@ def add_wikidata_tag():
     user = g.user
     assert user.is_authenticated
 
-    osm_backend, auth = get_backend_and_auth()
-
     url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
     r = requests.get(url, headers=user_agent_headers())
     root = etree.fromstring(r.content)
@@ -213,27 +202,17 @@ def add_wikidata_tag():
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
     comment = request.form.get('comment', 'add wikidata tag')
-    changeset = new_changeset(comment)
-
-    r = osm_backend.request(osm_api_base + '/changeset/create',
-                            method='PUT',
-                            data=changeset,
-                            auth=auth,
-                            headers=user_agent_headers())
-    changeset_id = r.text.strip()
+    changeset = edit.new_changeset(comment)
+    changeset_id = edit.create_changeset(changeset)
 
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
 
-    element_data = etree.tostring(root).decode('utf-8')
+    element_data = etree.tostring(root)
 
     try:
-        r = osm_backend.request(url,
-                                method='PUT',
-                                data=element_data,
-                                auth=auth,
-                                headers=user_agent_headers())
+        edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
         r = e.response
         mail.error_mail('error saving element', element_data, r)
@@ -241,7 +220,6 @@ def add_wikidata_tag():
         return render_template('error_page.html',
                 message="The OSM API returned an error when saving your edit: {}: " + r.text)
 
-    assert(r.text.strip().isdigit())
     for c in ItemCandidate.query.filter_by(osm_id=osm_id, osm_type=osm_type):
         c.tags['wikidata'] = wikidata_id
         flag_modified(c, 'tags')
@@ -256,11 +234,7 @@ def add_wikidata_tag():
     database.session.add(change)
     database.session.commit()
 
-    r = osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
-                            method='PUT',
-                            auth=auth,
-                            headers=user_agent_headers())
-
+    edit.close_changeset(changeset_id)
     flash('wikidata tag saved in OpenStreetMap')
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
@@ -342,23 +316,15 @@ def overpass_query(osm_type, osm_id):
 def close_changeset(osm_type, osm_id):
     Place.get_or_abort(osm_type, osm_id)
 
-    osm_backend, auth = get_backend_and_auth()
-
     changeset_id = request.form['changeset_id']
     update_count = request.form['update_count']
 
     if really_save:
-        osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
-                            method='PUT',
-                            auth=auth,
-                            headers=user_agent_headers())
-
+        edit.close_changeset(changeset_id)
         change = Changeset.query.get(changeset_id)
         change.update_count = update_count
 
         database.session.commit()
-
-        # mail.announce_change(change)
 
     return Response('done', mimetype='text/plain')
 
@@ -366,24 +332,17 @@ def close_changeset(osm_type, osm_id):
 def open_changeset(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
 
-    osm_backend, auth = get_backend_and_auth()
-
     comment = request.form['comment']
-    changeset = new_changeset(comment)
+    changeset = edit.new_changeset(comment)
 
     if not really_save:
-        return Response(changeset.id, mimetype='text/plain')
+        return Response(0, mimetype='text/plain')
 
     try:
-        r = osm_backend.request(osm_api_base + '/changeset/create',
-                                method='PUT',
-                                data=changeset.encode('utf-8'),
-                                auth=auth,
-                                headers=user_agent_headers())
+        changeset_id = edit.create_changeset(changeset)
     except requests.exceptions.HTTPError as e:
         mail.error_mail('error creating changeset: ' + place.name, changeset, e.response)
         return Response('error', mimetype='text/plain')
-    changeset_id = r.text.strip()
     if not changeset_id.isdigit():
         mail.open_changeset_error(place, changeset, r)
         return Response('error', mimetype='text/plain')
@@ -400,19 +359,6 @@ def open_changeset(osm_type, osm_id):
 
     return Response(changeset_id, mimetype='text/plain')
 
-def get_backend_and_auth():
-    if not really_save:
-        return None, None
-
-    user = g.user
-    assert user.is_authenticated
-
-    social_user = user.social_auth.one()
-    osm_backend = social_user.get_backend_instance()
-    auth = osm_backend.oauth_auth(social_user.access_token)
-
-    return osm_backend, auth
-
 def save_timing(name, t0):
     timing = Timing(start=t0,
                     path=request.full_path,
@@ -425,7 +371,6 @@ def post_tag(osm_type, osm_id, item_id):
     changeset_id = request.form['changeset_id']
 
     t0 = time()
-    osm_backend, auth = get_backend_and_auth()
     save_timing('backend and auth', t0)
 
     wikidata_id = 'Q{:d}'.format(item_id)
@@ -463,20 +408,13 @@ def post_tag(osm_type, osm_id, item_id):
     root[0].append(tag)
     save_timing('build tree', t0)
 
-    element_data = etree.tostring(root).decode('utf-8')
+    element_data = etree.tostring(root)
     if really_save:
         t0 = time()
         try:
-            r = osm_backend.request(url,
-                                    method='PUT',
-                                    data=element_data,
-                                    auth=auth,
-                                    headers=user_agent_headers())
+            edit.save_element(osm_type, osm_id, element_data)
         except requests.exceptions.HTTPError as e:
             mail.error_mail('error saving element', element_data, e.response)
-            database.session.commit()
-            return Response('save error', mimetype='text/plain')
-        if not r.text.strip().isdigit():
             database.session.commit()
             return Response('save error', mimetype='text/plain')
         save_timing('add tag via OSM API', t0)
@@ -496,17 +434,10 @@ def post_tag(osm_type, osm_id, item_id):
     return Response('done', mimetype='text/plain')
 
 def do_add_tags(place, table):
-    osm_backend, auth = get_backend_and_auth()
-
+    ''' Currently unused. '''
     comment = request.form['comment']
-    changeset = new_changeset(comment)
-
-    r = osm_backend.request(osm_api_base + '/changeset/create',
-                            method='PUT',
-                            data=changeset,
-                            auth=auth,
-                            headers=user_agent_headers())
-    changeset_id = r.text.strip()
+    changeset = edit.new_changeset(comment)
+    changeset_id = edit.create_changeset(changeset)
     update_count = 0
 
     for item, osm in table:
@@ -526,12 +457,7 @@ def do_add_tags(place, table):
         root[0].append(tag)
 
         element_data = etree.tostring(root).decode('utf-8')
-        r = osm_backend.request(url,
-                                method='PUT',
-                                data=element_data,
-                                auth=auth,
-                                headers=user_agent_headers())
-        assert(r.text.strip().isdigit())
+        edit.save_element(osm.osm_type, osm.osm_id, element_data)
 
         osm.tags['wikidata'] = wikidata_id
         flag_modified(osm, 'tags')
@@ -540,11 +466,7 @@ def do_add_tags(place, table):
         assert osm.tags['wikidata'] == wikidata_id
         update_count += 1
 
-    osm_backend.request(osm_api_base + '/changeset/{}/close'.format(changeset_id),
-                        method='PUT',
-                        auth=auth,
-                        headers=user_agent_headers())
-
+    edit.close_changeset(changeset_id)
     change = Changeset(id=changeset_id,
                        place=place,
                        created=func.now(),
