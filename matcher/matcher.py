@@ -206,7 +206,7 @@ def find_item_matches(cur, item, prefix, debug=False):
                  if 'name' in k and k not in bad_name_fields}
 
         if item_identifiers:
-            for k, values, label in item_identifiers.items():
+            for k, (values, label) in item_identifiers.items():
                 osm_value = osm_tags.get(k)
                 if osm_value and osm_value in values:
                     cur_match = True
