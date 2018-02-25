@@ -775,7 +775,7 @@ def changesets():
     q = Changeset.query.filter(Changeset.update_count > 0).order_by(Changeset.id.desc())
 
     page = get_int_arg('page') or 1
-    per_page = 50
+    per_page = 100
     pager = Pagination(page, per_page, q.count())
 
     return render_template('changesets.html', objects=pager.slice(q), pager=pager)
