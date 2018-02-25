@@ -41,8 +41,6 @@
     {% else %}
         unknown location
     {% endif %}
-
-    <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">(osm)</a>
 </td>
 
 <td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
@@ -51,7 +49,7 @@
     {% if obj.place %}
       {% set area = obj.place.area_in_sq_km %}
       {% if area %}
-        {{ '{:.1f}'.forma(obj.place.area_in_sq_km) }}km&sup2;
+        {{ '{:.1f}'.format(obj.place.area_in_sq_km) }}km&sup2;
       {% else %}
         unknown
       {% endif %}
