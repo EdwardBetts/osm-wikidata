@@ -347,20 +347,11 @@ def add_tags(osm_type, osm_id):
              for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))
              if 'candidate' in match]
 
-    items = [{'row_id': '{:s}-{:s}-{:d}'.format(i.qid, c.osm_type, c.osm_id),
-              'qid': i.qid,
+    items = [{'qid': i.qid,
               'osm_type': c.osm_type,
               'osm_id': c.osm_id,
-              'description': '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid),
-              'post_tag_url': url_for('.post_tag',
-                                      item_id=i.item_id,
-                                      osm_id=c.osm_id,
-                                      osm_type=c.osm_type)} for i, c in table]
-
-    if False and request.form.get('confirm') == 'yes':
-        update_count = do_add_tags(place, table)
-        flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
-        return redirect(place.candidates_url())
+              'description': '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid)}
+            for i, c in table]
 
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
