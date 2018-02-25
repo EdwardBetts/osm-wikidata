@@ -178,18 +178,23 @@ class Item(Base):
         else:
             return []
 
-    def get_location_identifiers(self):
+    def get_item_identifiers(self):
         if not self.entity:
             return {}
 
-        property_map = [('P238', 'iata'), ('P239', 'icao'), ('P296', 'ref')]
+        property_map = [
+            ('P238', 'iata', 'IATA airport code'),
+            ('P239', 'icao', 'ICAO airport code'),
+            ('P296', 'ref', 'station code'),
+            ('P1216', 'HE_ref', 'National Heritage List for England number'),
+        ]
 
         tags = {}
-        for claim, osm_key in property_map:
+        for claim, osm_key, label in property_map:
             values = [i['mainsnak']['datavalue']['value']
                       for i in self.entity['claims'].get(claim, [])]
             if values:
-                tags[osm_key] = values
+                tags[osm_key] = (values, label)
         return tags
 
     def ref_nrhp(self):

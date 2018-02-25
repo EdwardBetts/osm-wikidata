@@ -181,7 +181,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         if found:
             return found
 
-    location_identifiers = item.get_location_identifiers()
+    item_identifiers = item.get_item_identifiers()
 
     endings = get_ending_from_criteria(item.tags)
 
@@ -205,8 +205,8 @@ def find_item_matches(cur, item, prefix, debug=False):
         names = {k: v for k, v in osm_tags.items()
                  if 'name' in k and k not in bad_name_fields}
 
-        if location_identifiers:
-            for k, values in location_identifiers.items():
+        if item_identifiers:
+            for k, values, label in item_identifiers.items():
                 osm_value = osm_tags.get(k)
                 if osm_value and osm_value in values:
                     cur_match = True
