@@ -49,7 +49,12 @@
 
 <td class="text-right">
     {% if obj.place %}
-      {{ obj.place.area_in_sq_km }}km&sup2;
+      {% set area = obj.place.area_in_sq_km %}
+      {% if area %}
+        {{ '{:.1f}'.forma(obj.place.area_in_sq_km) }}km&sup2;
+      {% else %}
+        unknown
+      {% endif %}
     {% else %}
       n/a
     {% endif %}
