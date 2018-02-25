@@ -14,23 +14,17 @@
 <table class="table table-hover">
 <thead>
   <tr>
-    <th class="text-right">when</th>
-    <th>user</th>
-    <th class="text-right">#</th>
     <th>place / item</th>
+    <th class="text-right">#</th>
+    <th class="text-right">size</th>
+    <th>user</th>
+    <th class="text-right">when</th>
   </tr>
 </thead>
 <tbody>
 {% for obj in objects %}
 <tr>
-<td class="text-nowrap text-right">
-    <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
-        {{- obj.created.strftime('%H:%M:%S %a, %d %b %Y') if obj.created else obj.id -}}
-    </a>
-</td>
-<td class="text-nowrap"><a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a></td>
-<td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
-<!-- <td>{{ obj.comment }}</td> -->
+
 <td>
     {% if obj.place %}
         {% set name = obj.place.name_for_changeset %}
@@ -47,7 +41,34 @@
     {% else %}
         unknown location
     {% endif %}
+
+    <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">(osm)</a>
 </td>
+
+<td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
+
+<td class="text-right">
+    {% if obj.place %}
+      {{ obj.place.area_in_sq_km }}km&sup2;
+    {% else %}
+      n/a
+    {% endif %}
+</td>
+
+<td class="text-nowrap">
+  <a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a>
+</td>
+
+<td class="text-nowrap text-right">
+    <a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">
+        {{- obj.created.strftime('%a, %d %b %Y  %H:%M:%S') if obj.created else obj.id -}}
+    </a>
+</td>
+
+<!-- <td>{{ obj.comment }}</td> -->
+
+
+
 </tr>
 {% endfor %}
 </tbody>
