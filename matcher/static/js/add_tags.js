@@ -46,7 +46,6 @@ function update_progress(num) {
 
 function onmessage(e) {
     var data = JSON.parse(e.data);
-    console.log(data);
     var msg_type = data['type'];
 
     switch(msg_type) {
