@@ -49,7 +49,7 @@
     {% if obj.place %}
       {% set area = obj.place.area_in_sq_km %}
       {% if area %}
-        {{ '{:.1f}'.format(obj.place.area_in_sq_km) }}km&sup2;
+        {{ '{:,.1f}'.format(obj.place.area_in_sq_km) }} km&sup2;
       {% else %}
         unknown
       {% endif %}
