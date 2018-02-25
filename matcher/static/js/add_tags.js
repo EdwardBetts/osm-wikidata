@@ -1,82 +1,96 @@
-"use strict";
+'use strict';
+
 var current_item = 0;
 var changeset_id = null;
 var update_count = 0;
+var comment;
+var end = matches.length;
 
+var url = ws_scheme + '://' + location.host + '/websocket/add_tags/' + osm_type + '/' + osm_id;
 
-function open_changeset() {
-    var comment = $('#comment').val();
+var connection;
+
+function send(payload) {
+    connection.send(JSON.stringify(payload));
+}
+
+function start_upload() {
+    comment = $('#comment').val();
     if (!comment) {
         $('#status').text('a comment is required');
         return;
     }
+
     $('#comment').prop('disabled', true);
     $('#save').prop('disabled', true);
     $('#status').text('opening changeset');
-    $.post(open_changeset_url, {'comment': comment}).done(start_upload);
+
+    connection = new WebSocket(url);
+
+    connection.onopen = function () {
+        send({'comment': comment, 'matches': matches});
+    };
+
+    // Log errors
+    connection.onerror = function (error) {
+        console.log('WebSocket Error ' + error);
+    };
+
+    connection.onmessage = onmessage;
 }
 
-function start_upload(data) {
-    if (data == 'error') {
-        $('#status').text('error opening changeset');
-        return
-    }
-    changeset_id = data;
-    var url = 'https://www.openstreetmap.org/changeset/' + changeset_id;
-    $('#changeset-link').prop('href', url);
-
-    $('#notice').hide();
-    $('#status').text('uploading tags');
-    upload_tags();
-}
-
-function finished(data) {
-    $('#status').text('upload complete');
-    $("#done").show();
-}
-
-function close_changeset() {
-    $('#status').text('closing changeset');
-    var comment = $('#comment').val();
-    var data = {
-        'comment': comment,
-        'changeset_id': changeset_id,
-        'update_count': update_count,
-    }
-    $.post(close_changeset_url, data).done(finished);
-}
-
-function upload_tags() {
-    var end = items.length;
-
-    if(current_item >= end) {
-        close_changeset();
-        return;
-    }
-
-    var item = items[current_item++];
+function update_progress(num) {
     var progress = (current_item * 100) / end;
     $('#upload-progress').css('width', progress + '%');
+}
 
-    $('#' + item.row_id).addClass('table-active');
-    $('#status').text(item.description);
+function onmessage(e) {
+    var data = JSON.parse(e.data);
+    console.log(data);
+    var msg_type = data['type'];
 
-    $.post(item.post_tag_url, {'changeset_id': changeset_id}).done(function(data) {
-        $('#' + item.row_id).removeClass('table-active');
-        if (data == 'done') {
-            $('#' + item.row_id).addClass('table-success')
-            update_count += 1;
-        } else if (data == 'already tagged') {
-            $('#' + item.row_id).addClass('table-warning')
-        } else {
-            $('#' + item.row_id).addClass('table-danger')
-        }
-
-        upload_tags();
-    });
-};
+    switch(msg_type) {
+      case 'open':
+        changeset_id = data['id'];
+        var url = 'https://www.openstreetmap.org/changeset/' + changeset_id;
+        $('#changeset-link').prop('href', url);
+        $('#notice').hide();
+        $('#status').text('uploading tags');
+        break;
+      case 'changeset-error':
+        $('#status').text('error opening changeset');
+        break;
+      case 'progress':
+        var num = data['num'];
+        var m = matches[num];
+        $('#status').text(m['description']);
+        update_progress(num);
+        $('#' + data['qid']).addClass('table-active');
+        break;
+      case 'saved':
+        $('#' + data['qid']).removeClass('table-active');
+        $('#' + data['qid']).addClass('table-success')
+        break;
+      case 'changeset-error':
+        $('#' + data['qid']).removeClass('table-active');
+        $('#' + data['qid']).addClass('table-danger')
+        break;
+      case 'already_tagged':
+      case 'deleted':
+        $('#' + data['qid']).removeClass('table-active');
+        $('#' + data['qid']).addClass('table-warning');
+        break;
+      case 'closing':
+        $('#status').text('closing changeset');
+        break;
+      case 'done':
+        $('#status').text('upload complete');
+        $('#done').show();
+        break;
+    }
+}
 
 $(function() {
-    $("#save").click(open_changeset);
+    $("#save").click(start_upload);
     $("#done").hide();
 });

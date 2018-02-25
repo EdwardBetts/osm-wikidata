@@ -64,9 +64,9 @@
     <tbody>
     {% set lang = place.most_common_language() %}
     {% for i, c in table %}
-      <tr id="{{ i.qid }}-{{c.osm_type }}-{{ c.osm_id }}">
+      <tr id="{{ i.qid }}">
         <td>
-          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label(lang=lang) }} ({{ i.qid }})</a></p>
+          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label(lang=lang) }} ({{ i.qid }})</a>
         </td>
         <td>
           {% set m = c.get_match() %}
@@ -83,6 +83,7 @@
       </tr>
     {% endfor %}
     </table>
+    </div>
 
 {% else %}
 <p class="my-3">All done. <a href="{{ place.candidates_url() }}">go back to candidate list</a></p>
@@ -97,13 +98,12 @@
 {% block script %}
 
 <script>
-var open_changeset_url = {{ url_for('open_changeset', osm_id=place.osm_id, osm_type=place.osm_type) | tojson }};
-var close_changeset_url = {{ url_for('close_changeset', osm_id=place.osm_id, osm_type=place.osm_type) | tojson }};
-
-var items = {{ items | tojson }}
+var ws_scheme = {{ ws_scheme | tojson }};
+var osm_type = {{ place.osm_type | tojson }};
+var osm_id = {{ place.osm_id | tojson }};
+var matches = {{ items | tojson }};
 
 </script>
-
 
 <script src="{{ url_for('static', filename='js/add_tags.js') }}"></script>
 {% endblock %}

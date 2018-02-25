@@ -203,7 +203,8 @@ def add_wikidata_tag():
 
     comment = request.form.get('comment', 'add wikidata tag')
     changeset = edit.new_changeset(comment)
-    changeset_id = edit.create_changeset(changeset)
+    r = edit.create_changeset(changeset)
+    changeset_id = r.text.strip()
 
     tag = etree.Element('tag', k='wikidata', v=wikidata_id)
     root[0].set('changeset', changeset_id)
@@ -224,15 +225,10 @@ def add_wikidata_tag():
         c.tags['wikidata'] = wikidata_id
         flag_modified(c, 'tags')
 
-    change = Changeset(id=changeset_id,
-                       item_id=wikidata_id[1:],
-                       created=func.now(),
-                       comment=comment,
-                       update_count=1,
-                       user=g.user)
-
-    database.session.add(change)
-    database.session.commit()
+    edit.record_changeset(id=changeset_id,
+                          comment=comment,
+                          item_id=wikidata_id[1:],
+                          update_count=1)
 
     edit.close_changeset(changeset_id)
     flash('wikidata tag saved in OpenStreetMap')
@@ -339,24 +335,20 @@ def open_changeset(osm_type, osm_id):
         return Response(0, mimetype='text/plain')
 
     try:
-        changeset_id = edit.create_changeset(changeset)
+        r = edit.create_changeset(changeset)
     except requests.exceptions.HTTPError as e:
         mail.error_mail('error creating changeset: ' + place.name, changeset, e.response)
         return Response('error', mimetype='text/plain')
+
+    changeset_id = r.text.strip()
     if not changeset_id.isdigit():
         mail.open_changeset_error(place, changeset, r)
         return Response('error', mimetype='text/plain')
 
-    change = Changeset(id=changeset_id,
-                       place=place,
-                       created=func.now(),
-                       comment=comment,
-                       update_count=0,
-                       user=g.user)
-
-    database.session.add(change)
-    database.session.commit()
-
+    edit.record_changeset(id=changeset_id,
+                          place=place,
+                          comment=comment,
+                          update_count=0)
     return Response(changeset_id, mimetype='text/plain')
 
 def save_timing(name, t0):
@@ -383,9 +375,8 @@ def post_tag(osm_type, osm_id, item_id):
         database.session.commit()
         return Response('not found', mimetype='text/plain')
 
-    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
     t0 = time()
-    r = requests.get(url, headers=user_agent_headers())
+    r = edit.get_existing(osm_type, osm_id)
     content = r.content
     save_timing('OSM API get', t0)
     if b'wikidata' in content:
@@ -437,13 +428,13 @@ def do_add_tags(place, table):
     ''' Currently unused. '''
     comment = request.form['comment']
     changeset = edit.new_changeset(comment)
-    changeset_id = edit.create_changeset(changeset)
+    changeset_id = edit.create_changeset(changeset).text.strip()
     update_count = 0
 
     for item, osm in table:
         wikidata_id = 'Q{:d}'.format(item.item_id)
-        url = '{}/{}/{}'.format(osm_api_base, osm.osm_type, osm.osm_id)
-        r = requests.get(url, headers=user_agent_headers())
+
+        r = edit.get_existing(osm.osm_type, osm.osm_id)
         if 'wikidata' in r.text:  # done already
             print('skip:', wikidata_id)
             continue
@@ -467,16 +458,10 @@ def do_add_tags(place, table):
         update_count += 1
 
     edit.close_changeset(changeset_id)
-    change = Changeset(id=changeset_id,
-                       place=place,
-                       created=func.now(),
-                       comment=comment,
-                       update_count=update_count,
-                       user=g.user)
-
-    database.session.add(change)
-    database.session.commit()
-
+    change = edit.record_changeset(id=changeset_id,
+                                   place=place,
+                                   comment=comment,
+                                   update_count=update_count)
     mail.announce_change(change)
 
     return update_count
@@ -528,9 +513,13 @@ def add_tags(osm_type, osm_id):
         flash('{:,d} wikidata tags added to OpenStreetMap'.format(update_count))
         return redirect(place.candidates_url())
 
+    url_scheme = request.environ.get('wsgi.url_scheme')
+    ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
+
     return render_template('add_tags.html',
                            place=place,
                            osm_id=osm_id,
+                           ws_scheme=ws_scheme,
                            items=items,
                            table=table)
 

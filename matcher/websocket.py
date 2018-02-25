@@ -1,8 +1,13 @@
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, g
 from time import time, sleep
 from .place import Place
-from . import wikipedia, database, wikidata, netstring, utils
+from . import wikipedia, database, wikidata, netstring, utils, edit, mail
+from flask_login import current_user
+from .model import ItemCandidate
 from datetime import datetime
+from lxml import etree
+from sqlalchemy.orm.attributes import flag_modified
+import requests
 import re
 import json
 import socket
@@ -368,3 +373,85 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
     m = MatcherSocket(ws_sock, place)
     return run_matcher(place, m)
+
+def process_match(ws_sock, changeset_id, m):
+    osm_type, osm_id = m['osm_type'], m['osm_id']
+    item_id = m['qid'][1:]
+
+    r = edit.get_existing(osm_type, osm_id)
+    if r.status_code == 410 or r.content == b'':
+        return 'deleted'
+
+    osm = (ItemCandidate.query
+                        .filter_by(item_id=item_id,
+                                   osm_type=osm_type,
+                                   osm_id=osm_id)
+                        .one_or_none())
+
+    if b'wikidata' in r.content:
+        root = etree.fromstring(r.content)
+        existing = root.find('.//tag[@k="wikidata"]')
+        if existing is not None:
+            osm.tags['wikidata'] = existing.get('v')
+            flag_modified(osm, 'tags')
+        database.session.commit()
+        return 'already_tagged'
+
+    root = etree.fromstring(r.content)
+    tag = etree.Element('tag', k='wikidata', v=m['qid'])
+    root[0].set('changeset', changeset_id)
+    root[0].append(tag)
+
+    element_data = etree.tostring(root)
+    try:
+        edit.save_element(osm_type, osm_id, element_data)
+    except requests.exceptions.HTTPError as e:
+        mail.error_mail('error saving element',
+                        element_data.decode('utf-8'),
+                        e.response)
+        database.session.commit()
+        return 'element-error'
+
+    osm.tags['wikidata'] = m['qid']
+    flag_modified(osm, 'tags')
+
+    return 'saved'
+
+@ws.route('/websocket/add_tags/<osm_type>/<int:osm_id>')
+def ws_add_tags(ws_sock, osm_type, osm_id):
+    g.user = current_user
+
+    def send(msg_type, **kwars):
+        ws_sock.send(json.dumps({'type': msg_type, **kwars}))
+
+    place = Place.get_by_osm(osm_type, osm_id)
+
+    data = json.loads(ws_sock.receive())
+    comment = data['comment']
+    changeset = edit.new_changeset(comment)
+    r = edit.create_changeset(changeset)
+    changeset_id = r.text.strip()
+    if not changeset_id.isdigit():
+        send('changeset-error', msg='error opening changeset')
+        return
+
+    send('open', id=int(changeset_id))
+
+    update_count = 0
+    change = edit.record_changeset(id=changeset_id,
+                                   place=place,
+                                   comment=comment,
+                                   update_count=update_count)
+
+    for num, m in enumerate(data['matches']):
+        send('progress', qid=m['qid'], num=num)
+        result = process_match(ws_sock, changeset_id, m)
+        if result == 'saved':
+            update_count += 1
+            change.update_count = update_count
+        database.session.commit()
+        send(result, qid=m['qid'], num=num)
+
+    send('closing')
+    edit.close_changeset(changeset_id)
+    send('done')
