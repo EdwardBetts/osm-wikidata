@@ -695,6 +695,32 @@ def get_item_types(items, name=None):
         'Q39659461',  # shopping arcade
         'Q2304397',   # residential tower
         'Q39658032',  # open air shopping centre
+        'Q13586493',  # outdoor pool
+        'Q48635101',  # Jewish delicatessen
+        'Q47012103',  # mixed-use building
+        'Q4298922',   # mixed-use development
+        'Q42929138',  # Tramlink stop
+        'Q3640372',   # brewpub
+        'Q42011297',  # puppet theatre
+        'Q40553563',  # restaurant district
+        'Q40531603',  # railway station footbridge
+        'Q1068842',   # footbridge
+        'Q39947311',  # warehouse district
+        'Q39919471',  # former warehouse
+        'Q39917125',  # railway building
+        'Q39364723',  # hospital building
+        'Q11755959',  # multi-storey urban building
+        'Q30301606',  # cubic building
+        'Q30301498',  # student housing
+        'Q3661265',   # halls of residence
+        'Q18658261',  # flower market
+        'Q29905619',  # chalk pit
+        'Q28148504',  # museum district
+        'Q3710552',   # cultural district
+        'Q28142754',  # food market
+        'Q27702623',  # academic enclave
+        'Q27095213',  # shopping district
+        'Q27095194',  # bookshop neighbourhood
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
