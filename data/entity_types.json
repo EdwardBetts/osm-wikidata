@@ -1299,5 +1299,13 @@
     "tags": ["lock=yes"],
     "trim": [],
     "dist": 2
+},
+{
+    "cats": ["Student activity centers"],
+    "tags": ["building"],
+    "trim": [],
+    "check_housename": true,
+    "wikidata": "Q7627808",
+    "dist": 1
 }
 ]
