@@ -58,6 +58,8 @@ extra_keys = {
     'Q811979': ['Key:building'],              # architectural structure
     'Q1329623': ['Tag:amenity=arts_centre'],  # cultural centre
     'Q856584': ['Tag:amenity=library'],       # library building
+    'Q11315': ['Tag:landuse=retail'],         # shopping mall
+    'Q39658032': ['Tag:landuse=retail'],      # open air shopping centre
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -689,6 +691,10 @@ def get_item_types(items, name=None):
         'Q853854',    # clock tower
         'Q3457526',   # local nature reserve
         'Q245016',    # military base
+        'Q17350442',  # venue
+        'Q39659461',  # shopping arcade
+        'Q2304397',   # residential tower
+        'Q39658032',  # open air shopping centre
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
