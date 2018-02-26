@@ -629,8 +629,13 @@ class Place(Base):
                 for t in matcher.categories_to_tags(v['categories']):
                     tags.add(t)
 
-            if 'building' in tags and len(tags) > 1:
-                tags.remove('building')
+            # building is a very generic tag so remove it if we have more
+            # specific search criteria
+            if 'building' in tags or 'building=yes' in tags:
+                without_buildings = [t for t in tags if t not in ('building', 'building=yes')]
+                if without_buildings:
+                    tags.discard('building')
+                    tags.discard('building=yes')
 
             item.tags = tags
             if qid in seen:
