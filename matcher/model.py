@@ -101,6 +101,14 @@ class Item(Base):
 
     isa = relationship('ItemIsA')
 
+    @property
+    def labels(self):
+        if not self.entity:
+            return None
+
+        return {l['language']: l['value']
+                for l in self.entity['labels'].values()}
+
     def label(self, lang='en'):
         if not self.entity:
             return self.enwiki or self.query_label or None
@@ -126,10 +134,13 @@ class Item(Base):
     def wikidata_uri(self):
         return 'https://www.wikidata.org/wiki/Q{}'.format(self.item_id)
 
+    def get_lat_lon(self):
+        return session.query(func.ST_Y(self.location),
+                             func.ST_X(self.location)).one()
+
     def get_osm_url(self, zoom=18):
-        lat, lon = session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
-        params = (zoom, lat, lon)
-        return 'https://www.openstreetmap.org/#map={}/{}/{}'.format(*params)
+        lat, lon = self.get_lat_lon()
+        return f'https://www.openstreetmap.org/#map={zoom}/{lat}/{lon}'
 
     def get_extra_tags(self):
         tags = set()
