@@ -108,12 +108,16 @@
 var current_highlight;
 var current_marker;
 var map = L.map('map');
+{% if not candidates %}
 var bounds = [[{{ place.north }}, {{place.west }}],
               [{{ place.south}}, {{ place.east}}]];
 map.fitBounds(bounds);
+{% endif %}
 // map.setView(new L.LatLng(37.7749, -122.4194), 12);
 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 tiles.addTo(map);
+var group = L.featureGroup();
+
 var marker;
 var qid;
 var markers = {};
@@ -170,7 +174,7 @@ const highlightIcon = L.divIcon({
                     'icon': icon,
   });
   markers[{{ item.qid | tojson }}] = marker;
-  marker.addTo(map);
+  marker.addTo(group);
   marker.on('click', (e) => {
     var item = document.getElementById({{ item.qid | tojson }});
     item.scrollIntoView();
@@ -190,6 +194,11 @@ const highlightIcon = L.divIcon({
     current_highlight = item;
   });
 {% endfor %}
+
+{% if candidates %}
+map.fitBounds(group.getBounds());
+map.addLayer(group);
+{% endif %}
 
 </script>
 {% endblock %}
