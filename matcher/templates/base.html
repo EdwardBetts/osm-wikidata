@@ -18,7 +18,7 @@
 
 <body>
   <div class="container-fluid p-0">
-  {{ navbar() }}
+  {% block nav %}{{ navbar() }}{% endblock %}
   {% block content %}{% endblock %}
   </div>
 
