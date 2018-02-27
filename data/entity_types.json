@@ -573,6 +573,7 @@
 },
 {
     "cats": ["Campuses"],
+    "exclude_cats": ["Railway stations"],
     "tags": ["amenity=university", "building"],
     "trim": ["university", "school", "college"],
     "area": true,
