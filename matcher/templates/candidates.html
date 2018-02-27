@@ -1,4 +1,5 @@
 {% from "macro.html" import place_box, candidate_info with context %}
+{% from "navbar.html" import navbar_inner with context %}
 {% extends "base.html" %}
 
 {% macro refresh_button(place) %}
@@ -6,7 +7,8 @@
 {% endmacro %}
 
 {% macro candidate_item(item) %}
-  <p>
+<div id="{{ item.qid }}">
+<p>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
   {% if upload_okay and picked %}
       {% set checked = (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
@@ -63,15 +65,140 @@
     {{ candidate_info(c, is_picked=(c == picked), is_bad=is_bad, show_tags=show_tags) }}
   {% endfor %}
   </ul>
+</div>
 {% endmacro %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
 
+{% block nav %}
+<nav class="navbar fixed-top navbar-toggleable-md navbar-expand-lg navbar-dark bg-primary">
+  {{ navbar_inner() }}
+</nav>
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#page-body {
+  width: 50%;
+  left: 0px;
+  position: relative;
+}
+
+#map {
+  width: 50%;
+
+  top: 56px;
+  right: 0px;
+  bottom: 0px;
+  left: auto;
+
+  display: block;
+  position: fixed;
+}
+
+.highlight {
+  background: lightblue;
+}
+
+</style>
+{% endblock %}
+{% block script %}
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+var current_highlight;
+var current_marker;
+var map = L.map('map');
+var bounds = [[{{ place.north }}, {{place.west }}],
+              [{{ place.south}}, {{ place.east}}]];
+map.fitBounds(bounds);
+// map.setView(new L.LatLng(37.7749, -122.4194), 12);
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+tiles.addTo(map);
+var marker;
+var qid;
+var markers = {};
+
+const pinColour = '#00ccff';
+
+const markerHtmlStyles = `
+  background-color: ${pinColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`
+
+const icon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${markerHtmlStyles}" />`
+})
+
+const highlightColour = '#ff0000';
+
+const highlightHtmlStyles = `
+  background-color: ${highlightColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`
+
+const highlightIcon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${highlightHtmlStyles}" />`
+})
+
+
+
+{% for item in candidates %}
+  marker = L.marker({{ item.get_lat_lon() | list }}, {
+                    'title': {{ item.label_and_qid() | tojson }},
+                    'icon': icon,
+  });
+  markers[{{ item.qid | tojson }}] = marker;
+  marker.addTo(map);
+  marker.on('click', (e) => {
+    var item = document.getElementById({{ item.qid | tojson }});
+    item.scrollIntoView();
+    var scrolledY = window.scrollY;
+    if(scrolledY){
+        window.scroll(0, scrolledY - 60);
+    }
+    if (current_highlight) {
+      current_highlight.className = '';
+    }
+    if (current_marker) {
+      current_marker.setIcon(icon);
+    }
+    item.className = 'highlight';
+    e.target.setIcon(highlightIcon);
+    current_marker = e.target;
+    current_highlight = item;
+  });
+{% endfor %}
+
+</script>
+{% endblock %}
+
 {% block content %}
-  <div class="container my-2">
+  <div id="page-body">
+    <div class="m-2">
   {% include "flash_msg.html" %}
-  <div class="row">
-  <div class="col">
     <h1>{{ place.name }}</h1>
   {% set q = place.display_name %}
 
@@ -142,8 +269,6 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       <p>[Filter: <a href="{{ place.candidates_url(multiple=1) }}">only multiple matches</a>]
     {% endif %}
   {% endif %}
-  </div>
-  </div>
 
   {% if not candidates %}
   <p>{{ refresh_button(place) }}</p>
@@ -196,5 +321,6 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
 </div>
 </div>
+<div id="map">
 </div>
 {% endblock %}
