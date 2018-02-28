@@ -41,6 +41,9 @@
     search tags: {{ ', '.join(search_tags | sort) }}
   {% endif %}
 
+  {% set lat, lon = item.get_lat_lon() %}
+  <a href="#" class="show_on_map" id="map_{{ item.qid }}">show on map</a>
+
   {% set defunct_cats = item.defunct_cats() %}
   {% if defunct_cats %}
     <div class="alert alert-danger">
@@ -48,7 +51,6 @@
     article is in these categories: {{ ', '.join(defunct_cats) }}
     </div>
   {% endif %}
-  <p>
   {# <br>
   <ul>
     <li>Categories:
@@ -121,6 +123,7 @@ var group = L.featureGroup();
 var marker;
 var qid;
 var markers = {};
+var latlon = {};
 
 const pinColour = '#00ccff';
 
@@ -134,7 +137,7 @@ const markerHtmlStyles = `
   position: relative;
   border-radius: 1rem 1rem 0;
   transform: rotate(45deg);
-  border: 1px solid #FFFFFF`
+  border: 1px solid #FFFFFF`;
 
 const icon = L.divIcon({
   className: "my-custom-pin",
@@ -142,7 +145,7 @@ const icon = L.divIcon({
   labelAnchor: [-6, 0],
   popupAnchor: [0, -36],
   html: `<span style="${markerHtmlStyles}" />`
-})
+});
 
 const highlightColour = '#ff0000';
 
@@ -156,7 +159,7 @@ const highlightHtmlStyles = `
   position: relative;
   border-radius: 1rem 1rem 0;
   transform: rotate(45deg);
-  border: 1px solid #FFFFFF`
+  border: 1px solid #FFFFFF`;
 
 const highlightIcon = L.divIcon({
   className: "my-custom-pin",
@@ -164,16 +167,32 @@ const highlightIcon = L.divIcon({
   labelAnchor: [-6, 0],
   popupAnchor: [0, -36],
   html: `<span style="${highlightHtmlStyles}" />`
-})
+});
 
+function highlight(item, marker) {
+    if (current_highlight) {
+      current_highlight.className = '';
+    }
+    if (current_marker) {
+      current_marker.setIcon(icon);
+    }
+    item.className = 'highlight';
+    marker.setIcon(highlightIcon);
+    current_marker = marker;
+    current_highlight = item;
+}
 
-
+var show_on_map;
 {% for item in candidates %}
+  show_on_map = document.getElementById({{ ('map_' + item.qid) | tojson }});
+  show_on_map.addEventListener("click", zoom_to_item);
+
   marker = L.marker({{ item.get_lat_lon() | list }}, {
                     'title': {{ item.label_and_qid() | tojson }},
                     'icon': icon,
   });
   markers[{{ item.qid | tojson }}] = marker;
+  latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
   marker.addTo(group);
   marker.on('click', (e) => {
     var item = document.getElementById({{ item.qid | tojson }});
@@ -182,22 +201,27 @@ const highlightIcon = L.divIcon({
     if(scrolledY){
         window.scroll(0, scrolledY - 60);
     }
-    if (current_highlight) {
-      current_highlight.className = '';
-    }
-    if (current_marker) {
-      current_marker.setIcon(icon);
-    }
-    item.className = 'highlight';
-    e.target.setIcon(highlightIcon);
-    current_marker = e.target;
-    current_highlight = item;
+    highlight(item, e.target);
   });
 {% endfor %}
 
 {% if candidates %}
 map.fitBounds(group.getBounds());
 map.addLayer(group);
+
+function zoom_to_item(e) {
+  e.preventDefault();
+  console.log(this.id);
+  var qid = this.id.substring(4);
+  console.log(qid);
+  var lat = latlon[qid][0];
+  var lon = latlon[qid][1];
+  var item = document.getElementById(qid);
+  map.setView(new L.LatLng(lat, lon), 18);
+  marker = markers[qid]
+  highlight(item, marker);
+}
+
 {% endif %}
 
 </script>
