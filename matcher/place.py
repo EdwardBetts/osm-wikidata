@@ -32,7 +32,8 @@ skip_tags = {'route:road',
              'type=waterway',
              'waterway=river'
              'addr:street',
-             'type=associatedStreet'}
+             'type=associatedStreet',
+             'amenity'}
 
 def envelope(bbox):
     # note: different order for coordinates, xmin first, not ymin
@@ -636,6 +637,8 @@ class Place(Base):
                 if without_buildings:
                     tags.discard('building')
                     tags.discard('building=yes')
+
+            tags -= skip_tags
 
             item.tags = tags
             if qid in seen:
