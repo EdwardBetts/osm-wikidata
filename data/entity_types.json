@@ -1302,6 +1302,12 @@
     "dist": 2
 },
 {
+    "cats": ["Banks by country"],
+    "tags": ["amenity=bank", "building=office"],
+    "trim": ["bank"],
+    "dist": 0.5
+},
+{
     "cats": ["Student activity centers"],
     "tags": ["building"],
     "trim": [],
