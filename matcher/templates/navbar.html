@@ -35,7 +35,7 @@
           {{ dropdown_item('criteria_page') }}
         </div>
       </li>
-      {% if g.user.is_authenticated and g.user.username == 'Edward' %}
+      {% if g.user.is_authenticated and g.user.is_admin %}
           {{ nav_item('random_city') }}
       {% endif %}
     </ul>
