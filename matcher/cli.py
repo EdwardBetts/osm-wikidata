@@ -1,6 +1,6 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base, IsA, ItemIsA
+from .model import Item, Changeset, get_bad, Base
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata
 from datetime import datetime, timedelta
@@ -557,3 +557,13 @@ def place_chunks(place_identifier):
     for chunk in place.geojson_chunks():
         print(len(chunk), chunk[:100])
 
+@app.cli.command()
+def nominatim_refresh():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Place.query.filter_by(state='ready')
+    for place in q:
+        print(place.display_name)
+        place.refresh_nominatim()
+        sleep(10)
