@@ -64,3 +64,26 @@ def get_us_city(name, state):
         return
     assert ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit)
     return hit
+
+def reverse(osm_type, osm_id):
+    url = 'https://nominatim.openstreetmap.org/reverse'
+
+    params = {
+        'osm_type': osm_type[0].upper(),
+        'osm_id': osm_id,
+        'format': 'jsonv2',
+        'addressdetails': 1,
+        'email': current_app.config['ADMIN_EMAIL'],
+        'extratags': 1,
+        'namedetails': 1,
+        'accept-language': 'en',
+        'polygon_text': 1,
+    }
+    r = requests.get(url, params=params, headers=user_agent_headers())
+    if r.status_code == 500:
+        raise SearchError
+
+    try:
+        return json.loads(r.text, object_pairs_hook=OrderedDict)
+    except json.decoder.JSONDecodeError:
+        raise SearchError(r)
