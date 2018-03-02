@@ -554,6 +554,8 @@ def refresh_place(osm_type, osm_id):
     tables = database.get_tables()
     assert not any(t in tables for t in expect)
 
+    place.nominatim_refresh()
+    database.session.commit()
     return redirect_to_matcher(place)
 
 def get_existing(sort, name_filter):
