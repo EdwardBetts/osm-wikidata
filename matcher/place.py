@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship, backref, column_property, object_sessio
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
-from . import wikidata, matcher, wikipedia, overpass, utils
+from . import wikidata, matcher, wikipedia, overpass, utils, nominatim
 from collections import Counter
 from .overpass import oql_from_tag
 from time import time
@@ -122,11 +122,21 @@ class Place(Base):
         return self.area_in_sq_km > max_area
 
     def update_from_nominatim(self, hit):
-        keys = ('display_name', 'place_rank', 'category', 'type', 'icon',
-                'extratags', 'namedetails')
+        if self.place_id != int(hit['place_id']):
+            print((self.place_id, hit['place_id']))
+            self.place_id = hit['place_id']
+
+        keys = ('lat', 'lon', 'display_name', 'place_rank', 'category', 'type',
+                'icon', 'extratags', 'namedetails')
+        assert all(hit[n] is not None for n in ('lat', 'lon'))
         for n in keys:
             setattr(self, n, hit.get(n))
+        bbox = hit['boundingbox']
+        assert all(i is not None for i in bbox)
+        (self.south, self.north, self.west, self.east) = bbox
         self.address = [dict(name=n, type=t) for t, n in hit['address'].items()]
+        self.wikidata = hit['extratags'].get('wikidata')
+        self.geom = hit['geotext']
 
     def change_comment(self, item_count):
         if item_count == 1:
@@ -981,6 +991,11 @@ class Place(Base):
 
     def latest_matcher_run(self):
         return self.matcher_runs.order_by(PlaceMatcher.start.desc()).first()
+
+    def refresh_nominatim(self):
+        hit = nominatim.reverse(self.osm_type, self.osm_id)
+        self.update_from_nominatim(hit)
+        session.commit()
 
 class PlaceMatcher(Base):
     __tablename__ = 'place_matcher'
