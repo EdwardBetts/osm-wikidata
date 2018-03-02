@@ -456,11 +456,20 @@ class Changeset(Base):
     __tablename__ = 'changeset'
     id = Column(BigInteger, primary_key=True)
     created = Column(DateTime)
-    place_id = Column(BigInteger, ForeignKey('place.place_id'), index=True)
+    place_id = Column(BigInteger)
+    osm_type = Column(osm_type_enum, index=True)
+    osm_id = Column(BigInteger, index=True)
     item_id = Column(Integer)
     comment = Column(String)
     user_id = Column(Integer, ForeignKey(User.id))
     update_count = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['osm_type', 'osm_id'],
+            ['place.osm_type', 'place.osm_id']
+        ),
+    )
 
     user = relationship('User',
                         backref=backref('changesets',
