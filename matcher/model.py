@@ -330,7 +330,16 @@ class PlaceItem(Base):
     __tablename__ = 'place_item'
 
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
-    place_id = Column(BigInteger, ForeignKey('place.place_id'), primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    place_id = Column(BigInteger)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['osm_type', 'osm_id'],
+            ['place.osm_type', 'place.osm_id']
+        ),
+    )
 
     item = relationship('Item')
     place = relationship('Place')
