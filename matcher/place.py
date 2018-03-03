@@ -4,6 +4,7 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
+from sqlalchemy.sql.expression import false
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -69,6 +70,7 @@ class Place(Base):
     wikidata_query_timeout = Column(Boolean, default=False)
     wikidata = Column(String)
     item_types_retrieved = Column(Boolean, default=False)
+    index_hide = Column(Boolean, default=False)
 
     area = column_property(func.ST_Area(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
@@ -1040,6 +1042,7 @@ def get_top_existing(limit=39):
 
     q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
                             Place.area > 0,
+                            Place.index_hide == false(),
                             Place.candidate_count > 4)
                     .options(load_only(*cols))
                     .outerjoin(Changeset)
