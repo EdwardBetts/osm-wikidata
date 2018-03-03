@@ -362,7 +362,7 @@ class ItemCandidate(Base):
 
     @property
     def key(self):
-        return '{0.osm_type:s}_{0.osm_id:d}'.format(self)
+        return f'Q{self.item_id}-{self.osm_type:s}-{self.osm_id:d}'
 
     def get_match(self):
         endings = matcher.get_ending_from_criteria(self.tags)
