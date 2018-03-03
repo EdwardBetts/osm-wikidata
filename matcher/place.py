@@ -14,6 +14,7 @@ from .overpass import oql_from_tag
 from time import time
 from collections import defaultdict
 
+import json
 import subprocess
 import os.path
 import re
@@ -993,6 +994,59 @@ class Place(Base):
 
     def latest_matcher_run(self):
         return self.matcher_runs.order_by(PlaceMatcher.start.desc()).first()
+
+    def obj_for_json(self, include_geom=False):
+        keys = [
+            'osm_type',
+            'osm_id',
+            'display_name',
+            'name',
+            'extratags',
+            'address',
+            'namedetails',
+            'state',
+            'lat',
+            'lon',
+            'area_in_sq_km',
+            'name_for_changeset',
+            'name_for_change_comment',
+            'bbox',
+        ]
+        out = {key: getattr(self, key) for key in keys}
+        out['added'] = str(self.added)
+        if include_geom:
+            out['geom'] = json.loads(self.geojson)
+
+        items = []
+        for item in self.items:
+            if not item.sitelinks():
+                continue
+            cur = {
+                'labels': item.labels,
+                'qid': item.qid,
+                'url': item.wikidata_uri,
+                'item_identifiers': item.get_item_identifiers(),
+                'names': item.names(),
+                'sitelinks': item.sitelinks(),
+                'location': item.get_lat_lon(),
+            }
+            if item.categories:
+                cur['categories'] = item.categories
+
+            matches = [{
+                'osm_type': m.osm_type,
+                'osm_id': m.osm_id,
+                'dist': m.dist,
+                'label': m.label,
+            } for m in item.candidates]
+
+            if matches:
+                cur['matches'] = matches
+
+            items.append(cur)
+
+        out['items'] = items
+        return out
 
     def refresh_nominatim(self):
         hit = nominatim.reverse(self.osm_type, self.osm_id)
