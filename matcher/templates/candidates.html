@@ -109,7 +109,12 @@
 <script>
 var current_highlight;
 var current_marker;
+var geojson = {{ place.geojson | safe }};
 var map = L.map('map');
+var mapStyle = {fillOpacity: 0};
+var layer = L.geoJSON(geojson, {'style': mapStyle});
+layer.addTo(map);
+
 {% if not candidates %}
 var bounds = [[{{ place.north }}, {{place.west }}],
               [{{ place.south}}, {{ place.east}}]];
