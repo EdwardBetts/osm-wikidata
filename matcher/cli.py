@@ -3,6 +3,7 @@ from .view import app, get_top_existing, get_existing
 from .model import Item, Changeset, get_bad, Base
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata
+from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
@@ -567,3 +568,15 @@ def nominatim_refresh():
         print(place.display_name)
         place.refresh_nominatim()
         sleep(10)
+
+@app.cli.command()
+def hide_top_places_from_index():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    top_places = get_top_existing()
+    for p in top_places:
+        print((p.osm_type, p.osm_id, p.display_name))
+        p.index_hide = True
+
+    database.session.commit()
