@@ -19,6 +19,9 @@ import subprocess
 import os.path
 import re
 
+degrees = '(-?[0-9.]+)'
+re_box = re.compile(f'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
+
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
 skip_tags = {'route:road',
@@ -36,6 +39,20 @@ skip_tags = {'route:road',
              'addr:street',
              'type=associatedStreet',
              'amenity'}
+
+def bbox_chunk(bbox, n):
+    n = max(1, n)
+    (south, north, west, east) = bbox
+    ns = (north - south) / n
+    ew = (east - west) / n
+
+    chunks = []
+    for row in range(n):
+        for col in range(n):
+            chunk = (south + ns * row, south + ns * (row + 1),
+                    west + ew * col, west + ew * (col + 1))
+            chunks.append(chunk)
+    return chunks
 
 def envelope(bbox):
     # note: different order for coordinates, xmin first, not ymin
@@ -77,6 +94,8 @@ class Place(Base):
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
     srid = column_property(func.ST_SRID(geom))
     # match_ratio = column_property(candidate_count / item_count)
+    num_geom = column_property(func.ST_NumGeometries(cast(geom, Geometry)),
+                               deferred=True)
 
     items = relationship('Item',
                          secondary='place_item',
@@ -190,8 +209,6 @@ class Place(Base):
                 'place_rank', 'category', 'type', 'icon', 'extratags',
                 'namedetails')
         n = {k: hit[k] for k in keys if k in hit}
-        if hit['osm_type'] == 'node':
-            n['radius'] = 1000   # 1km
         bbox = hit['boundingbox']
         (n['south'], n['north'], n['west'], n['east']) = bbox
         n['geom'] = hit['geotext']
@@ -902,8 +919,7 @@ class Place(Base):
         return chunks
 
     def get_chunks(self):
-        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
-        bbox_chunks = self.chunk_n(chunk_size)
+        bbox_chunks = list(self.polygon_chunk(size=64))
 
         chunks = []
         for num, chunk in enumerate(bbox_chunks):
@@ -973,9 +989,8 @@ class Place(Base):
         return len(self.chunk_n(utils.calc_chunk_size(self.area_in_sq_km)))
 
     def geojson_chunks(self):
-        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
         chunks = []
-        for chunk in self.chunk_n(chunk_size):
+        for chunk in self.polygon_chunk(size=64):
             clip = func.ST_Intersection(Place.geom, envelope(chunk))
 
             geojson = (session.query(func.ST_AsGeoJSON(clip, 4))
@@ -992,6 +1007,21 @@ class Place(Base):
         if area < 10000:
             return 1
         return utils.calc_chunk_size(area, size=32)
+
+    def polygon_chunk(self, size=64):
+        stmt = (session.query(func.ST_Dump(Place.geom.cast(Geometry())).label('x'))
+                       .filter_by(place_id=self.place_id)
+                       .subquery())
+
+        q = session.query(stmt.c.x.path[1],
+                          func.ST_Area(stmt.c.x.geom.cast(Geography)) / (1000 * 1000),
+                          func.Box2D(stmt.c.x.geom))
+
+        for num, area, box2d in q:
+            chunk_size = utils.calc_chunk_size(area, size=size)
+            west, south, east, north = map(float, re_box.match(box2d).groups())
+            for chunk in bbox_chunk((south, north, west, east), chunk_size):
+                yield chunk
 
     def latest_matcher_run(self):
         return self.matcher_runs.order_by(PlaceMatcher.start.desc()).first()
