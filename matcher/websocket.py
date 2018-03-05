@@ -91,7 +91,7 @@ class MatcherSocket(object):
             print('wikidata unchunked')
             wikidata_items = place.items_from_wikidata()
         else:
-            chunks = list(place.chunk_n(chunk_size))
+            chunks = list(place.polygon_chunk(size=64))
 
             msg = 'downloading wikidata in {} chunks'.format(len(chunks))
             self.status(msg)
