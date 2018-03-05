@@ -723,6 +723,10 @@ def get_item_types(items, name=None):
         'Q27095213',  # shopping district
         'Q27095194',  # bookshop neighbourhood
         'Q277760',    # gatehouse
+        'Q15243209',  # historic district
+        'Q9826',      # high school
+        'Q159334',    # secondary school
+        'Q9842',      # primary school
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
