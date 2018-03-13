@@ -406,6 +406,10 @@ class ItemCandidate(Base):
 
     @property
     def label(self):
+        for key in 'bridge:name', 'lock_name':
+            if key in self.tags:
+                return self.tags[key]
+
         if 'name' in self.tags:
             name = self.tags['name']
             if 'addr:housename' in self.tags:
