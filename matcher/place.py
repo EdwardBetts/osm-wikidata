@@ -748,12 +748,6 @@ class Place(Base):
         except IndexError:
             return None
 
-    def database_loaded(self):
-        tables = get_tables()
-        expect = [self.prefix + '_' + t for t in ('line', 'point', 'polygon')]
-        if not all(t in tables for t in expect):
-            return
-
     def run_matcher(self, debug=False, progress=None):
         if progress is None:
             def progress(candidates, item):
