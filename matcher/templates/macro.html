@@ -31,7 +31,7 @@
        {% endif %}
 
      {% if show_tags %}
-	 <a href="#" class="show-tags-link" data-key="{{ c.key }}">[hide tags]</a>
+         <a href="#" class="show-tags-link" data-key="{{ c.key }}">[hide tags]</a>
      {% else %}
          <a href="#" class="show-tags-link" data-key="{{ c.key }}">[show tags]</a>
      {% endif %}
@@ -52,7 +52,7 @@
        {% for k, v in c.tags.items() if k != 'way_area' %}
         {% set tag = k + '=' + v %}
         {% if k in search_tags or tag in search_tags %}
-            <b>{{ tag }}</b>
+            <b>{{ tag }}</b> (OSM tag matches Wikidata or Wikipedia category)
         {% else %}
             {{ tag }}
         {% endif %}<br />
