@@ -126,7 +126,7 @@ class Item(Base):
             return self.label()
         labels = self.entity['labels']
         for lang in languages:
-            code = lang.wikimedia_language_code
+            code = code if isinstance(code, string) else lang.wikimedia_language_code
             if code in labels:
                 return labels[code]['value']
         return self.label()
@@ -427,7 +427,7 @@ class ItemCandidate(Base):
                 return self.tags[key]
 
         for lang in languages:
-            key = 'name:' + lang.iso_639_1
+            key = 'name:' + (lang if isinstance(lang) else lang.iso_639_1)
             if key in self.tags:
                 return self.tags[key]
 
