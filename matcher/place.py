@@ -745,16 +745,21 @@ class Place(Base):
         lang_count = Counter()
 
         candidate_count = 0
+        candidate_has_language_count = 0
         for c in self.items_with_candidates().with_entities(ItemCandidate):
             candidate_count += 1
+            candidate_has_language = False
             for lang in c.languages():
                 lang_count[lang] += 1
+                candidate_has_language = True
+            if candidate_has_language:
+                candidate_has_language_count += 1
 
         if candidate_count > 10:
             # truncate the long tail of languages
             lang_count = {key: count
                           for key, count in lang_count.items()
-                          if count > 1}
+                          if count / candidate_has_language_count > 0.1 }
 
         return sorted(lang_count.items(),
                       key=lambda i:i[1],
