@@ -29,6 +29,7 @@ skip_tags = {'route:road',
              'waterway=river'}
 
 edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school']
+tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
     'Q1021290': edu,                          # music school
@@ -39,9 +40,9 @@ extra_keys = {
     'Q2385804': edu,                          # educational institution
     'Q47530379': edu,                         # agricultural college
     'Q1469420': edu,                          # adult education centre
-    'Q11303': ['Key:height'],                 # skyscraper
-    'Q18142': ['Key:height'],                 # high-rise building
-    'Q33673393': ['Key:height'],              # multi-storey building
+    'Q11303': tall,                           # skyscraper
+    'Q18142': tall,                           # high-rise building
+    'Q33673393': tall,                        # multi-storey building
     'Q641226': ['Tag:leisure=stadium'],       # arena
     'Q2301048': ['Tag:aeroway=helipad'],      # special airfield
     'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],     # nightclub
