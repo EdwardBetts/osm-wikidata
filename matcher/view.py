@@ -6,7 +6,7 @@ from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
-from .forms import AccountSettingsForm
+# from .forms import AccountSettingsForm
 
 from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response
 from flask_login import current_user, logout_user, LoginManager, login_required
@@ -407,7 +407,8 @@ def get_place_language(place):
     else:
         codes = [code for code, count in place.languages() if '_' not in code]
 
-    languages = [Language.query.filter_by(iso_639_1=code).one() for code in codes]
+    languages = [Language.query.filter_by(iso_639_1=code).one_or_none() or code for code in codes]
+    languages = [lang for lang in languages if lang]
 
     return languages
 
