@@ -1,0 +1,48 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+{% extends "base.html" %}
+
+{% block script %}
+
+<script src="{{ url_for('static', filename='Sortable/Sortable.min.js') }}"></script>
+<script src="{{ url_for('static', filename='Sortable/jquery.binding.js') }}"></script>
+
+<script>
+var el = document.getElementById('items');
+var sortable = Sortable.create(el);
+var osm_type = {{ place.osm_type | tojson }};
+var osm_id = {{ place.osm_id | tojson }};
+var save_language_order = {{ url_for('save_language_order',
+                                      osm_type=place.osm_type,
+                                      osm_id=place.osm_id) | tojson }};
+
+$('#save').click((e) => {
+  var new_order = sortable.toArray().join(';');
+  window.location.href = save_language_order + '?order=' + new_order;
+});
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container my-2">
+<div class="row">
+<div class="col">
+
+  {{ place_box(place) }}
+
+  <p>Drag languages to adjust the order preference.</p>
+
+  <ul id="items"  class="list-group">
+  {% for item in languages %}
+    <li data-id="{{ item.code }}" class="list-group-item">{{ item.lang.label() if item.lang else item.code }} ({{ item.count }} OSM objects with a name tagged with this language)</li>
+  {% endfor %}
+  </ul>
+
+  <button class="btn btn-primary mt-2" id="save">save language order</button>
+
+</div>
+</div>
+</div>
+
+{% endblock %}
