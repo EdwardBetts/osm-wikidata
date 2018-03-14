@@ -121,6 +121,16 @@ class Item(Base):
         elif labels:
             return list(labels.values())[0]['value']
 
+    def label_best_language(self, languages):
+        if not languages:
+            return self.label()
+        labels = self.entity['labels']
+        for lang in languages:
+            code = lang.wikimedia_language_code
+            if code in labels:
+                return labels[code]['value']
+        return self.label()
+
     @classmethod
     def get_by_qid(cls, qid):
         if qid and len(qid) > 1 and qid[0].upper() == 'Q' and qid[1:].isdigit():
@@ -380,6 +390,10 @@ class ItemCandidate(Base):
         m = match.get_all_matches(self.tags, wikidata_names, endings)
         return m
 
+    def languages(self):
+        return {key[5:] for key in self.tags.keys()
+                if key.startswith('name:')}
+
     def matching_tags(self):
         tags = []
 
@@ -403,6 +417,21 @@ class ItemCandidate(Base):
     @property
     def wikidata_tag(self):
         return self.tags.get('wikidata') or None
+
+    def label_best_language(self, languages):
+        if not languages:
+            return self.label
+
+        for key in 'bridge:name', 'lock_name':
+            if key in self.tags:
+                return self.tags[key]
+
+        for lang in languages:
+            key = 'name:' + lang.iso_639_1
+            if key in self.tags:
+                return self.tags[key]
+
+        return self.label
 
     @property
     def label(self):
@@ -548,3 +577,41 @@ def get_bad(items):
     q = (session.query(BadMatch.item_id)
                 .filter(BadMatch.item_id.in_([i.item_id for i in items])))
     return {item_id for item_id, in q}
+
+class Language(Base):
+    __tablename__ = 'language'
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
+    iso_639_1 = Column(String(2))
+    iso_639_2 = Column(String(3))
+    iso_639_3 = Column(String(3))
+    wikimedia_language_code = Column(String, unique=True)
+    qid = column_property('Q' + cast(item_id, String))
+    labels = relationship('LanguageLabel',
+                          lazy='dynamic',
+                          foreign_keys=lambda: LanguageLabel.item_id)
+
+    def english_name(self):
+        return self.labels.filter_by(wikimedia_language_code='en').one().label
+
+    def self_name(self):
+        ''' Name of this language in this language. '''
+        return self.labels.filter_by(language=self).one().label
+
+    def label(self):
+        name = self.self_name()
+        if self.wikimedia_language_code != 'en':
+            name += ' / ' + self.english_name()
+        return f'{name} [{self.iso_639_1}]'
+
+class LanguageLabel(Base):
+    __tablename__ = 'language_label'
+    item_id = Column(Integer,
+                     ForeignKey(Language.item_id),
+                     primary_key=True,
+                     autoincrement=False)
+    wikimedia_language_code = Column(String,
+                                     ForeignKey(Language.wikimedia_language_code),
+                                     primary_key=True)
+    label = Column(String, nullable=False)
+
+    language = relationship('Language', foreign_keys=[wikimedia_language_code])
