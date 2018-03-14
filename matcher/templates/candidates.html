@@ -319,9 +319,9 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
                         osm_type=place.osm_type,
                         osm_id=place.osm_id) }}">edit</a></p>
     <ol>
-    {% for lang, count in languages_with_counts %}
-      <li>{{ lang if lang is string else lang.label() }}
-          ({{ count }} OSM objects are tagged with a name in this language)
+    {% for l in languages_with_counts %}
+      <li>{{ l.lang.label() if l.lang else lang.code }}
+          ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
       </li>
     {% endfor %}
     </ol>

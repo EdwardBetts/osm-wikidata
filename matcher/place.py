@@ -741,7 +741,7 @@ class Place(Base):
                 print(qid)
             items[qid].entity = entity
 
-    def languages(self):
+    def languages_osm(self):
         lang_count = Counter()
 
         candidate_count = 0
@@ -764,6 +764,33 @@ class Place(Base):
         return sorted(lang_count.items(),
                       key=lambda i:i[1],
                       reverse=True)
+
+    def languages_wikidata(self):
+        lang_count = Counter()
+        item_count = self.items.count()
+        for item in self.items:
+            if item.entity and 'labels' in item.entity:
+                for lang in item.entity['labels'].keys():
+                    if '-' in lang:
+                        continue
+                    lang_count[lang] += 1
+
+        if item_count > 10:
+            # truncate the long tail of languages
+            lang_count = {key: count
+                          for key, count in lang_count.items()
+                          if count / item_count > 0.1 }
+
+        return sorted(lang_count.items(),
+                      key=lambda i:i[1],
+                      reverse=True)
+
+    def languages(self):
+        wikidata = self.languages_wikidata()
+        osm = dict(self.languages_osm())
+
+        return [{'code': code, 'wikidata': count, 'osm': osm.get(code)}
+                for code, count in wikidata]
 
     def most_common_language(self):
         lang_count = Counter()

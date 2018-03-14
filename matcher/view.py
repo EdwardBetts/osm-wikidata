@@ -381,15 +381,17 @@ def get_bad_matches(place):
 
     return set(tuple(row) for row in q)
 
+def get_wikidata_language(code):
+    return (Language.query.filter_by(wikimedia_language_code=code)
+                          .one_or_none())
+
 @app.route('/languages/<osm_type>/<int:osm_id>')
 def switch_languages(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
 
-    languages = [{
-        'count': count,
-        'lang': Language.query.filter_by(iso_639_1=code).one_or_none(),
-        'code': code,
-    } for code, count in place.languages() if '_' not in code]
+    languages = place.languages()
+    for l in languages:
+        l['lang'] = get_wikidata_language(l['code'])
 
     return render_template('switch_languages.html',
                            place=place,
@@ -401,19 +403,23 @@ def read_language_order():
     return json.loads(cookie_json) if cookie_json else {}
 
 def get_place_language_with_counts(place):
-    languages = [(code, count) for code, count in place.languages() if '_' not in code]
+    languages = place.languages()
 
     cookie = read_language_order()
     if place.identifier in cookie:
-        lookup = dict(languages)
-        languages = [(code, lookup[code]) for code in cookie[place.identifier]
+        lookup = {l['code']: l for l in languages}
+        languages = [lookup[code] for code in cookie[place.identifier]
                      if code in lookup]
 
-    return [(Language.query.filter_by(iso_639_1=code).one_or_none() or code, count)
-            for code, count in languages]
+    for l in languages:
+        l['lang'] = get_wikidata_language(l['code'])
+
+    return languages
 
 def get_place_language(place):
-    return [lang for lang, count in get_place_language_with_counts(place)]
+    return [l['lang']
+            for l in get_place_language_with_counts(place)
+            if l['lang']]
 
 @app.route('/save_language_order/<osm_type>/<int:osm_id>')
 def save_language_order(osm_type, osm_id):
@@ -471,7 +477,7 @@ def candidates(osm_type, osm_id):
     bad_matches = get_bad_matches(place)
 
     languages_with_counts = get_place_language_with_counts(place)
-    languages = [lang for lang, count in languages_with_counts]
+    languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
     return render_template('candidates.html',
                            place=place,
