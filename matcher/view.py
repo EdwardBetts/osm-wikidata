@@ -400,17 +400,20 @@ def read_language_order():
     cookie_json = request.cookies.get(cookie_name)
     return json.loads(cookie_json) if cookie_json else {}
 
-def get_place_language(place):
+def get_place_language_with_counts(place):
+    languages = [(code, count) for code, count in place.languages() if '_' not in code]
+
     cookie = read_language_order()
     if place.identifier in cookie:
-        codes = cookie[place.identifier]
-    else:
-        codes = [code for code, count in place.languages() if '_' not in code]
+        lookup = dict(languages)
+        languages = [(code, lookup[code]) for code in cookie[place.identifier]
+                     if code in lookup]
 
-    languages = [Language.query.filter_by(iso_639_1=code).one_or_none() or code for code in codes]
-    languages = [lang for lang in languages if lang]
+    return [(Language.query.filter_by(iso_639_1=code).one_or_none() or code, count)
+            for code, count in languages]
 
-    return languages
+def get_place_language(place):
+    return [lang for lang, count in get_place_language_with_counts(place)]
 
 @app.route('/save_language_order/<osm_type>/<int:osm_id>')
 def save_language_order(osm_type, osm_id):
@@ -467,7 +470,8 @@ def candidates(osm_type, osm_id):
     upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
     bad_matches = get_bad_matches(place)
 
-    languages = get_place_language(place)
+    languages_with_counts = get_place_language_with_counts(place)
+    languages = [lang for lang, count in languages_with_counts]
 
     return render_template('candidates.html',
                            place=place,
@@ -481,6 +485,7 @@ def candidates(osm_type, osm_id):
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
                            candidates=items,
+                           languages_with_counts=languages_with_counts,
                            languages=languages)
 
 @app.route('/test_candidates/<osm_type>/<int:osm_id>')

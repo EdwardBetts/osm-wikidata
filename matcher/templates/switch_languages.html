@@ -35,7 +35,7 @@ $('#save').click((e) => {
 
   <ul id="items"  class="list-group">
   {% for item in languages %}
-    <li data-id="{{ item.code }}" class="list-group-item">{{ item.lang.label() if item.lang else item.code }} ({{ item.count }} OSM objects with a name tagged with this language)</li>
+    <li data-id="{{ item.code }}" class="list-group-item">{{ item.lang.label() if item.lang else item.code }} ({{ item.count }} OSM objects are tagged with a name in this language)</li>
   {% endfor %}
   </ul>
 
