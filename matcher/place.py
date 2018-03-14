@@ -771,7 +771,7 @@ class Place(Base):
         for item in self.items:
             if item.entity and 'labels' in item.entity:
                 for lang in item.entity['labels'].keys():
-                    if '-' in lang:
+                    if '-' in lang or lang == 'ceb':
                         continue
                     lang_count[lang] += 1
 
