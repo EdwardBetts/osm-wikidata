@@ -595,11 +595,15 @@ class Language(Base):
 
     def self_name(self):
         ''' Name of this language in this language. '''
-        return self.labels.filter_by(language=self).one().label
+        name = self.labels.filter_by(language=self).one_or_none()
+        if name:
+            return name.label
 
     def label(self):
         name = self.self_name()
-        if self.wikimedia_language_code != 'en':
+        if not name:
+            name = self.english_name()
+        elif self.wikimedia_language_code != 'en':
             name += ' / ' + self.english_name()
         return f'{name} [{self.iso_639_1}]'
 
