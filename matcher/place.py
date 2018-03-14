@@ -755,12 +755,6 @@ class Place(Base):
             if candidate_has_language:
                 candidate_has_language_count += 1
 
-        if candidate_count > 10:
-            # truncate the long tail of languages
-            lang_count = {key: count
-                          for key, count in lang_count.items()
-                          if count / candidate_has_language_count > 0.1 }
-
         return sorted(lang_count.items(),
                       key=lambda i:i[1],
                       reverse=True)
@@ -779,7 +773,7 @@ class Place(Base):
             # truncate the long tail of languages
             lang_count = {key: count
                           for key, count in lang_count.items()
-                          if count / item_count > 0.1 }
+                          if count / item_count > 0.2 }
 
         return sorted(lang_count.items(),
                       key=lambda i:i[1],
