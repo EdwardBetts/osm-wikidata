@@ -320,7 +320,7 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
                         osm_id=place.osm_id) }}">edit</a></p>
     <ol>
     {% for l in languages_with_counts %}
-      <li>{{ l.lang.label() if l.lang is define and l.lang is not none else lang.code }}
+      <li>{{ l.lang.label() if l.lang is defined and l.lang is not none else lang.code }}
           ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
       </li>
     {% endfor %}
