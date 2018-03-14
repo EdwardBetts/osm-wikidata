@@ -1,13 +1,14 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
                overpass, mail, browse, edit)
 from .utils import cache_filename, get_radius, get_int_arg, is_bot
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
+from .forms import AccountSettingsForm
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
@@ -380,6 +381,51 @@ def get_bad_matches(place):
 
     return set(tuple(row) for row in q)
 
+@app.route('/languages/<osm_type>/<int:osm_id>')
+def switch_languages(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+
+    languages = [{
+        'count': count,
+        'lang': Language.query.filter_by(iso_639_1=code).one_or_none(),
+        'code': code,
+    } for code, count in place.languages() if '_' not in code]
+
+    return render_template('switch_languages.html',
+                           place=place,
+                           languages=languages)
+
+def read_language_order():
+    cookie_name = 'language_order'
+    cookie_json = request.cookies.get(cookie_name)
+    return json.loads(cookie_json) if cookie_json else {}
+
+def get_place_language(place):
+    cookie = read_language_order()
+    if place.identifier in cookie:
+        codes = cookie[place.identifier]
+    else:
+        codes = [code for code, count in place.languages() if '_' not in code]
+
+    languages = [Language.query.filter_by(iso_639_1=code).one() for code in codes]
+
+    return languages
+
+@app.route('/save_language_order/<osm_type>/<int:osm_id>')
+def save_language_order(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+    order = request.args.get('order').split(';')
+
+    cookie_name = 'language_order'
+    place_identifier = f'{osm_type}/{osm_id}'
+
+    cookie = read_language_order()
+    cookie[place_identifier] = order
+
+    flash('language order updated')
+    response = make_response(redirect(place.candidates_url()))
+    response.set_cookie(cookie_name, json.dumps(cookie))
+    return response
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
@@ -420,6 +466,8 @@ def candidates(osm_type, osm_id):
     upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
     bad_matches = get_bad_matches(place)
 
+    languages = get_place_language(place)
+
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
@@ -431,7 +479,8 @@ def candidates(osm_type, osm_id):
                            bad_matches=bad_matches,
                            full_count=full_count,
                            multiple_match_count=multiple_match_count,
-                           candidates=items)
+                           candidates=items,
+                           languages=languages)
 
 @app.route('/test_candidates/<osm_type>/<int:osm_id>')
 def test_candidates(osm_type, osm_id):
@@ -481,13 +530,15 @@ def no_match(osm_type, osm_id):
     full_count = place.items_with_candidates_count()
 
     items_without_matches = place.items_without_candidates()
+    languages = get_place_language(place)
 
     return render_template('no_match.html',
                            place=place,
                            osm_id=osm_id,
                            tab_pages=tab_pages,
                            items_without_matches=items_without_matches,
-                           full_count=full_count)
+                           full_count=full_count,
+                           languages=languages)
 
 @app.route('/already_tagged/<osm_type>/<int:osm_id>')
 def already_tagged(osm_type, osm_id):
@@ -498,11 +549,13 @@ def already_tagged(osm_type, osm_id):
     items = [item for item in place.items_with_candidates()
              if any('wikidata' in c.tags for c in item.candidates)]
 
+    languages = get_place_language(place)
     return render_template('already_tagged.html',
                            place=place,
                            osm_id=osm_id,
                            tab_pages=tab_pages,
-                           items=items)
+                           items=items,
+                           languages=languages)
 
 # disable matcher for nodes, it isn't finished
 # @app.route('/matcher/node/<int:osm_id>')

@@ -26,7 +26,8 @@
         ✕
       {% endif %}
   {% endif %}
-  <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a>
+  <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
+    {{- item.label_best_language(languages) }} ({{ item.qid }})</a>
 
   {% set search_tags = item.tags %}
   {% set isa_list = item.isa %}
@@ -312,8 +313,18 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
   {% endif %}
 
   {% if candidates %}
-    {% set lang=place.most_common_language() %}
-    <p>{{ refresh_button(place) }}most common language: {{ lang }}</p>
+
+    <p>Language order preference.
+    <a href="{{ url_for('switch_languages',
+                        osm_type=place.osm_type,
+                        osm_id=place.osm_id) }}">edit</a></p>
+    <ol>
+    {% for lang in languages %}
+      <li>{{ lang.label() -}}</li>
+    {% endfor %}
+    </ol>
+
+    <p>{{ refresh_button(place) }}</p>
 
     {% if filter_okay and not upload_okay %}
       <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>

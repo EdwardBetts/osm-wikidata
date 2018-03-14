@@ -302,7 +302,11 @@ class Place(Base):
 
     @property
     def prefix(self):
-        return 'osm_{}'.format(self.place_id)
+        return f'osm_{self.place_id}'
+
+    @property
+    def identifier(self):
+        return f'{self.osm_type}/{self.osm_id}'
 
     @property
     def overpass_filename(self):
@@ -326,7 +330,7 @@ class Place(Base):
         for t in get_tables():
             if not t.startswith(self.prefix):
                 continue
-            engine.execute('drop table if exists {}'.format(t))
+            engine.execute(f'drop table if exists {t}')
         engine.execute('commit')
 
         overpass_dir = current_app.config['OVERPASS_DIR']
@@ -736,6 +740,17 @@ class Place(Base):
             if debug:
                 print(qid)
             items[qid].entity = entity
+
+    def languages(self):
+        lang_count = Counter()
+
+        for c in self.items_with_candidates().with_entities(ItemCandidate):
+            for lang in c.languages():
+                lang_count[lang] += 1
+
+        return sorted(lang_count.items(),
+                      key=lambda i:i[1],
+                      reverse=True)
 
     def most_common_language(self):
         lang_count = Counter()
