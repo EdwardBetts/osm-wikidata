@@ -211,6 +211,7 @@ class Item(Base):
             ('P240', 'faa', 'FAA airport code'),
             ('P296', 'ref', 'station code'),
             ('P722', 'uic_ref', 'UIC station code'),
+            ('P836', 'ref:gss', 'UK Government Statistical Service code'),
             ('P2815', 'ref', 'ESR station code'),
             ('P1216', 'HE_ref', 'National Heritage List for England number'),
             ('P4755', 'ref', 'UK railway station code'),
@@ -220,7 +221,8 @@ class Item(Base):
         tags = {}
         for claim, osm_key, label in property_map:
             values = [i['mainsnak']['datavalue']['value']
-                      for i in self.entity['claims'].get(claim, [])]
+                      for i in self.entity['claims'].get(claim, [])
+                      if 'datavalue' in i['mainsnak']]
             if values:
                 tags[osm_key] = (values, label)
         return tags
