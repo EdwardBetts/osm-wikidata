@@ -609,10 +609,7 @@ class Place(Base):
         else:
             endpoint = 'candidates'
 
-        return url_for(endpoint,
-                       osm_type=self.osm_type,
-                       osm_id=self.osm_id,
-                       **kwargs)
+        return self.place_url(endpoint, **kwargs)
 
     def place_url(self, endpoint, **kwargs):
         return url_for(endpoint,
