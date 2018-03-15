@@ -4,7 +4,7 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -817,7 +817,8 @@ class Place(Base):
                                 .join(Item)
                                 .filter(Item.entity.isnot(None),
                                         PlaceItem.place == self,
-                                        PlaceItem.done != true())
+                                        or_(PlaceItem.done.is_(None),
+                                            PlaceItem.done != true()))
                                 .order_by(PlaceItem.item_id))
 
         total = place_items.count()
@@ -863,7 +864,6 @@ class Place(Base):
             place_item.done = True
 
             if num % 100 == 0:
-                print('commit')
                 session.commit()
 
         self.state = 'ready'
