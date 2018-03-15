@@ -166,7 +166,8 @@ class Item(Base):
 
     def disused_tags(self):
         tags = set()
-        prefixes = ('disused', 'was', 'abandoned')
+        prefixes = ('disused', 'was', 'abandoned', 'demolished',
+                    'destroyed', 'ruins')
         for i in self.tags:
             key = i.split('=')[0] if '=' in i else i
             if key in disused_prefix_key:
