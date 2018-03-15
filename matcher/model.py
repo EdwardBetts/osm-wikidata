@@ -393,7 +393,7 @@ class ItemCandidate(Base):
 
     def languages(self):
         return {key[5:] for key in self.tags.keys()
-                if key.startswith('name:') and len(key) == 7}
+                if key.startswith('name:')}
 
     def matching_tags(self):
         tags = []
