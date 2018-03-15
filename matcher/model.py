@@ -349,7 +349,8 @@ class PlaceItem(Base):
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
     osm_type = Column(osm_type_enum, primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
-    place_id = Column(BigInteger)
+    place_id = Column(BigInteger)  # unused, replaced by osm_type & osm_id
+    done = Column(Boolean)
 
     __table_args__ = (
         ForeignKeyConstraint(

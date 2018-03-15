@@ -602,6 +602,8 @@ def refresh_place(osm_type, osm_id):
 
     refresh_type = request.form['type']
 
+    place.reset_all_items_to_not_done()
+
     if refresh_type == 'matcher':
         place.state = 'osm2pgsql'
         database.session.commit()

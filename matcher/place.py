@@ -4,7 +4,7 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
-from sqlalchemy.sql.expression import false
+from sqlalchemy.sql.expression import true, false
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
@@ -794,6 +794,18 @@ class Place(Base):
         except IndexError:
             return None
 
+    def reset_all_items_to_not_done(self):
+        place_items = (PlaceItem.query
+                                .join(Item)
+                                .filter(Item.entity.isnot(None),
+                                        PlaceItem.place == self,
+                                        PlaceItem.done == true())
+                                .order_by(PlaceItem.item_id))
+
+        for place_item in place_items:
+            place_item.done = False
+        session.commit()
+
     def run_matcher(self, debug=False, progress=None):
         if progress is None:
             def progress(candidates, item):
@@ -801,8 +813,19 @@ class Place(Base):
         conn = session.bind.raw_connection()
         cur = conn.cursor()
 
-        items = self.items.filter(Item.entity.isnot(None)).order_by(Item.item_id)
-        for item in items:
+        place_items = (PlaceItem.query
+                                .join(Item)
+                                .filter(Item.entity.isnot(None),
+                                        PlaceItem.place == self,
+                                        PlaceItem.done != true())
+                                .order_by(PlaceItem.item_id))
+
+        total = place_items.count()
+        # too many items means something has gone wrong
+        assert total < 40000
+        for num, place_item in enumerate(place_items):
+            item = place_item.item
+
             if debug:
                 print('searching for', item.label())
                 print(item.tags)
@@ -836,6 +859,12 @@ class Place(Base):
                 else:
                     c = ItemCandidate(**i, item=item)
                     session.add(c)
+
+            place_item.done = True
+
+            if num % 100 == 0:
+                print('commit')
+                session.commit()
 
         self.state = 'ready'
         self.item_count = self.items.count()
