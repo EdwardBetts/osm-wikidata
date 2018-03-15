@@ -408,7 +408,7 @@ class Place(Base):
             if IsA.query.get(item_id):
                 continue
             i = IsA(item_id=item_id, entity=entity)
-            session.add(i)
+            session.merge(i)
         session.commit()
 
         type_pairs = wikidata.find_superclasses(all_types)
@@ -471,7 +471,7 @@ class Place(Base):
                 existing = ItemIsA.query.get((item_id, type_id))
                 if not existing:
                     isa = ItemIsA(item_id=item_id, isa_id=type_id)
-                    session.add(isa)
+                    session.merge(isa)
         self.item_types_retrieved = True
         session.commit()
 
