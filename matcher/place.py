@@ -773,11 +773,11 @@ class Place(Base):
             # truncate the long tail of languages
             lang_count = {key: count
                           for key, count in lang_count.items()
-                          if count / item_count > 0.3 }
+                          if count / item_count > 0.2 }
 
         return sorted(lang_count.items(),
-                      key=lambda i:i[1],
-                      reverse=True)
+                      key=lambda i: i[1],
+                      reverse=True)[:10]
 
     def languages(self):
         wikidata = self.languages_wikidata()
