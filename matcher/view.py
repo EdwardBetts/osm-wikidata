@@ -951,6 +951,7 @@ def api_item_match(wikidata_id):
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
     qid = 'Q{}'.format(item_id)
+    sort = request.args.get('sort')
 
     place = Place.query.filter_by(wikidata=qid).one_or_none()
     entity = wikidata.get_entity(qid)
@@ -963,6 +964,9 @@ def browse_page(item_id):
         name = place.name
 
     rows = wikidata.next_level_places(qid, entity)
+
+    if sort and sort in {'area', 'population'}:
+        rows.sort(key=lambda i: i[sort] if i[sort] else 0)
 
     return render_template('browse.html',
                            qid=qid,
