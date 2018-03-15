@@ -12,6 +12,7 @@ from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia
 from .overpass import oql_from_tag
+from .utils import capfirst
 from collections import defaultdict
 
 Base = declarative_base()
@@ -602,11 +603,11 @@ class Language(Base):
 
     def label(self):
         name = self.self_name()
-        if not name:
+        if not name:  # self label missing for language
             name = self.english_name()
-        elif self.wikimedia_language_code != 'en':
-            name += ' / ' + self.english_name()
-        return f'{name} [{self.iso_639_1}]'
+        elif self.wikimedia_language_code != 'en':  # add name in English
+            name = capfirst(name) + ' / ' + capfirst(self.english_name())
+        return f'{name} [{self.wikimedia_language_code}]'
 
 class LanguageLabel(Base):
     __tablename__ = 'language_label'
