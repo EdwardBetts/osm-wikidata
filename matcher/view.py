@@ -424,13 +424,17 @@ def get_place_language(place):
 @app.route('/save_language_order/<osm_type>/<int:osm_id>')
 def save_language_order(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
-    order = request.args.get('order').split(';')
+    order = request.args.get('order')
+    if not order:
+        flash('order parameter missing')
+        url = place.place_url('switch_languages')
+        return redirect(url)
 
     cookie_name = 'language_order'
     place_identifier = f'{osm_type}/{osm_id}'
 
     cookie = read_language_order()
-    cookie[place_identifier] = order
+    cookie[place_identifier] = order.split(';')
 
     flash('language order updated')
     response = make_response(redirect(place.candidates_url()))
