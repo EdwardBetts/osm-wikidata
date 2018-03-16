@@ -364,22 +364,46 @@ class PlaceItem(Base):
     item = relationship('Item')
     place = relationship('Place')
 
+class OsmCandidate(Base):
+    __tablename__ = 'osm_candidate'
+    osm_type = Column(osm_type_enum, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    name = Column(String)
+    tags = Column(postgresql.JSON)
+    geom = Column(Geography(srid=4326, spatial_index=True))
+
 class ItemCandidate(Base):
     __tablename__ = 'item_candidate'
 
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
-    osm_id = Column(BigInteger, primary_key=True)
     osm_type = Column(osm_type_enum, primary_key=True)
-    name = Column(String)
+    osm_id = Column(BigInteger, primary_key=True)
     dist = Column(Float)
-    tags = Column(postgresql.JSON)
     planet_table = Column(String)
     src_id = Column(BigInteger)
+    name = Column(String)
+    tags = Column(postgresql.JSON)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['osm_type', 'osm_id'],
+            ['osm_candidate.osm_type', 'osm_candidate.osm_id']
+        ),
+    )
 
     item = relationship('Item', backref=backref('candidates',
                                                 lazy='dynamic',
                                                 cascade='save-update, merge, delete, delete-orphan'))
+    candidate = relationship(OsmCandidate)
 
+#     @property
+#     def name(self):
+#         return self.candidate.name
+#
+#     @property
+#     def tags(self):
+#         return self.candidate.tags
+#
     @property
     def key(self):
         return f'Q{self.item_id}-{self.osm_type:s}-{self.osm_id:d}'

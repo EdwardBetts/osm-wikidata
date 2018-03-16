@@ -1,17 +1,21 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base
+from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
 from datetime import datetime, timedelta
 from tabulate import tabulate
-from sqlalchemy import inspect, func
+from sqlalchemy import inspect, func, cast
+from geoalchemy2 import Geometry, Geography
 from time import time, sleep
 from pprint import pprint
 from sqlalchemy.types import Enum
 from sqlalchemy.schema import CreateTable, CreateIndex
 from sqlalchemy.dialects.postgresql.base import CreateEnumType
+import math
+import os.path
+import re
 import json
 import click
 import socket
@@ -579,4 +583,172 @@ def hide_top_places_from_index():
         print((p.osm_type, p.osm_id, p.display_name))
         p.index_hide = True
 
+    database.session.commit()
+
+def wikidata_chunk_size(area):
+    return 1 if area < 10000 else utils.calc_chunk_size(area, size=32)
+
+def chunk_n(bbox, n):
+    n = max(1, n)
+    (south, north, west, east) = bbox
+    ns = (north - south) / n
+    ew = (east - west) / n
+
+    chunks = []
+    for row in range(n):
+        for col in range(n):
+            chunk = (south + ns * row, south + ns * (row + 1),
+                    west + ew * col, west + ew * (col + 1))
+            chunks.append(chunk)
+    return chunks
+
+
+@app.cli.command()
+@click.argument('place_identifier')
+def show_polygons(place_identifier):
+    place = get_place(place_identifier)
+    num = 0
+    for chunk in place.polygon_chunk(size=64):
+        num += 1
+        print(chunk)
+
+    print()
+    print(num)
+
+    return
+    num = '(-?[0-9.]+)'
+    re_box = re.compile(f'^BOX\({num} {num},{num} {num}\)$')
+
+    # select ST_Dump(geom::geometry) as poly from place where osm_id=1543125
+    stmt = (database.session.query(func.ST_Dump(Place.geom.cast(Geometry())).label('x'))
+                            .filter_by(place_id=place.place_id)
+                            .subquery())
+
+    q = database.session.query(stmt.c.x.path[1],
+                               func.ST_Area(stmt.c.x.geom.cast(Geography)) / (1000 * 1000),
+                               func.Box2D(stmt.c.x.geom))
+    print(q)
+
+    for num, area, box2d in q:
+        # west, south, east, noth
+        # BOX(135.8536855 20.2145811,136.3224209 20.6291059)
+
+        size = wikidata_chunk_size(area)
+        west, south, east, north = map(float, re_box.match(box2d).groups())
+        bbox = (south, north, west, east)
+
+        # print((num, area, size, box2d))
+
+        for chunk in chunk_n(bbox, size):
+            print(chunk)
+
+@app.cli.command()
+def operator():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = ItemCandidate.query.filter(ItemCandidate.tags['operator'] != None)
+
+    for c in q:
+        tags = c.tags
+        print((c.osm_type, c.osm_id))
+        pprint(tags)
+        print()
+
+@app.cli.command()
+def load_languages():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    filename = 'data/languages.json'
+
+    if not os.path.exists(filename):
+
+        query = '''
+    SELECT ?lang WHERE {
+      ?lang wdt:P424 ?code .
+      ?lang wdt:P218 ?iso .
+    }'''
+
+        ids = [wikidata.wd_uri_to_qid(row['lang']['value'])
+               for row in wikidata.run_query(query)]
+
+        print(len(ids), 'languages')
+
+        out = open('languages', 'w')
+        for qid, entity in wikidata.entity_iter(ids):
+            # item_id = int(qid[1:])
+            print((qid, entity['labels'].get('en')))
+            print((qid, entity), file=out)
+        out.close()
+
+    property_map = {
+        'P218': 'iso_639_1',
+        'P219': 'iso_639_2',
+        'P220': 'iso_639_3',
+        'P424': 'wikimedia_language_code',
+    }
+
+    known_lang = set()
+    for line in open(filename):
+        qid, entity = eval(line)
+        if qid == 'Q9129':
+            continue
+        item_id = int(qid[1:])
+        claims = entity['claims']
+        print(entity['labels']['en']['value'])
+
+        item = Language(item_id=item_id)
+
+        for property_key, field in property_map.items():
+            values = claims.get(property_key)
+            if not values:
+                continue
+            # print(field, len(values))
+            # French ISO 639-2 codes: fre and fra
+            if len(values) != 1:
+                continue
+            v = values[0]['mainsnak']['datavalue']['value']
+            setattr(item, field, v)
+        known_lang.add(item.wikimedia_language_code)
+        # database.session.add(item)
+    # database.session.commit()
+
+    print()
+    for line in open(filename):
+        qid, entity = eval(line)
+        if qid == 'Q9129':
+            continue
+        print(entity['labels']['en']['value'])
+        item_id = int(qid[1:])
+        for k, v in entity['labels'].items():
+            if k not in known_lang:
+                continue
+            label = LanguageLabel(item_id=item_id,
+                                  wikimedia_language_code=k,
+                                  label=v['value'])
+            database.session.add(label)
+
+        database.session.commit()
+
+@app.cli.command()
+@click.argument('place_identifier')
+def place_languages(place_identifier):
+    place = get_place(place_identifier)
+
+    for lang in place.languages():
+        print(lang)
+
+@app.cli.command()
+def populate_osm_candidate_table():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    total = ItemCandidate.query.count()
+    print(f'total: {total}')
+    for num, ic in enumerate(ItemCandidate.query):
+        print(f'{num}/{total} {num/total:.2%}  {ic.name}')
+
+        fields = ['osm_id', 'osm_type', 'name', 'tags']
+        c = OsmCandidate(**{k: getattr(ic, k) for k in fields})
+        database.session.merge(c)
     database.session.commit()
