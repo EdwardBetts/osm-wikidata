@@ -225,7 +225,7 @@ class MatcherSocket(object):
         def progress(candidates, item):
             num = len(candidates)
             noun = 'candidate' if num == 1 else 'candidates'
-            count = ': {num} {noun} found'.format(num=num, noun=noun)
+            count = f': {num} {noun} found'
             msg = item.label_and_qid() + count
             self.item_line(msg)
 
