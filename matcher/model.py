@@ -376,25 +376,25 @@ class ItemCandidate(Base):
     __tablename__ = 'item_candidate'
 
     item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
-    osm_type = Column(osm_type_enum, primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    name = Column(String)
     dist = Column(Float)
+    tags = Column(postgresql.JSON)
     planet_table = Column(String)
     src_id = Column(BigInteger)
-    name = Column(String)
-    tags = Column(postgresql.JSON)
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ['osm_type', 'osm_id'],
-            ['osm_candidate.osm_type', 'osm_candidate.osm_id']
-        ),
-    )
+#    __table_args__ = (
+#        ForeignKeyConstraint(
+#            ['osm_type', 'osm_id'],
+#            ['osm_candidate.osm_type', 'osm_candidate.osm_id']
+#        ),
+#    )
 
     item = relationship('Item', backref=backref('candidates',
                                                 lazy='dynamic',
                                                 cascade='save-update, merge, delete, delete-orphan'))
-    candidate = relationship(OsmCandidate)
+    # candidate = relationship(OsmCandidate)
 
 #     @property
 #     def name(self):
