@@ -466,15 +466,16 @@ class Place(Base):
                         remove.add(b)
             item_types[item_qid].difference_update(remove)
 
-        done = set()
+        new_isa = set()
         for item_id, types in item_types.items():
-            for type_id in set(types):
-                key = (item_id, type_id)
-                if key in done or ItemIsA.query.get(key):
-                    continue
-                isa = ItemIsA(item_id=item_id, isa_id=type_id)
-                session.merge(isa)
-                done.add(key)
+            new_isa |= {(item_id, type_id)
+                        for type_id in set(types)
+                        if not ItemIsA.query.get((item_id, type_id))}
+
+        for item_id, type_id in new_isa:
+            isa = ItemIsA(item_id=item_id, isa_id=type_id)
+            session.add(isa)
+
         self.item_types_retrieved = True
         session.commit()
 
