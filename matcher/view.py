@@ -990,11 +990,12 @@ def matcher_wikidata(item_id):
     entity = wikidata.get_entity(qid)
     q = browse.qid_to_search_string(qid, entity)
     place = browse.place_from_qid(qid, q=q)
-    if place:  # search using wikidata query and nominatim
+    # search using wikidata query and nominatim
+    if place and place.osm_type != 'node':
         return redirect(place.matcher_progress_url())
 
     # give up and redirect to search page
-    return redirect(url_for('search_page', q=q))
+    return redirect(url_for('search_results', q=q))
 
 @region.cache_on_arguments()
 def get_tag_list(sort):
