@@ -9,7 +9,7 @@
     "cats": ["Forts by country"],
     "tags": ["historic=fort", "castle_type=fortress"],
     "trim": ["fort"],
-    "wikidata": "Q57821",
+    "wikidata": "Q1785071",
     "dist": 2
 },
 {
@@ -24,6 +24,7 @@
     "cats": ["Docks (maritime)"],
     "tags": ["waterway=dock"],
     "trim": ["dock"],
+    "wikidata": "Q124282",
     "dist": 2
 },
 {
@@ -38,6 +39,7 @@
     "tags": ["man_made=tower", "man_made=water_tower", "building=tower"],
     "trim": ["tower"],
     "check_housename": true,
+    "wikidata": "Q12518",
     "dist": 2
 },
 {
@@ -66,6 +68,7 @@
     "cats": ["Museums by country"],
     "tags": ["tourism=museum", "historic=museum", "building=museum", "tourism=gallery", "tourism=attraction"],
     "trim": ["museum"],
+    "wikidata": "Q33506",
     "dist": 1
 },
 {
@@ -80,6 +83,7 @@
     "tags": ["amenity=hospital", "building=hospital"],
     "trim": ["hospital"],
     "check_housename": true,
+    "wikidata": "Q16917",
     "dist": 2
 },
 {
@@ -87,6 +91,7 @@
     "tags": ["amenity=clinic", "building=clinic"],
     "trim": ["clinic"],
     "check_housename": true,
+    "wikidata": "Q1774898",
     "dist": 2
 },
 {
@@ -94,6 +99,7 @@
     "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory"],
     "trim": ["telescope", "observatory", "astronomical observatory"],
     "check_housename": true,
+    "wikidata": "Q1254933",
     "dist": 3
 },
 {
@@ -101,6 +107,7 @@
     "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park", "shop=department_store" ],
     "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
     "check_housename": true,
+    "wikidata": "Q11315",
     "dist": 5
 },
 {
@@ -110,6 +117,7 @@
              "historic=archaeological_site"],
     "trim": ["castle", "castell", "museum"],
     "check_housename": true,
+    "wikidata": "Q23413",
     "dist": 1
 },
 {
@@ -117,6 +125,7 @@
     "tags": ["amenity=place_of_worship", "building=church", "man_made=tower", "disused:amenity=place_of_worship"],
     "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of"],
     "check_housename": true,
+    "wikidata": "Q1370598",
     "dist": 1
 },
 {
@@ -124,6 +133,7 @@
     "tags": ["amenity=place_of_worship"],
     "trim": ["temple"],
     "check_housename": true,
+    "wikidata": "Q842402",
     "dist": 1
 },
 {
@@ -131,6 +141,7 @@
     "tags": ["building=chapel", "amenity=place_of_worship"],
     "trim": ["chapel"],
     "check_housename": true,
+    "wikidata": "Q108325",
     "dist": 1
 },
 {
