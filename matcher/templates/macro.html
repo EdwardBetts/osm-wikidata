@@ -53,7 +53,7 @@
         {% set tag = k + '=' + v %}
         {% if k in search_tags or tag in search_tags %}
             <b>{{ tag }}</b> (OSM tag matches Wikidata or Wikipedia category)
-        {% elif k in identifiers and v in identifiers[k][0] %}
+        {% elif identifiers and k in identifiers and v in identifiers[k][0] %}
           <b>{{ tag }}</b> (OSM tag matches Wikidata identifier)
         {% else %}
             {{ tag }}
