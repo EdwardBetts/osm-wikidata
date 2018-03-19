@@ -1,6 +1,5 @@
 'use strict';
 
-var current_item = 0;
 var changeset_id = null;
 var update_count = 0;
 var comment;
@@ -40,7 +39,7 @@ function start_upload() {
 }
 
 function update_progress(num) {
-    var progress = (current_item * 100) / end;
+    var progress = (num * 100) / end;
     $('#upload-progress').css('width', progress + '%');
 }
 
