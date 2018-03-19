@@ -39,7 +39,7 @@ function start_upload() {
 }
 
 function update_progress(num) {
-    var progress = (num * 100) / end;
+    var progress = ((num + 1) * 100) / end;
     $('#upload-progress').css('width', progress + '%');
 }
 
