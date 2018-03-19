@@ -13,6 +13,7 @@ from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
+from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
@@ -959,7 +960,10 @@ def browse_page(item_id):
     qid = 'Q{}'.format(item_id)
     sort = request.args.get('sort')
 
-    place = Place.query.filter_by(wikidata=qid).one_or_none()
+    try:
+        place = Place.query.filter_by(wikidata=qid).one_or_none()
+    except MultipleResultsFound:
+        place = None
     entity = wikidata.get_entity(qid)
 
     if not place:
