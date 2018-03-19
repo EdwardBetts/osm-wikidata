@@ -4,6 +4,7 @@ from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime,
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
 from sqlalchemy.orm import relationship, backref, column_property, object_session, deferred, load_only
+from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -109,6 +110,14 @@ class Place(Base):
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+
+    @classmethod
+    def get_by_wikidata(cls, qid):
+        q = cls.query.filter_by(wikidata=qid)
+        try:
+            return q.one_or_none()
+        except MultipleResultsFound:
+            return None
 
     def get_address_key(self, key):
         if isinstance(self.address, dict):

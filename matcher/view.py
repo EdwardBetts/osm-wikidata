@@ -960,7 +960,7 @@ def browse_page(item_id):
     qid = 'Q{}'.format(item_id)
     sort = request.args.get('sort')
 
-    place = Place.query.filter_by(wikidata=qid).one_or_none()
+    place = Place.get_by_wikidata(qid)
     entity = wikidata.get_entity(qid)
 
     if not place:
@@ -984,10 +984,7 @@ def browse_page(item_id):
 @app.route('/matcher/Q<int:item_id>')
 def matcher_wikidata(item_id):
     qid = 'Q{}'.format(item_id)
-    try:
-        place = Place.query.filter_by(wikidata=qid).one_or_none()
-    except MultipleResultsFound:
-        place = None
+    place = Place.get_by_wikidata(qid)
     if place:  # already in the database
         return redirect(place.matcher_progress_url())
 
