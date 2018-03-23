@@ -460,6 +460,7 @@ class Place(Base):
 
         if not_in_db:
             self.save_isa(not_in_db, all_types)
+            session.commit()
 
         type_pairs = set()
         for isa in IsA.query:
@@ -483,7 +484,7 @@ class Place(Base):
 
         for item_id, type_id in new_isa:
             isa = ItemIsA(item_id=item_id, isa_id=type_id)
-            session.add(isa)
+            session.merge(isa)
 
         self.item_types_retrieved = True
         session.commit()
