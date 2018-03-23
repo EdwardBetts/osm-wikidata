@@ -139,7 +139,6 @@ class Place(Base):
         if osm_type in {'way', 'relation'}:
             place = cls.get_by_osm(osm_type, osm_id)
             if place:
-                place.ensure_item_types_retrieved()
                 return place
         abort(404)
 

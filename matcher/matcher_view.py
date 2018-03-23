@@ -98,6 +98,7 @@ def matcher_done(osm_type, osm_id):
     else:
         msg = 'The matcher has finished.'
     flash(msg)
+    place.ensure_item_types_retrieved()
     return redirect(place.candidates_url())
 
 @matcher_blueprint.route('/replay/<osm_type>/<int:osm_id>')
