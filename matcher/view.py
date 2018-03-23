@@ -1213,7 +1213,7 @@ def user_page(username):
 
     return render_template('user_page.html', user=user)
 
-@app.route('/account', methods=['GET', 'POST'])
+@app.route('/account')
 @login_required
 def account_page():
     return render_template('user/account.html', user=g.user)
