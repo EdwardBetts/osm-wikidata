@@ -536,14 +536,14 @@
 {
     "cats": ["Parks by country", "National Natural Landmarks"],
     "tags": ["leisure=park", "landuse=recreation_ground", "leisure=common", "boundary=national_park"],
-    "trim": ["park", "gardens", "common", "estate", "national natural landmark"],
+    "trim": ["park", "gardens", "common", "estate", "national natural landmark", "state park", "national park"],
     "area": true,
     "dist": 5
 },
 {
     "cats": ["National parks by country"],
     "tags": ["leisure=nature_reserve", "boundary=national_park"],
-    "trim": [],
+    "trim": ["state park", "national park", "park"],
     "area": true,
     "dist": 20
 },
