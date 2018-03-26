@@ -147,6 +147,13 @@ var marker;
 var qid;
 var markers = {};
 var latlon = {};
+var osm_layer = null;
+
+function drop_osm_layer() {
+  if(!osm_layer) return;
+  map.removeLayer(osm_layer);
+  osm_layer = null;
+}
 
 const pinColour = '#00ccff';
 
@@ -219,6 +226,7 @@ var show_on_map;
   latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
   marker.addTo(group);
   marker.on('click', (e) => {
+    drop_osm_layer();
     var item = document.getElementById({{ item.qid | tojson }});
     item.scrollIntoView();
     var scrolledY = window.scrollY;
@@ -235,26 +243,26 @@ map.addLayer(group);
 
 function zoom_to_item(e) {
   e.preventDefault();
-  console.log(this.id);
   var qid = this.id.substring(4);
-  console.log(qid);
-  var lat = latlon[qid][0];
-  var lon = latlon[qid][1];
-  var item = document.getElementById(qid);
-  map.setView(new L.LatLng(lat, lon), 18);
+
   marker = markers[qid]
+  var item = document.getElementById(qid);
   highlight(item, marker);
 
   var url = item_candidate_json_url.replace('Q' + sentinel, qid);
-  console.log(url);
 
   $.getJSON(url).done((data) => {
+    drop_osm_layer();
+    if(data.candidates.length == 0) {
+      map.setView(marker.getLatLng(), 18);
+      return;
+    }
     var mapStyle = {fillOpacity: 0};
-    var layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
+    osm_layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
     $.each(data.candidates, (index, candidate) => {
-      layer.addData(candidate.geojson);
+      osm_layer.addData(candidate.geojson);
     });
-    bounds = layer.getBounds();
+    bounds = osm_layer.getBounds();
     bounds.extend(marker.getLatLng());
     map.fitBounds(bounds);
   });
