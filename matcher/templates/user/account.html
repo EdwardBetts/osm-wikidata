@@ -8,6 +8,10 @@
 <div class="col">
   <h1>{{ user.username }}</h1>
 
+  {% set changeset_count = user.changesets.count() %}
+
+  {% if changeset_count %}
+  <p>You have uploaded {{ '{:,d}'.format(changeset_countformat) }} changesets.</p>
   <h4>Changesets</h4>
   <table class="table table-hover">
   <thead>
@@ -51,6 +55,7 @@
   {% endfor %}
   </tbody>
   </table>
+  {% endif %}
 
   <h4>Matcher runs</h4>
 
