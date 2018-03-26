@@ -224,6 +224,13 @@ def find_item_matches(cur, item, prefix, debug=False):
         if not cur_match:
             continue
 
+        sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
+               f'from {prefix}_{src_type} '
+               f'where osm_id={src_id}')
+        cur.execute(sql)
+        row = cur.fetchone()
+        geom = row and row[0]
+
         candidate = {
             'osm_type': osm_type,
             'osm_id': osm_id,
@@ -233,6 +240,7 @@ def find_item_matches(cur, item, prefix, debug=False):
             # 'match': match.match_type.name,
             'planet_table': src_type,
             'src_id': src_id,
+            'geom': geom,
         }
         candidates.append(candidate)
     return candidates
