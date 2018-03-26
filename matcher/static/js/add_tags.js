@@ -3,7 +3,7 @@
 var changeset_id = null;
 var update_count = 0;
 var comment;
-var end = matches.length;
+var end;
 
 var url = ws_scheme + '://' + location.host + '/websocket/add_tags/' + osm_type + '/' + osm_id;
 
@@ -24,10 +24,26 @@ function start_upload() {
     $('#save').prop('disabled', true);
     $('#status').text('opening changeset');
 
+    var to_upload = [];
+    $.each(matches, (index, value) => {
+        var select = $('#select_' + value.qid)
+        select.attr('disabled', true);
+        if (select.prop('checked')) {
+            to_upload.push(value)
+        }
+    });
+
+    if (to_upload.length == 0) {
+        // FIXME: show error to user
+        return;
+    }
+
+    end = to_upload.length;
+
     connection = new WebSocket(url);
 
     connection.onopen = function () {
-        send({'comment': comment, 'matches': matches});
+        send({'comment': comment, 'matches': to_upload});
     };
 
     // Log errors

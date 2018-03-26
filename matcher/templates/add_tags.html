@@ -51,10 +51,13 @@
 
     <p>{{ '{:,d}'.format(table | count) }} matches to upload</p>
 
+    <p>Untick the checkbox next to a match if you don't want the wikidata tag added to OSM.</p>
+
     <div class="my-3">
     <table class="table table-sm table-hover">
     <thead>
       <tr>
+        <th></th>
         <th>Wikidata</th>
         <th>OSM</th>
         <th>distance</th>
@@ -65,6 +68,7 @@
     {% set lang = place.most_common_language() %}
     {% for i, c in table %}
       <tr id="{{ i.qid }}">
+        <td><input type="checkbox" id="select_{{ i.qid }}" checked="checked"/></td>
         <td>
           <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label(lang=lang) }} ({{ i.qid }})</a>
         </td>
