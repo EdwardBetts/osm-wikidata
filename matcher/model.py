@@ -383,6 +383,8 @@ class ItemCandidate(Base):
     tags = Column(postgresql.JSON)
     planet_table = Column(String)
     src_id = Column(BigInteger)
+    geom = Column(Geography(srid=4326, spatial_index=True))
+    geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
 
 #    __table_args__ = (
 #        ForeignKeyConstraint(
