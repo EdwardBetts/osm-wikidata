@@ -67,7 +67,7 @@
     {% set duration = run.duration() %}
     <tr>
     <td>{{ run.start.strftime('%a, %d %b %Y %H:%S') }}</td>
-    <td><a href="{{ run.place.candidates_url }}">{{ run.place.name_for_changeset }}</a></td>
+    <td><a href="{{ run.place.candidates_url() }}">{{ run.place.name_for_changeset }}</a></td>
     <td>
         {% if duration %}
             {{ '{:.1f}'.format(duration.total_seconds() / 60) }} minutes
