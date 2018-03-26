@@ -752,3 +752,50 @@ def populate_osm_candidate_table():
         c = OsmCandidate(**{k: getattr(ic, k) for k in fields})
         database.session.merge(c)
     database.session.commit()
+
+@app.cli.command()
+@click.argument('qid')
+def get_isa(qid):
+    pass
+
+@app.cli.command()
+def load_item_candidate_geom():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    tables = database.get_tables()
+
+    conn = database.session.bind.raw_connection()
+    cur = conn.cursor()
+
+    q = ItemCandidate.query.filter(ItemCandidate.geom.is_(None))
+    total = q.count()
+
+    for num, c in enumerate(q):
+        for place in c.item.places:
+            table = place.prefix + '_' + c.planet_table
+            if table not in tables:
+                continue
+            sql = f'select ST_AsText(ST_Transform(way, 4326)) from {table} where osm_id={c.src_id}'
+            cur.execute(sql)
+            row = cur.fetchone()
+            if row is None:
+                continue
+            geom = row[0]
+            if len(geom) > 40_000:
+                continue
+            print(f'{num}/{total} ({num/total:.2%}) ', table, c.src_id, len(geom))
+            c.geom = geom
+            break
+        if num % 100 == 0:
+            database.session.commit()
+
+    database.session.commit()
+
+@app.cli.command()
+@click.argument('place_identifier')
+def candidate_shapes(place_identifier):
+    place = get_place(place_identifier)
+
+    for item in place.items_with_candidates():
+        for c in item.candidates:
+            print(c.key, ' ', c.geojson)
