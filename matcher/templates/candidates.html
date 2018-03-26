@@ -119,11 +119,14 @@
 
 </style>
 {% endblock %}
+{% set sentinel = 314159 %}
 {% block script %}
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
 <script>
 var current_highlight;
 var current_marker;
+var sentinel = {{ sentinel }};
+var item_candidate_json_url = {{ url_for('item_candidate_json', item_id=sentinel) | tojson }};
 var geojson = {{ place.geojson | safe }};
 var map = L.map('map');
 var mapStyle = {fillOpacity: 0};
@@ -203,6 +206,7 @@ function highlight(item, marker) {
 }
 
 var show_on_map;
+{# FIXME: convert this jinja2 for loop to a loop in javascript #}
 {% for item in candidates %}
   show_on_map = document.getElementById({{ ('map_' + item.qid) | tojson }});
   show_on_map.addEventListener("click", zoom_to_item);
@@ -240,6 +244,20 @@ function zoom_to_item(e) {
   map.setView(new L.LatLng(lat, lon), 18);
   marker = markers[qid]
   highlight(item, marker);
+
+  var url = item_candidate_json_url.replace('Q' + sentinel, qid);
+  console.log(url);
+
+  $.getJSON(url).done((data) => {
+    var mapStyle = {fillOpacity: 0};
+    var layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
+    $.each(data.candidates, (index, candidate) => {
+      layer.addData(candidate.geojson);
+    });
+    bounds = layer.getBounds();
+    bounds.extend(marker.getLatLng());
+    map.fitBounds(bounds);
+  });
 }
 
 {% endif %}

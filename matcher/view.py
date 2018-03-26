@@ -1221,10 +1221,17 @@ def account_page():
 @app.route('/account/settings', methods=['GET', 'POST'])
 @login_required
 def account_settings_page():
-    form = AccountSettingsForm(obj=g.user)
-    if form.validate_on_submit():
-        form.populate_obj(current_user)
-        database.session.commit()
-        flash('Account details updated.')
-        return redirect(url_for(request.endpoint))
-    return render_template('user/account.html', form=form)
+    return render_template('user/settings.html')
+
+@app.route('/item_candidate/Q<int:item_id>.json')
+def item_candidate_json(item_id):
+    item = Item.query.get(item_id)
+    candidates = [{
+        'osm_id': c.osm_id,
+        'osm_type': c.osm_type,
+        'geojson': json.loads(c.geojson),
+        'key': c.key,
+    } for c in item.candidates]
+
+    return jsonify(qid=item.qid,
+                   candidates=candidates)
