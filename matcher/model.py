@@ -474,7 +474,7 @@ class ItemCandidate(Base):
         if 'name' in self.tags:
             name = self.tags['name']
             if 'addr:housename' in self.tags:
-                return '{} (house name: {})'.format(name, self.tags['addr:housename'])
+                return f'{name} (house name: {self.tags["addr:housename"]})'
             else:
                 return name
 
@@ -486,11 +486,17 @@ class ItemCandidate(Base):
         for k, v in self.tags.items():
             if 'name' in k:
                 return v
-        return '{}/{}'.format(self.osm_type, self.osm_id)
+
+        if all(tag in self.tags for tag in ('addr:housenumber', 'addr:street')):
+            housenumber = self.tags['addr:housenumber']
+            street = self.tags['addr:street']
+            return f'{housenumber} {street}'
+
+        return f'{self.osm_type}/{self.osm_id}'
 
     @property
     def url(self):
-        return '{}/{}/{}'.format(osm_api_base, self.osm_type, self.osm_id)
+        return f'{osm_api_base}/{self.osm_type}/{self.osm_id}'
 
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'
