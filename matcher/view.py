@@ -1231,7 +1231,7 @@ def item_candidate_json(item_id):
         'osm_type': c.osm_type,
         'geojson': json.loads(c.geojson),
         'key': c.key,
-    } for c in item.candidates]
+    } for c in item.candidates if c.geojson]
 
     return jsonify(qid=item.qid,
                    candidates=candidates)
