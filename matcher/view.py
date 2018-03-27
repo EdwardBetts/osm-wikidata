@@ -871,13 +871,7 @@ def api_osm_list(existing, found):
         osm.append(i)
     return osm
 
-@app.route('/api/1/item/Q<int:wikidata_id>')
-def api_item_match(wikidata_id):
-    '''API call: find matches for Wikidata item
-
-    Optional parameter: radius (in metres)
-    '''
-
+def api_get(wikidata_id):
     qid = 'Q' + str(wikidata_id)
     entity = wikidata.WikidataItem.retrieve_item(qid)
     if not entity:
@@ -951,9 +945,57 @@ def api_item_match(wikidata_id):
     data['found_matches'] = bool(found)
     data['osm'] = osm
 
+    return data
+
+@app.route('/api/1/item/Q<int:wikidata_id>')
+def api_item_match(wikidata_id):
+    '''API call: find matches for Wikidata item
+
+    Optional parameter: radius (in metres)
+    '''
+
+    data = api_get(wikidata_id)
+
     response = jsonify(data)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+
+@app.route('/api/1/names/Q<int:wikidata_id>')
+def api_item_names(wikidata_id):
+    api_data = api_get(wikidata_id)
+
+    def json_data(**kwargs):
+        response = jsonify(**kwargs)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+
+    if not api_data.get('osm'):
+        return json_data(found=False,
+                         labels=False,
+                         message='item not found in OSM')
+
+    for osm in api_data['osm']:
+        osm['names'] = {k[5:]: v for k, v in osm['tags'].items()
+                        if k.startswith('name:')}
+        osm['name_count'] = len(osm['names'])
+
+    picked = max(api_data['osm'], key=lambda osm: osm['name_count'])
+    osm_type, osm_id = picked['type'], picked['id']
+    url = f'https://www.openstreetmap.org/{osm_type}/{osm_id}'
+
+    data = {}
+    if picked['name_count']:
+        data['names'] = picked['names']
+        data['labels'] = True
+    else:
+        data['message'] = 'no labels found in OSM'
+        data['labels'] = False
+
+    return json_data(found=True,
+                     osm_type=osm_type,
+                     osm_id=osm_id,
+                     osm_url=url,
+                     **data)
 
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
