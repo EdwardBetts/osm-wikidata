@@ -222,6 +222,7 @@ var show_on_map;
                     'title': {{ item.label_and_qid() | tojson }},
                     'icon': icon,
   });
+  marker.bindTooltip({{ item.label_and_qid() | tojson }});
   markers[{{ item.qid | tojson }}] = marker;
   latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
   marker.addTo(group);
