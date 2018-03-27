@@ -1268,6 +1268,9 @@ def account_settings_page():
 @app.route('/item_candidate/Q<int:item_id>.json')
 def item_candidate_json(item_id):
     item = Item.query.get(item_id)
+    if item is None:
+        return jsonify(qid=f'Q{item_id}', candidates=[])
+
     candidates = [{
         'osm_id': c.osm_id,
         'osm_type': c.osm_type,
