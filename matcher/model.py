@@ -212,8 +212,9 @@ class Item(Base):
             ('P296', 'ref', 'station code'),
             ('P722', 'uic_ref', 'UIC station code'),
             ('P836', 'ref:gss', 'UK Government Statistical Service code'),
-            ('P2815', 'ref', 'ESR station code'),
             ('P1216', 'HE_ref', 'National Heritage List for England number'),
+            ('P2253', 'ref:edubase', 'EDUBase URN'),
+            ('P2815', 'ref', 'ESR station code'),
             ('P4755', 'ref', 'UK railway station code'),
             ('P4803', 'ref', 'Amtrak station code'),
         ]
