@@ -221,6 +221,7 @@ class Item(Base):
             ('P239', 'icao', 'ICAO airport code'),
             ('P240', 'faa', 'FAA airport code'),
             ('P296', 'ref', 'station code'),
+            ('P649', 'ref:nrhp', 'NRHP reference number'),
             ('P722', 'uic_ref', 'UIC station code'),
             ('P836', 'ref:gss', 'UK Government Statistical Service code'),
             ('P856', 'website', 'website'),
