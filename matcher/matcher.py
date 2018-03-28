@@ -203,7 +203,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         except Exception:
             admin_level = None
         names = {k: v for k, v in osm_tags.items()
-                 if 'name' in k and k not in bad_name_fields}
+                 if ('name' in k and k not in bad_name_fields) or k == 'operator'}
 
         if item_identifiers:
             for k, (values, label) in item_identifiers.items():
