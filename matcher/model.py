@@ -170,6 +170,8 @@ class Item(Base):
         prefixes = ('disused', 'was', 'abandoned', 'demolished',
                     'destroyed', 'ruins')
         for i in self.tags:
+            if i == 'amenity':  # too generic
+                continue
             key = i.split('=')[0] if '=' in i else i
             if key in disused_prefix_key:
                 tags |= {prefix + ':' + i for prefix in prefixes}
@@ -189,9 +191,17 @@ class Item(Base):
         if not tags:
             return
 
-        cond = ("((tags->'{}') = '{}')".format(*tag.split('='))
-                if '=' in tag
-                else "(tags ? '{}')".format(tag) for tag in tags)
+        cond = []
+        for tag in tags:
+            if '=' not in tag:
+                cond.append(f"(tags ? '{tag}')")
+                continue
+            k, v = tag.split('=')
+            cond.append(f"((tags->'{k}') = '{v}')")
+            if '_' in v:
+                space = v.replace('_', ' ')
+                cond.append(f"((tags->'{k}') = '{space}')")
+
         return ' or\n '.join(cond)
 
     def instanceof(self):
