@@ -197,10 +197,11 @@ class Item(Base):
                 cond.append(f"(tags ? '{tag}')")
                 continue
             k, v = tag.split('=')
-            cond.append(f"((tags->'{k}') = '{v}')")
-            if '_' in v:
-                space = v.replace('_', ' ')
-                cond.append(f"((tags->'{k}') = '{space}')")
+            cond.append(f"('{v}' = any(string_to_array((tags->'{k}'), ';')))")
+            if '_' not in v:
+                continue
+            space = v.replace('_', ' ')
+            cond.append(f"('{space}' = any(string_to_array((tags->'{k}'), ';')))")
 
         return ' or\n '.join(cond)
 
