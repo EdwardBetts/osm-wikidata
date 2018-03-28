@@ -454,7 +454,7 @@ class ItemCandidate(Base):
         if not languages:
             return self.label
 
-        for key in 'bridge:name', 'lock_name':
+        for key in 'bridge:name', 'tunnel:name', 'lock_name':
             if key in self.tags:
                 return self.tags[key]
 
