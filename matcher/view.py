@@ -848,9 +848,7 @@ def changesets():
 def api_overpass_error(data, error):
     data['error'] = error
     data['response'] = 'error'
-    response = jsonify(data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    return data
 
 def api_osm_list(existing, found):
     osm = []
