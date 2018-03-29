@@ -1196,6 +1196,7 @@ class Place(Base):
         return self.overpass_is_in
 
     def suggest_larger_areas(self):
+        ret = []
         for e in reversed(self.is_in()):
             osm_type, osm_id, bounds = e['type'], e['id'], e['bounds']
             if osm_type == self.osm_type and osm_id == self.osm_id:
@@ -1211,8 +1212,12 @@ class Place(Base):
             if area_in_sq_km < 10 or area_in_sq_km > 20_000:
                 continue
             place = Place.from_osm(osm_type, osm_id)
-            if place:
-                yield place
+            if not place:
+                continue
+            ret.append(place)
+
+        ret.sort(key=lambda place: place.area_in_sq_km)
+        return ret
 
 
 class PlaceMatcher(Base):
