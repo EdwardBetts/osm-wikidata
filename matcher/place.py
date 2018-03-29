@@ -90,6 +90,7 @@ class Place(Base):
     wikidata = Column(String)
     item_types_retrieved = Column(Boolean, default=False)
     index_hide = Column(Boolean, default=False)
+    overpass_is_in = deferred(Column(JSON))
 
     area = column_property(func.ST_Area(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
@@ -110,6 +111,18 @@ class Place(Base):
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
+
+    @classmethod
+    def from_osm(cls, osm_type, osm_id):
+        place = cls.get_by_osm(osm_type, osm_id)
+        if place:
+            return place
+
+        hit = nominatim.reverse(osm_type, osm_id)
+        place = Place.from_nominatim(hit)
+        session.add(place)
+        session.commit()
+        return place
 
     @classmethod
     def get_by_wikidata(cls, qid):
@@ -145,6 +158,10 @@ class Place(Base):
     @hybrid_property
     def area_in_sq_km(self):
         return self.area / (1000 * 1000)
+
+    @property
+    def type_and_id(self):
+        return (self.osm_type, self.osm_id)
 
     @property
     def too_big(self):
@@ -1165,6 +1182,33 @@ class Place(Base):
         hit = nominatim.reverse(self.osm_type, self.osm_id)
         self.update_from_nominatim(hit)
         session.commit()
+
+    def is_in(self):
+        if self.overpass_is_in:
+            return self.overpass_is_in
+
+        # self.overpass_is_in = overpass.is_in(self.overpass_type, self.osm_id)
+        self.overpass_is_in = overpass.is_in_lat_lon(self.lat, self.lon)
+        session.commit()
+        return self.overpass_is_in
+
+    def suggest_larger_areas(self):
+        for e in reversed(self.is_in()):
+            osm_type, osm_id, bounds = e['type'], e['id'], e['bounds']
+            if osm_type == self.osm_type and osm_id == self.osm_id:
+                continue
+
+            box = func.ST_MakeEnvelope(bounds['minlon'], bounds['minlat'],
+                                       bounds['maxlon'], bounds['maxlat'], 4326)
+
+            q = func.ST_Area(box.cast(Geography))
+            bbox_area = session.query(q).scalar()
+            area_in_sq_km = bbox_area / (1000 * 1000)
+
+            if area_in_sq_km > 20_000:
+                continue
+            yield Place.from_osm(osm_type, osm_id)
+
 
 class PlaceMatcher(Base):
     __tablename__ = 'place_matcher'

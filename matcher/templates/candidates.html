@@ -288,6 +288,19 @@ function zoom_to_item(e) {
     <p>Latest matcher run: {{ run.start.strftime('%a, %d %b %Y %H:%S') }}</p>
   {% endif %}
 
+  {% if place.area_in_sq_km < 1000 %}
+    {% set larger_areas = place.suggest_larger_areas() | list %}
+    {% if larger_areas %}
+      <p>{{ place.name }} is small ({{ p.area_in_sq_km }}), you might consider a larger enclosing area:</p>
+      <ul>
+        {% for p in larger_areas %}
+        <li><a href="{{ p.candidates_url() }}">{{ p.name }}</a>
+          ({{ '{:,.1f}'.format(p.area_in_sq_km) }}) km&sup2;</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+
     {% if upload_okay %}
 <div id="notice" class="alert alert-danger" role="alert">
   <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>

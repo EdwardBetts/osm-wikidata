@@ -332,3 +332,23 @@ def items_as_xml(items):
         raise RateLimited
 
     return r.content
+
+def is_in(osm_type, osm_id):
+    oql = f'''
+[out:json][timeout:25];
+{osm_type}({osm_id});
+(._;>);
+is_in->.a;
+(way(pivot.a); rel(pivot.a););
+out bb tags qt;'''
+
+    return get_elements(oql)
+
+def is_in_lat_lon(lat, lon):
+    oql = f'''
+[out:json][timeout:25];
+is_in({lat},{lon})->.a;
+(way(pivot.a); rel(pivot.a););
+out bb tags qt;'''
+
+    return get_elements(oql)
