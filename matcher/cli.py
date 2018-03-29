@@ -262,7 +262,7 @@ def run_matcher(place_identifier):
 
     click.echo('do match')
     place.do_match()
-    click.echo(place.state, place.display_name)
+    click.echo((place.state, place.display_name))
     click.echo('https://osm.wikidata.link/candidates/{place.osm_type}/{place.osm_id}'.format(place=place))
 
 @app.cli.command()
