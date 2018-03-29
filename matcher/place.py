@@ -119,7 +119,10 @@ class Place(Base):
             return place
 
         hit = nominatim.reverse(osm_type, osm_id)
-        place = Place.from_nominatim(hit)
+        try:
+            place = Place.from_nominatim(hit)
+        except KeyError:
+            return None
         session.add(place)
         session.commit()
         return place
@@ -1207,7 +1210,9 @@ class Place(Base):
 
             if area_in_sq_km < 10 or area_in_sq_km > 20_000:
                 continue
-            yield Place.from_osm(osm_type, osm_id)
+            place = Place.from_osm(osm_type, osm_id)
+            if place:
+                yield place
 
 
 class PlaceMatcher(Base):
