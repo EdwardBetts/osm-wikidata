@@ -1205,7 +1205,7 @@ class Place(Base):
             bbox_area = session.query(q).scalar()
             area_in_sq_km = bbox_area / (1000 * 1000)
 
-            if area_in_sq_km > 20_000:
+            if area_in_sq_km < 10 or area_in_sq_km > 20_000:
                 continue
             yield Place.from_osm(osm_type, osm_id)
 
