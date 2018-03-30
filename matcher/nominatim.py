@@ -65,7 +65,7 @@ def get_us_city(name, state):
     assert ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit)
     return hit
 
-def reverse(osm_type, osm_id):
+def reverse(osm_type, osm_id, polygon_text=1):
     url = 'https://nominatim.openstreetmap.org/reverse'
 
     params = {
@@ -77,7 +77,7 @@ def reverse(osm_type, osm_id):
         'extratags': 1,
         'namedetails': 1,
         'accept-language': 'en',
-        'polygon_text': 1,
+        'polygon_text': polygon_text,
     }
     r = requests.get(url, params=params, headers=user_agent_headers())
     if r.status_code == 500:
