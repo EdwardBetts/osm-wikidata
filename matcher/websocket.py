@@ -89,11 +89,19 @@ class MatcherSocket(object):
         chunk_size = place.wikidata_chunk_size()
         if chunk_size == 1:
             print('wikidata unchunked')
-            wikidata_items = place.items_from_wikidata()
-        else:
-            chunks = list(place.polygon_chunk(size=64))
+            try:
+                wikidata_items = place.items_from_wikidata()
+            except wikidata.QueryTimeout:
+                place.wikidata_query_timeout = True
+                database.session.commit()
+                chunk_size = 2
+                msg = 'wikidata query timeout, retrying with smaller chunks.'
+                self.status(msg)
 
-            msg = 'downloading wikidata in {} chunks'.format(len(chunks))
+        if chunk_size != 1:
+            chunks = list(place.polygon_chunk(size=18))
+
+            msg = f'downloading wikidata in {len(chunks)} chunks'
             self.status(msg)
             wikidata_items = self.wikidata_chunked(chunks)
         self.status('wikidata query complete')
