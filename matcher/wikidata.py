@@ -340,6 +340,11 @@ class QueryError(Exception):
         self.query = query
         self.r = r
 
+class QueryTimeout(QueryError):
+    def __init__(self, query, r):
+        self.query = query
+        self.r = r
+
 def get_query(q, south, north, west, east):
     return render_template_string(q,
                                   south=south,
@@ -375,12 +380,21 @@ def run_query(query, name=None, timeout=None):
                       data={'query': query, 'format': 'json'},
                       timeout=timeout,
                       headers=user_agent_headers())
-    if r.status_code != 200:
-        mail.error_mail('wikidata query error', query, r)
-        raise QueryError(query, r)
-    if name:
-        open(filename, 'wb').write(r.content)
-    return r.json()['results']['bindings']
+    if r.status_code == 200:
+        if name:
+            open(filename, 'wb').write(r.content)
+        return r.json()['results']['bindings']
+
+    # query timeout generates two different exceptions
+    # java.lang.RuntimeException: java.util.concurrent.ExecutionException: com.bigdata.bop.engine.QueryTimeoutException: Query deadline is expired.
+    # java.util.concurrent.TimeoutException
+    if ('Query deadline is expired.' in r.text or
+            'java.util.concurrent.TimeoutException' in r.text):
+        mail.error_mail('wikidata query timeout', query, r)
+        raise QueryTimeout(query, r)
+
+    mail.error_mail('wikidata query error', query, r)
+    raise QueryError(query, r)
 
 def flatten_criteria(items):
     start = {'Tag:' + i[4:] + '=' for i in items if i.startswith('Key:')}
