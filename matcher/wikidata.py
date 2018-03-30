@@ -40,6 +40,7 @@ extra_keys = {
     'Q2385804': edu,                          # educational institution
     'Q47530379': edu,                         # agricultural college
     'Q1469420': edu,                          # adult education centre
+    'Q7894959': edu,                          # University Technical College
     'Q11303': tall,                           # skyscraper
     'Q18142': tall,                           # high-rise building
     'Q33673393': tall,                        # multi-storey building
@@ -728,6 +729,9 @@ def get_item_types(items, name=None):
         'Q9826',      # high school
         'Q159334',    # secondary school
         'Q9842',      # primary school
+        'Q628179',    # trail
+        'Q74047',     # ghost town
+        'Q7894959',   # University Technical College
     }
     query_items = ' '.join(f'wd:{qid}' for qid in items)
     query_types = ' '.join(f'(wd:{qid})' for qid in extra_types)
