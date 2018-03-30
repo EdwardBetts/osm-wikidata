@@ -1104,9 +1104,7 @@ class Place(Base):
 
     def wikidata_chunk_size(self):
         area = self.area_in_sq_km
-        if self.wikidata_query_timeout:
-            return utils.calc_chunk_size(area, size=32)
-        if area < 10000:
+        if area < 5000 and not self.wikidata_query_timeout:
             return 1
         return utils.calc_chunk_size(area, size=32)
 
