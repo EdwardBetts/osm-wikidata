@@ -35,7 +35,7 @@ def get_place(place_identifier):
         return Place.query.get(place_identifier)
     else:
         osm_type, osm_id = place_identifier.split('/')
-        return Place.get_by_osm(osm_type, osm_id)
+        return Place.from_osm(osm_type, osm_id)
 
 @app.cli.command()
 def mail_recent():
@@ -799,3 +799,48 @@ def candidate_shapes(place_identifier):
     for item in place.items_with_candidates():
         for c in item.candidates:
             print(c.key, ' ', c.geojson)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def suggest_larger_areas(place_identifier):
+    top = get_place(place_identifier)
+
+    for place in top.go_bigger():
+        area_in_sq_km = place.area_in_sq_km
+        print(f'{area_in_sq_km:>10.1f} sq km  {place.name}')
+
+    return
+
+    for e in reversed(top.is_in()):
+        # pprint(e)
+        osm_type, osm_id = e['type'], e['id']
+        if osm_type == top.osm_type and osm_id == top.osm_id:
+            continue
+
+        level = e['tags'].get('admin_level')
+
+        # {'minlat': 49, 'minlon': -14, 'maxlat': 61.061, 'maxlon': 2}
+
+        box = func.ST_MakeEnvelope(e['bounds']['minlon'],
+                                   e['bounds']['minlat'],
+                                   e['bounds']['maxlon'],
+                                   e['bounds']['maxlat'], 4326)
+
+        bbox_area = database.session.query(func.ST_Area(box.cast(Geography))).scalar()
+        area_in_sq_km = bbox_area / (1000 * 1000)
+
+        if area_in_sq_km > 20_000:
+            continue
+        place = Place.from_osm(osm_type, osm_id)
+        area_in_sq_km = place.area_in_sq_km
+        print(f'{area_in_sq_km:>10.1f} sq km', e['type'], f"{e['id']:10d}", level, e['tags']['name'])
+
+        continue
+
+        print(f'{place.area_in_sq_km:>10.1f} sq km  {place.name:30s}')
+        continue
+
+        hit = nominatim.reverse(e['type'], e['id'], polygon_text=0)
+        pprint(hit)
+        print()
+        sleep(2)
