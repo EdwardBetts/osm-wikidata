@@ -226,6 +226,9 @@ class Item(Base):
             ('P722', 'uic_ref', 'UIC station code'),
             ('P836', 'ref:gss', 'UK Government Statistical Service code'),
             ('P856', 'website', 'website'),
+            ('P882', 'nist:fips_code', 'FIPS 6-4 (US counties)'),
+            ('P883', 'state_code', 'FIPS 5-2 (code for US states)'),
+            # FIPS code for US states: "ref" and "nist:fips_code" are also used
             ('P1216', 'HE_ref', 'National Heritage List for England number'),
             ('P2253', 'ref:edubase', 'EDUBase URN'),
             ('P2815', 'ref', 'ESR station code'),
