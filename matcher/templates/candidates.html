@@ -288,7 +288,7 @@ function zoom_to_item(e) {
     <p>Latest matcher run: {{ run.start.strftime('%a, %d %b %Y %H:%S') }}</p>
   {% endif %}
 
-  {% if place.area_in_sq_km < 1000 and place.item_count < 200 %}
+  {% if place.area_in_sq_km < 1000 and (place.item_count or 0) < 200 %}
     {% set larger_areas = place.suggest_larger_areas() | list %}
     {% if larger_areas %}
       <p>{{ place.name }} is small ({{ '{:,.2f}'.format(place.area_in_sq_km) }} km&sup2;), you might consider a larger enclosing area:</p>
