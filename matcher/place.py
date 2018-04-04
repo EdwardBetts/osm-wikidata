@@ -840,7 +840,7 @@ class Place(Base):
         for qid, isa_list in isa_map.items():
             isa_objects = []
             for isa_dict in isa_list:
-                item_id = isa_dict['qid'][1:]
+                item_id = int(isa_dict['qid'][1:])
                 isa = IsA.query.get(item_id)
                 if isa:
                     isa.label = isa_dict['label']
