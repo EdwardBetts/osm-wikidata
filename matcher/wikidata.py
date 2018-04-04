@@ -224,6 +224,21 @@ SELECT DISTINCT ?item ?type WHERE {
 }
 '''
 
+item_types_tree = '''
+SELECT DISTINCT ?item ?itemLabel ?country ?countryLabel ?type ?typeLabel WHERE {
+  {
+    VALUES ?top { ITEMS }
+    ?top wdt:P31/wdt:P279* ?item .
+    ?item wdt:P279 ?type .
+  } UNION {
+    VALUES ?item { ITEMS }
+    ?item wdt:P31 ?type .
+  }
+  OPTIONAL { ?item wdt:P17 ?country }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+'''
+
 subclasses = '''
 SELECT DISTINCT ?item ?itemLabel ?type ?typeLabel WHERE {
   VALUES (?item) { ITEMS }
@@ -654,6 +669,81 @@ def next_level_places(qid, entity, name=None):
         }
         rows.append(i)
     return rows
+
+def row_qid_and_label(row, name):
+    qid = wd_uri_to_qid(row[name]['value'])
+    label = row[name + 'Label']['value']
+
+    return {'qid': qid, 'label': label}
+
+def get_isa(items, name=None):
+    graph = item_types_graph(items, name=name)
+
+    ret = {}
+    for qid in items:
+        visited, queue = set(), [qid]
+        result = []
+        while queue:
+            vertex = queue.pop(0)
+            if vertex in visited:
+                continue
+            if vertex != qid:
+                result.append(graph[vertex])
+            visited.add(vertex)
+            if vertex == qid or 'country' in graph[vertex]:
+                queue.extend(graph[vertex]['children'] - visited)
+
+        drop = set()
+        for i in result[:]:
+            if not (len(i['children']) == 1 and 'country' in i and
+                    any(c.isupper() for c in i['label'])):
+                continue
+            child = graph[list(i['children'])[0]]['label']
+            if i['label'].startswith(child):
+                drop.add(i['qid'])
+            else:
+                i['label'] += f' ({child})'
+
+        result = [i for i in result if i['qid'] not in drop]
+
+        all_children = set()
+        for i in result:
+            all_children.update(i.pop('children'))
+            if 'country' in i:
+                del i['country']
+        ret[qid] = [i for i in result if i['qid'] not in all_children]
+    return ret
+
+def item_types_graph(items, name=None):
+    query_items = ' '.join(f'wd:{qid}' for qid in items)
+    query = item_types_tree.replace('ITEMS', query_items)
+
+    graph = {}
+    for row in run_query(query, name=name, send_error_mail=False):
+        item_qid = wd_uri_to_qid(row['item']['value'])
+        type_qid = wd_uri_to_qid(row['type']['value'])
+        if type_qid not in graph:
+            graph[type_qid] = {
+                'qid': type_qid,
+                'label': row['typeLabel']['value'],
+                'children': set(),
+            }
+        if item_qid not in graph:
+            graph[item_qid] = {
+                'qid': item_qid,
+                'label': row['itemLabel']['value'],
+                'children': set(),
+            }
+        if 'country' in row and 'country' not in graph[item_qid]:
+            graph[item_qid]['country'] = row_qid_and_label(row, 'country')
+
+        graph[item_qid]['children'].add(type_qid)
+
+    return graph
+
+    return {i: row_qid_and_label(row, i)
+            for i in ('item', 'type', 'country')}
+
 
 def get_item_types(items, name=None):
     extra_types = extra_keys.keys() | {
