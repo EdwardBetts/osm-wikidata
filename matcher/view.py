@@ -453,11 +453,6 @@ def candidates(osm_type, osm_id):
                                overpass_error=error,
                                place=place)
 
-    if place.state == 'load_isa':
-        place.load_isa()
-        place.state = 'ready'
-        database.session.commit()
-
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
