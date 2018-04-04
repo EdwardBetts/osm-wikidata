@@ -520,6 +520,8 @@ def get_entities(ids):
     return list(json_data['entities'].values())
 
 def names_from_entity(entity, skip_lang=None):
+    if not entity:
+        return
     if skip_lang is None:
         skip_lang = set()
     if not entity:
@@ -1071,15 +1073,16 @@ SELECT DISTINCT ?code WHERE {
 
     @property
     def names(self):
-        if self.entity:
-            return dict(names_from_entity(self.entity))
-        else:
-            return {}
+        return dict(names_from_entity(self.entity))
 
     @property
     def is_a(self):
         return [isa['mainsnak']['datavalue']['value']['id']
                 for isa in self.entity.get('claims', {}).get('P31', [])]
+
+    @property
+    def is_a_detail(self):
+        return [WikidataItem.retrieve_item(qid) for qid in self.is_a]
 
     def is_proposed(self):
         '''is this a proposed building or structure (Q811683)?'''
