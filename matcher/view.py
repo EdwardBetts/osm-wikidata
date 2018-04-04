@@ -199,7 +199,7 @@ def add_wikidata_tag():
     r = requests.get(url, headers=user_agent_headers())
     root = etree.fromstring(r.content)
 
-    if root.find('.//tag[@k="wikidata"]'):
+    if root.find('.//tag[@k="wikidata"]') is not None:
         flash('no edit needed: OSM element already had wikidata tag')
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
