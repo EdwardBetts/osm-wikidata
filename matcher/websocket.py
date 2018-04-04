@@ -370,8 +370,6 @@ def run_matcher(place, m):
     m.send('done')
     m.mark_log_good()
 
-    place.get_item_types()
-
 @ws.route('/websocket/matcher/<osm_type>/<int:osm_id>')
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
