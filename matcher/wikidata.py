@@ -28,7 +28,8 @@ skip_tags = {'route:road',
              'type=waterway',
              'waterway=river'}
 
-edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school']
+edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school',
+       'Tag:office=educational_institution']
 tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
@@ -230,6 +231,8 @@ SELECT DISTINCT ?item ?itemLabel ?country ?countryLabel ?type ?typeLabel WHERE {
     VALUES ?top { ITEMS }
     ?top wdt:P31/wdt:P279* ?item .
     ?item wdt:P279 ?type .
+    ?type wdt:P279* ?subtype .
+    ?subtype ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
   } UNION {
     VALUES ?item { ITEMS }
     ?item wdt:P31 ?type .
@@ -699,7 +702,7 @@ def get_isa(items, name=None):
 
         drop = set()
         for i in result[:]:
-            if not (len(i['children']) == 1 and 'country' in i and
+            if not (len(i.get('children', [])) == 1 and 'country' in i and
                     any(c.isupper() for c in i['label'])):
                 continue
             child = graph[list(i['children'])[0]]['label']
@@ -712,7 +715,8 @@ def get_isa(items, name=None):
 
         all_children = set()
         for i in result:
-            all_children.update(i.pop('children'))
+            if 'children' in i:
+                all_children.update(i.pop('children'))
             if 'country' in i:
                 del i['country']
         ret[qid] = [i for i in result if i['qid'] not in all_children]
