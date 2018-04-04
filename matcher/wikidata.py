@@ -385,7 +385,7 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
-def run_query(query, name=None, timeout=None):
+def run_query(query, name=None, timeout=None, send_error_mail=True):
     if name:
         filename = cache_filename(name + '.json')
         if os.path.exists(filename):
@@ -405,10 +405,12 @@ def run_query(query, name=None, timeout=None):
     # java.util.concurrent.TimeoutException
     if ('Query deadline is expired.' in r.text or
             'java.util.concurrent.TimeoutException' in r.text):
-        mail.error_mail('wikidata query timeout', query, r)
+        if send_error_mail:
+            mail.error_mail('wikidata query timeout', query, r)
         raise QueryTimeout(query, r)
 
-    mail.error_mail('wikidata query error', query, r)
+    if send_error_mail:
+        mail.error_mail('wikidata query error', query, r)
     raise QueryError(query, r)
 
 def flatten_criteria(items):
