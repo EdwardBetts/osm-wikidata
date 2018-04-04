@@ -43,7 +43,7 @@ def create_changeset(changeset):
         return osm_request('/changeset/create', data=changeset.encode('utf-8'))
     except requests.exceptions.HTTPError as r:
         print(changeset)
-        print(r.text)
+        print(r.response.text)
         raise
 
 def close_changeset(changeset_id):
