@@ -3,6 +3,7 @@ from sqlalchemy import func
 from . import user_agent_headers, database
 from .model import Changeset
 import requests
+import cgi
 
 really_save = True
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
@@ -27,7 +28,7 @@ def new_changeset(comment):
     <tag k="created_by" v="https://osm.wikidata.link/"/>
     <tag k="comment" v="{}"/>
   </changeset>
-</osm>'''.format(comment)
+</osm>'''.format(cgi.escape(comment))
 
 def osm_request(path, **kwargs):
     osm_backend, auth = get_backend_and_auth()
