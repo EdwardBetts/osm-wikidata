@@ -848,18 +848,6 @@ def get_item_types(items, name=None):
              wd_uri_to_qid(row['type']['value']))
             for row in run_query(query, name=name)}
 
-    pairs = set()
-    for row in run_query(query, name=name):
-        item_qid = wd_uri_to_qid(row['item']['value'])
-        type_qid = wd_uri_to_qid(row['type']['value'])
-        # label = row['typeLabel']['value']
-        # tag = row['tag']['value'] if 'tag' in row else None
-        pairs.add((item_qid, type_qid))
-        # item_types[item_qid].add(type_qid)
-        # print(f'{item_qid:10s}  {type_qid:10s}  {label:30s}  {tag or "n/a":20s}')
-
-    return pairs
-
 def find_superclasses(items, name=None):
     query_items = ' '.join(f'(wd:{qid})' for qid in items)
     query = subclasses.replace('ITEMS', query_items)
