@@ -688,6 +688,8 @@ def get_isa(items, name=None):
 
     ret = {}
     for qid in items:
+        if qid not in graph:
+            continue
         visited, queue = set(), [qid]
         result = []
         while queue:
