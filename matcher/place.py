@@ -430,84 +430,6 @@ class Place(Base):
     def items_with_instanceof(self):
         return [item for item in self.items if item.instanceof()]
 
-    def save_isa(self, not_in_db, all_types):
-        for qid, entity in wikidata.entity_iter(not_in_db):
-            item_id = int(qid[1:])
-            if IsA.query.get(item_id):
-                continue
-            i = IsA(item_id=item_id, entity=entity)
-            session.merge(i)
-        session.commit()
-
-        type_pairs = wikidata.find_superclasses(all_types)
-        superclasses_dict = defaultdict(set)
-        for a, b in type_pairs:
-            superclasses_dict[a].add(b)
-
-        for qid, values in superclasses_dict.items():
-            try:
-                IsA.query.get(int(qid[1:])).subclass_of = list(values)
-            except TypeError:
-                print(repr(values))
-                raise
-        session.commit()
-
-    def ensure_item_types_retrieved(self):
-        if not self.item_types_retrieved:
-            self.get_item_types()
-
-    def get_item_types(self):
-        items = self.items_with_instanceof()
-        if not items:
-            return
-
-        pairs = []
-        qid_list = [i.qid for i in items]
-        for cur in utils.chunk(qid_list, 1000):
-            pairs += wikidata.get_item_types(cur)
-        if not pairs:
-            return
-
-        item_types = defaultdict(set)
-        for item_qid, type_qid in pairs:
-            item_types[int(item_qid[1:])].add(int(type_qid[1:]))
-
-        all_types = {i for _, i in pairs}
-
-        not_in_db = {qid for qid in all_types
-                     if not IsA.query.get(qid[1:])}
-
-        if not_in_db:
-            self.save_isa(not_in_db, all_types)
-            session.commit()
-
-        type_pairs = set()
-        for isa in IsA.query:
-            for subclass_of in isa.subclass_of or []:
-                type_pairs.add((isa.item_id, int(subclass_of[1:])))
-
-        for item_qid in item_types.keys():
-            values = item_types[item_qid]
-            remove = set()
-            for a in values:
-                for b in values:
-                    if a != b and (a, b) in type_pairs:
-                        remove.add(b)
-            item_types[item_qid].difference_update(remove)
-
-        new_isa = set()
-        for item_id, types in item_types.items():
-            new_isa |= {(item_id, type_id)
-                        for type_id in set(types)
-                        if not ItemIsA.query.get((item_id, type_id))}
-
-        for item_id, type_id in new_isa:
-            isa = ItemIsA(item_id=item_id, isa_id=type_id)
-            session.merge(isa)
-
-        self.item_types_retrieved = True
-        session.commit()
-
     def osm2pgsql_cmd(self, filename=None):
         if filename is None:
             filename = self.overpass_filename
@@ -906,6 +828,30 @@ class Place(Base):
 
         conn.close()
 
+    def load_isa(self):
+        items = [item.qid for item in self.items_with_instanceof()]
+        if not items:
+            return
+
+        isa_map = {}
+        for cur in utils.chunk(items, 1000):
+            isa_map.update(wikidata.get_isa(items))
+
+        for qid, isa_list in isa_map.items():
+            isa_objects = []
+            for isa_dict in isa_list:
+                item_id = isa_dict['qid'][1:]
+                isa = IsA.query.get(item_id)
+                if isa:
+                    isa.label = isa_dict['label']
+                else:
+                    isa = IsA(item_id=item_id, label=isa_dict['label'])
+                    session.add(isa)
+                isa_objects.append(isa)
+            item = Item.query.get(qid[1:])
+            item.isa = isa_objects
+        session.commit()
+
     def do_match(self, debug=True):
         if self.state == 'ready':  # already done
             return
@@ -939,6 +885,12 @@ class Place(Base):
         if self.state == 'osm2pgsql':
             print('run matcher')
             self.run_matcher(debug=debug)
+            self.state = 'load_isa'
+            session.commit()
+
+        if self.state == 'load_isa':
+            print('load isa')
+            self.load_isa()
             print('ready')
             self.state = 'ready'
             session.commit()
@@ -1259,7 +1211,7 @@ def get_top_existing(limit=39):
             Place.candidate_count, Place.item_count]
     c = func.count(Changeset.place_id)
 
-    q = (Place.query.filter(Place.state.in_(['ready', 'refresh']),
+    q = (Place.query.filter(Place.state.in_(['ready', 'load_isa', 'refresh']),
                             Place.area > 0,
                             Place.index_hide == false(),
                             Place.candidate_count > 4)

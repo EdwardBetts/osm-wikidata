@@ -752,8 +752,7 @@ def item_types_graph(items, name=None):
     return {i: row_qid_and_label(row, i)
             for i in ('item', 'type', 'country')}
 
-
-def get_item_types(items, name=None):
+def get_item_types(items, name=None):  # unused
     extra_types = extra_keys.keys() | {
         'Q102496',    # parish
         'Q28564',     # public library

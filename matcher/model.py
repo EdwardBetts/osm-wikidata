@@ -53,9 +53,9 @@ class IsA(Base):
     item_id = Column(Integer, primary_key=True, autoincrement=False)
     entity = Column(postgresql.JSON)
     qid = column_property('Q' + cast(item_id, String))
-    subclass_of = Column(postgresql.ARRAY(String))
+    label = Column(String)
 
-    def label(self, lang='en'):
+    def entity_label(self, lang='en'):
         labels = self.entity['labels']
         if lang in labels:
             return labels[lang]['value']
@@ -100,7 +100,7 @@ class Item(Base):
 
     tags = association_proxy('db_tags', 'tag_or_key')
 
-    isa = relationship('ItemIsA')
+    isa = relationship('IsA', secondary='item_isa')
 
     @property
     def labels(self):
