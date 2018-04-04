@@ -834,8 +834,8 @@ class Place(Base):
             return
 
         isa_map = {}
-        for cur in utils.chunk(items, 500):
-            isa_map.update(wikidata.get_isa(items))
+        for cur in utils.chunk(items, 1000):
+            isa_map.update(wikidata.get_isa(cur))
 
         for qid, isa_list in isa_map.items():
             isa_objects = []
