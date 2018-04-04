@@ -39,7 +39,12 @@ def osm_request(path, **kwargs):
     return r
 
 def create_changeset(changeset):
-    return osm_request('/changeset/create', data=changeset.encode('utf-8'))
+    try:
+        return osm_request('/changeset/create', data=changeset.encode('utf-8'))
+    except requests.exceptions.HTTPError as r:
+        print(changeset)
+        print(r.text)
+        raise
 
 def close_changeset(changeset_id):
     return osm_request(f'/changeset/{changeset_id}/close')
