@@ -231,6 +231,8 @@ class Item(Base):
             ('P856', 'website', 'website'),
             ('P882', 'nist:fips_code', 'FIPS 6-4 (US counties)'),
             ('P883', 'state_code', 'FIPS 5-2 (code for US states)'),
+            # A UIC id can be a IBNR, but not every IBNR is an UIC id
+            ('P954', 'uic_ref', 'IBNR ID'),
             # FIPS code for US states: "ref" and "nist:fips_code" are also used
             ('P1216', 'HE_ref', 'National Heritage List for England number'),
             ('P2253', 'ref:edubase', 'EDUBase URN'),
