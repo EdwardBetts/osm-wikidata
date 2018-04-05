@@ -55,6 +55,9 @@ class IsA(Base):
     qid = column_property('Q' + cast(item_id, String))
     label = Column(String)
 
+    def url(self):
+        return f'https://www.wikidata.org/wiki/Q{self.item_id}'
+
     def entity_label(self, lang='en'):
         labels = self.entity['labels']
         if lang in labels:

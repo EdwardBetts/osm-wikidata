@@ -36,14 +36,14 @@
   {% elif isa_list %}
     item type:
     {% for isa in isa_list %}
-      {{ isa.label }}{% if not loop.last %} / {% endif %}
+      <a href="{{ isa.url() }}">{{ isa.label }}</a>{% if not loop.last %} / {% endif %}
     {% endfor %}
   {% else %}
     search tags: {{ ', '.join(search_tags | sort) }}
   {% endif %}
 
   {% set lat, lon = item.get_lat_lon() %}
-  <a href="#" class="show_on_map" id="map_{{ item.qid }}">show on map</a>
+  <a href="#" class="show_on_map" id="map_{{ item.qid }}">[show on map]</a>
 
   {% set identifiers = item.get_item_identifiers() %}
   {% if identifiers %}
