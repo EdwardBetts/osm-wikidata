@@ -19,6 +19,7 @@ import re
 import json
 import click
 import socket
+import sys
 
 @app.cli.command()
 def create_db():
@@ -844,3 +845,61 @@ def suggest_larger_areas(place_identifier):
         pprint(hit)
         print()
         sleep(2)
+
+@app.cli.command()
+@click.argument('qid')
+def find_isa(qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    items = [qid]
+    cache_name = 'isa_' + ','.join(items)
+    try:
+        result = wikidata.get_isa(items, name=cache_name)
+    except wikidata.QueryError as e:
+        print(e.args[0])
+        sys.exit(0)
+
+    print(result)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def show_place_item_isa(place_identifier):
+    place = get_place(place_identifier)
+    items = {item.qid: item for item in place.items_with_instanceof()}
+
+    name = 'isa_' + place_identifier.replace('/', '_')
+
+    try:
+        isa = wikidata.get_isa(items.keys(), name=name)
+    except wikidata.QueryError as e:
+        print(e.args[0])
+        sys.exit(0)
+
+    for k, v in isa.items():
+        print(k, items[k].label(), v)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def load_isa(place_identifier):
+    place = get_place(place_identifier)
+
+    place.load_isa()
+
+@app.cli.command()
+def load_all_isa():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Place.query.filter_by(state='load_isa')
+    first = True
+    for place in q:
+        if not first:
+            sleep(10)
+            first = False
+        print(place.display_name)
+        place.load_isa()
+        place.state = 'ready'
+        database.session.commit()
+
+    print('done')
