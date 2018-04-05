@@ -61,13 +61,3 @@ function add_pin(item) {
   marker.bindPopup(label);
   return marker;
 }
-
-function load_wikidata_pins() {
-  // load wikidata items via AJAX
-  // not used: we access via websocket instead
-  $.getJSON(wikidata_json_url).done(function(data) {
-      $.each(data.items, function(i, item) {
-        add_pin(item);
-      });
-  });
-}
