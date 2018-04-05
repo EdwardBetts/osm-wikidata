@@ -895,7 +895,7 @@ def load_all_isa():
     first = True
     for place in q:
         if not first:
-            sleep(10)
+            sleep(20)
             first = False
         print(place.display_name)
         place.load_isa()
