@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, g
 from time import time, sleep
-from .place import Place
+from .place import Place, bbox_chunk
 from . import wikipedia, database, wikidata, netstring, utils, edit, mail
 from flask_login import current_user
 from .model import ItemCandidate
@@ -75,11 +75,21 @@ class MatcherSocket(object):
 
     def wikidata_chunked(self, chunks):
         items = {}
-        for num, bbox in enumerate(chunks):
-            msg = 'requesting wikidata chunk {}'.format(num + 1)
+        num = 0
+        while chunks:
+            bbox = chunks.pop()
+            num += 1
+            msg = f'requesting wikidata chunk {num}'
             print(msg)
             self.status(msg)
-            items.update(self.place.items_from_wikidata(bbox))
+            try:
+                items.update(self.place.items_from_wikidata(bbox))
+            except wikidata.QueryTimeout:
+                msg = f'wikidata timeout, splitting chunk {num} info four'
+                print(msg)
+                self.status(msg)
+                chunks += bbox_chunk(bbox, 2)
+
         return items
 
     def get_items(self):
