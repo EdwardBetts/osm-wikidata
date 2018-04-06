@@ -254,7 +254,7 @@ class Item(Base):
             if not values:
                 continue
             for osm_key in osm_keys:
-                tags[osm_key].append((values, label))
+                tags[osm_key].append((tuple(values), label))
         return tags
 
     def ref_nrhp(self):
