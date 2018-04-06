@@ -2,6 +2,8 @@ from flask import current_app, g, request, has_request_context
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 import smtplib
+import traceback
+import sys
 
 def send_mail(subject, body, config=None):
     if config is None:
@@ -123,3 +125,9 @@ reply:
                            reply=r.text)
 
     send_mail('error creating changeset:' + place.name, body)
+
+def send_traceback(info):
+    exception_name = sys.exc_info()[0].__name__
+    subject = f'osm-wikidata error: {exception_name}'
+    body = f'user: {get_username()}\n' + info + '\n' + traceback.format_exc()
+    send_mail(subject, body)

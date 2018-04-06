@@ -393,17 +393,37 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     # also e-mail them
 
     print('websocket')
+    place = None
 
-    place = Place.get_by_osm(osm_type, osm_id)
-    if place.state == 'ready':
-        log_filename = utils.find_log_file(place)
-        if log_filename:
-            print('replaying log:', log_filename)
-            replay_log(ws_sock, log_filename)
-            return
+    try:
+        place = Place.get_by_osm(osm_type, osm_id)
+        if place.state == 'ready':
+            log_filename = utils.find_log_file(place)
+            if log_filename:
+                print('replaying log:', log_filename)
+                replay_log(ws_sock, log_filename)
+                return
 
-    m = MatcherSocket(ws_sock, place)
-    return run_matcher(place, m)
+        m = MatcherSocket(ws_sock, place)
+        return run_matcher(place, m)
+    except Exception as e:
+        msg = type(e).__name__ + ': ' + str(e)
+        print(msg)
+        ws_sock.send(json.dumps({'type': 'error', 'msg': msg}))
+
+        g.user = current_user
+
+        if place:
+            name = place.display_name
+        else:
+            name = 'unknown place'
+        info = f'''
+place: {name}
+https://openstreetmap.org/{osm_type}/{osm_id}
+
+exception in websocket
+'''
+        mail.send_traceback(info)
 
 def process_match(ws_sock, changeset_id, m):
     osm_type, osm_id = m['osm_type'], m['osm_id']
