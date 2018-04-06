@@ -216,7 +216,7 @@ class Item(Base):
             return []
 
     def identifiers(self):
-        return set(self.get_item_identifiers().values())
+        return {j for i in self.get_item_identifiers().values() for j in i}
 
     def get_item_identifiers(self):
         if not self.entity:
