@@ -363,11 +363,18 @@ def run_matcher(place, m):
         database.session.commit()
 
     if place.state == 'osm2pgsql':
-        m.run_matcher()
+        m.status('adding item type information')
+        place.load_isa()
         place.state = 'load_isa'
         database.session.commit()
 
     if place.state == 'load_isa':
+        m.status('running matcher')
+        m.run_matcher()
+        place.state = 'ready'
+        database.session.commit()
+
+    if place.state == 'refresh_isa':
         m.status('adding item type information')
         place.load_isa()
         place.state = 'ready'
