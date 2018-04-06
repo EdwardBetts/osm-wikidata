@@ -714,9 +714,14 @@ class Place(Base):
     def languages_wikidata(self):
         lang_count = Counter()
         item_count = self.items.count()
+        count_sv = self.country_code in {'se', 'fi'}
+
         for item in self.items:
             if item.entity and 'labels' in item.entity:
-                for lang in item.entity['labels'].keys():
+                keys = item.entity['labels'].keys()
+                if not count_sv and keys == {'ceb', 'sv'}:
+                    continue
+                for lang in keys:
                     if '-' in lang or lang == 'ceb':
                         continue
                     lang_count[lang] += 1
