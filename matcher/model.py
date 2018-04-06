@@ -216,7 +216,10 @@ class Item(Base):
             return []
 
     def identifiers(self):
-        return {j for i in self.get_item_identifiers().values() for j in i}
+        ret = set()
+        for v in self.get_item_identifiers().values():
+            ret.update(v)
+        return ret
 
     def get_item_identifiers(self):
         if not self.entity:
@@ -251,7 +254,7 @@ class Item(Base):
             if not values:
                 continue
             for osm_key in osm_keys:
-                tags[osm_key] = (values, label)
+                tags[osm_key].append((values, label))
         return tags
 
     def ref_nrhp(self):
