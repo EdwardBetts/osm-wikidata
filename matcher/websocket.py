@@ -421,7 +421,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 place: {name}
 https://openstreetmap.org/{osm_type}/{osm_id}
 
-exception in websocket
+exception in matcher websocket
 '''
         mail.send_traceback(info)
 
@@ -475,34 +475,53 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
     def send(msg_type, **kwars):
         ws_sock.send(json.dumps({'type': msg_type, **kwars}))
 
-    place = Place.get_by_osm(osm_type, osm_id)
+    place = None
+    try:
+        place = Place.get_by_osm(osm_type, osm_id)
 
-    data = json.loads(ws_sock.receive())
-    comment = data['comment']
-    changeset = edit.new_changeset(comment)
-    r = edit.create_changeset(changeset)
-    changeset_id = r.text.strip()
-    if not changeset_id.isdigit():
-        send('changeset-error', msg='error opening changeset')
-        return
+        data = json.loads(ws_sock.receive())
+        comment = data['comment']
+        changeset = edit.new_changeset(comment)
+        r = edit.create_changeset(changeset)
+        changeset_id = r.text.strip()
+        if not changeset_id.isdigit():
+            send('changeset-error', msg='error opening changeset')
+            return
 
-    send('open', id=int(changeset_id))
+        send('open', id=int(changeset_id))
 
-    update_count = 0
-    change = edit.record_changeset(id=changeset_id,
-                                   place=place,
-                                   comment=comment,
-                                   update_count=update_count)
+        update_count = 0
+        change = edit.record_changeset(id=changeset_id,
+                                       place=place,
+                                       comment=comment,
+                                       update_count=update_count)
 
-    for num, m in enumerate(data['matches']):
-        send('progress', qid=m['qid'], num=num)
-        result = process_match(ws_sock, changeset_id, m)
-        if result == 'saved':
-            update_count += 1
-            change.update_count = update_count
-        database.session.commit()
-        send(result, qid=m['qid'], num=num)
+        for num, m in enumerate(data['matches']):
+            send('progress', qid=m['qid'], num=num)
+            result = process_match(ws_sock, changeset_id, m)
+            if result == 'saved':
+                update_count += 1
+                change.update_count = update_count
+            database.session.commit()
+            send(result, qid=m['qid'], num=num)
 
-    send('closing')
-    edit.close_changeset(changeset_id)
-    send('done')
+        send('closing')
+        edit.close_changeset(changeset_id)
+        send('done')
+
+    except Exception as e:
+        msg = type(e).__name__ + ': ' + str(e)
+        print(msg)
+        send('error', msg=msg)
+
+        if place:
+            name = place.display_name
+        else:
+            name = 'unknown place'
+        info = f'''
+place: {name}
+https://openstreetmap.org/{osm_type}/{osm_id}
+
+exception in add tags websocket
+'''
+        mail.send_traceback(info)
