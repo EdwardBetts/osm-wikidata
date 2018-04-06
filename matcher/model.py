@@ -215,38 +215,42 @@ class Item(Base):
         else:
             return []
 
+    def identifiers(self):
+        return set(self.get_item_identifiers().values())
+
     def get_item_identifiers(self):
         if not self.entity:
             return {}
 
         property_map = [
-            ('P238', 'iata', 'IATA airport code'),
-            ('P239', 'icao', 'ICAO airport code'),
-            ('P240', 'faa', 'FAA airport code'),
-            ('P296', 'ref', 'station code'),
-            ('P300', 'ISO3166-2', 'ISO 3166-2 code'),
-            ('P649', 'ref:nrhp', 'NRHP reference number'),
-            ('P722', 'uic_ref', 'UIC station code'),
-            ('P836', 'ref:gss', 'UK Government Statistical Service code'),
-            ('P856', 'website', 'website'),
-            ('P882', 'nist:fips_code', 'FIPS 6-4 (US counties)'),
-            ('P883', 'state_code', 'FIPS 5-2 (code for US states)'),
+            ('P238', ['iata'], 'IATA airport code'),
+            ('P239', ['icao'], 'ICAO airport code'),
+            ('P240', ['faa', 'ref'], 'FAA airport code'),
+            ('P296', ['ref'], 'station code'),
+            ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
+            ('P649', ['ref:nrhp'], 'NRHP reference number'),
+            ('P722', ['uic_ref'], 'UIC station code'),
+            ('P836', ['ref:gss'], 'UK Government Statistical Service code'),
+            ('P856', ['website', 'contact:website'], 'website'),
+            ('P882', ['nist:fips_code'], 'FIPS 6-4 (US counties)'),
+            ('P883', ['state_code', 'ref', 'nist:fips_code'], 'FIPS 5-2 (code for US states)'),
             # A UIC id can be a IBNR, but not every IBNR is an UIC id
-            ('P954', 'uic_ref', 'IBNR ID'),
-            # FIPS code for US states: "ref" and "nist:fips_code" are also used
-            ('P1216', 'HE_ref', 'National Heritage List for England number'),
-            ('P2253', 'ref:edubase', 'EDUBase URN'),
-            ('P2815', 'ref', 'ESR station code'),
-            ('P4755', 'ref', 'UK railway station code'),
-            ('P4803', 'ref', 'Amtrak station code'),
+            ('P954', ['uic_ref'], 'IBNR ID'),
+            ('P1216', ['HE_ref'], 'National Heritage List for England number'),
+            ('P2253', ['ref:edubase'], 'EDUBase URN'),
+            ('P2815', ['esr:user', 'ref'], 'ESR station code'),
+            ('P4755', ['ref'], 'UK railway station code'),
+            ('P4803', ['ref'], 'Amtrak station code'),
         ]
 
-        tags = {}
-        for claim, osm_key, label in property_map:
+        tags = defaultdict(list)
+        for claim, osm_keys, label in property_map:
             values = [i['mainsnak']['datavalue']['value']
                       for i in self.entity['claims'].get(claim, [])
                       if 'datavalue' in i['mainsnak']]
-            if values:
+            if not values:
+                continue
+            for osm_key in osm_keys:
                 tags[osm_key] = (values, label)
         return tags
 
