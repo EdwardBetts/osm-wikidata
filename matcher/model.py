@@ -221,6 +221,13 @@ class Item(Base):
             ret.update(v)
         return ret
 
+    def identifier_values(self):
+        ret = defaultdict(set)
+        for osm_key, wikidata_values in self.get_item_identifiers().items():
+            for values, label in wikidata_values:
+                ret[osm_key].update(values)
+        return ret
+
     def get_item_identifiers(self):
         if not self.entity:
             return {}

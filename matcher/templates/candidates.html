@@ -45,10 +45,10 @@
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map" id="map_{{ item.qid }}">[show on map]</a>
 
-  {% set identifiers = item.identifiers() %}
+  {% set identifiers = item.identifier_values() %}
   {% if identifiers %}
     <p>
-    {% for values, label in identifiers %}
+    {% for values, label in item.identifiers() %}
       {{ label }}: <strong>{{ ', '.join(values) }}</strong>
       {%- if not loop.last %}; {% endif %}
     {% endfor %}
