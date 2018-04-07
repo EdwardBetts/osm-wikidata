@@ -404,7 +404,8 @@ def read_language_order():
     return json.loads(cookie_json) if cookie_json else {}
 
 def get_place_language_with_counts(place):
-    languages = place.languages()
+    g.default_languages = place.languages()
+    languages = g.default_languages[:]
 
     cookie = read_language_order()
     if place.identifier in cookie:

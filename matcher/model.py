@@ -1,4 +1,5 @@
 # coding: utf-8
+from flask import g
 from sqlalchemy import func
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
 from sqlalchemy.types import BigInteger, Float, Integer, String, Boolean, DateTime, Text
@@ -494,16 +495,23 @@ class ItemCandidate(Base):
             if key in self.tags:
                 return self.tags[key]
 
+        names = {k[5:]: v for k, v in self.tags.items()
+                 if k.startswith('name:')}
+        if 'name' in self.tags:
+            top_lang = g.default_languages[0]['code']
+            if top_lang not in names:
+                names[top_lang] = self.tags['name']
+
         for lang in languages:
-            key = 'name:' + (lang if isinstance(lang, str) else lang.iso_639_1)
-            if key in self.tags:
-                return self.tags[key]
+            key = lang if isinstance(lang, str) else lang.iso_639_1
+            if key in names:
+                return names[key]
 
         return self.label
 
     @property
     def label(self):
-        for key in 'bridge:name', 'lock_name':
+        for key in 'bridge:name', 'tunnel:name', 'lock_name':
             if key in self.tags:
                 return self.tags[key]
 
