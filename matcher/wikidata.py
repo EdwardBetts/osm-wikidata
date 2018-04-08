@@ -545,6 +545,12 @@ def names_from_entity(entity, skip_lang=None):
         if title.startswith(cat_start):
             title = title[len(cat_start):]
 
+        first_letter = title[0]
+        if first_letter.isupper():
+            lc_first_title = first_letter.lower() + title[1:]
+            if lc_first_title in ret:
+                title = lc_first_title
+
         ret[title].append(('sitelink', k))
 
     for lang, value_list in entity.get('aliases', {}).items():
