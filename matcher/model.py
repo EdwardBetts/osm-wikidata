@@ -329,6 +329,9 @@ class Item(Base):
         '''is this item a proposed building or structure?'''
 
         cats = self.categories or []
+        if any(cat.startswith('Disused ') for cat in cats):
+            # disused stations that might be reopened could be in OSM
+            return False
         if any(cat.startswith('Proposed ') for cat in cats):
             return True
         # proposed building or structure (Q811683)
