@@ -498,6 +498,14 @@
     "dist": 2
 },
 {
+    "cats": ["Disused railway stations", "Disused railroad stations", "Disused train stations"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations"],
+    "tags": ["disused=station", "railway=disused_station"],
+    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
+    "check_housename": false,
+    "dist": 2
+},
+{
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations"],
