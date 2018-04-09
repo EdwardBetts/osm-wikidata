@@ -76,7 +76,7 @@
     {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
     {% set show_tags = (c == picked) and not checked %}
     {{ candidate_info(c,
-                      is_picked=(c == picked),
+                      is_picked=(item.candidates.count() > 1 and c == picked),
                       is_bad=is_bad,
                       show_tags=show_tags,
                       identifiers=identifiers) }}
