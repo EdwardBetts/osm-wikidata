@@ -157,6 +157,16 @@ def normalize_name(name):
 def has_address(osm_tags):
     return any('addr:' + part in osm_tags for part in ('housenumber', 'full'))
 
+def check_identifier(osm_tags, item_identifiers):
+    if not item_identifiers:
+        return False
+    for k, v in item_identifiers.items():
+        for values, label in v:
+            osm_value = osm_tags.get(k)
+            if osm_value and osm_value in values:
+                return True
+    return False
+
 def check_name_matches_address(osm_tags, wikidata_names):
     if not has_address(osm_tags):
         return
@@ -170,10 +180,12 @@ def check_name_matches_address(osm_tags, wikidata_names):
                    if ',' in name]
     number_start.update(n for n in strip_comma if not n.isdigit())
     number_start = {normalize_name(name) for name in number_start}
+
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:housenumber'] + osm_tags['addr:street'])
         if any(name == osm_address for name in number_start):
             return True
+
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
         if any(osm_address.startswith(name) for name in number_start):
@@ -206,26 +218,12 @@ def get_wikidata_names(item):
 
 def get_names(osm_tags):
     return {k: v for k, v in osm_tags.items()
-             if 'name' in k and k not in bad_name_fields}
+             if ('name' in k and k not in bad_name_fields) or k == 'operator'}
 
 def check_for_match(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)
-
-    best = None
-    if not wikidata_names:
-        return
-
-    address_match = check_name_matches_address(osm_tags, wikidata_names)
-
-    if address_match is not None:
-        if address_match:
-            m = Match(MatchType.address)
-            # FIXME: this just picks a random Wikidata name and OSM name
-            m.wikidata_name, m.wikidata_source = list(wikidata_names.items())[0]
-            m.osm_key, m.osm_name = list(names.items())[0]
-            return m
-        else:
-            return
+    if not names or not wikidata_names:
+        return {}
 
     if 'addr:city' in osm_tags:
         city = osm_tags['addr:city'].lower()
@@ -243,21 +241,23 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
             'a ' + city,   # Italian
         }
 
+    name = defaultdict(list)
+    cache = {}
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
-            m = name_match(o, w, endings)
-            if m:
-                m.wikidata_name = w
-                m.wikidata_source = source
-                m.osm_name = o
-                m.osm_key = osm_key
-            if m and m.match_type == MatchType.good:
-                # print(source, '  match: {} == {}'.format(o, w))
-                return m
-            elif m and m.match_type == MatchType.trim:
-                best = m
+            if (o, w) in cache:
+                result = cache[(o, w)]
+                if not result:
+                    continue
+            else:
+                m = name_match(o, w, endings)
+                if not m:
+                    cache[(o, w)] = None
+                    continue
+                result = (m.match_type.name, w, source)
+            name[osm_key].append(result)
 
-    return best
+    return dict(name)
 
 def get_all_matches(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)

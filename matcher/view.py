@@ -465,6 +465,14 @@ def candidates(osm_type, osm_id):
     items = [item for item in items
              if all('wikidata' not in c.tags for c in item.candidates)]
 
+    need_commit = False
+    for item in items:
+        for c in item.candidates:
+            if c.set_match_detail():
+                need_commit = True
+    if need_commit:
+        database.session.commit()
+
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 

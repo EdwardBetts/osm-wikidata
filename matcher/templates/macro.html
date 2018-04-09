@@ -20,7 +20,7 @@
     {% if c.dist and c.dist > 1 %}
      {{ '{:,d}'.format(c.dist | int) }} m from Wikidata
     {% else %}
-      <span class="badge badge-success">exact location match</span>
+      <span class="badge badge-success">exact location</span>
     {% endif %}
      {# {{ ', '.join(c.matching_tags()) }} #}
 
@@ -29,6 +29,18 @@
        {% elif is_picked %}
          <span class="badge badge-info">best match</span>
        {% endif %}
+
+     {% if c.identifier_match %}
+         <span class="badge badge-success">identifier match</span>
+     {% endif %}
+
+     {% if c.name_match %}
+         <span class="badge badge-success">name match</span>
+     {% endif %}
+
+     {% if c.address_match %}
+         <span class="badge badge-success">address match</span>
+     {% endif %}
 
      {% if show_tags %}
          <a href="#" class="show-tags-link" data-key="{{ c.key }}">[hide tags]</a>
@@ -51,7 +63,9 @@
      <div{% if not show_tags %} class="hide-all-tags"{% endif %} id="candidate-{{ c.key }}">
        {% for k, v in c.tags.items() if k != 'way_area' %}
         {% set tag = k + '=' + v %}
-        {% if k in search_tags or tag in search_tags %}
+        {% if c.name_match and k in c.name_match %}
+          <b>{{ tag }}</b> ({{ c.name_match_count(k) }} Wikidata/Wikipedia name matches)
+        {% elif k in search_tags or tag in search_tags %}
             <b>{{ tag }}</b> (OSM tag matches Wikidata or Wikipedia category)
         {% elif identifiers and k in identifiers and v in identifiers[k] %}
           <b>{{ tag }}</b> (OSM tag matches Wikidata identifier)

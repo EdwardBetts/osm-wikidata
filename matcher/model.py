@@ -68,6 +68,12 @@ class IsA(Base):
         elif labels:
             return list(labels.values())[0]['value']
 
+    def label_and_qid(self):
+        return f'{self.entity_label()} ({self.qid})'
+
+    def labels(self):
+        return self.entity['labels']
+
 class ItemIsA(Base):
     __tablename__ = 'item_isa'
     item_id = Column(Integer,
@@ -135,6 +141,24 @@ class Item(Base):
             if code in labels:
                 return labels[code]['value']
         return self.label()
+
+    def languages(self):
+        entity = self.entity
+        labels = {lang for lang in entity['labels'].keys() if '-' not in lang}
+        sitelinks = {i[:-4] for i in entity['sitelinks'].keys() if i.endswith('wiki')}
+
+        return labels | sitelinks
+
+    def more_endings_from_isa(self):
+        endings = set()
+        langs = self.languages()
+        for isa in self.isa:
+            if not isa.entity:
+                continue
+            for lang, label in isa.entity['labels'].items():
+                if lang in langs:
+                    endings.add(label['value'])
+        return endings
 
     @classmethod
     def get_by_qid(cls, qid):
@@ -237,6 +261,7 @@ class Item(Base):
             ('P238', ['iata'], 'IATA airport code'),
             ('P239', ['icao'], 'ICAO airport code'),
             ('P240', ['faa', 'ref'], 'FAA airport code'),
+            # ('P281', ['addr:postcode', 'postal_code'], 'postal code'),
             ('P296', ['ref'], 'station code'),
             ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
@@ -426,6 +451,9 @@ class ItemCandidate(Base):
     src_id = Column(BigInteger)
     geom = Column(Geography(srid=4326, spatial_index=True))
     geojson = column_property(func.ST_AsGeoJSON(geom), deferred=True)
+    identifier_match = Column(Boolean)
+    address_match = Column(Boolean)
+    name_match = Column(postgresql.JSON)
 
 #    __table_args__ = (
 #        ForeignKeyConstraint(
@@ -544,6 +572,30 @@ class ItemCandidate(Base):
     @property
     def url(self):
         return f'{osm_api_base}/{self.osm_type}/{self.osm_id}'
+
+    def name_match_count(self, osm_key):
+        if not self.name_match:
+            return
+
+        match_count = 0
+        for match_type, wikidata_name, source in self.name_match[osm_key]:
+            match_count += len(source)
+        return match_count
+
+    def set_match_detail(self):
+        keys = ['identifier', 'address', 'name']
+        if any(getattr(self, key + '_match') is not None for key in keys):
+            return False  # no need
+
+        endings = matcher.get_ending_from_criteria(self.tags)
+        endings |= self.item.more_endings_from_isa()
+
+        names = self.item.names()
+        identifiers = self.item.get_item_identifiers()
+        self.address_match = match.check_name_matches_address(self.tags, names)
+        self.name_match = match.check_for_match(self.tags, names, endings)
+        self.identifier_match = match.check_identifier(self.tags, identifiers)
+        return True
 
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'

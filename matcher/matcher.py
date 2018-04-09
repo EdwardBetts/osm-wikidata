@@ -6,9 +6,6 @@ import os.path
 import json
 import re
 
-bad_name_fields = {'tiger:name_base', 'old_name', 'name:right', 'name:left',
-                   'gnis:county_name', 'openGeoDB:name'}
-
 cat_to_ending = {}
 patterns = {}
 entity_types = {}
@@ -184,10 +181,11 @@ def find_item_matches(cur, item, prefix, debug=False):
     item_identifiers = item.get_item_identifiers()
 
     endings = get_ending_from_criteria(item.tags)
+    endings |= item.more_endings_from_isa()
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
-        cur_match = False
+
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
             continue
@@ -202,29 +200,20 @@ def find_item_matches(cur, item, prefix, debug=False):
             admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
         except Exception:
             admin_level = None
-        names = {k: v for k, v in osm_tags.items()
-                 if ('name' in k and k not in bad_name_fields) or k == 'operator'}
 
-        if item_identifiers:
-            for k, v in item_identifiers.items():
-                for values, label in v:
-                    osm_value = osm_tags.get(k)
-                    if osm_value and osm_value in values:
-                        cur_match = True
-                        break
-                if cur_match:
-                    break
+        identifier_match = match.check_identifier(osm_tags, item_identifiers)
 
-        if not cur_match:
+        if not identifier_match:
             if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
                 continue
-            if not names:
-                continue
 
-            if match.check_for_match(osm_tags, wikidata_names, endings):
-                cur_match = True
+        address_match = match.check_name_matches_address(osm_tags, wikidata_names)
 
-        if not cur_match:
+        if address_match is False:
+            continue
+
+        name_match = match.check_for_match(osm_tags, wikidata_names, endings)
+        if not (identifier_match or address_match or name_match):
             continue
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
@@ -244,6 +233,9 @@ def find_item_matches(cur, item, prefix, debug=False):
             'planet_table': src_type,
             'src_id': src_id,
             'geom': geom,
+            'identifier_match': identifier_match,
+            'address_match': address_match,
+            'name_match': name_match,
         }
         candidates.append(candidate)
     return candidates
