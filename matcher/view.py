@@ -448,12 +448,6 @@ def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     multiple_only = bool(request.args.get('multiple'))
 
-    if place.state == 'overpass_error':
-        error = open(place.overpass_filename).read()
-        return render_template('candidates.html',
-                               overpass_error=error,
-                               place=place)
-
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
