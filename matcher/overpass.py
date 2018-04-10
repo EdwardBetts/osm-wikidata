@@ -66,7 +66,7 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
     self = '    {}({});'.format(overpass_type, osm_id) if include_self else ''
 
     oql_template = '''
-[timeout:300][out:xml][bbox:{bbox}];
+[timeout:600][out:xml][bbox:{bbox}];
 area({area_id}) -> .a;
 (
 {tags}
