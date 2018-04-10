@@ -21,6 +21,11 @@ def drop_start(s, start):
 def remove_start(s, start):
     return s[len(start):] if s.startswith(start) else s
 
+def normalize_url(url):
+    for start in 'http://', 'https://', 'www.':
+        url = remove_start(url, start)
+    return url.rstrip('/')
+
 def cache_dir():
     return current_app.config['CACHE_DIR']
 

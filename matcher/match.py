@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from collections import defaultdict
 from unidecode import unidecode
-from .utils import remove_start
+from .utils import remove_start, normalize_url
 
 import re
 
@@ -157,13 +157,21 @@ def normalize_name(name):
 def has_address(osm_tags):
     return any('addr:' + part in osm_tags for part in ('housenumber', 'full'))
 
+def any_url_match(osm_value, values):
+    osm_url = normalize_url(osm_value)
+    return any(osm_url == normalize_url(wd_url) for wd_url in values)
+
 def check_identifier(osm_tags, item_identifiers):
     if not item_identifiers:
         return False
     for k, v in item_identifiers.items():
         for values, label in v:
             osm_value = osm_tags.get(k)
-            if osm_value and osm_value in values:
+            if not osm_value:
+                continue
+            if osm_value in values:
+                return True
+            if k == 'P856' and any_url_match(osm_value, values):
                 return True
     return False
 
