@@ -267,7 +267,7 @@ class Item(Base):
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
             ('P722', ['uic_ref'], 'UIC station code'),
             ('P836', ['ref:gss'], 'UK Government Statistical Service code'),
-            ('P856', ['website', 'contact:website'], 'website'),
+            ('P856', ['website', 'contact:website', 'url'], 'website'),
             ('P882', ['nist:fips_code'], 'FIPS 6-4 (US counties)'),
             ('P883', ['state_code', 'ref', 'nist:fips_code'], 'FIPS 5-2 (code for US states)'),
             # A UIC id can be a IBNR, but not every IBNR is an UIC id
