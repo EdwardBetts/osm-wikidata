@@ -73,9 +73,8 @@
           <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label(lang=lang) }} ({{ i.qid }})</a>
         </td>
         <td>
-          {% set m = c.get_match() %}
           <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-            {{ (m.osm_key + '=' + m.osm_name) if m else c.name }}
+            {{ c.name }}
           </a>
         </td>
         <td style="white-space:nowrap">
