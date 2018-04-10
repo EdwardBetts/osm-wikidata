@@ -978,7 +978,7 @@ class Place(Base):
         return chunks
 
     def get_chunks(self):
-        bbox_chunks = list(self.polygon_chunk(size=64))
+        bbox_chunks = list(self.polygon_chunk(size=32))
 
         chunks = []
         for num, chunk in enumerate(bbox_chunks):
