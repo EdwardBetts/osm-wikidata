@@ -355,6 +355,8 @@ def run_matcher(place, m):
 
         overpass_dir = current_app.config['OVERPASS_DIR']
         for chunk in chunks:
+            if not chunk['oql']:
+                continue  # empty chunk
             filename = os.path.join(overpass_dir, chunk['filename'])
             if (os.path.getsize(filename) > 2000 or
                     "<remark> runtime error" not in open(filename).read()):
