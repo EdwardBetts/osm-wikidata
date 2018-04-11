@@ -109,7 +109,7 @@ class MatcherSocket(object):
                 self.status(msg)
 
         if chunk_size != 1:
-            chunks = list(place.polygon_chunk(size=18))
+            chunks = list(place.polygon_chunk(size=32))
 
             msg = f'downloading wikidata in {len(chunks)} chunks'
             self.status(msg)
@@ -345,13 +345,24 @@ def run_matcher(place, m):
         try:
             overpass_good = m.overpass_request(chunks)
         except ConnectionRefusedError:
-            m.status("error: unable to connect to task queue")
+            m.error("unable to connect to task queue")
             database.session.commit()
             return
         if not overpass_good:
-            m.send('overpass_error')
+            m.error('overpass error')
             # FIXME: e-mail admin
             return
+
+        for chunk in chunks:
+            filename = chunk['filename']
+            if (os.path.getsize(filename) > 2000 or
+                    "<remark> runtime error" not in open(filename).read()):
+                continue
+            root = etree.parse(filename).getroot()
+            remark = root.find('.//remark')
+            m.error('overpass: ' + remark.text)
+            return  # FIXME report error to admin
+
         if len(chunks) > 1:
             m.merge_chunks(chunks)
         place.state = 'postgis'
