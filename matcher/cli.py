@@ -268,6 +268,13 @@ def run_matcher(place_identifier):
 
 @app.cli.command()
 @click.argument('place_identifier')
+def place_match(place_identifier):
+    place = get_place(place_identifier)
+    debug = True
+    place.run_matcher(debug=debug)
+
+@app.cli.command()
+@click.argument('place_identifier')
 @click.argument('qid')
 def individual_match(place_identifier, qid):
     app.config.from_object('config.default')
