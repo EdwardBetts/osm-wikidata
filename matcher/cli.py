@@ -271,6 +271,10 @@ def run_matcher(place_identifier):
 @click.option('--debug', is_flag=True)
 def place_match(place_identifier, debug):
     place = get_place(place_identifier)
+    place_items = place.matcher_query()
+    total = place_items.count()
+    print('total:', total)
+
     place.run_matcher(debug=debug)
 
 @app.cli.command()

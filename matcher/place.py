@@ -767,6 +767,15 @@ class Place(Base):
             place_item.done = False
         session.commit()
 
+    def matcher_query(self):
+        return (PlaceItem.query
+                         .join(Item)
+                         .filter(Item.entity.isnot(None),
+                                 PlaceItem.place == self,
+                                 or_(PlaceItem.done.is_(None),
+                                     PlaceItem.done != true()))
+                         .order_by(PlaceItem.item_id))
+
     def run_matcher(self, debug=False, progress=None):
         if progress is None:
             def progress(candidates, item):
@@ -774,14 +783,7 @@ class Place(Base):
         conn = session.bind.raw_connection()
         cur = conn.cursor()
 
-        place_items = (PlaceItem.query
-                                .join(Item)
-                                .filter(Item.entity.isnot(None),
-                                        PlaceItem.place == self,
-                                        or_(PlaceItem.done.is_(None),
-                                            PlaceItem.done != true()))
-                                .order_by(PlaceItem.item_id))
-
+        place_items = self.matcher_query()
         total = place_items.count()
         # too many items means something has gone wrong
         assert total < 40000
