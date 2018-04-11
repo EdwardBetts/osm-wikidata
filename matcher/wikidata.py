@@ -705,7 +705,8 @@ def get_isa(items, name=None):
             if vertex != qid:
                 result.append(graph[vertex])
             visited.add(vertex)
-            if vertex == qid or 'country' in graph[vertex]:
+            if (vertex == qid or
+                    ('country' in graph[vertex] and 'children' in graph[vertex])):
                 queue.extend(graph[vertex]['children'] - visited)
 
         drop = set()
