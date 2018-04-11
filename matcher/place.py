@@ -20,6 +20,7 @@ import subprocess
 import os.path
 import re
 
+place_chunk_size = 32
 degrees = '(-?[0-9.]+)'
 re_box = re.compile(f'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
 
@@ -978,7 +979,7 @@ class Place(Base):
         return chunks
 
     def get_chunks(self):
-        bbox_chunks = list(self.polygon_chunk(size=32))
+        bbox_chunks = list(self.polygon_chunk(size=place_chunk_size))
 
         chunks = []
         for num, chunk in enumerate(bbox_chunks):
@@ -1045,11 +1046,11 @@ class Place(Base):
         return oql
 
     def chunk_count(self):
-        return sum(1 for _ in self.polygon_chunk(size=64))
+        return sum(1 for _ in self.polygon_chunk(size=place_chunk_size))
 
     def geojson_chunks(self):
         chunks = []
-        for chunk in self.polygon_chunk(size=64):
+        for chunk in self.polygon_chunk(size=place_chunk_size):
             clip = func.ST_Intersection(Place.geom, envelope(chunk))
 
             geojson = (session.query(func.ST_AsGeoJSON(clip, 4))
