@@ -351,4 +351,7 @@ is_in({lat},{lon})->.a;
 (way(pivot.a); rel(pivot.a););
 out bb tags qt;'''
 
-    return get_elements(oql)
+    try:
+        return get_elements(oql)
+    except simplejson.errors.JSONDecodeError:
+        return None

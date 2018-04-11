@@ -1147,12 +1147,14 @@ class Place(Base):
 
         # self.overpass_is_in = overpass.is_in(self.overpass_type, self.osm_id)
         self.overpass_is_in = overpass.is_in_lat_lon(self.lat, self.lon)
-        session.commit()
+        if self.overpass_is_in:
+            session.commit()
         return self.overpass_is_in
 
     def suggest_larger_areas(self):
         ret = []
-        for e in reversed(self.is_in()):
+        is_in = self.is_in() or []
+        for e in reversed(is_in):
             osm_type, osm_id, bounds = e['type'], e['id'], e['bounds']
             if osm_type == self.osm_type and osm_id == self.osm_id:
                 continue
