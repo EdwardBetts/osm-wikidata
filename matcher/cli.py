@@ -268,9 +268,9 @@ def run_matcher(place_identifier):
 
 @app.cli.command()
 @click.argument('place_identifier')
-def place_match(place_identifier):
+@click.option('--debug', is_flag=True)
+def place_match(place_identifier, debug):
     place = get_place(place_identifier)
-    debug = True
     place.run_matcher(debug=debug)
 
 @app.cli.command()
