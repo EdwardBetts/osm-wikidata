@@ -570,7 +570,7 @@
 },
 {
     "cats": ["Mines by country"],
-    "tags": ["man_made=mineshaft", "man_made=mine"],
+    "tags": ["man_made=mineshaft", "man_made=mine", "gnis:feature_type=Mine"],
     "trim": ["mine"],
     "area": true,
     "dist": 10
