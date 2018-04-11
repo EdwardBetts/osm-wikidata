@@ -353,8 +353,9 @@ def run_matcher(place, m):
             # FIXME: e-mail admin
             return
 
+        overpass_dir = current_app.config['OVERPASS_DIR']
         for chunk in chunks:
-            filename = os.path.join('overpass', chunk['filename'])
+            filename = os.path.join(overpass_dir, chunk['filename'])
             if (os.path.getsize(filename) > 2000 or
                     "<remark> runtime error" not in open(filename).read()):
                 continue
