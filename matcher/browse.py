@@ -18,7 +18,10 @@ def qid_to_search_string(qid, entity):
     isa = {i['mainsnak']['datavalue']['value']['id']
            for i in entity.get('claims', {}).get('P31', [])}
 
-    en_label = entity['labels']['en']['value']
+    if 'en' in entity['labels']:
+        label = entity['labels']['en']['value']
+    else:  # pick a label at random
+        label = list(entity['labels'].values())[0]['value']
 
     country_or_bigger = {
         'Q5107',     # continent
@@ -31,11 +34,11 @@ def qid_to_search_string(qid, entity):
     }
 
     if isa & country_or_bigger:
-        return en_label
+        return label
 
     names = wikidata.up_one_level(qid)
     if not names:
-        return en_label
+        return label
     country = names['country_name'] or names['up_country_name']
 
     q = names['name']
