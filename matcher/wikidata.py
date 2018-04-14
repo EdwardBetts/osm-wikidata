@@ -507,6 +507,12 @@ def get_entity(qid):
     if 'missing' not in entity:
         return entity
 
+def entity_label(entity):
+    if 'en' in entity['labels']:
+        return entity['labels']['en']['value']
+    else:  # pick a label at random
+        return list(entity['labels'].values())[0]['value']
+
 def get_entities(ids):
     if not ids:
         return []

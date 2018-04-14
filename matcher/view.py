@@ -1014,7 +1014,7 @@ def browse_page(item_id):
     if not place:
         place = browse.place_from_qid(qid, entity=entity)
         if not place:
-            name = entity['labels']['en']['value']
+            name = wikidata.entity_label(entity)
     if place:
         name = place.name
 
