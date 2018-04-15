@@ -15,7 +15,7 @@
             {{ place.size | filesizeformat }}
         {% endif %}
         </td>
-        <td>{{ place.display_name.replace(';', '; ') }}</td>
+        <td><a href="{{ place.candidates_url }}">{{ place.display_name.replace(';', '; ') }}</a></td>
         <td>{{ place.state }}</td>
         <td>{{ place.changesets }}</td>
         <td>
