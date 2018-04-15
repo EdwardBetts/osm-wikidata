@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Space{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+    {% include "flash_msg.html" %}
+    <h1>{{ self.title() }}</h1>
+
+    <table class="table">
+    {% for place in items %}
+    <tr>
+        <td class="text-nowrap text-right">
+        {% if place.size %}
+            {{ place.size | filesizeformat }}
+        {% endif %}
+        </td>
+        <td>{{ place.display_name.replace(';', '; ') }}</td>
+        <td>{{ place.state }}</td>
+        <td>{{ place.changesets }}</td>
+        <td>
+        <form method="POST" action="{{ url_for('delete_place', place_id=place.place_id, next=request.endpoint) }}">
+            <input type="submit" class="btn btn-danger btn-sm" value="delete">
+        </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
+
+</div>
+{% endblock %}
