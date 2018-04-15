@@ -166,10 +166,13 @@ def check_identifier(osm_tags, item_identifiers):
         return False
     for k, v in item_identifiers.items():
         for values, label in v:
+            values = set(values) | {i.replace(' ', '') for i in values if ' ' in i}
             osm_value = osm_tags.get(k)
             if not osm_value:
                 continue
             if osm_value in values:
+                return True
+            if ' ' in osm_value and osm_value.replace(' ', '') in values:
                 return True
             if k == 'P856' and any_url_match(osm_value, values):
                 return True
