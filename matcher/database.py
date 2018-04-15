@@ -25,7 +25,7 @@ def init_app(app, echo=False):
 
 def get_big_table_list():
     sql_big_polygon_tables = '''
-select place.place_id, size, display_name, state, count(changeset.id)
+select place.place_id, place.osm_type, place.osm_id, size, display_name, state, count(changeset.id)
 from place left outer join changeset ON changeset.place_id = place.place_id, (
     SELECT cast(substring(relname from '\d+') as integer) as place_id, pg_relation_size(C.oid) AS "size"
     FROM pg_class C
