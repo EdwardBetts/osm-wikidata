@@ -330,6 +330,14 @@ def run_matcher(place, m):
     item_count = len(db_items)
     m.status('{:,d} Wikidata items found'.format(item_count))
 
+    if not db_items:
+        m.item_line('finished')
+        place.state = 'ready'
+        database.session.commit()
+        print('done')
+        m.send('done')
+        m.mark_log_good()
+
     if place.state == 'tags':
         m.get_item_detail(db_items)
         place.state = 'wbgetentities'
