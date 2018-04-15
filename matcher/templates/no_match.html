@@ -34,7 +34,11 @@
   <p>{{ '{:,d}'.format(items_without_matches.count()) }} items</p>
 
   {% for item in items_without_matches %}
-    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a><br>
+    <div class="card my-2">
+      <div class="card-body">
+        <h5 class="card-title"><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a></h5>
+    {{ (item.first_paragraph() or '') | safe }}
+      {#
       <ul>
         {% if item.categories %}
           <li>Wikipedia categories: {{ ', '.join(item.categories) }}</li>
@@ -43,7 +47,9 @@
           <li>possible OSM tags: {{ ', '.join(item.tags|sort) }}</li>
         {% endif %}
       </ul>
-    </p>
+      #}
+      </div>
+    </div>
   {% endfor %}
 
 </div>

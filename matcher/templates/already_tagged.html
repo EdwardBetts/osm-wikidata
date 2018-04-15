@@ -32,7 +32,10 @@
 
   {% set lang = place.most_common_language() %}
   {% for item in items %}
-    <p><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a></p>
+    <div class="card my-2">
+      <div class="card-body">
+      <h5 class="card-title"><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a></h5>
+    {{ (item.first_paragraph() or '') | safe }}
     {# <br>
     <ul>
       <li>Categories:
@@ -47,6 +50,8 @@
       {{ candidate_info(c) }}
     {% endfor %}
     </ul>
+      </div>
+    </div>
   {% endfor %}
 
 </div>
