@@ -276,6 +276,7 @@ class Item(Base):
             ('P1216', ['HE_ref'], 'National Heritage List for England number'),
             ('P2253', ['ref:edubase'], 'EDUBase URN'),
             ('P2815', ['esr:user', 'ref'], 'ESR station code'),
+            ('P3562', ['seamark:light:reference'], 'Admiralty number'),
             ('P4755', ['ref'], 'UK railway station code'),
             ('P4803', ['ref'], 'Amtrak station code'),
         ]
