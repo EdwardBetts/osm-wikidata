@@ -425,7 +425,7 @@ def wd_uri_to_id(value):
 
 def wd_to_qid(wd):
     # expecting {'type': 'url', 'value': 'https://www.wikidata.org/wiki/Q30'}
-    if wd['type'] == 'url':
+    if wd['type'] == 'uri':
         return wd_uri_to_qid(wd['value'])
 
 def wd_uri_to_qid(value):
