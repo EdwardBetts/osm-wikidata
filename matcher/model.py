@@ -404,6 +404,17 @@ class Item(Base):
             names[v].append(('sitelink', k))
         return names
 
+    def first_paragraph(self):
+        close_tag = '</p>'
+        if not self.extract:
+            return
+        first_end_p_tag = self.extract.find(close_tag)
+        if first_end_p_tag == -1:
+            # FIXME: e-mail admin
+            return self.extract
+
+        return self.extract[:first_end_p_tag + len(close_tag)]
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 

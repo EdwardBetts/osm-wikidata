@@ -7,7 +7,8 @@
 {% endmacro %}
 
 {% macro candidate_item(item) %}
-<div id="{{ item.qid }}">
+<div id="{{ item.qid }}" class="card my-2">
+  <div class="card-body">
 <p>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
   {% if upload_okay and picked %}
@@ -44,6 +45,8 @@
 
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map" id="map_{{ item.qid }}">[show on map]</a>
+
+  {{ (item.first_paragraph() or '') | safe }}
 
   {% set identifiers = item.identifier_values() %}
   {% if identifiers %}
@@ -82,6 +85,8 @@
                       identifiers=identifiers) }}
   {% endfor %}
   </ul>
+
+</div>
 </div>
 {% endmacro %}
 
