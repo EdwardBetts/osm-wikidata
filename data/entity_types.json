@@ -149,6 +149,7 @@
     "tags": ["building=mosque", "amenity=place_of_worship"],
     "trim": ["mosque"],
     "check_housename": true,
+    "wikidata": "Q32815",
     "dist": 1
 },
 {
@@ -156,6 +157,7 @@
     "tags": ["building=synagogue", "amenity=place_of_worship"],
     "trim": ["temple", "synagogue"],
     "check_housename": true,
+    "wikidata": "Q34627",
     "dist": 1
 },
 {
@@ -163,6 +165,7 @@
     "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli"],
     "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge"],
     "check_housename": true,
+    "wikidata": "Q11707",
     "dist": 6
 },
 {
@@ -170,6 +173,7 @@
     "tags": ["tourism=hotel", "building=hotel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
+    "wikidata": "Q27686",
     "dist": 2
 },
 {
@@ -177,6 +181,7 @@
     "tags": ["tourism=hotel", "building=hotel", "tourism=motel", "building=motel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
+    "wikidata": "Q216212",
     "dist": 5
 },
 {
@@ -189,12 +194,14 @@
     "cats": ["Dams by country"],
     "tags": ["waterway=dam"],
     "trim": ["dam"],
+    "wikidata": "Q12323",
     "dist": 10
 },
 {
     "cats": ["Valleys by country"],
     "tags": ["natural=valley"],
     "trim": ["valley"],
+    "wikidata": "Q39816",
     "dist": 10
 },
 {
@@ -203,6 +210,7 @@
     "tags": ["building", "historic=manor"],
     "trim": ["house", "hall"],
     "check_housename": true,
+    "wikidata": "Q3947",
     "dist": 0.5
 },
 {
@@ -210,6 +218,7 @@
     "tags": ["historic=palace", "building=palace", "historic=castle"],
     "trim": ["palace"],
     "check_housename": true,
+    "wikidata": "Q16560",
     "dist": 3
 },
 {
@@ -217,12 +226,14 @@
     "tags": ["amenity=fire_station"],
     "trim": [],
     "check_housename": true,
+    "wikidata": "Q1195942",
     "dist": 2
 },
 {
     "cats": ["Commercial buildings by country", "Office buildings by country"],
     "tags": ["building", "landuse=commercial", "office"],
     "trim": ["building", "tower", "shopping centre", "shopping center"],
+    "wikidata": "Q1021645",
     "check_housename": true,
     "dist": 0.5
 },
@@ -231,6 +242,7 @@
     "tags": ["office=government", "amenity=public_building", "building=public"],
     "skip_cats": ["Ambassadors by country of origin", "Military installations", "Fire stations by country", "Police stations by country", "Publicly funded schools in the United States", "Prisons in the United States", "Lighthouses in the United States", "Fire stations in the United States", "Police stations in the United States", "Post office buildings in the United States", "Ambassadors by mission country", "Public schools"],
     "trim": [],
+    "wikidata": "Q16831714",
     "check_housename": true,
     "dist": 5
 },
@@ -239,6 +251,7 @@
     "skip_cats": ["Prisons in"],
     "tags": ["building", "landuse=residential"],
     "trim": ["house", "estate"],
+    "wikidata": "Q11755880",
     "check_housename": true,
     "dist": 0.5
 },
@@ -246,6 +259,7 @@
     "cats": ["Fountains by country"],
     "tags": ["amenity=fountain"],
     "trim": ["fountain"],
+    "wikidata": "Q483453",
     "dist": 2
 },
 {
@@ -253,20 +267,23 @@
     "tags": ["building=industrial", "man_made=works", "building=manufacture"],
     "trim": ["factory", "works"],
     "check_housename": true,
-    "dist": 5
+    "wikidata": "Q12144897",
+    "dist": 2
 },
 {
     "cats": ["Department store buildings"],
     "tags": ["shop=department_store"],
     "trim": ["department store", "store"],
     "check_housename": true,
-    "dist": 4
+    "wikidata": "Q216107",
+    "dist": 2
 },
 {
     "cats": ["Agricultural buildings by country"],
     "tags": ["building=farm", "building=barn", "building=farm_auxiliary"],
     "trim": ["farm", "barn"],
     "check_housename": true,
+    "wikidata": "Q10480682",
     "dist": 4
 },
 {
@@ -342,6 +359,7 @@
     "tags": ["amenity=cinema"],
     "trim": ["cinema", "picture house", "theater", "theatre"],
     "check_housename": true,
+    "wikidata": "Q41253",
     "dist": 1
 },
 {
@@ -349,6 +367,7 @@
     "tags": ["amenity=arts_centre"],
     "trim": ["arts centre", "arts centre", "art center", "art centre", "center for the arts", "centre for the arts", "gallery"],
     "check_housename": true,
+    "wikidata": "Q2190251",
     "dist": 2
 },
 {
@@ -362,6 +381,7 @@
     "cats": ["Windmills by country"],
     "tags": ["man_made=windmill"],
     "trim": ["mill", "wind mill"],
+    "wikidata": "Q38720",
     "dist": 2
 },
 {
@@ -1152,6 +1172,13 @@
     "area": true,
     "trim": [],
     "dist": 5
+},
+{
+    "cats": ["Shopping districts", "Pedestrian malls"],
+    "tags": ["landuse=retail"],
+    "area": true,
+    "trim": [],
+    "dist": 2
 },
 {
     "cats": ["Rock formations by country"],
