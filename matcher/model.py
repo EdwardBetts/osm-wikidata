@@ -234,11 +234,12 @@ class Item(Base):
         return ' or\n '.join(cond)
 
     def instanceof(self):
-        if self.entity:
-            return [i['mainsnak']['datavalue']['value']['numeric-id']
-                    for i in self.entity['claims'].get('P31', [])]
-        else:
+        if not self.entity:
             return []
+
+        return [i['mainsnak']['datavalue']['value']['numeric-id']
+                for i in self.entity['claims'].get('P31', [])
+                if 'datavalue' in i['mainsnak']]
 
     def identifiers(self):
         ret = set()
