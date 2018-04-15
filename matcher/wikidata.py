@@ -423,7 +423,14 @@ def flatten_criteria(items):
 def wd_uri_to_id(value):
     return int(drop_start(value, wd_entity))
 
+def wd_to_qid(wd):
+    # expecting {'type': 'url', 'value': 'https://www.wikidata.org/wiki/Q30'}
+    if wd['type'] == 'url':
+        return wd_uri_to_qid(wd['value'])
+
 def wd_uri_to_qid(value):
+    if not value.startswith(wd_entity):
+        print(repr(value))
     assert value.startswith(wd_entity)
     return value[len(wd_entity) - 1:]
 
@@ -438,7 +445,7 @@ def parse_enwiki_query_old(query):
     } for i in query]
 
 def parse_enwiki_query(rows):
-    return {wd_uri_to_qid(row['place']['value']):
+    return {wd_to_qid(row['place']):
             {
                 'query_label': row['placeLabel']['value'],
                 'enwiki': enwiki_url_to_title(row['article']['value']),
@@ -457,7 +464,9 @@ def parse_item_tag_query(rows, items):
         tag_or_key = drop_tag_prefix(row['tag']['value'])
         if not tag_or_key or tag_or_key in skip_tags:
             continue
-        qid = wd_uri_to_qid(row['place']['value'])
+        qid = wd_to_qid(row['place'])
+        if not qid:
+            continue
 
         if qid not in items:
             items[qid] = {
@@ -610,7 +619,7 @@ def get_location_hierarchy(qid, name=None):
     # not currently in use
     query = located_in_query.replace('QID', qid)
     return [{
-        'qid': wd_uri_to_qid(row['item']['value']),
+        'qid': wd_to_qid(row['item']),
         'label': row['itemLabel']['value'],
         'country': row['countryLabel']['value'],
     } for row in run_query(query, name=name)]
@@ -627,9 +636,9 @@ def up_one_level(qid, name=None):
         return {
             'name': row['startLabel']['value'],
             'up': row['itemLabel']['value'],
-            'country_qid': wd_uri_to_qid(row['country1']['value']),
+            'country_qid': wd_to_qid(row['country1']),
             'country_name': row['country1Label']['value'],
-            'up_country_qid': wd_uri_to_qid(row['country2']['value']),
+            'up_country_qid': wd_to_qid(row['country2']),
             'up_country_name': row['country2Label']['value'],
         }
 
@@ -743,8 +752,10 @@ def item_types_graph(items, name=None):
 
     graph = {}
     for row in run_query(query, name=name, send_error_mail=False):
-        item_qid = wd_uri_to_qid(row['item']['value'])
-        type_qid = wd_uri_to_qid(row['type']['value'])
+        item_qid = wd_to_qid(row['item'])
+        type_qid = wd_to_qid(row['type'])
+        if not item_qid or not type_qid:
+            continue
         if type_qid not in graph:
             graph[type_qid] = {
                 'qid': type_qid,
@@ -758,7 +769,9 @@ def item_types_graph(items, name=None):
                 'children': set(),
             }
         if 'country' in row and 'country' not in graph[item_qid]:
-            graph[item_qid]['country'] = row_qid_and_label(row, 'country')
+            country = row_qid_and_label(row, 'country')
+            if country:
+                graph[item_qid]['country'] = country
 
         graph[item_qid]['children'].add(type_qid)
 
