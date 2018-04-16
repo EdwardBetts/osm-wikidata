@@ -845,19 +845,30 @@ class Place(Base):
         for cur in utils.chunk(items, 1000):
             isa_map.update(wikidata.get_isa(cur))
 
+        download_isa = set()
+        isa_obj_map = {}
         for qid, isa_list in isa_map.items():
             isa_objects = []
             for isa_dict in isa_list:
-                item_id = int(isa_dict['qid'][1:])
+                isa_qid = isa_dict['qid']
+                item_id = int(isa_qid[1:])
                 isa = IsA.query.get(item_id)
                 if isa:
                     isa.label = isa_dict['label']
+                    if not isa.entity:
+                        download_isa.add(isa_qid)
                 else:
                     isa = IsA(item_id=item_id, label=isa_dict['label'])
+                    download_isa.add(isa_qid)
                     session.add(isa)
+                isa_obj_map[isa_qid] = isa
                 isa_objects.append(isa)
             item = Item.query.get(qid[1:])
             item.isa = isa_objects
+
+        for qid, entity in wikidata.entity_iter(download_isa):
+            isa_obj_map[qid].entity = entity
+
         session.commit()
 
     def do_match(self, debug=True):
