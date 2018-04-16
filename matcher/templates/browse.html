@@ -3,21 +3,13 @@
 
 {% block title %}Browse {{ name }} ({{ qid }}){% endblock %}
 
-{% block content %}
-<div class="container my-2">
-<div class="row">
-<div class="col">
-
-<h1>{{ name }} <small>({{ qid }})</small></h1>
-{% if place %}
-  {{ place_box(place) }}
-{% endif %}
-
+{% macro place_table(rows) %}
 <table class="table">
 <thead>
 <tr>
   <th>place</th>
   <th>matcher</th>
+  <th>instance of</th>
   <th class="text-right">area</th>
   <th class="text-right">population</th>
 </tr>
@@ -35,12 +27,39 @@
       too big for matcher
     {% endif %}
   </td>
+  <td>
+    {% for isa_qid in row.isa %}
+      {{ isa_map[isa_qid].label_and_qid() }}{% if not loop.last %}<br/>{% endif %}
+    {% endfor %}
+  </td>
   <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'n/a' }}</td>
   <td class="text-right">{{ '{:,d}'.format(row.population) if row.population else 'n/a' }}</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+{% endmacro %}
+
+{% block content %}
+<div class="container my-2">
+<div class="row">
+<div class="col">
+
+<h1>{{ name }} <small>({{ qid }})</small></h1>
+{% if place %}
+  {{ place_box(place) }}
+{% endif %}
+
+{% if current_places %}
+  {{ place_table(current_places) }}
+{% else %}
+  <p>No subregions were found.</p>
+{% endif %}
+
+{% if former_places %}
+<h3>former places</h3>
+{{ place_table(former_places) }}
+{% endif %}
 
 </div>
 </div>

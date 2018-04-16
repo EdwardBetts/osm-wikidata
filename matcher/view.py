@@ -1,7 +1,7 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
                overpass, mail, browse, edit)
 from .utils import cache_filename, get_radius, get_int_arg, is_bot
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language, IsA
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -1020,14 +1020,45 @@ def browse_page(item_id):
 
     rows = wikidata.next_level_places(qid, entity)
 
+    isa_map = {}
+    download_isa = set()
+    for row in rows:
+        for isa_qid in row['isa']:
+            if isa_qid in isa_map:
+                continue
+            isa_obj = IsA.query.get(isa_qid[1:])
+            isa_map[isa_qid] = isa_obj
+            if isa_obj and isa_obj.entity:
+                continue
+            download_isa.add(isa_qid)
+
+    for isa_qid, entity in wikidata.entity_iter(download_isa):
+        if isa_map[isa_qid]:
+            isa_map[isa_qid].entity = entity
+            continue
+        isa_obj = IsA(item_id=isa_qid[1:], entity=entity)
+        isa_map[isa_qid] = isa_obj
+        database.session.add(isa_obj)
+    if download_isa:
+        database.session.commit()
+
     if sort and sort in {'area', 'population'}:
         rows.sort(key=lambda i: i[sort] if i[sort] else 0)
+
+    former_type = {isa_qid for isa_qid, isa in isa_map.items()
+                   if 'former' in isa.entity_label().lower() or
+                      'historical' in isa.entity_label().lower()}
+
+    current_places = [row for row in rows if not (set(row['isa']) & former_type)]
+    former_places = [row for row in rows if set(row['isa']) & former_type]
 
     return render_template('browse.html',
                            qid=qid,
                            place=place,
                            name=name,
-                           rows=rows)
+                           current_places=current_places,
+                           former_places=former_places,
+                           isa_map=isa_map)
 
 @app.route('/matcher/Q<int:item_id>')
 def matcher_wikidata(item_id):

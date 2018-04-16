@@ -181,7 +181,12 @@ GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 # Q56061 == administrative territorial entity
 
 next_level_query = '''
-SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
+WHERE {
   VALUES ?start { wd:QID } .
   ?start wdt:P31/wdt:P279* ?subclass .
   ?subclass wdt:P150 ?nextlevel .
@@ -192,23 +197,37 @@ SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE 
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
-GROUP BY ?item ?itemLabel ?startLabel ?area
+GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
 next_level_query3 = '''
-SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
+WHERE {
   VALUES ?start { wd:QID } .
   VALUES (?item) { PLACES }
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
-GROUP BY ?item ?itemLabel ?startLabel ?area
+GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
+
+item_labels_query = '''
+SELECT ?item ?itemLabel
+WHERE {
+  VALUES (?item) { ITEMS }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}'''
 
 item_types = '''
 SELECT DISTINCT ?item ?type WHERE {
@@ -266,7 +285,12 @@ admin_area_map = {
 }
 
 next_level_query2 = '''
-SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE {
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
+WHERE {
   VALUES ?start { wd:QID } .
   TYPES
   # metropolitan borough of the County of London (old)
@@ -276,9 +300,10 @@ SELECT DISTINCT ?item ?itemLabel ?startLabel (SAMPLE(?pop) AS ?pop) ?area WHERE 
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
-GROUP BY ?item ?itemLabel ?startLabel ?area
+GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
@@ -336,7 +361,9 @@ next_level_by_type = '''
 SELECT DISTINCT ?item ?itemLabel
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
-                (SAMPLE(?area) AS ?area) WHERE {
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
+WHERE {
   VALUES ?start { wd:QID } .
   TYPES
   ?item wdt:P131 ?start .
@@ -345,6 +372,7 @@ SELECT DISTINCT ?item ?itemLabel
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
@@ -654,7 +682,7 @@ def isa_list(types):
         return '?item wdt:P31 wd:{} .'.format(types[0])
     return ' union '.join('{ ?item wdt:P31 wd:' + t + ' }' for t in types)
 
-def next_level_places(qid, entity, name=None):
+def get_next_level_query(qid, entity, name=None):
     claims = entity.get('claims', {})
 
     isa = {i['mainsnak']['datavalue']['value']['id']
@@ -667,7 +695,6 @@ def next_level_places(qid, entity, name=None):
 
     types_from_isa = isa & next_level_type_map.keys()
 
-    rows = []
     if types_from_isa:
         # use first match in type map
         types = isa_list(next_level_type_map[t] for t in types_from_isa)
@@ -684,9 +711,18 @@ def next_level_places(qid, entity, name=None):
     else:
         query = next_level_query
 
-    for row in run_query(query.replace('QID', qid), name=name):
+    return query.replace('QID', qid)
+
+def next_level_places(qid, entity, name=None):
+    query = get_next_level_query(qid, entity)
+
+    rows = []
+    for row in run_query(query, name=name):
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
+        isa_list = [wd_uri_to_qid(url)
+                    for url in row['isa_list']['value'].split(' ')
+                    if url]
         i = {
             'population': (int(row['pop']['value']) if row.get('pop') else None),
             'area': (int(float(row['area']['value'])) if row.get('area') else None),
@@ -694,15 +730,36 @@ def next_level_places(qid, entity, name=None):
             'start': row['startLabel']['value'],
             'item_id': item_id,
             'qid': qid,
+            'isa': isa_list,
+        }
+        rows.append(i)
+
+    return rows
+
+def get_item_labels_query(items):
+    query_items = ' '.join(f'(wd:{qid})' for qid in items)
+    return item_labels_query.replace('ITEMS', query_items)
+
+def get_item_labels(items):
+    query = get_item_labels_query(items)
+    rows = []
+    for row in run_query(query):
+        item_id = wd_uri_to_id(row['item']['value'])
+        qid = 'Q{:d}'.format(item_id)
+
+        i = {
+            'label': row['itemLabel']['value'],
+            'item_id': item_id,
+            'qid': qid,
         }
         rows.append(i)
     return rows
 
 def row_qid_and_label(row, name):
-    qid = wd_uri_to_qid(row[name]['value'])
-    label = row[name + 'Label']['value']
-
-    return {'qid': qid, 'label': label}
+    qid = wd_to_qid(row[name])
+    if not qid:
+        return
+    return {'qid': qid, 'label': row[name + 'Label']['value']}
 
 def get_isa(items, name=None):
     graph = item_types_graph(items, name=name)
@@ -877,25 +934,15 @@ def get_item_types(items, name=None):  # unused
     query = (item_types.replace('ITEMS', query_items)
                        .replace('TYPES', query_types))
 
-    return {(wd_uri_to_qid(row['item']['value']),
-             wd_uri_to_qid(row['type']['value']))
+    return {(wd_to_qid(row['item']), wd_to_qid(row['type']))
             for row in run_query(query, name=name)}
 
 def find_superclasses(items, name=None):
     query_items = ' '.join(f'(wd:{qid})' for qid in items)
     query = subclasses.replace('ITEMS', query_items)
 
-    pair = set()
-    for row in run_query(query, name=name):
-        item_qid = wd_uri_to_qid(row['item']['value'])
-        type_qid = wd_uri_to_qid(row['type']['value'])
-        # item_label = row['typeLabel']['value']
-        # type_label = row['typeLabel']['value']
-        # print(f'{item_qid:10s}  {item_label:30s}  {type_qid:10s}  {type_label:30s}')
-        # tree[item_qid].add(type_qid)
-        pair.add((item_qid, type_qid))
-
-    return pair
+    return {(wd_to_qid(row['item']), wd_to_qid(row['type']))
+            for row in run_query(query, name=name)}
 
 def claim_value(claim):
     return claim['mainsnak']['datavalue']['value']
