@@ -60,7 +60,7 @@ def test_hit_from_qid(monkeypatch):
     }
 
     def mock_lookup(q):
-        return [hit]
+        return [{'extratags': {}}, hit]
 
     monkeypatch.setattr(nominatim, 'lookup', mock_lookup)
 
