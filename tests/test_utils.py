@@ -1,4 +1,5 @@
 from matcher import utils
+import pytest
 
 def test_normalize_url():
     expect = 'test.org'
@@ -24,6 +25,9 @@ def test_flatten():
 
 def test_drop_start():
     assert utils.drop_start('aaabbb', 'aaa') == 'bbb'
+
+    with pytest.raises(AssertionError):
+        assert utils.drop_start('aaabbb', 'ccc')
 
 def test_remove_start():
     assert utils.remove_start('aaabbb', 'aaa') == 'bbb'
