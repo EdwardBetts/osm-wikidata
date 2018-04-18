@@ -46,35 +46,39 @@ def wait_for_slot(send_queue):
     send_queue.put({'type': 'status', 'wait': secs})
     sleep(secs)
 
+def process_queue_loop():
+    with app.app_context():
+        while True:
+            process_queue()
+
 def process_queue():
-    while True:
-        area, item = task_queue.get()
-        place = item['place']
-        send_queue = item['queue']
-        for num, chunk in enumerate(item['chunks']):
-            oql = chunk.get('oql')
-            if not oql:
-                continue
-            filename = 'overpass/' + chunk['filename']
-            msg = {
-                'num': num,
-                'filename': chunk['filename'],
-                'place': place,
-            }
-            if not os.path.exists(filename):
-                utils.check_free_space(app.config)
-                wait_for_slot(send_queue)
-                to_client(send_queue, 'run_query', msg)
-                print('run query')
-                r = overpass.run_query(oql)
-                print('query complete')
-                with open(filename, 'wb') as out:
-                    out.write(r.content)
-                utils.check_free_space(app.config)
-            print(msg)
-            to_client(send_queue, 'chunk', msg)
-        print('item complete')
-        send_queue.put(None)
+    area, item = task_queue.get()
+    place = item['place']
+    send_queue = item['queue']
+    for num, chunk in enumerate(item['chunks']):
+        oql = chunk.get('oql')
+        if not oql:
+            continue
+        filename = 'overpass/' + chunk['filename']
+        msg = {
+            'num': num,
+            'filename': chunk['filename'],
+            'place': place,
+        }
+        if not os.path.exists(filename):
+            utils.check_free_space(app.config)
+            wait_for_slot(send_queue)
+            to_client(send_queue, 'run_query', msg)
+            print('run query')
+            r = overpass.run_query(oql)
+            print('query complete')
+            with open(filename, 'wb') as out:
+                out.write(r.content)
+            utils.check_free_space(app.config)
+        print(msg)
+        to_client(send_queue, 'chunk', msg)
+    print('item complete')
+    send_queue.put(None)
 
 class Request:
     def __init__(self, sock, address):
@@ -134,7 +138,7 @@ def handle_request(sock, address):
 
 def main():
     utils.check_free_space(app.config)
-    spawn(process_queue)
+    spawn(process_queue_loop)
     print('listening on port {}'.format(port))
     server = StreamServer((listen_host, port), handle_request)
     server.serve_forever()
