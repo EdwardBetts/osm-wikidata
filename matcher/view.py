@@ -186,7 +186,7 @@ def add_wikidata_tag():
     if osm:
         osm_type, _, osm_id = osm.partition('/')
     elif 'osm_id' in request.form and 'osm_type' in request.form:
-        osm_id = request.form['osm_id']  # old form paramters
+        osm_id = request.form['osm_id']  # old form parameters
         osm_type = request.form['osm_type']
     else:
         flash('no candidate selected')
