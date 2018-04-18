@@ -11,7 +11,7 @@ tags = ['admin_level', 'amenity=arts_centre',
         'type=bridge', 'type=site', 'waterway=lock_gate']
 
 def test_oql_from_tag():
-    ret = oql_from_tag('site', False, filters='area.a')
+    ret = oql_from_tag('site', filters='area.a')
 
     assert ret == ['\n    rel(area.a)[site][~"^(addr:housenumber|.*name.*)$"~".",i];']
 
@@ -19,7 +19,7 @@ def test_oql_for_area():
     bbox = 'bbox:52.157942,0.068639,52.237230,0.184552'
     oql = oql_for_area('rel', 295355, ['amenity=library'], bbox, '')
     expect = '''
-[timeout:300][out:xml][bbox:bbox:52.157942,0.068639,52.237230,0.184552];
+[timeout:600][out:xml][bbox:bbox:52.157942,0.068639,52.237230,0.184552];
 area(3600295355) -> .a;
 (
 node(area.a)["amenity"="library"];
@@ -41,7 +41,7 @@ out;'''
     oql = oql_for_area('rel', 295355, tags, bbox, '')
 
     expect = '''
-[timeout:300][out:xml][bbox:bbox:52.157942,0.068639,52.237230,0.184552];
+[timeout:600][out:xml][bbox:bbox:52.157942,0.068639,52.237230,0.184552];
 area(3600295355) -> .a;
 (
 node(area.a)["admin_level"];

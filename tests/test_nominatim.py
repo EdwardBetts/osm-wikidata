@@ -67,14 +67,13 @@ def test_place_from_nominatim():
         ('country', 'United Kingdom'),
         ('country_code', 'gb'),
     ]
-    assert len(expect_address) == len(place.address_details)
+    assert len(expect_address) == len(place.address)
     for i in range(len(expect_address)):
-        a = place.address_details[i]
+        a = place.address[i]
         expect = expect_address[i]
-        assert a.type == expect[0]
-        assert a.name == expect[1]
-        assert a.position == i
+        assert a['type'] == expect[0]
+        assert a['name'] == expect[1]
     # assert list(place.address.items()) == expect_address
 
-    place.address_details = []
-    assert len(place.address_details) == 0
+    place.address = []
+    assert len(place.address) == 0
