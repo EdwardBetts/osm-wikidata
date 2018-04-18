@@ -20,9 +20,8 @@ name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
 name_only_key = ['place', 'landuse', 'admin_level', 'water', 'man_made',
         'railway', 'aeroway', 'bridge', 'natural']
 
-overpass_url = 'http://overpass-api.de/api/interpreter'
-# overpass_url = 'http://overpass.osm.rambler.ru/cgi/interpreter'
-# overpass_url = 'http://api.openstreetmap.fr/oapi/interpreter'
+def endpoint():
+    return current_app.config['OVERPASS_URL'] + '/api/interpreter'
 
 class RateLimited(Exception):
     pass
@@ -30,9 +29,19 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
+def run_query(oql, error_on_rate_limit=True):
+    r = requests.post(endpoint(), data=oql, headers=user_agent_headers())
+
+    if (error_on_rate_limit and
+            r.status_code == 429 and
+            'rate_limited' in r.text):
+        mail.error_mail('items_as_xml: overpass rate limit', oql, r)
+        raise RateLimited
+
+    return r
+
 def get_elements(oql):
-    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-    return r.json()['elements']
+    return run_query(oql).json()['elements']
 
 def name_only(t):
     return (t in name_only_tag or
@@ -191,7 +200,7 @@ def parse_status(status):
 
 def get_status(url=None):
     if url is None:
-        url = 'https://overpass-api.de/api/status'
+        url = current_app.config['OVERPASS_URL'] + '/api/status'
     status = requests.get(url).text
     return parse_status(status)
 
@@ -219,11 +228,7 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
     if not refresh and os.path.exists(filename):
         return json.load(open(filename))['elements']
 
-    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-
-    if r.status_code == 429 and 'rate_limited' in r.text:
-        mail.error_mail('item query: overpass rate limit', oql, r)
-        raise RateLimited
+    r = run_query(oql)
 
     if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
         mail.error_mail('item query: overpass 504 gateway timeout', oql, r)
@@ -250,11 +255,7 @@ def get_existing(wikidata_id, refresh=False):
 out qt center tags;
 '''.format(qid=wikidata_id)
 
-    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-
-    if r.status_code == 429 and 'rate_limited' in r.text:
-        mail.error_mail('get existing: overpass rate limit', oql, r)
-        raise RateLimited
+    r = run_query(oql)
 
     if len(r.content) < 2000 and b'<title>504 Gateway' in r.content:
         mail.error_mail('item query: overpass 504 gateway timeout', oql, r)
@@ -279,20 +280,13 @@ def get_tags(elements):
 out qt tags;
 '''.format(''.join(union))
 
-    r = requests.post(overpass_url, data=oql, headers=user_agent_headers())
-
-    return r.json()['elements']
-
-def run_query(oql):
-    return requests.post(overpass_url,
-                         data=oql,
-                         headers=user_agent_headers())
+    return get_elements(oql)
 
 def run_query_persistent(oql, attempts=3, via_web=True):
     for attempt in range(attempts):
         wait_for_slot()
         print('calling overpass')
-        r = run_query(oql)
+        r = run_query(oql, error_on_rate_limit=False)
         if r is None:
             seconds = 30
             print('retrying, waiting {} seconds'.format(seconds))
@@ -323,15 +317,7 @@ def items_as_xml(items):
 
     oql = '({});(._;>);out meta;'.format(union)
 
-    r = requests.post(overpass_url,
-                      data=oql,
-                      headers=user_agent_headers())
-
-    if r.status_code == 429 and 'rate_limited' in r.text:
-        mail.error_mail('items_as_xml: overpass rate limit', oql, r)
-        raise RateLimited
-
-    return r.content
+    return run_query(oql).content
 
 def is_in(osm_type, osm_id):
     oql = f'''
