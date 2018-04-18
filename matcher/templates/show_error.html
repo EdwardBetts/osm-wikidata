@@ -21,7 +21,7 @@ URL: {{ request.url }}
 {{ tb.plaintext | safe }}
 {% endset %}
 
-<p><a class="btn btn-primary btn-lg" role="button" href="https://github.com/EdwardBetts/osm-wikidata/issues/new?title={{ tb.exception | urlencode }}&body={{ body | urlencode }}">Submit as an issue on GitHub</a> (requires an accout with GitHub)</p>
+<p><a class="btn btn-primary btn-lg" role="button" href="https://github.com/EdwardBetts/osm-wikidata/issues/new?title={{ tb.exception | urlencode }}&body={{ body | urlencode }}">Submit as an issue on GitHub</a> (requires an account with GitHub)</p>
 
 <h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
 {{ tb.render_summary(include_title=False) | safe }}
