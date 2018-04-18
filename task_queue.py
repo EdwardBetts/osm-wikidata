@@ -4,8 +4,9 @@ from gevent.queue import PriorityQueue, Queue
 from gevent import monkey, spawn, sleep
 monkey.patch_all()
 
-from matcher import overpass, netstring, utils
+from matcher import overpass, netstring, utils, mail
 from matcher.view import app
+import requests.exceptions
 import json
 import os.path
 
@@ -36,7 +37,14 @@ def to_client(send_queue, msg_type, msg):
 
 def wait_for_slot(send_queue):
     print('get status')
-    status = overpass.get_status()
+    try:
+        status = overpass.get_status()
+    except requests.exceptions.Timeout:
+        body = 'Timeout talking to overpass API'
+        mail.send_mail('overpass timeout', body)
+        send_queue.put({'type': 'error',
+                        'error': "Can't access overpass API"})
+        raise
 
     if not status['slots']:
         return
