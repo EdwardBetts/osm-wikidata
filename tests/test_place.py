@@ -13,6 +13,15 @@ def simple_place():
                   south=0, west=0, north=0, east=0)
     return place
 
+def filter_tags(tags):
+    ''' Filter out lifecycle prefixes like was: and disused: '''
+
+    prefixes = ('disused', 'was', 'abandoned', 'demolished',
+                'destroyed', 'ruins')
+
+    return {tag for tag in tags
+            if not any(tag.startswith(prefix + ':') for prefix in prefixes)}
+
 def test_add_tags_to_items(app):
     place = simple_place()
 
@@ -34,9 +43,8 @@ def test_add_tags_to_items(app):
         'amenity=library',
     }
 
-    assert item.tags == expect
-
-    assert place.all_tags == expect
+    assert filter_tags(item.tags) == expect
+    assert filter_tags(place.all_tags) == expect
 
 def test_place_country_code(app):
     place = simple_place()
