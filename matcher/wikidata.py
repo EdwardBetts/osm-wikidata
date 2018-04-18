@@ -64,6 +64,7 @@ extra_keys = {
     'Q11315': ['Tag:landuse=retail'],         # shopping mall
     'Q39658032': ['Tag:landuse=retail'],      # open air shopping centre
     'Q277760': ['Tag:historic=folly'],        # gatehouse
+    'Q15243209': ['Tag:leisure=park'],        # historic district
 }
 
 # search for items in bounding box that have an English Wikipedia article
