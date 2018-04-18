@@ -201,7 +201,7 @@ def parse_status(status):
 def get_status(url=None):
     if url is None:
         url = current_app.config['OVERPASS_URL'] + '/api/status'
-    status = requests.get(url).text
+    status = requests.get(url, timeout=10).text
     return parse_status(status)
 
 def wait_for_slot(status=None, url=None):
