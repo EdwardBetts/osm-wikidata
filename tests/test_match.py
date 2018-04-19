@@ -1,4 +1,5 @@
 from matcher import match
+import pytest
 
 def test_tidy_name():
     same = 'no change'
@@ -78,25 +79,92 @@ def test_get_osm_id_and_type():
     assert match.get_osm_id_and_type('polygon', 1) == ('way', 1)
     assert match.get_osm_id_and_type('polygon', -1) == ('relation', 1)
 
-def test_name_match_main():
-    assert match.name_match_main('test', 'test')
-    assert match.name_match_main('the old shop', 'old shop')
+def test_name_match():
+    assert match.name_match('test', 'test')
+    assert match.name_match('the old shop', 'old shop')
 
-    assert not match.name_match_main('test', '')
-    assert not match.name_match_main('', 'test')
-    assert match.name_match_main('test', 'test.')
-    assert match.name_match_main('test.', 'test')
+    assert not match.name_match('test', '')
+    assert not match.name_match('', 'test')
+    assert match.name_match('test', 'test.')
+    assert match.name_match('test.', 'test')
 
-    assert not match.name_match_main('test', '.')
-    assert not match.name_match_main('.', 'test')
+    assert not match.name_match('test', '.')
+    assert not match.name_match('.', 'test')
 
-    assert not match.name_match_main('aaa', 'bbb')
+    assert not match.name_match('aaa', 'bbb')
 
-    assert not match.name_match_main('aaa', 'the ')
+    assert not match.name_match('aaa', 'the ')
 
-    assert match.name_match_main('aaa-bbb', 'aaa bbb')
-    assert match.name_match_main('the old shop', 'old shop')
-    assert match.name_match_main('the bull', 'bull public house',
+    assert match.name_match('aaa-bbb', 'aaa bbb')
+    assert match.name_match('the old shop', 'old shop')
+    assert match.name_match('the bull', 'bull public house',
                                  ['public house'])
-    assert match.name_match_main('TIAT', 'This Is A Test')
+    assert match.name_match('TIAT', 'This Is A Test')
 
+    assert match.name_match('John Smith', 'Statue of John Smith')
+
+    name = "St John's Church"
+    assert match.name_match(name, name + ' And Attached Railings')
+
+    assert match.name_match('Church building', 'Church')
+    assert match.name_match('Church', 'Church building')
+
+    assert match.name_match('Lake Test', 'Test', ['lake'])
+    assert match.name_match('Test', 'Lake Test', ['lake'])
+
+def test_get_names():
+    assert match.get_names({}) == {}
+    assert match.get_names({'name': 'test'}) == {'name': 'test'}
+    assert match.get_names({'operator': 'test'}) == {'operator': 'test'}
+    assert match.get_names({'name:left': 'test'}) == {}
+
+@pytest.mark.skip(reason="get_wikidata_names is unused code")
+def test_get_wikidata_names():
+    item = {'labels': {}}
+    assert match.get_wikidata_names(item) == {}
+
+    item = {'labels': {'en': 'test'}}
+    expect = {'test': [('label', 'en')]}
+    assert dict(match.get_wikidata_names(item)) == expect
+
+    item = {'labels': {'en': 'test', 'ar': 'test'}}
+    assert dict(match.get_wikidata_names(item)) == expect
+
+    item = {
+        'labels': {'en': 'test', 'ar': 'test'},
+        'sitelinks': {'enwiki': 'test', 'arwiki': 'test'},
+    }
+    expect = {'test': [('label', 'en'), ('sitelink', 'enwiki')]}
+    assert dict(match.get_wikidata_names(item)) == expect
+
+def test_check_name_matches_address():
+    assert not match.check_name_matches_address({}, [])
+
+    tags = {'addr:housenumber': '12', 'addr:street': 'Station Road'}
+    assert match.check_name_matches_address(tags, ['12 Station Road'])
+    assert match.check_name_matches_address(tags, ['12, Station Road'])
+    assert match.check_name_matches_address(tags, ['Number 12 Station Road'])
+    tags = {'addr:housenumber': '12-14', 'addr:street': 'Station Road'}
+    assert match.check_name_matches_address(tags, ['Nos 12-14 Station Road'])
+
+    assert not match.check_name_matches_address(tags, ['Station Road'])
+
+    tags = {'addr:full': '12 Station Road'}
+    assert match.check_name_matches_address(tags, ['12 Station Road'])
+
+    tags = {'addr:full': 'Station Road'}
+    assert not match.check_name_matches_address(tags, ['12 Station Road'])
+
+
+def test_check_for_match():
+    assert match.check_for_match({}, []) == {}
+
+    osm_tags = {'addr:city': 'Rome', 'name': 'test', 'alt_name': 'test'}
+    wd_names = {'test': [('label', 'en')]}
+
+    expect = {
+        'alt_name': [('good', 'test', [('label', 'en')])],
+        'name': [('good', 'test', [('label', 'en')])],
+    }
+
+    assert match.check_for_match(osm_tags, wd_names) == expect
