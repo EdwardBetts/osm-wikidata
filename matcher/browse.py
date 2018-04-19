@@ -2,6 +2,11 @@ from . import database, nominatim, wikidata
 from .place import Place
 
 def place_from_qid(qid, q=None, entity=None):
+    hit = hit_from_qid(qid, q=None, entity=None)
+    if hit:
+        return place_from_nominatim(hit)
+
+def hit_from_qid(qid, q=None, entity=None):
     if q is None:
         if entity is None:
             entity = wikidata.get_entity(qid)
@@ -12,7 +17,7 @@ def place_from_qid(qid, q=None, entity=None):
         hit_qid = hit['extratags'].get('wikidata')
         if hit_qid != qid:
             continue
-        return place_from_nominatim(hit)
+        return hit
 
 def qid_to_search_string(qid, entity):
     isa = {i['mainsnak']['datavalue']['value']['id']
