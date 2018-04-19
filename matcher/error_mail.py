@@ -1,5 +1,4 @@
 import logging
-from flask import current_app
 from logging.handlers import SMTPHandler
 from logging import Formatter
 
