@@ -9,7 +9,7 @@ from enum import Enum
 
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
-re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d .*$)')
+re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
@@ -203,29 +203,6 @@ def check_name_matches_address(osm_tags, wikidata_names):
             return True
 
     return False
-
-def get_wikidata_names(item):
-    skip_lang = {'ar', 'arc', 'pl'}
-    # print(len(item['sitelinks']), len(item['labels']))
-    names = defaultdict(list)
-    # only include aliases if there are less than 10 other names
-    if len(item.get('sitelinks', {})) < 6 and len(item['labels']) < 6:
-        for k, v in item.get('aliases', {}).items():
-            if k in skip_lang:
-                continue
-            if len(v) > 3:
-                continue
-            for name in v:
-                names[name].append(('alias', k))
-    for k, v in item['labels'].items():
-        if k in skip_lang:
-            continue
-        names[v].append(('label', k))
-    for k, v in item.get('sitelinks', {}).items():
-        if k + 'wiki' in skip_lang:
-            continue
-        names[v].append(('sitelink', k))
-    return names
 
 def get_names(osm_tags):
     return {k: v for k, v in osm_tags.items()
