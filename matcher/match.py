@@ -32,7 +32,7 @@ def tidy_name(n):
     n = n.replace('saint ', 'st ')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
-    if not n.startswith('s '):
+    if not n.lstrip().startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '')
     for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von', 'pw.':
         n = n.replace(' {} '.format(word), ' ')
@@ -174,7 +174,7 @@ def check_identifier(osm_tags, item_identifiers):
                 return True
             if ' ' in osm_value and osm_value.replace(' ', '') in values:
                 return True
-            if k == 'P856' and any_url_match(osm_value, values):
+            if label == 'website' and any_url_match(osm_value, values):
                 return True
     return False
 
