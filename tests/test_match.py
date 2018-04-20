@@ -113,6 +113,10 @@ def test_name_match():
     assert match.name_match('Lake Test', 'Test', ['lake'])
     assert match.name_match('Test', 'Lake Test', ['lake'])
 
+    assert match.name_match('Test', 'Test, Washington, DC')
+
+    assert match.name_match('aaa bbb', 'bbb aaa')
+
 def test_get_names():
     assert match.get_names({}) == {}
     assert match.get_names({'name': 'test'}) == {'name': 'test'}
@@ -169,3 +173,21 @@ def test_check_for_match():
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
+
+def test_get_all_matches():
+    tags = {'name': 'test'}
+    names = {'test': [('label', 'en'), ('sitelink', 'enwiki')]}
+    match_list = match.get_all_matches(tags, names)
+    assert len(match_list) == 1
+    m = match_list[0]
+    assert m.osm_name == 'test'
+    assert m.osm_key == 'name'
+    assert m.wikidata_name == 'test'
+    assert m.wikidata_source == [('label', 'en'), ('sitelink', 'enwiki')]
+
+@pytest.mark.skip(reason="broken code")
+def test_get_all_matches_address():
+    tags = {'addr:housenumber': '12', 'addr:street': 'Station Road'}
+    names = {'12 Station Road': [('label', 'en')]}
+    match_list = match.get_all_matches(tags, names)
+    assert len(match_list) == 1

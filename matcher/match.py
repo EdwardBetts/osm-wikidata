@@ -261,14 +261,15 @@ def get_all_matches(osm_tags, wikidata_names, endings=None):
                 m.osm_key = osm_key
                 matches.append(m)
 
-    address_match = check_name_matches_address(osm_tags, wikidata_names)
-    if address_match:
-        m = address_match
-        m.wikidata_name = w
-        m.wikidata_source = source
-        m.osm_name = o
-        m.osm_key = osm_key
-        matches.append(m)
+    # FIXME this code is broken
+    # address_match = check_name_matches_address(osm_tags, wikidata_names)
+    # if address_match:
+    #     m = address_match
+    #     m.wikidata_name = w
+    #     m.wikidata_source = source
+    #     m.osm_name = o
+    #     m.osm_key = osm_key
+    #     matches.append(m)
     return matches
 
 def get_osm_id_and_type(source_type, source_id):
