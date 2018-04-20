@@ -303,10 +303,3 @@ def get_all_matches(osm_tags, wikidata_names, endings=None):
     #     m.osm_key = osm_key
     #     matches.append(m)
     return matches
-
-def get_osm_id_and_type(source_type, source_id):
-    if source_type == 'point':
-        return ('node', source_id)
-    if source_id > 0:
-        return ('way', source_id)
-    return ('relation', -source_id)
