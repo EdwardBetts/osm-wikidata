@@ -358,12 +358,16 @@ def add_tags(osm_type, osm_id):
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
 
+    languages_with_counts = get_place_language_with_counts(place)
+    languages = [l['lang'] for l in languages_with_counts if l['lang']]
+
     return render_template('add_tags.html',
                            place=place,
                            osm_id=osm_id,
                            ws_scheme=ws_scheme,
                            items=items,
-                           table=table)
+                           table=table,
+                           languages=languages)
 
 @app.route('/places/<name>')
 def place_redirect(name):

@@ -65,16 +65,17 @@
       </tr>
     </thead>
     <tbody>
-    {% set lang = place.most_common_language() %}
     {% for i, c in table %}
       <tr id="{{ i.qid }}">
         <td><input type="checkbox" id="select_{{ i.qid }}" checked="checked"/></td>
         <td>
-          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">{{ i.label(lang=lang) }} ({{ i.qid }})</a>
+          <a href="{{ url_for('item_page', wikidata_id=i.qid[1:]) }}">
+            {{ i.label_best_language(languages) }} ({{ i.qid }})
+          </a>
         </td>
         <td>
           <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">
-            {{ c.name }}
+            {{ c.label_best_language(languages) }}
           </a>
         </td>
         <td style="white-space:nowrap">
