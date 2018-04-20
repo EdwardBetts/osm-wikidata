@@ -31,6 +31,8 @@ class Match(object):
 def tidy_name(n):
     # expects to be passed a name in lowercase
     n = n.replace('saint ', 'st ')
+    n = n.replace(' church of england ', ' ce ')
+    n = n.replace(' cofe ', ' ce ')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     if not n.lstrip().startswith('s '):
@@ -68,22 +70,26 @@ def match_with_words_removed(osm, wd, words):
     return any(x_wd.replace(word, '') == x_osm.replace(word, '')
                for word in words)
 
+def strip_non_chars_match(osm, wd):
+    wc_stripped = re_strip_non_chars.sub('', wd)
+    osm_stripped = re_strip_non_chars.sub('', osm)
+    return wc_stripped and osm_stripped and wc_stripped == osm_stripped
+
 def name_match_main(osm, wd, endings=None, debug=False):
+    if not wd or not osm:
+        return
+
     if wd == osm:
         return Match(MatchType.good)
 
     wd_lc = wd.lower()
     osm_lc = osm.lower()
-    if not wd or not osm:
-        return
 
     m = initials_match(osm, wd, endings) or initials_match(wd, osm, endings)
     if m:
         return m
 
-    wc_stripped = re_strip_non_chars.sub('', wd_lc)
-    osm_stripped = re_strip_non_chars.sub('', osm_lc)
-    if wc_stripped and osm_stripped and wc_stripped == osm_stripped:
+    if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
 
     wd_lc = tidy_name(wd_lc)
@@ -96,13 +102,14 @@ def name_match_main(osm, wd, endings=None, debug=False):
         return Match(MatchType.good)
 
     if wd_lc == osm_lc:
-        # print ('{} == {} was: {}'.format(wd_lc, osm_lc, osm))
         return Match(MatchType.good)
     if 'washington, d' in wd_lc:  # special case for Washington, D.C.
         wd_lc = wd_lc.replace('washington, d', 'washington d')
     comma = wd_lc.rfind(', ')
-    if comma != -1 and not osm_lc.isdigit() and wd_lc[:comma] == osm_lc:
-        return Match(MatchType.good)
+    if comma != -1 and not osm_lc.isdigit():
+        wc_part1 = wd_lc[:comma]
+        if wc_part1 == osm_lc or strip_non_chars_match(osm_lc, wc_part1):
+            return Match(MatchType.good)
     if wd_lc.split() == list(reversed(osm_lc.split())):
         return Match(MatchType.good)
 

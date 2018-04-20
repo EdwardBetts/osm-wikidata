@@ -80,6 +80,7 @@ def test_get_osm_id_and_type():
     assert match.get_osm_id_and_type('polygon', -1) == ('relation', 1)
 
 def test_name_match():
+    assert not match.name_match('', '')
     assert match.name_match('test', 'test')
     assert match.name_match('the old shop', 'old shop')
 
@@ -116,6 +117,29 @@ def test_name_match():
     assert match.name_match('Test', 'Test, Washington, DC')
 
     assert match.name_match('aaa bbb', 'bbb aaa')
+
+    osm = 'St Peter & St Paul'
+    wd = 'St Peter and St Paul, Bromley'
+    assert match.name_match(osm, wd)
+
+def test_match_name_church_of_england():
+    wikidata_names = [
+        'Bishop Justus Church of England School',
+        'Bishop Justus CE School',
+    ]
+
+    for wd in wikidata_names:
+        assert match.name_match('Bishop Justus CofE School ', wd)
+
+@pytest.mark.skip(reason="todo")
+def test_match_name_parish_church():
+    osm = 'Church of St Peter & St Paul'
+    wd = 'St Peter and St Paul, Bromley'
+    assert match.name_match(osm, wd, ['church of'])
+
+    osm = 'Bromley Parish Church of St Peter & St Paul'
+    wd = 'St Peter and St Paul, Bromley'
+    assert match.name_match(osm, wd, ['Parish Church of'])
 
 def test_get_names():
     assert match.get_names({}) == {}
