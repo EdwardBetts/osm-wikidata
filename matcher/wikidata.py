@@ -186,7 +186,7 @@ SELECT DISTINCT ?item ?itemLabel
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
-                (GROUP_CONCAT(?isa) as ?isa_list)
+                (GROUP_CONCAT(DISTINCT ?isa) as ?isa_list)
 WHERE {
   VALUES ?start { wd:QID } .
   ?start wdt:P31/wdt:P279* ?subclass .
@@ -721,9 +721,13 @@ def next_level_places(qid, entity, name=None):
     for row in run_query(query, name=name):
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
-        isa_list = [wd_uri_to_qid(url)
-                    for url in row['isa_list']['value'].split(' ')
-                    if url]
+        isa_list = []
+        for url in row['isa_list']['value'].split(' '):
+            if not url:
+                continue
+            isa_qid = wd_uri_to_qid(url)
+            if isa_qid not in isa_list:
+                isa_list.append(isa_qid)
         i = {
             'population': (int(row['pop']['value']) if row.get('pop') else None),
             'area': (int(float(row['area']['value'])) if row.get('area') else None),
