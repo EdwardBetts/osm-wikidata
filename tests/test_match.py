@@ -122,7 +122,7 @@ def test_name_match():
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)
 
-def test_match_name_church_of_england():
+def test_match_name_abbreviation():
     wikidata_names = [
         'Bishop Justus Church of England School',
         'Bishop Justus CE School',
@@ -130,6 +130,9 @@ def test_match_name_church_of_england():
 
     for wd in wikidata_names:
         assert match.name_match('Bishop Justus CofE School ', wd)
+
+    assert match.name_match('St Peter', 'Saint Peter')
+    assert match.name_match('Test Roman Catholic church', 'Test RC church')
 
 @pytest.mark.skip(reason="todo")
 def test_match_name_parish_church():
