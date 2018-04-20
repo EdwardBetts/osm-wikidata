@@ -263,7 +263,7 @@ class Item(Base):
             ('P239', ['icao'], 'ICAO airport code'),
             ('P240', ['faa', 'ref'], 'FAA airport code'),
             # ('P281', ['addr:postcode', 'postal_code'], 'postal code'),
-            ('P296', ['ref'], 'station code'),
+            ('P296', ['ref', 'ref:train'], 'station code'),
             ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
             ('P722', ['uic_ref'], 'UIC station code'),
@@ -275,10 +275,10 @@ class Item(Base):
             ('P954', ['uic_ref'], 'IBNR ID'),
             ('P1216', ['HE_ref'], 'National Heritage List for England number'),
             ('P2253', ['ref:edubase'], 'EDUBase URN'),
-            ('P2815', ['esr:user', 'ref'], 'ESR station code'),
+            ('P2815', ['esr:user', 'ref', 'ref:train'], 'ESR station code'),
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
-            ('P4755', ['ref'], 'UK railway station code'),
-            ('P4803', ['ref'], 'Amtrak station code'),
+            ('P4755', ['ref', 'ref:train'], 'UK railway station code'),
+            ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
         ]
 
         tags = defaultdict(list)
