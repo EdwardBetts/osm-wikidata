@@ -35,6 +35,7 @@ def tidy_name(n):
     n = n.replace(' cofe ', ' ce ')
     n = n.replace(' c of e ', ' ce ')
     n = n.replace(' roman catholic ', ' rc ')
+    n = n.replace(' preparatory school ', ' prep school ')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     if not n.lstrip().startswith('s '):
