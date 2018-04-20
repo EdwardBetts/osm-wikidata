@@ -257,10 +257,11 @@ def get_osm_id_and_type(source_type, source_id):
     return ('relation', -source_id)
 
 def planet_table_id(osm):
+    osm_id = int(osm['id'])
     if osm['type'] == 'node':
-        return ('point', osm['id'])
+        return ('point', osm_id)
     table = 'polygon' if 'way_area' in osm['tags'] else 'line'
-    return (table, osm['id'] if osm['type'] == 'way' else -osm['id'])
+    return (table, osm_id if osm['type'] == 'way' else -osm_id)
 
 def get_biggest_polygon(item):
     biggest = None
