@@ -152,7 +152,7 @@ def name_match(osm, wd, endings=None, debug=False):
     if match:
         return match
 
-    for start in 'Tomb of ', 'Statue of ':
+    for start in 'Tomb of ', 'Statue of ', 'Memorial to ':
         if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
             return Match(MatchType.trim)
 
