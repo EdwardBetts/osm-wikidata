@@ -364,3 +364,43 @@ def test_names_from_entity():
     }
 
     assert dict(names) == expect
+
+def test_flatten_criteria():
+    assert wikidata.flatten_criteria([]) == set()
+
+def test_enwiki_url_to_title():
+    start = 'https://en.wikipedia.org/wiki/'
+    with pytest.raises(AssertionError):
+        wikidata.enwiki_url_to_title('test')
+    assert wikidata.enwiki_url_to_title(start + 'Example') == 'Example'
+    assert wikidata.enwiki_url_to_title(start + 'A_B') == 'A B'
+    assert wikidata.enwiki_url_to_title(start + 'A_%28B%29') == 'A (B)'
+
+def test_wd_to_qid():
+    with pytest.raises(AssertionError):
+        wikidata.wd_to_qid({'type': 'uri', 'value': 'test'})
+
+    assert not wikidata.wd_to_qid({'type': 'pnode', 'value': 'test'})
+
+    wd = {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q42'}
+
+    assert wikidata.wd_to_qid(wd) == 'Q42'
+
+def test_wd_uri_to_qid():
+    uri = 'http://www.wikidata.org/entity/Q42'
+    assert wikidata.wd_uri_to_id(uri) == 42
+
+def test_drop_tag_prefix():
+    assert wikidata.drop_tag_prefix('Tag:name=test') == 'name=test'
+    assert wikidata.drop_tag_prefix('Key:name') == 'name'
+
+    assert wikidata.drop_tag_prefix('Key:name=test') is None
+    assert wikidata.drop_tag_prefix('Tag:name') is None
+    assert wikidata.drop_tag_prefix('test') is None
+
+def test_entity_label():
+    entity = {'labels': {'en': {'value': 'test'}}}
+    assert wikidata.entity_label(entity) == 'test'
+
+    entity = {'labels': {'fr': {'value': 'abc'}}}
+    assert wikidata.entity_label(entity) == 'abc'
