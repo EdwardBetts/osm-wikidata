@@ -143,9 +143,9 @@ def name_match(osm, wd, endings=None, debug=False):
     if match:
         return match
 
-    start = 'Statue of '
-    if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
-        return Match(MatchType.trim)
+    for start in 'Tomb of ', 'Statue of ':
+        if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
+            return Match(MatchType.trim)
 
     end = ' And Attached Railings'.lower()
     if wd.lower().endswith(end) and name_match_main(osm, wd[:-len(end)], endings):

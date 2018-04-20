@@ -102,6 +102,7 @@ def test_name_match():
     assert match.name_match('TIAT', 'This Is A Test')
 
     assert match.name_match('John Smith', 'Statue of John Smith')
+    assert match.name_match('John Smith', 'Tomb of John Smith')
 
     name = "St John's Church"
     assert match.name_match(name, name + ' And Attached Railings')
