@@ -271,9 +271,9 @@
     "dist": 2
 },
 {
-    "cats": ["Department store buildings"],
+    "cats": ["Department store buildings", "Department stores"],
     "tags": ["shop=department_store"],
-    "trim": ["department store", "store"],
+    "trim": ["department store", "store", "stores"],
     "check_housename": true,
     "wikidata": "Q216107",
     "dist": 2
@@ -819,7 +819,7 @@
     "cats": ["Shops"],
     "tags": ["shop", "building=retail", "building=shop"],
     "skip_cats": ["Hardlines", "Toys", "Market towns", "Food retailers", "Retail markets", "Retailers"],
-    "trim": ["shop"],
+    "trim": ["shop", "store", "stores"],
     "dist": 5
 },
 {
