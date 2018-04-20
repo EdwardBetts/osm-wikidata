@@ -72,13 +72,6 @@ def test_check_identifiers():
     url = 'https://www.test.org'
     assert match.check_identifier({'website': url}, identifiers)
 
-def test_get_osm_id_and_type():
-    assert match.get_osm_id_and_type('point', 1) == ('node', 1)
-    assert match.get_osm_id_and_type('line', 1) == ('way', 1)
-    assert match.get_osm_id_and_type('line', -1) == ('relation', 1)
-    assert match.get_osm_id_and_type('polygon', 1) == ('way', 1)
-    assert match.get_osm_id_and_type('polygon', -1) == ('relation', 1)
-
 def test_name_match():
     assert not match.name_match('', '')
     assert match.name_match('test', 'test')
