@@ -10,6 +10,7 @@ from enum import Enum
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
+re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
@@ -190,17 +191,38 @@ def check_name_matches_address(osm_tags, wikidata_names):
                    for name in set(number_start)
                    if ',' in name]
     number_start.update(n for n in strip_comma if not n.isdigit())
-    number_start = {normalize_name(name) for name in number_start}
+    norm_number_start = {normalize_name(name) for name in number_start}
+
+    postcode = osm_tags.get('addr:postcode')
+    if postcode:
+        postcode = postcode.lower()
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
-        osm_address = normalize_name(osm_tags['addr:housenumber'] + osm_tags['addr:street'])
-        if any(name == osm_address for name in number_start):
+        osm_address = normalize_name(osm_tags['addr:housenumber'] +
+                                     osm_tags['addr:street'])
+        if any(name == osm_address for name in norm_number_start):
             return True
+        for i in number_start:
+            name, _, postcode_start = i.rpartition(' ')
+
+            if postcode and not postcode.startswith(postcode_start.lower()):
+                continue
+
+            if (re_uk_postcode_start.match(postcode_start) and
+                    normalize_name(name) == osm_address):
+                return True
 
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
-        if any(osm_address.startswith(name) for name in number_start):
+        if any(osm_address.startswith(name) for name in norm_number_start):
             return True
+
+        for i in number_start:
+            name, _, postcode_start = i.rpartition(' ')
+
+            if (re_uk_postcode_start.match(postcode_start) and
+                    normalize_name(name) == osm_address):
+                return True
 
     return False
 

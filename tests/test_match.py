@@ -160,6 +160,29 @@ def test_check_name_matches_address():
     tags = {'addr:full': 'Station Road'}
     assert not match.check_name_matches_address(tags, ['12 Station Road'])
 
+def test_check_name_matches_address_postcode():
+    tags = {
+        'addr:housenumber': '12',
+        'addr:street': 'Buckingham Street',
+    }
+    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+
+    tags = {
+        'addr:housenumber': '12',
+        'addr:street': 'Buckingham Street',
+        'addr:postcode': 'WC2N 6DF',
+    }
+    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+
+    tags = {
+        'addr:housenumber': '12',
+        'addr:street': 'Buckingham Street',
+        'addr:postcode': 'EC1X 1AA',
+    }
+    assert not match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+
+    tags = {'addr:full': '12 Buckingham Street'}
+    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
 
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
