@@ -65,7 +65,7 @@ extra_keys = {
     'Q39658032': ['Tag:landuse=retail'],        # open air shopping centre
     'Q277760': ['Tag:historic=folly'],          # gatehouse
     'Q15243209': ['Tag:leisure=park'],          # historic district
-    'Q3010369': ['Tag:Tag:historic=monument'],  # opening ceremony
+    'Q3010369': ['Tag:historic=monument'],      # opening ceremony
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -1102,6 +1102,7 @@ class WikidataItem:
         if hasattr(self, '_osm_keys'):
             return self._osm_keys
         self._osm_keys = run_query(self.osm_key_query())
+        print(self._osm_keys)
         return self._osm_keys
 
     def languages_from_country(self):
