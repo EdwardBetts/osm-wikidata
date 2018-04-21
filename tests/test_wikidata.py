@@ -40,7 +40,8 @@ test_entity = {
             'id': 'q243$6032A251-115E-4835-B758-361FB095D13C',
             'rank': 'normal',
         }],
-        'P31': [{
+        'P31': [
+            {
                 'mainsnak': {
                     'property': 'P31',
                     'datavalue': {
@@ -128,7 +129,7 @@ def test_wikidata():
     item._osm_keys = [
         {
             'item': {'value': 'http://www.wikidata.org/entity/Q56061', 'type': 'uri'},
-            'itemLabel': {'value': 'administrative territorial entity', 'xml:lang': 'en', 'type': 'literal' },
+            'itemLabel': {'value': 'administrative territorial entity', 'xml:lang': 'en', 'type': 'literal'},
             'tag': {'value': 'Key:admin_level', 'type': 'literal'},
         },
         {
@@ -481,3 +482,45 @@ WHERE {
 }'''
 
     assert wikidata.get_item_labels_query(['Q30', 'Q99']) == expect
+
+def test_parse_enwiki_query():
+    assert wikidata.parse_enwiki_query([]) == {}
+
+    rows = [{
+        'article': {
+            'type': 'uri',
+            'value': 'https://en.wikipedia.org/wiki/Eiffel_Tower'},
+        'location': {
+            'datatype': 'http://www.opengis.net/ont/geosparql#wktLiteral',
+            'type': 'literal',
+            'value': 'Point(2.2953 48.858)'},
+        'place': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q243'},
+        'placeLabel': {'type': 'literal', 'value': 'Eiffel Tower', 'xml:lang': 'en'}
+    }, {
+        'article': {
+            'type': 'uri',
+            'value': 'https://en.wikipedia.org/wiki/Champ_de_Mars'},
+        'location': {
+            'datatype': 'http://www.opengis.net/ont/geosparql#wktLiteral',
+            'type': 'literal',
+            'value': 'Point(2.298333333 48.856111111)'},
+        'place': {'type': 'uri', 'value': 'http://www.wikidata.org/entity/Q217925'},
+        'placeLabel': {'type': 'literal', 'value': 'Champ de Mars', 'xml:lang': 'en'}
+    }]
+
+    expect = {
+        'Q217925': {
+            'enwiki': 'Champ de Mars',
+            'location': 'Point(2.298333333 48.856111111)',
+            'query_label': 'Champ de Mars',
+            'tags': set()
+        },
+        'Q243': {
+            'enwiki': 'Eiffel Tower',
+            'location': 'Point(2.2953 48.858)',
+            'query_label': 'Eiffel Tower',
+            'tags': set()
+        }
+    }
+
+    assert wikidata.parse_enwiki_query(rows) == expect
