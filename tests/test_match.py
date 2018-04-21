@@ -92,7 +92,7 @@ def test_name_match():
     assert match.name_match('aaa-bbb', 'aaa bbb')
     assert match.name_match('the old shop', 'old shop')
     assert match.name_match('the bull', 'bull public house',
-                                 ['public house'])
+                            ['public house'])
     assert match.name_match('TIAT', 'This Is A Test')
 
     assert match.name_match('John Smith', 'Statue of John Smith')
