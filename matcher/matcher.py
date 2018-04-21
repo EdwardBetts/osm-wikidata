@@ -238,7 +238,7 @@ def find_item_matches(cur, item, prefix, debug=False):
             'name_match': name_match,
         }
         candidates.append(candidate)
-    return candidates
+    return filter_distant(candidates)
 
 def run_individual_match(place, item):
     conn = database.session.bind.raw_connection()
@@ -487,3 +487,18 @@ def filter_candidates_more(items, bad=None):
             continue
 
         yield (item, {'candidate': candidate})
+
+def filter_distant(candidates):
+    if len(candidates) < 2:
+        print('less than 2')
+        return candidates
+    close = []
+    for c in candidates:
+        print('dist:', c['dist'])
+        if c['dist'] < 25:
+            close.append(c)
+            continue
+        if c['dist'] < 1000:
+            return candidates
+
+    return close if len(close) == 1 else candidates
