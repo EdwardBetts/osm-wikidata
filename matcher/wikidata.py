@@ -466,13 +466,6 @@ def wd_uri_to_qid(value):
 def enwiki_url_to_title(url):
     return unquote(drop_start(url, enwiki)).replace('_', ' ')
 
-def parse_enwiki_query_old(query):
-    return [{
-        'location': i['location']['value'],
-        'id': wd_uri_to_id(i['place']['value']),
-        'enwiki':enwiki_url_to_title(i['article']['value']),
-    } for i in query]
-
 def parse_enwiki_query(rows):
     return {wd_to_qid(row['place']):
             {
@@ -742,6 +735,7 @@ def next_level_places(qid, entity, name=None):
     return rows
 
 def get_item_labels_query(items):
+    assert items
     query_items = ' '.join(f'(wd:{qid})' for qid in items)
     return item_labels_query.replace('ITEMS', query_items)
 
@@ -950,7 +944,10 @@ def find_superclasses(items, name=None):
             for row in run_query(query, name=name)}
 
 def claim_value(claim):
-    return claim['mainsnak']['datavalue']['value']
+    try:
+        return claim['mainsnak']['datavalue']['value']
+    except KeyError:
+        pass
 
 class WikidataItem:
     def __init__(self, qid, entity):
@@ -1109,7 +1106,7 @@ class WikidataItem:
     def languages_from_country(self):
         langs = []
         for country in self.claims.get('P17', []):
-            c = country['mainsnak']['datavalue']['value']['numeric-id']
+            c = claim_value(country)['numeric-id']
             for l in language.get_country_lanaguage(c):
                 if l not in langs:
                     langs.append(l)

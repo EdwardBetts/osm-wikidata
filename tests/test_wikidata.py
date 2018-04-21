@@ -14,9 +14,33 @@ test_entity = {
         'dewiki': {'site': 'dewiki', 'title': 'Eiffelturm', 'badges': ['Q17437796']},
 
     },
+    'aliases': {
+        'en': [
+            {'language': 'en', 'value': 'Tour Eiffel'},
+            {'language': 'en', 'value': 'The Eiffel Tower'},
+        ],
+    },
     'claims': {
-        'P31': [
-            {
+        'P17': [{
+            'mainsnak': {
+                'snaktype': 'value',
+                'property': 'P17',
+                'hash': 'c05db5d169c2560b9799d567a803d20a392f53e4',
+                'datavalue': {
+                    'value': {
+                        'entity-type': 'item',
+                        'numeric-id': 142,
+                        'id': 'Q142'
+                    },
+                    'type': 'wikibase-entityid'
+                },
+                'datatype': 'wikibase-item'
+            },
+            'type': 'statement',
+            'id': 'q243$6032A251-115E-4835-B758-361FB095D13C',
+            'rank': 'normal',
+        }],
+        'P31': [{
                 'mainsnak': {
                     'property': 'P31',
                     'datavalue': {
@@ -131,7 +155,6 @@ def test_wikidata():
 out center tags;'''.strip()
 
     oql = item.get_oql(criteria, 1000)
-    print(oql)
     assert oql == expect
 
     assert item.is_a == ['Q1440476', 'Q1440300', 'Q2319498']
@@ -142,11 +165,45 @@ out center tags;'''.strip()
                          ('commonscat', None)],
         'Eiffelturm': [('label', 'de'), ('sitelink', 'dewiki')],
         'tour Eiffel': [('label', 'fr'), ('sitelink', 'frwiki')],
+        'The Eiffel Tower': [('alias', 'en')],
+        'Tour Eiffel': [('alias', 'en')],
     }
 
     assert item.names == expect
 
     assert item.coords == (48.8583, 2.2944)
+
+    assert item.claims == test_entity['claims']
+    assert item.labels == test_entity['labels']
+    assert item.sitelinks == test_entity['sitelinks']
+    assert item.aliases == test_entity['aliases']
+
+    sitelinks = [
+        {'code': 'en',
+         'lang': 'English',
+         'title': 'Eiffel Tower',
+         'url': 'https://en.wikipedia.org/wiki/Eiffel_Tower'},
+        {'code': 'fr',
+         'lang': 'French',
+         'title': 'Tour Eiffel',
+         'url': 'https://fr.wikipedia.org/wiki/Tour_Eiffel'},
+        {'code': 'de',
+         'lang': 'German',
+         'title': 'Eiffelturm',
+         'url': 'https://de.wikipedia.org/wiki/Eiffelturm'}
+    ]
+    assert item.get_sitelinks() == sitelinks
+    assert item.remove_badges() is None
+
+    assert item.first_claim_value('P31')['id'] == 'Q1440476'
+
+    assert item.languages_from_country() == ['fr']
+
+    assert item.label() == 'tour Eiffel'
+    assert item.label('fr') == 'tour Eiffel'
+    assert item.label('en') == 'Eiffel Tower'
+
+    assert not item.is_proposed()
 
 @pytest.mark.skip(reason="keeps breaking, not helpful")
 @vcr.use_cassette(decode_compressed_response=True)
@@ -356,11 +413,13 @@ def test_names_from_entity():
     names = wikidata.names_from_entity(test_entity)
 
     expect = {
+        'The Eiffel Tower': [('alias', 'en')],
         'Eiffel Tower': [('label', 'en'),
                          ('sitelink', 'enwiki'),
                          ('commonscat', None)],
         'Eiffelturm': [('label', 'de'), ('sitelink', 'dewiki')],
         'tour Eiffel': [('label', 'fr'), ('sitelink', 'frwiki')],
+        'Tour Eiffel': [('alias', 'en')],
     }
 
     assert dict(names) == expect
@@ -404,3 +463,21 @@ def test_entity_label():
 
     entity = {'labels': {'fr': {'value': 'abc'}}}
     assert wikidata.entity_label(entity) == 'abc'
+
+def test_claim_value():
+    assert wikidata.claim_value({'mainsnak': {}}) is None
+    c = {'mainsnak': {'datavalue': {'value': 'test'}}}
+    assert wikidata.claim_value(c) == 'test'
+
+def test_get_item_labels_query():
+    with pytest.raises(AssertionError):
+        wikidata.get_item_labels_query([])
+
+    expect = '''
+SELECT ?item ?itemLabel
+WHERE {
+  VALUES (?item) { (wd:Q30) (wd:Q99) }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}'''
+
+    assert wikidata.get_item_labels_query(['Q30', 'Q99']) == expect
