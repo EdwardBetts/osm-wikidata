@@ -1,6 +1,6 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
-               overpass, mail, browse, edit)
-from .utils import cache_filename, get_radius, get_int_arg, is_bot
+               overpass, mail, browse, edit, utils)
+from .utils import cache_filename, get_int_arg
 from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language, IsA
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
@@ -127,7 +127,7 @@ def global_user():
 
 @app.before_request
 def slow_crawl():
-    if is_bot():
+    if utils.is_bot():
         sleep(5)
 
 @login_manager.user_loader
@@ -881,9 +881,8 @@ def api_osm_list(existing, found):
         osm.append(i)
     return osm
 
-def api_get(wikidata_id):
-    qid = 'Q' + str(wikidata_id)
-    entity = wikidata.WikidataItem.retrieve_item(qid)
+def api_get(wikidata_id, entity, radius):
+    qid = f'Q{wikidata_id}'
     if not entity:
         abort(404)
 
@@ -901,7 +900,6 @@ def api_get(wikidata_id):
 
     criteria = wikidata.flatten_criteria(criteria)
 
-    radius = get_radius()
     data = {
         'wikidata': {
             'item': qid,
@@ -949,7 +947,7 @@ def api_get(wikidata_id):
 
     for i in osm:
         coords = operator.itemgetter('lat', 'lon')(i.get('center', i))
-        i['distance'] = int(distance(coords, (lat, lon)).m);
+        i['distance'] = int(distance(coords, (lat, lon)).m)
 
     data['response'] = 'ok'
     data['found_matches'] = bool(found)
@@ -964,7 +962,9 @@ def api_item_match(wikidata_id):
     Optional parameter: radius (in metres)
     '''
 
-    data = api_get(wikidata_id)
+    qid = f'Q{wikidata_id}'
+    entity = wikidata.WikidataItem.retrieve_item(qid)
+    data = api_get(wikidata_id, entity, utils.get_radius())
 
     response = jsonify(data)
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -972,7 +972,10 @@ def api_item_match(wikidata_id):
 
 @app.route('/api/1/names/Q<int:wikidata_id>')
 def api_item_names(wikidata_id):
-    api_data = api_get(wikidata_id)
+
+    qid = f'Q{wikidata_id}'
+    entity = wikidata.WikidataItem.retrieve_item(qid)
+    data = api_get(wikidata_id, entity, utils.get_radius())
 
     def json_data(**kwargs):
         response = jsonify(**kwargs)
@@ -1195,7 +1198,7 @@ def build_item_page(wikidata_id, item):
 
     criteria = wikidata.flatten_criteria(criteria)
 
-    radius = get_radius()
+    radius = utils.get_radius()
     oql = entity.get_oql(criteria, radius)
     if item:
         overpass_reply = []
