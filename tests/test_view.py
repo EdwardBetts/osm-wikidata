@@ -13,14 +13,14 @@ test_entity = {
             "type": "item",
             "id": "Q4384193",
             "labels": {
-                "pt": { "language": "pt", "value": "Golden Spike" },
-                "ja": { "language": "ja", "value": "\u30b4\u30fc\u30eb\u30c7\u30f3\u30fb\u30b9\u30d1\u30a4\u30af" },
-                "en": { "language": "en", "value": "Golden spike" },
-                "de": { "language": "de", "value": "Golden Spike" },
-                "zh-hant": { "language": "zh-hant", "value": "\u91d1\u8272\u9053\u91d8" },
-                "zh-cn": { "language": "zh-cn", "value": "\u91d1\u8272\u9053\u9489" },
-                "he": { "language": "he", "value": "\u05d9\u05ea\u05d3 \u05d4\u05d6\u05d4\u05d1" },
-                "ru": { "language": "ru", "value": "\u0417\u043e\u043b\u043e\u0442\u043e\u0439 \u043a\u043e\u0441\u0442\u044b\u043b\u044c" }
+                "pt": {"language": "pt", "value": "Golden Spike"},
+                "ja": {"language": "ja", "value": "\u30b4\u30fc\u30eb\u30c7\u30f3\u30fb\u30b9\u30d1\u30a4\u30af"},
+                "en": {"language": "en", "value": "Golden spike"},
+                "de": {"language": "de", "value": "Golden Spike"},
+                "zh-hant": {"language": "zh-hant", "value": "\u91d1\u8272\u9053\u91d8"},
+                "zh-cn": {"language": "zh-cn", "value": "\u91d1\u8272\u9053\u9489"},
+                "he": {"language": "he", "value": "\u05d9\u05ea\u05d3 \u05d4\u05d6\u05d4\u05d1"},
+                "ru": {"language": "ru", "value": "\u0417\u043e\u043b\u043e\u0442\u043e\u0439 \u043a\u043e\u0441\u0442\u044b\u043b\u044c"}
             },
             "descriptions": {
                 "en": {
@@ -30,10 +30,10 @@ test_entity = {
             },
             "aliases": {
                 "pt": [
-                    { "language": "pt", "value": "Last Spike" }
+                    {"language": "pt", "value": "Last Spike"}
                 ],
                 "en": [
-                    { "language": "en", "value": "Final spike" }
+                    {"language": "en", "value": "Final spike"}
                 ]
             },
             "claims": {
