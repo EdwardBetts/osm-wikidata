@@ -78,27 +78,27 @@ def test_group_tags():
     ret = group_tags(tags)
 
     expect = {
-         'admin_level': [],
-         'amenity': ['arts_centre',
-                     'astronomical_observatory',
-                     'bar',
-                     'clock',
-                     'college',
-                     'community_centre',
-                     'concert_hall',
-                     'conference_centre',
-                     'courthouse',
-                     'grave_yard',
-                     'hospital',
-                     'library',
-                     'marketplace',
-                     'monastery',
-                     'music_venue'],
-         'site': ['school', 'station', 'university'],
-         'sport': [],
-         'tourism': [],
-         'type': ['bridge', 'site'],
-         'waterway': ['lock_gate']
+        'admin_level': [],
+        'amenity': ['arts_centre',
+                    'astronomical_observatory',
+                    'bar',
+                    'clock',
+                    'college',
+                    'community_centre',
+                    'concert_hall',
+                    'conference_centre',
+                    'courthouse',
+                    'grave_yard',
+                    'hospital',
+                    'library',
+                    'marketplace',
+                    'monastery',
+                    'music_venue'],
+        'site': ['school', 'station', 'university'],
+        'sport': [],
+        'tourism': [],
+        'type': ['bridge', 'site'],
+        'waterway': ['lock_gate']
     }
 
     assert ret == expect
