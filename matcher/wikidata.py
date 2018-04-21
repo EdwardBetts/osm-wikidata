@@ -1102,7 +1102,6 @@ class WikidataItem:
         if hasattr(self, '_osm_keys'):
             return self._osm_keys
         self._osm_keys = run_query(self.osm_key_query())
-        print(self._osm_keys)
         return self._osm_keys
 
     def languages_from_country(self):
