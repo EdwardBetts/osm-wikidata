@@ -33,38 +33,39 @@ edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school',
 tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
-    'Q1021290': edu,                          # music school
-    'Q5167149': edu,                          # cooking school
-    'Q383092': edu,                           # film school
-    'Q2143781': edu,                          # drama school
-    'Q322563': edu,                           # vocational school
-    'Q2385804': edu,                          # educational institution
-    'Q47530379': edu,                         # agricultural college
-    'Q1469420': edu,                          # adult education centre
-    'Q7894959': edu,                          # University Technical College
-    'Q11303': tall,                           # skyscraper
-    'Q18142': tall,                           # high-rise building
-    'Q33673393': tall,                        # multi-storey building
-    'Q641226': ['Tag:leisure=stadium'],       # arena
-    'Q2301048': ['Tag:aeroway=helipad'],      # special airfield
+    'Q1021290': edu,                            # music school
+    'Q5167149': edu,                            # cooking school
+    'Q383092': edu,                             # film school
+    'Q2143781': edu,                            # drama school
+    'Q322563': edu,                             # vocational school
+    'Q2385804': edu,                            # educational institution
+    'Q47530379': edu,                           # agricultural college
+    'Q1469420': edu,                            # adult education centre
+    'Q7894959': edu,                            # University Technical College
+    'Q11303': tall,                             # skyscraper
+    'Q18142': tall,                             # high-rise building
+    'Q33673393': tall,                          # multi-storey building
+    'Q641226': ['Tag:leisure=stadium'],         # arena
+    'Q2301048': ['Tag:aeroway=helipad'],        # special airfield
     'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],     # nightclub
     'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],       # bar
     'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],       # hospital
-    'Q330284': ['Tag:amenity=market'],        # marketplace
-                                              # drinking establishment
+    'Q330284': ['Tag:amenity=market'],          # marketplace
+                                                # drinking establishment
     'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
-    'Q875157': ['Tag:tourism=resort'],        # resort
-    'Q174782': ['Tag:leisure=park'],          # square
-    'Q34627': ['Tag:religion=jewish'],        # synagogue
-    'Q16970': ['Tag:religion=christian'],     # church
-    'Q32815': ['Tag:religion=islam'],         # mosque
-    'Q811979': ['Key:building'],              # architectural structure
-    'Q1329623': ['Tag:amenity=arts_centre'],  # cultural centre
-    'Q856584': ['Tag:amenity=library'],       # library building
-    'Q11315': ['Tag:landuse=retail'],         # shopping mall
-    'Q39658032': ['Tag:landuse=retail'],      # open air shopping centre
-    'Q277760': ['Tag:historic=folly'],        # gatehouse
-    'Q15243209': ['Tag:leisure=park'],        # historic district
+    'Q875157': ['Tag:tourism=resort'],          # resort
+    'Q174782': ['Tag:leisure=park'],            # square
+    'Q34627': ['Tag:religion=jewish'],          # synagogue
+    'Q16970': ['Tag:religion=christian'],       # church
+    'Q32815': ['Tag:religion=islam'],           # mosque
+    'Q811979': ['Key:building'],                # architectural structure
+    'Q1329623': ['Tag:amenity=arts_centre'],    # cultural centre
+    'Q856584': ['Tag:amenity=library'],         # library building
+    'Q11315': ['Tag:landuse=retail'],           # shopping mall
+    'Q39658032': ['Tag:landuse=retail'],        # open air shopping centre
+    'Q277760': ['Tag:historic=folly'],          # gatehouse
+    'Q15243209': ['Tag:leisure=park'],          # historic district
+    'Q3010369': ['Tag:Tag:historic=monument'],  # opening ceremony
 }
 
 # search for items in bounding box that have an English Wikipedia article
