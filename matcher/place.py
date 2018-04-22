@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables
-from . import wikidata, matcher, wikipedia, overpass, utils, nominatim
+from . import wikidata, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
 from collections import Counter
 from .overpass import oql_from_tag
 from time import time
@@ -191,8 +191,9 @@ class Place(Base):
 
     def change_comment(self, item_count):
         if item_count == 1:
-            return 'add wikidata tag'
-        return 'add wikidata tags within ' + self.name_for_change_comment
+            return g.user.single or default_change_comments['single']
+        comment = g.user.multi or default_change_comments['multi']
+        return comment.replace('PLACE', self.name_for_change_comment)
 
     @property
     def name_for_changeset(self):

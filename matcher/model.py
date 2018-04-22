@@ -42,6 +42,8 @@ class User(Base, UserMixin):
     description = Column(Text)
     img = Column(String)
     languages = Column(postgresql.ARRAY(String))
+    single = Column(String)
+    multi = Column(String)
 
     def is_active(self):
         return self.active

@@ -2,6 +2,11 @@ from flask import Flask, request
 
 user_agent = 'osm-wikidata/0.1 (https://github.com/EdwardBetts/osm-wikidata; edward@4angle.com)'
 
+default_change_comments = {
+    'single': 'add wikidata tag',
+    'multi': 'add wikidata tags within PLACE',
+}
+
 class MatcherFlask(Flask):
     def log_exception(self, exc_info):
         self.logger.error("""

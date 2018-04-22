@@ -6,7 +6,7 @@ from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
-# from .forms import AccountSettingsForm
+from .forms import AccountSettingsForm
 
 from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response
 from flask_login import current_user, logout_user, LoginManager, login_required
@@ -1308,7 +1308,19 @@ def account_page():
 @app.route('/account/settings', methods=['GET', 'POST'])
 @login_required
 def account_settings_page():
-    return render_template('user/settings.html')
+    form = AccountSettingsForm()
+    if request.method == 'GET':
+        if g.user.single:
+            form.single.data = g.user.single
+        if g.user.multi:
+            form.multi.data = g.user.multi
+
+    if form.validate_on_submit():
+        form.populate_obj(g.user)
+        database.session.commit()
+        flash('Account settings saved.')
+        return redirect(url_for(request.endpoint))
+    return render_template('user/settings.html', form=form)
 
 @app.route('/item_candidate/Q<int:item_id>.json')
 def item_candidate_json(item_id):
