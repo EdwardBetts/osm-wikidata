@@ -456,21 +456,21 @@ def filter_candidates_more(items, bad=None):
         if done:
             continue
 
-        place = filter_place(candidates)
-        if place:
-            candidates = [place]
-        else:
-            school = filter_schools(candidates)
-            if school:
-                candidates = [school]
+        # place = filter_place(candidates)
+        # if place:
+        #     candidates = [place]
+        # else:
+        school = filter_schools(candidates)
+        if school:
+            candidates = [school]
 
-            station = filter_station(candidates)
-            if station:
-                candidates = [station]
+        station = filter_station(candidates)
+        if station:
+            candidates = [station]
 
-            church = filter_churches(candidates)
-            if church:
-                candidates = [church]
+        church = filter_churches(candidates)
+        if church:
+            candidates = [church]
 
         if len(candidates) != 1:
             yield (item, {'note': 'more than one candidate found'})
@@ -489,8 +489,10 @@ def filter_candidates_more(items, bad=None):
         yield (item, {'candidate': candidate})
 
 def filter_distant(candidates):
+    if any('place' in c['tags'] or 'admin_level' in c['tags']
+            for c in candidates):
+        return candidates
     if len(candidates) < 2:
-        print('less than 2')
         return candidates
     close = []
     for c in candidates:
