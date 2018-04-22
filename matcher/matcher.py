@@ -503,4 +503,4 @@ def filter_distant(candidates):
             continue
         if c['dist'] < 1000:
             return candidates
-    return [chosen]
+    return [chosen] if chosen else candidates
