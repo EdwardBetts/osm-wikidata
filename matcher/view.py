@@ -975,7 +975,7 @@ def api_item_names(wikidata_id):
 
     qid = f'Q{wikidata_id}'
     entity = wikidata.WikidataItem.retrieve_item(qid)
-    data = api_get(wikidata_id, entity, utils.get_radius())
+    api_data = api_get(wikidata_id, entity, utils.get_radius())
 
     def json_data(**kwargs):
         response = jsonify(**kwargs)
