@@ -489,18 +489,18 @@ def filter_candidates_more(items, bad=None):
         yield (item, {'candidate': candidate})
 
 def filter_distant(candidates):
-    if any('place' in c['tags'] or 'admin_level' in c['tags']
-            for c in candidates):
+    if any(c['tags'].keys() & {'place', 'admin_level'} for c in candidates):
         return candidates
     if len(candidates) < 2:
         return candidates
-    close = []
+
+    chosen = None
     for c in candidates:
-        print('dist:', c['dist'])
-        if c['dist'] < 25:
-            close.append(c)
+        if c['dist'] < 50:
+            if chosen:
+                return candidates
+            chosen = c
             continue
         if c['dist'] < 1000:
             return candidates
-
-    return close if len(close) == 1 else candidates
+    return [chosen]
