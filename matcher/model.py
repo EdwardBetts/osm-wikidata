@@ -1,5 +1,5 @@
 # coding: utf-8
-from flask import g
+from flask import g, has_app_context
 from sqlalchemy import func
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
 from sqlalchemy.types import BigInteger, Float, Integer, String, Boolean, DateTime, Text
@@ -11,7 +11,7 @@ from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
 from .database import session
 from flask_login import UserMixin
-from . import wikidata, matcher, match, wikipedia
+from . import wikidata, matcher, match, wikipedia, country_units, utils
 from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
@@ -44,6 +44,7 @@ class User(Base, UserMixin):
     languages = Column(postgresql.ARRAY(String))
     single = Column(String)
     multi = Column(String)
+    units = Column(String)
 
     def is_active(self):
         return self.active
@@ -611,6 +612,19 @@ class ItemCandidate(Base):
         self.name_match = match.check_for_match(self.tags, names, endings)
         self.identifier_match = match.check_identifier(self.tags, identifiers)
         return True
+
+    def display_distance(self):
+
+        if has_app_context() and g.user.is_authenticated and g.user.units:
+            units = g.user.units
+        else:
+            units = 'local'  # default
+
+        if units == 'local':
+            country_code = g.place.country_code if has_app_context() else None
+            units = country_units.get(country_code, 'km_and_metres')
+
+        return utils.display_distance(units, self.dist)
 
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'

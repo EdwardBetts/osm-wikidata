@@ -2,14 +2,14 @@
 
 {% block title %}Settings{% endblock %}
 
+{% macro ucfirst(s) %}{{ (s[0] | upper) + s[1:] }}{% endmacro %}
+
 {% block content %}
 <div class="container my-2">
 <div class="row">
 <div class="col">
   {% include "flash_msg.html" %}
   <h1>Settings</h1>
-
-  <h4>Change comment</h4>
 
   {% if form.errors %}
   <ul class="errors">
@@ -22,6 +22,8 @@
   {% endif %}
 
   <form method="POST" role="form">
+
+  <h4>Change comment</h4>
   {{ form.hidden_tag() }}
   <div class="form-group">
     {{ form.single.label }}
@@ -32,6 +34,17 @@
     {{ form.multi.label }}
     {{ form.multi(class="form-control") }}
     <small class="form-text text-muted">{{ form.multi.description }}</small>
+  </div>
+
+  <h4>{{ ucfirst(form.units.label.text) }}</h4>
+
+  <div class="form-group">
+    {% for option in form.units %}
+    <div class="form-check">
+      {{ option() }}
+      {{ option.label }}
+    </div>
+    {% endfor %}
   </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>

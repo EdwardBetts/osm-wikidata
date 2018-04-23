@@ -32,3 +32,24 @@ def test_drop_start():
 def test_remove_start():
     assert utils.remove_start('aaabbb', 'aaa') == 'bbb'
     assert utils.remove_start('aaabbb', 'ccc') == 'aaabbb'
+
+def test_display_distance():
+    units = 'km_and_metres'
+    assert utils.display_distance(units, 10) == '10 m'
+    assert utils.display_distance(units, 500) == '500 m'
+    assert utils.display_distance(units, 1000) == '1.00 km'
+
+    units = 'miles_and_feet'
+    assert utils.display_distance(units, 500) == '1,640 feet'
+    assert utils.display_distance(units, 1000) == '0.62 miles'
+    assert utils.display_distance(units, 10_000) == '6.21 miles'
+
+    units = 'miles_and_yards'
+    assert utils.display_distance(units, 500) == '547 yards'
+    assert utils.display_distance(units, 1000) == '0.62 miles'
+    assert utils.display_distance(units, 10_000) == '6.21 miles'
+
+    units = 'miles_and_metres'
+    assert utils.display_distance(units, 500) == '500 metres'
+    assert utils.display_distance(units, 1000) == '0.62 miles'
+    assert utils.display_distance(units, 10_000) == '6.21 miles'

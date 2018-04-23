@@ -1,4 +1,4 @@
-from flask import current_app, request, has_app_context
+from flask import current_app, request, has_app_context, g
 from itertools import islice
 from . import mail
 import os.path
@@ -6,6 +6,10 @@ import json
 import math
 import user_agents
 import humanize
+
+metres_per_mile = 1609.344
+feet_per_metre = 3.28084
+feet_per_mile = 5280
 
 def chunk(it, size):
     it = iter(it)
@@ -102,3 +106,27 @@ There is currently {} available.
 '''.format(readable)
 
     mail.send_mail(subject, body, config=config)
+
+def display_distance(units, dist):
+    if units in ('miles_and_feet', 'miles_and_yards'):
+        total_feet = dist * feet_per_metre
+        miles = total_feet / feet_per_mile
+
+        if miles > 0.5:
+            return f'{miles:,.2f} miles'
+        else:
+            return {
+                'miles_and_feet': f'{total_feet:,.0f} feet',
+                'miles_and_yards': f'{total_feet / 3:,.0f} yards',
+            }[units]
+
+    if units == 'miles_and_metres':
+        miles = dist / metres_per_mile
+        return f'{miles:,.2f} miles' if miles > 0.5 else f'{dist:,.0f} metres'
+
+    if units == 'km_and_metres':
+        units = 'km' if dist > 500 else 'metres'
+    if units == 'metres':
+        return f'{dist:,.0f} m'
+    if units == 'km':
+        return f'{dist / 1000:,.2f} km'

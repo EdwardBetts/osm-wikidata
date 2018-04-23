@@ -450,6 +450,7 @@ def save_language_order(osm_type, osm_id):
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
+    g.place = place
     multiple_only = bool(request.args.get('multiple'))
 
     if place.state not in ('ready', 'complete'):
@@ -539,6 +540,7 @@ def test_candidates(osm_type, osm_id):
 
 def get_place(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
+    g.place = place
 
     if place.state == 'refresh_isa':
         place.load_isa()
@@ -1314,6 +1316,8 @@ def account_settings_page():
             form.single.data = g.user.single
         if g.user.multi:
             form.multi.data = g.user.multi
+        if g.user.units:
+            form.units.data = g.user.units
 
     if form.validate_on_submit():
         form.populate_obj(g.user)
