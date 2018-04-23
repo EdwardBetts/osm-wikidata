@@ -42,7 +42,7 @@
         {% endfor %}
       </li>
       {% if osm.dist %}
-          <li>distance between Wikidata coordinates and OSM location: {{ osm.dist | int }}m</li>
+          <li>distance between Wikidata coordinates and OSM location: {{ osm.display_distance() }}</li>
       {% else %}
           <li>Wikidata and OSM <span class="badge badge-success">exact location match</span></li>
       {% endif %}

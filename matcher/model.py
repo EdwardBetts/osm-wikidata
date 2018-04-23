@@ -418,6 +418,12 @@ class Item(Base):
 
         return self.extract[:first_end_p_tag + len(close_tag)]
 
+    def set_country_code(self):
+        for place in self.places:
+            if place.country_code:
+                g.country_code = place.country_code
+                return
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 
@@ -614,14 +620,13 @@ class ItemCandidate(Base):
         return True
 
     def display_distance(self):
-
         if has_app_context() and g.user.is_authenticated and g.user.units:
             units = g.user.units
         else:
             units = 'local'  # default
 
         if units == 'local':
-            country_code = g.place.country_code if has_app_context() else None
+            country_code = g.country_code if has_app_context() else None
             units = country_units.get(country_code, 'km_and_metres')
 
         return utils.display_distance(units, self.dist)

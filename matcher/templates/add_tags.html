@@ -79,7 +79,7 @@
           </a>
         </td>
         <td style="white-space:nowrap">
-          ({{ c.osm_type}}{% if c.dist %},&nbsp;{{ c.dist | int }}&nbsp;m{% endif %})
+          ({{ c.osm_type}}{% if c.dist %}, {{ c.display_dist() }}{% endif %})
         </td>
         <td>
           {{ ', '.join(c.matching_tags()) }}

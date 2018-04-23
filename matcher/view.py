@@ -341,6 +341,7 @@ def update_tags(osm_type, osm_id):
 @app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
 def add_tags(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
+    g.country_code = place.country_code
 
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
@@ -450,7 +451,7 @@ def save_language_order(osm_type, osm_id):
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
-    g.place = place
+    g.country_code = place.country_code
     multiple_only = bool(request.args.get('multiple'))
 
     if place.state not in ('ready', 'complete'):
@@ -540,7 +541,7 @@ def test_candidates(osm_type, osm_id):
 
 def get_place(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
-    g.place = place
+    g.country_code = place.country_code
 
     if place.state == 'refresh_isa':
         place.load_isa()
@@ -1142,6 +1143,7 @@ def match_detail(item_id, osm_type, osm_id):
         abort(404)
 
     item = osm.item
+    item.set_country_code()
 
     qid = 'Q' + str(item_id)
     wikidata_names = dict(wikidata.names_from_entity(item.entity))
@@ -1243,6 +1245,7 @@ def build_item_page(wikidata_id, item):
 @app.route('/Q<int:wikidata_id>')
 def item_page(wikidata_id):
     item = Item.query.get(wikidata_id)
+    item.set_country_code()
     try:
         return build_item_page(wikidata_id, item)
     except wikidata.QueryError:
