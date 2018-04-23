@@ -231,7 +231,7 @@ class Place(Base):
                 state = address.get('state')
                 if state and n != state:
                     return n + ', ' + state
-        return 'the ' + n if ' of ' in n else n
+        return 'the ' + n if (' of ' in n or 'national park' in n.lower()) else n
 
     @classmethod
     def from_nominatim(cls, hit):
