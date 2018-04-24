@@ -924,6 +924,4 @@ def identifier_match_only():
     for c in q:
         if c.name_match:
             continue
-        print(c.tags)
-        print(dict(c.item.names()))
-        print()
+        print(c.tags, dict(c.item.names()))
