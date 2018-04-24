@@ -456,6 +456,7 @@
 {
     "name": "Peaks",
     "cats": ["Hills by country", "Mountains by country"],
+    "exclude_cats": ["Populated places"],
     "tags": ["natural=peak"],
     "trim": ["hill", "mountain", "peak"],
     "dist": 3
