@@ -514,7 +514,7 @@
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations", "police stations", "radio stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
-    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de", "Bahnhof", "Haltepunkt"],
+    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de", "bahnhof", "haltepunkt"],
     "check_housename": false,
     "dist": 2
 },
