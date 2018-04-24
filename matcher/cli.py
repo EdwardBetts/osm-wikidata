@@ -914,3 +914,16 @@ def load_all_isa():
         database.session.commit()
 
     print('done')
+
+@app.cli.command()
+def identifier_match_only():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = ItemCandidate.query.filter(ItemCandidate.identifier_match.is_(True))
+    for c in q:
+        if c.name_match:
+            continue
+        print(c.tags)
+        print(dict(c.item.names()))
+        print()
