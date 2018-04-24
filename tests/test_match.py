@@ -32,9 +32,20 @@ def test_initials_match():
     n2 = 'This Is A Test'
 
     assert match.initials_match(n1, n2)
+
+    n1 = 'TIAT'
+    n2 = 'This is a test'
+
+    assert match.initials_match(n1, n2)
+
     assert not match.initials_match('bad', 'Bad Match Here')
 
     assert not match.initials_match('TO', 'to short')
+
+    n1 = 'ТГПУ'
+    n2 = 'Томский государственный педагогический университет'
+
+    assert match.initials_match(n1, n2)
 
 def test_no_alpha():
     assert not match.no_alpha('abc')

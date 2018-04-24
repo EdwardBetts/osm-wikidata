@@ -53,7 +53,7 @@ def tidy_name(n):
 
 def initials_match(n1, n2, endings=None):
     n1_lc = n1.lower()
-    initals = ''.join(term[0] for term in n2 if term[0].isupper())
+    initals = ''.join(term[0] for term in n2.split()).upper()
     if len(initals) < 3 or len(n1) < 3:
         return
     if initals == n1:
