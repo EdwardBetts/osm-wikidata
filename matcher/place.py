@@ -614,9 +614,15 @@ class Place(Base):
             tags = set(v['tags'])
             # if wikidata says this is a place then adding tags
             # from wikipedia can just confuse things
-            if 'categories' in v and not any(t.startswith('place') for t in tags):
+            # Wikipedia articles sometimes combine a village and a windmill
+            # or a neighbourhood and a light rail station.
+            # Exception for place tags, we always add place tags from
+            # Wikipedia categories.
+            if 'categories' in v:
+                is_place = any(t.startswith('place') for t in tags)
                 for t in matcher.categories_to_tags(v['categories']):
-                    tags.add(t)
+                    if t.startswith('place') or not is_place:
+                        tags.add(t)
 
             # building is a very generic tag so remove it if we have more
             # specific search criteria
