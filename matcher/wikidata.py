@@ -47,12 +47,15 @@ extra_keys = {
     'Q33673393': tall,                          # multi-storey building
     'Q641226': ['Tag:leisure=stadium'],         # arena
     'Q2301048': ['Tag:aeroway=helipad'],        # special airfield
-    'Q622425': ['Tag:amenity=pub', 'Tag:amenity=music_venue'],     # nightclub
-    'Q187456': ['Tag:amenity=pub', 'Tag:amenity=nightclub'],       # bar
-    'Q16917': ['Tag:amenity=clinic', 'Tag:building=clinic'],       # hospital
+    'Q622425': ['Tag:amenity=pub',
+                'Tag:amenity=music_venue'],     # nightclub
+    'Q187456': ['Tag:amenity=pub',
+                'Tag:amenity=nightclub'],       # bar
+    'Q16917': ['Tag:amenity=clinic',
+               'Tag:building=clinic'],          # hospital
     'Q330284': ['Tag:amenity=market'],          # marketplace
-                                                # drinking establishment
-    'Q5307737': ['Tag:amenity=pub', 'Tag:amenity=bar'],
+    'Q5307737': ['Tag:amenity=pub',
+                 'Tag:amenity=bar'],            # drinking establishment
     'Q875157': ['Tag:tourism=resort'],          # resort
     'Q174782': ['Tag:leisure=park'],            # square
     'Q34627': ['Tag:religion=jewish'],          # synagogue
@@ -66,6 +69,7 @@ extra_keys = {
     'Q277760': ['Tag:historic=folly'],          # gatehouse
     'Q15243209': ['Tag:leisure=park'],          # historic district
     'Q3010369': ['Tag:historic=monument'],      # opening ceremony
+    'Q123705': ['Tag:place=suburb'],            # neighbourhood
 }
 
 # search for items in bounding box that have an English Wikipedia article
