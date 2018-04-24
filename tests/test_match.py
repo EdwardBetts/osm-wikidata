@@ -19,7 +19,11 @@ def test_match_with_words_removed():
 
     wd = 'norwich bus station'
     osm = 'norwich'
-    assert match.match_with_words_removed(wd, osm, ['bus station'])
+    assert match.match_with_words_removed(osm, wd, ['bus station'])
+
+    assert match.match_with_words_removed('Vif',
+                                          'gare de Vif',
+                                          ['gare de'])
 
 def test_initials_match():
     n1 = 'TIAT'
@@ -122,9 +126,16 @@ def test_name_match():
 
     assert match.name_match('aaa bbb', 'bbb aaa')
 
+    assert match.name_match('Vif', 'gare de Vif', endings=['gare de'])
+    assert match.name_match('Vif', 'station Vif', endings=['station'])
+
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)
+
+    osm = 'New York Skyports Incorporated Seaplane Base'
+    wikidata = 'New York Skyports Inc. Seaplane Base'
+    assert match.name_match(osm, wikidata)
 
 def test_match_name_abbreviation():
     wikidata_names = [

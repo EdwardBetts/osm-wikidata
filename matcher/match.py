@@ -36,6 +36,7 @@ def tidy_name(n):
     n = n.replace(' c of e ', ' ce ')
     n = n.replace(' roman catholic ', ' rc ')
     n = n.replace(' preparatory school ', ' prep school ')
+    n = n.replace(' incorporated ', ' inc ')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     if not n.lstrip().startswith('s '):
@@ -93,6 +94,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
         return m
 
     if strip_non_chars_match(osm_lc, wd_lc):
+        return Match(MatchType.good)
+
+    if endings and match_with_words_removed(osm_lc, wd_lc, endings):
         return Match(MatchType.good)
 
     wd_lc = tidy_name(wd_lc)
