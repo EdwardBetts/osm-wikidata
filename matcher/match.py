@@ -35,13 +35,16 @@ def tidy_name(n):
     n = n.replace(' cofe ', ' ce ')
     n = n.replace(' c of e ', ' ce ')
     n = n.replace(' roman catholic ', ' rc ')
-    n = n.replace(' preparatory school ', ' prep school ')
-    n = n.replace(' incorporated ', ' inc ')
+    n = n.replace(' preparatory school', ' prep school')
+    n = n.replace(' incorporated', ' inc')
+    n = n.replace(' cooperative', ' coop')
+    n = n.replace(' co-operative', ' coop')
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     if not n.lstrip().startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '')
-    for word in 'the', 'and', 'at', 'of', 'de', 'le', 'la', 'les', 'von', 'pw.':
+    for word in ('the', 'and', 'at', 'of', 'de', 'di', 'le', 'la', 'les',
+                 'von', 'pw.'):
         n = n.replace(' {} '.format(word), ' ')
     if n.startswith('the '):
         n = n[4:]
@@ -165,6 +168,13 @@ def name_match(osm, wd, endings=None, debug=False):
     end = ' And Attached Railings'.lower()
     if wd.lower().endswith(end) and name_match_main(osm, wd[:-len(end)], endings):
         return Match(MatchType.trim)
+
+    if ';' not in osm:
+        return
+    for osm_name in osm.split(';'):
+        match = name_match(osm_name.strip(), wd, endings=endings, debug=debug)
+        if match:
+            return match
 
 def normalize_name(name):
     return re_strip_non_chars.sub('', name.lower())

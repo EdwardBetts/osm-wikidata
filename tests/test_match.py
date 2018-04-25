@@ -126,7 +126,7 @@ def test_name_match():
 
     assert match.name_match('aaa bbb', 'bbb aaa')
 
-    assert match.name_match('Vif', 'gare de Vif', endings=['gare de'])
+    assert match.name_match('Vif', 'gare de Vif', endings=['gare'])
     assert match.name_match('Vif', 'station Vif', endings=['station'])
 
     osm = 'St Peter & St Paul'
@@ -136,6 +136,23 @@ def test_name_match():
     osm = 'New York Skyports Incorporated Seaplane Base'
     wikidata = 'New York Skyports Inc. Seaplane Base'
     assert match.name_match(osm, wikidata)
+
+    osm = 'Disneyland Pacific Hotel; Pacific Hotel'
+    wikidata = 'Disneyland Pacific Hotel'
+    assert match.name_match(osm, wikidata)
+
+    osm = 'Leeds Bradford International'
+    wikidata = 'Leeds Bradford International Airport'
+    trim = ['airport', 'international airport']
+    assert match.name_match(osm, wikidata, endings=trim)
+
+    osm = 'Bresso'
+    wikidata = 'Aeroporto di Bresso'
+    trim = ['aeroporto']
+    assert match.name_match(osm, wikidata, endings=trim)
+
+    assert match.name_match('Rainbow Grocery Coop',
+                            'Rainbow Grocery Cooperative')
 
 def test_match_name_abbreviation():
     wikidata_names = [
@@ -235,6 +252,21 @@ def test_check_for_match():
     expect = {
         'alt_name': [('good', 'test', [('label', 'en')])],
         'name': [('good', 'test', [('label', 'en')])],
+    }
+
+    assert match.check_for_match(osm_tags, wd_names) == expect
+
+    return
+
+    osm_tags = {'name': 'National Museum of Mathematics (MoMath)'}
+    wd_names = {
+        'National Museum of Mathematics': [('label', 'en')],
+        'Momath': [('alias', 'en')],
+        'Museum of Mathematics': [('alias', 'en')],
+    }
+
+    expect = {
+        'name': [('good', 'National Museum of Mathematics', [('label', 'en')])],
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
