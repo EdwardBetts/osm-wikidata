@@ -890,7 +890,7 @@
 {
     "cats": ["Golf clubs and courses by country"],
     "tags": ["leisure=golf_course"],
-    "trim": ["golf course", "golf club"],
+    "trim": ["golf course", "golf club", "club", "golf"],
     "area": true,
     "dist": 10
 },

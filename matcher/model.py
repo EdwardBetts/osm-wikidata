@@ -266,7 +266,7 @@ class Item(Base):
             ('P239', ['icao'], 'ICAO airport code'),
             ('P240', ['faa', 'ref'], 'FAA airport code'),
             # ('P281', ['addr:postcode', 'postal_code'], 'postal code'),
-            ('P296', ['ref', 'ref:train'], 'station code'),
+            ('P296', ['ref', 'ref:train', 'railway:ref'], 'station code'),
             ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
             ('P722', ['uic_ref'], 'UIC station code'),
