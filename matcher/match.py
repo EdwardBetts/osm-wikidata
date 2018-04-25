@@ -207,12 +207,15 @@ def check_for_address_in_extract(osm_tags, extract):
     if not extract or not has_address(osm_tags):
         return
 
+    def address_in_extract(address):
+        return bool(re.match(r'\b' + re.escape(address), extract, re.I))
+
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']
-        if address in extract:
+        if address_in_extract(address):
             return True
 
-    if 'addr:full' in osm_tags and osm_tags['addr:full'] in extract:
+    if 'addr:full' in osm_tags and address_in_extract(osm_tags['addr:full']):
         return True
 
 def check_name_matches_address(osm_tags, wikidata_names):

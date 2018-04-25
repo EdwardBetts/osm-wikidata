@@ -243,6 +243,23 @@ def test_check_name_matches_address_postcode():
     tags = {'addr:full': '12 Buckingham Street'}
     assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
 
+def test_check_for_address_in_extract():
+    osm_tags = {
+        'addr:street': 'West 43rd Street',
+        'addr:housenumber': '4',
+    }
+
+    extract = ('Aeolian Hall was a concert hall in midtown Manhattan in ' +
+               'New York City, located on the third floor of ' +
+               '29-33 West 42nd Street (also 34 West 43rd Street, from the ' +
+               'other side) across the street from Bryant Park.')
+
+    assert not match.check_for_address_in_extract(osm_tags, extract)
+
+    osm_tags = {'addr:street': 'Station Road', 'addr:housenumber': '10'}
+    extract = 'Test House, located at 10 Station Road is a test.'
+    assert not match.check_for_address_in_extract(osm_tags, extract)
+
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
 
