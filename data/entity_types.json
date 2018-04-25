@@ -81,7 +81,7 @@
 {
     "cats": ["Hospitals by country"],
     "tags": ["amenity=hospital", "building=hospital"],
-    "trim": ["hospital"],
+    "trim": ["hospital", "medical center", "medical centre"],
     "check_housename": true,
     "wikidata": "Q16917",
     "dist": 2
@@ -89,7 +89,7 @@
 {
     "cats": ["Clinics"],
     "tags": ["amenity=clinic", "building=clinic"],
-    "trim": ["clinic"],
+    "trim": ["clinic", "medical center", "medical centre"],
     "check_housename": true,
     "wikidata": "Q1774898",
     "dist": 2
