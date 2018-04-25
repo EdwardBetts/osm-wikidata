@@ -208,7 +208,7 @@ def check_for_address_in_extract(osm_tags, extract):
         return
 
     def address_in_extract(address):
-        return bool(re.match(r'\b' + re.escape(address), extract, re.I))
+        return bool(re.search(r'\b' + re.escape(address), extract, re.I))
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']
