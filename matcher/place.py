@@ -42,6 +42,15 @@ skip_tags = {'route:road',
              'type=associatedStreet',
              'amenity'}
 
+def drop_building_tag(tags):
+    # building is a very generic tag so remove it if we have more
+    # specific search criteria
+    if 'building' in tags or 'building=yes' in tags:
+        without_buildings = [t for t in tags if t not in ('building', 'building=yes')]
+        if without_buildings:
+            tags.discard('building')
+            tags.discard('building=yes')
+
 def bbox_chunk(bbox, n):
     n = max(1, n)
     (south, north, west, east) = bbox
@@ -624,13 +633,7 @@ class Place(Base):
                     if t.startswith('place') or not is_place:
                         tags.add(t)
 
-            # building is a very generic tag so remove it if we have more
-            # specific search criteria
-            if 'building' in tags or 'building=yes' in tags:
-                without_buildings = [t for t in tags if t not in ('building', 'building=yes')]
-                if without_buildings:
-                    tags.discard('building')
-                    tags.discard('building=yes')
+            # drop_building_tag(tags)
 
             tags -= skip_tags
 
