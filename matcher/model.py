@@ -626,7 +626,9 @@ class ItemCandidate(Base):
             units = 'local'  # default
 
         if units == 'local':
-            country_code = g.country_code if has_app_context() else None
+            country_code = (getattr(g, 'country_code', None)
+                            if has_app_context()
+                            else None)
             units = country_units.get(country_code, 'km_and_metres')
 
         return utils.display_distance(units, self.dist)
