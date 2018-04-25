@@ -207,10 +207,15 @@ def find_item_matches(cur, item, prefix, debug=False):
             if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
                 continue
 
-        address_match = match.check_name_matches_address(osm_tags, wikidata_names)
+        address_match = match.check_name_matches_address(osm_tags,
+                                                         wikidata_names)
 
-        if address_match is False:
+        if address_match is False:  # OSM and Wikidata addresses differ
             continue
+
+        if (not address_match and
+                match.check_for_address_in_extract(osm_tags, item.extract)):
+            address_match = True
 
         name_match = match.check_for_match(osm_tags, wikidata_names, endings)
         if not (identifier_match or address_match or name_match):

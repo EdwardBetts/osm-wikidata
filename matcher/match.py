@@ -193,6 +193,18 @@ def check_identifier(osm_tags, item_identifiers):
                 return True
     return False
 
+def check_for_address_in_extract(osm_tags, extract):
+    if not extract or not has_address(osm_tags):
+        return
+
+    if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
+        address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']
+        if address in extract:
+            return True
+
+    if 'addr:full' in osm_tags and osm_tags['addr:full'] in extract:
+        return True
+
 def check_name_matches_address(osm_tags, wikidata_names):
     if not has_address(osm_tags):
         return
