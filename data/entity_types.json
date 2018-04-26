@@ -69,6 +69,7 @@
     "tags": ["tourism=museum", "historic=museum", "building=museum", "tourism=gallery", "tourism=attraction"],
     "trim": ["museum"],
     "wikidata": "Q33506",
+    "check_housename": false,
     "dist": 1
 },
 {
@@ -239,7 +240,7 @@
 },
 {
     "cats": ["Government buildings by country"],
-    "tags": ["office=government", "amenity=public_building", "building=public"],
+    "tags": ["office=government", "amenity=public_building", "building=public", "building=civic", "building=public_building"],
     "skip_cats": ["Ambassadors by country of origin", "Military installations", "Fire stations by country", "Police stations by country", "Publicly funded schools in the United States", "Prisons in the United States", "Lighthouses in the United States", "Fire stations in the United States", "Police stations in the United States", "Post office buildings in the United States", "Ambassadors by mission country", "Public schools"],
     "trim": [],
     "wikidata": "Q16831714",
@@ -290,6 +291,7 @@
     "cats": ["Pubs by country", "Drinking establishments by country"],
     "tags": ["amenity=pub", "amenity=bar", "amenity=restaurant", "amenity=nightclub", "building=pub"],
     "trim": ["pub", "house", "public house", "inn", "lounge", "bar and grill"],
+    "check_housename": true,
     "dist": 1
 },
 {
@@ -310,6 +312,7 @@
     "cats": ["Convention centers by country", "conference centres"],
     "tags": ["amenity=conference_centre"],
     "trim": ["conference center", "conference centre", "convention center"],
+    "check_housename": true,
     "dist": 4
 },
 {
@@ -388,6 +391,7 @@
     "cats": ["Casinos by country"],
     "tags": ["amenity=casino"],
     "trim": ["resort", "casino", "lounge", "casino resort"],
+    "check_housename": true,
     "dist": 5
 },
 {
@@ -400,6 +404,7 @@
     "cats": ["Bus stations"],
     "tags": ["amenity=bus_station"],
     "trim": ["bus station", "bus terminal", "transit center", "transit centre"],
+    "check_housename": true,
     "dist": 4
 },
 {
@@ -609,6 +614,7 @@
     "tags": ["amenity=university", "type=site", "site=university", "building=university"],
     "trim": ["university", "school", "college"],
     "area": true,
+    "check_housename": true,
     "dist": 3
 },
 {
@@ -664,6 +670,7 @@
 {
     "cats": ["Seats of local government", "City and town halls", "City halls", "Town halls"],
     "tags": ["amenity=townhall", "amenity=village_hall", "building", "amenity=public_building"],
+    "check_housename": true,
     "trim": [],
     "dist": 0.5
 },
@@ -821,11 +828,13 @@
     "tags": ["shop", "building=retail", "building=shop"],
     "skip_cats": ["Hardlines", "Toys", "Market towns", "Food retailers", "Retail markets", "Retailers"],
     "trim": ["shop", "store", "stores"],
+    "check_housename": true,
     "dist": 5
 },
 {
     "cats": ["Bookshops", "Bookstores"],
     "tags": ["shop=books"],
+    "check_housename": true,
     "trim": [],
     "dist": 5
 },
@@ -833,6 +842,7 @@
     "cats": ["Warehouses"],
     "tags": ["building=warehouse"],
     "trim": ["warehouse"],
+    "check_housename": true,
     "dist": 5
 },
 {
@@ -872,6 +882,7 @@
     "tags": ["tourism=attraction"],
     "skip_cats": ["Universities and colleges", "Places of worship in ", "Theatres in ", "Zoos in ", "Restaurants in ", "Museums in ", "Mountains of ", "Libraries in ", "Houses in", "Skyscrapers in ", "Historic sites in", "Buildings and structures ", "American architecture", "Entertainment events "],
     "trim": [],
+    "check_housename": true,
     "dist": 10
 },
 {
@@ -917,6 +928,7 @@
     "cats": ["Art museums and galleries by country", "Art galleries", "Art museums"],
     "tags": ["tourism=gallery", "tourism=museum", "amenity=arts_centre"],
     "trim": ["gallery", "space", "museum"],
+    "check_housename": true,
     "dist": 2
 },
 {
@@ -1010,18 +1022,21 @@
     "cats": ["Sports venues by country", "Baseball", "Bullrings", "Stadiums", "Indoor arenas"],
     "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
     "trim": ["sports centre", "sport center", "track", "stadium"],
+    "check_housename": true,
     "dist": 2
 },
 {
     "cats": ["Ice rinks"],
     "tags": ["leisure=ice_rink", "sport"],
     "trim": ["centre", "center", "ice rink"],
+    "check_housename": true,
     "dist": 2
 },
 {
     "name": "Rowing clubs",
     "cats": ["Rowing clubs"],
     "tags": ["sport=rowing"],
+    "check_housename": true,
     "trim": [],
     "dist": 2
 },
@@ -1062,6 +1077,7 @@
     "cats": ["Skyscrapers by country"],
     "tags": ["building", "height"],
     "trim": ["tower"],
+    "check_housename": true,
     "dist": 1
 },
 {
@@ -1091,29 +1107,34 @@
     "cats": ["Business schools by country"],
     "tags": ["amenity=college", "amenity=university"],
     "trim": ["school", "business school"],
+    "check_housename": true,
     "dist": 2
 },
 {
     "cats": ["Prisons by country"],
     "tags": ["amenity=prison", "landuse=prison", "building=prison"],
+    "check_housename": true,
     "trim": [],
     "dist": 5
 },
 {
     "cats": ["Courthouses", "Court buildings"],
     "tags": ["amenity=courthouse"],
+    "check_housename": true,
     "trim": [],
     "dist": 4
 },
 {
     "cats": ["Comedy venues"],
     "tags": ["comedy=yes"],
+    "check_housename": true,
     "trim": [],
     "dist": 4
 },
 {
     "cats": ["Yacht clubs"],
     "tags": ["sport=sailing"],
+    "check_housename": true,
     "trim": ["club"],
     "dist": 2
 },
@@ -1121,11 +1142,13 @@
     "cats": ["Country houses", "Manor houses"],
     "tags": ["historic=manor"],
     "trim": ["house", "hall", "manor"],
+    "check_housename": true,
     "dist": 5
 },
 {
     "cats": ["Hardware stores"],
     "tags": ["shop=hardware", "shop=doityourself"],
+    "check_housename": true,
     "trim": [],
     "dist": 1
 },
@@ -1133,6 +1156,7 @@
     "cats": ["Clubs and societies by country"],
     "tags": ["club", "leisure=social_club", "sport", "amenity=bar"],
     "trim": ["club", "lounge"],
+    "check_housename": true,
     "dist": 5
 },
 {
@@ -1152,6 +1176,7 @@
     "cats": ["Community centres", "Community centers"],
     "tags": ["amenity=community_centre"],
     "trim": ["centre", "center", "community center", "community centre"],
+    "check_housename": true,
     "dist": 5
 },
 {
@@ -1333,6 +1358,7 @@
 {
     "cats": ["Research institutes"],
     "tags": ["building"],
+    "check_housename": true,
     "trim": [],
     "dist": 1
 },
