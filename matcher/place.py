@@ -852,7 +852,7 @@ class Place(Base):
             return
 
         isa_map = {}
-        for cur in utils.chunk(items, 1000):
+        for cur in utils.chunk(items, 500):
             isa_map.update(wikidata.get_isa(cur))
 
         download_isa = set()
