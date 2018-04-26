@@ -215,10 +215,12 @@ class Item(Base):
         # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
         # 'amenity'. This is too generic, so we ignore it.
         ignore_tags.add('amenity')
-        tags = (self.get_extra_tags() |
-                set(self.tags) |
-                self.ref_keys |
-                self.disused_tags()) - ignore_tags
+
+        tags = (self.get_extra_tags() | set(self.tags)) - ignore_tags
+        if matcher.could_be_building(tags):
+            tags.add('building')
+        tags |= self.ref_keys | self.disused_tags()
+        tags -= ignore_tags
         if not tags:
             return
 

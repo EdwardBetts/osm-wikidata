@@ -86,6 +86,19 @@ def get_ending_from_criteria(tags):
 
     return endings
 
+def could_be_building(tags):
+    if any(tag.startswith('building') for tag in tags):
+        return True
+
+    global entity_types
+
+    if not entity_types:
+        entity_types = load_entity_types()
+
+    tags = set(tags)
+    return any(t.get('check_housename') and tags & set(t['tags'])
+               for t in entity_types)
+
 def get_max_dist_from_criteria(tags):
     global entity_types
 
