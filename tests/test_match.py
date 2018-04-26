@@ -258,7 +258,7 @@ def test_check_for_address_in_extract():
 
     osm_tags = {'addr:street': 'Station Road', 'addr:housenumber': '10'}
     extract = 'Test House, located at 10 Station Road is a test.'
-    assert not match.check_for_address_in_extract(osm_tags, extract)
+    assert match.check_for_address_in_extract(osm_tags, extract)
 
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
@@ -272,6 +272,16 @@ def test_check_for_match():
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
+
+    osm_tags = {'name': 'Burgers and Cupcakes'}
+    wd_names = {
+        'Baryshnikov Arts Center': [('label', 'en')],
+        'BAC': [('extract', 'en')],
+    }
+    assert match.check_for_match(osm_tags, wd_names) == {}
+
+    del wd_names['Baryshnikov Arts Center']
+    assert match.check_for_match(osm_tags, wd_names)
 
     return
 

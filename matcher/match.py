@@ -269,6 +269,10 @@ def get_names(osm_tags):
     return {k: v for k, v in osm_tags.items()
              if ('name' in k and k not in bad_name_fields) or k == 'operator'}
 
+def intials_matches_other_wikidata_name(initials, wikidata_names):
+    return any(w != initials and initials_match(initials, w)
+               for w in wikidata_names.keys())
+
 def check_for_match(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)
     if not names or not wikidata_names:
@@ -304,6 +308,9 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                     cache[(o, w)] = None
                     continue
                 result = (m.match_type.name, w, source)
+            if (result[0] == 'initials' and
+                    intials_matches_other_wikidata_name(w, wikidata_names)):
+                continue
             name[osm_key].append(result)
 
     return dict(name)
