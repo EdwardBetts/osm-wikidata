@@ -410,15 +410,21 @@ class Item(Base):
         return names
 
     def first_paragraph(self):
-        close_tag = '</p>'
         if not self.extract:
             return
-        first_end_p_tag = self.extract.find(close_tag)
+
+        empty_p_span = '<p><span></span></p>'
+        text = self.extract.strip()
+        if text.startswith(empty_p_span):
+            text = text[len(empty_p_span):].strip()
+
+        close_tag = '</p>'
+        first_end_p_tag = text.find(close_tag)
         if first_end_p_tag == -1:
             # FIXME: e-mail admin
-            return self.extract
+            return text
 
-        return self.extract[:first_end_p_tag + len(close_tag)]
+        return text[:first_end_p_tag + len(close_tag)]
 
     def set_country_code(self):
         for place in self.places:
