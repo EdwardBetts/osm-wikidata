@@ -124,7 +124,7 @@
 {
     "cats": ["Places of worship by country", "Churches"],
     "tags": ["amenity=place_of_worship", "building=church", "man_made=tower", "disused:amenity=place_of_worship"],
-    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of", "mission"],
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of", "mission", "church and cemetery"],
     "check_housename": true,
     "wikidata": "Q1370598",
     "dist": 1
