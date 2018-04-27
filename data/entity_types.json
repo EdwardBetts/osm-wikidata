@@ -331,7 +331,7 @@
 },
 {
     "cats": ["Theatres by country"],
-    "tags": ["amenity=theatre"],
+    "tags": ["amenity=theatre", "building=theatre"],
     "trim": ["theatre", "theater", "playhouse", "opera house", "theatre company", "theater company"],
     "check_housename": true,
     "dist": 3
@@ -359,7 +359,7 @@
 },
 {
     "cats": ["Cinemas and movie theaters by country", "Cinemas", "Movie theaters"],
-    "tags": ["amenity=cinema"],
+    "tags": ["amenity=cinema", "building=theatre", "building=cinema"],
     "trim": ["cinema", "picture house", "theater", "theatre"],
     "check_housename": true,
     "wikidata": "Q41253",
