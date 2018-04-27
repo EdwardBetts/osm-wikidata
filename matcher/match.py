@@ -145,7 +145,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if wd_lc == osm_lc:
         return Match(MatchType.good)
 
-    for end in ['building'] + list(endings or []):
+    for end in ['building', 'complex'] + list(endings or []):
         if wd_lc.endswith(end) and wd_lc[:-len(end)] == osm_lc:
             return Match(MatchType.trim)
         if wd_lc.startswith(end) and wd_lc[len(end):] == osm_lc:
