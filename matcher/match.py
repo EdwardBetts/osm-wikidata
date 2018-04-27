@@ -14,6 +14,21 @@ re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
 
 MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
 
+abbr = {
+    'avenue': 'ave',
+    'street': 'st',
+    'road': 'rd',
+    'boulevard': 'blvd',
+    'drive': 'dr',
+    'lane': 'ln',
+    'square': 'sq',
+    'north': 'n',
+    'south': 's',
+    'east': 'e',
+    'west': 'w',
+}
+re_abbr = re.compile(r'\b(' + '|'.join(abbr.keys()) + r')\b', re.I)
+
 bad_name_fields = {'tiger:name_base', 'name:right',
                    'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
@@ -208,7 +223,12 @@ def check_for_address_in_extract(osm_tags, extract):
         return
 
     def address_in_extract(address):
-        return bool(re.search(r'\b' + re.escape(address), extract, re.I))
+        address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + ')', re.escape(address))
+        # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
+
+        print(address)
+
+        return bool(re.search(r'\b' + address, extract, re.I))
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']

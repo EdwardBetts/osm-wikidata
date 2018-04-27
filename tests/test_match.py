@@ -260,6 +260,17 @@ def test_check_for_address_in_extract():
     extract = 'Test House, located at 10 Station Road is a test.'
     assert match.check_for_address_in_extract(osm_tags, extract)
 
+    extract = ('The Pinball Hall of Fame is a museum for pinball machines ' +
+               'that opened in Paradise, Nevada in January 2006. It is ' +
+               'located at 1610 E Tropicana Ave.')
+    osm_tags = {
+        'addr:city': 'Las Vegas',
+        'addr:street': 'East Tropicana Avenue',
+        'addr:postcode': '89119',
+        'addr:housenumber': '1610',
+    }
+    assert match.check_for_address_in_extract(osm_tags, extract)
+
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
 
