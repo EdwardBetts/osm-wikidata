@@ -208,8 +208,7 @@ class Item(Base):
                 tags |= {prefix + ':' + i for prefix in prefixes}
         return tags
 
-    def hstore_query(self, ignore_tags=None):
-        '''hstore query for use with osm2pgsql database'''
+    def calculate_tags(self, ignore_tags=None):
         ignore_tags = set(ignore_tags or [])
 
         # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
@@ -221,22 +220,7 @@ class Item(Base):
             tags.add('building')
         tags |= self.ref_keys | self.disused_tags()
         tags -= ignore_tags
-        if not tags:
-            return
-
-        cond = []
-        for tag in tags:
-            if '=' not in tag:
-                cond.append(f"(tags ? '{tag}')")
-                continue
-            k, v = tag.split('=')
-            cond.append(f"('{v}' = any(string_to_array((tags->'{k}'), ';')))")
-            if '_' not in v:
-                continue
-            space = v.replace('_', ' ')
-            cond.append(f"('{space}' = any(string_to_array((tags->'{k}'), ';')))")
-
-        return ' or\n '.join(cond)
+        return tags
 
     def instanceof(self):
         if not self.entity:

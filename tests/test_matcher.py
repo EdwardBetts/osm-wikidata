@@ -5,6 +5,13 @@ import os.path
 class MockApp:
     config = {'DATA_DIR': os.path.normpath(os.path.split(__file__)[0] + '/../data')}
 
+class MockDatabase:
+    def execute(self, sql):
+        pass
+
+    def fetchone(self):
+        pass
+
 entity = {
   "claims": {
     "P17": [
@@ -16,9 +23,6 @@ entity = {
             "type": "wikibase-entityid",
             "value": { "entity-type": "item", "id": "Q30", "numeric-id": 30 }
           },
-          "hash": "be4c6eafa2984964f04be85667263f5642ba1a72",
-          "property": "P17",
-          "snaktype": "value"
         },
         "rank": "normal",
       }
@@ -36,9 +40,6 @@ entity = {
               "numeric-id": 3469910
             }
           },
-          "hash": "f3913ffb9faae56eabc86fffba34ed4ee8ade65a",
-          "property": "P31",
-          "snaktype": "value"
         },
         "rank": "normal",
         "type": "statement"
@@ -75,9 +76,6 @@ entity = {
               "precision": 0.001
             }
           },
-          "hash": "86dcb61373be7b5ff614f4f0f6dcf1135028598b",
-          "property": "P625",
-          "snaktype": "value"
         },
         "rank": "normal",
         "type": "statement"
@@ -92,9 +90,6 @@ entity = {
             "type": "string",
             "value": "http://www.bacnyc.org/"
           },
-          "hash": "5d683dafc5696e6e9a3636fa245caad8ae0accfb",
-          "property": "P856",
-          "snaktype": "value"
         },
         "rank": "normal",
         "type": "statement"
@@ -175,8 +170,59 @@ def test_item_match_sql(monkeypatch):
     sql = matcher.item_match_sql(item, 'test')
     assert "(tags ? 'building')" in sql
 
+def test_find_item_matches_parking(monkeypatch):
+    osm_tags = {
+        'amenity': 'parking',
+        'building': 'yes',
+        'fee': 'yes',
+        'name': 'PlayhouseSquare Parking',
+        'operator': 'PlayhouseSquare',
+        'parking': 'multi-storey',
+        'supervised': 'yes',
+    }
+
+    test_entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Playhouse Square'},
+            'de': {'language': 'de', 'value': 'Playhouse Square'},
+        },
+        'sitelinks': {
+            'commonswiki': {
+                'site': 'commonswiki',
+                'title': 'Category:Playhouse Square',
+            },
+            'enwiki': {
+                'site': 'enwiki',
+                'title': 'Playhouse Square',
+            }
+        },
+    }
+
+    tags = ['amenity=arts_centre', 'building']
+    item = Item(entity=test_entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        rows = [('polygon', 116620439, None, osm_tags, 253.7)]
+        return rows
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix')
+    assert len(candidates) == 0
+
 def test_find_item_matches(monkeypatch):
-    osm_tags = {'height': '44.9', 'building': 'yes', 'way_area': '1214.77', 'addr:street': 'West 37th Street', 'nycdoitt:bin': '1087066', 'addr:postcode': '10018', 'addr:housenumber': '450'}
+    osm_tags = {
+        'height': '44.9',
+        'building': 'yes',
+        'addr:street': 'West 37th Street',
+        'nycdoitt:bin': '1087066',
+        'addr:postcode': '10018',
+        'addr:housenumber': '450',
+    }
 
     def mock_run_sql(cur, sql, debug):
         rows = [('polygon', 265273006, None, osm_tags, 0.0)]
@@ -186,13 +232,6 @@ def test_find_item_matches(monkeypatch):
 
     extract = '''<p>The <b>Baryshnikov Arts Center</b> (<b>BAC</b>) is a foundation and arts complex opened by Mikhail Baryshnikov in 2005 at 450 West 37th Street between Ninth and Tenth Avenues in the Hell's Kitchen neighborhood of Manhattan, New York City. The top three floors of the complex are occupied by the Baryshnikov Arts Center, which provides space and production facilities for dance, music, theater, film, and visual arts. The building also houses the Orchestra of St. Luke's DiMenna Center for Classical Music.</p>'''
     item = Item(entity=entity, tags=['building'], extract=extract)
-
-    class MockDatabase:
-        def execute(self, sql):
-            pass
-
-        def fetchone(self):
-            pass
 
     mock_db = MockDatabase()
 

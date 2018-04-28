@@ -114,13 +114,32 @@ def get_max_dist_from_criteria(tags):
 
     return max(max_dists) if max_dists else None
 
+def hstore_query(tags):
+    '''hstore query for use with osm2pgsql database'''
+    cond = []
+    for tag in tags:
+        if '=' not in tag:
+            cond.append(f"(tags ? '{tag}')")
+            continue
+        k, v = tag.split('=')
+        cond.append(f"('{v}' = any(string_to_array((tags->'{k}'), ';')))")
+        if '_' not in v:
+            continue
+        space = v.replace('_', ' ')
+        cond.append(f"('{space}' = any(string_to_array((tags->'{k}'), ';')))")
+
+    return ' or\n '.join(cond)
+
 def item_match_sql(item, prefix, ignore_tags=None):
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
     item_max_dist = get_max_dist_from_criteria(item.tags) or default_max_dist
 
-    hstore = item.hstore_query(ignore_tags=ignore_tags)
-    if not hstore:
+    tags = item.calculate_tags(ignore_tags=ignore_tags)
+    if not tags:
         return
+
+    hstore = hstore_query(tags)
+    assert hstore
 
     sql_list = []
     for obj_type in 'point', 'line', 'polygon':
@@ -162,6 +181,17 @@ def find_nrhp_match(nrhp_numbers, rows):
     if len(nrhp_match) == 1:
         return nrhp_match
 
+def find_matching_tags(osm, wikidata):
+    matching = set()
+    for wikidata_tag in wikidata:
+        if '=' in wikidata_tag:
+            k, _, v = wikidata_tag.partition('=')
+            if k in osm and v in set(osm[k].split(';')):
+                matching.add(wikidata_tag)
+        elif wikidata_tag in osm:
+            matching.add(wikidata_tag)
+    return matching
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -195,6 +225,8 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     endings = get_ending_from_criteria(item.tags)
     endings |= item.more_endings_from_isa()
+
+    wikidata_tags = item.calculate_tags()
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
@@ -232,6 +264,14 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         name_match = match.check_for_match(osm_tags, wikidata_names, endings)
         if not (identifier_match or address_match or name_match):
+            continue
+
+        matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+        is_parking = 'parking' in osm_tags.get('amenity', '')
+        building_only_match = (matching_tags == {'building'} or
+                               matching_tags == {'building=yes'})
+        if (is_parking and building_only_match and name_match and
+                not identifier_match and not address_match):
             continue
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
