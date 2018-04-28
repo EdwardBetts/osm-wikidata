@@ -192,6 +192,15 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return simplify_tags(matching)
 
+def bad_building_match(osm_tags, wikidata_tags):
+    matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+    is_parking = 'parking' in osm_tags.get('amenity', '')
+    is_place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
+    building_only_match = (matching_tags == {'building'} or
+                           matching_tags == {'building=yes'})
+    return (is_parking or is_place_of_worship) and building_only_match
+
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -266,12 +275,8 @@ def find_item_matches(cur, item, prefix, debug=False):
         if not (identifier_match or address_match or name_match):
             continue
 
-        matching_tags = find_matching_tags(osm_tags, wikidata_tags)
-        is_parking = 'parking' in osm_tags.get('amenity', '')
-        building_only_match = (matching_tags == {'building'} or
-                               matching_tags == {'building=yes'})
-        if (is_parking and building_only_match and name_match and
-                not identifier_match and not address_match):
+        if (name_match and not identifier_match and not address_match and
+                bad_building_match(osm_tags, wikidata_tags)):
             continue
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
