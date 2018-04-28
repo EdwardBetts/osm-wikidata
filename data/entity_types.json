@@ -1394,5 +1394,15 @@
     "trim": ["desert"],
     "wikidata": "Q8514",
     "dist": 20
+},
+{
+    "cats": ["Garages (parking)", "Parking"],
+    "tags": ["amenity=parking", "parking=multi-storey", "building=parking"],
+    "trim": ["garage", "parking", "parking garage", "multistorey car park",
+             "multistorey", "parking structure", "parkade", "parking building",
+             "indoor parking", "car park", "parking lot", "car lot"],
+    "check_housename": true,
+    "wikidata": "Q6501349",
+    "dist": 1
 }
 ]
