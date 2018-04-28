@@ -39,20 +39,29 @@ def wait_for_slot(send_queue):
     print('get status')
     try:
         status = overpass.get_status()
-    except requests.exceptions.Timeout:
-        body = 'Timeout talking to overpass API'
-        mail.send_mail('overpass timeout', body)
+    except overpass.OverpassError as e:
+        r = e.args[0]
+        body = f'URL: {r.url}\n\nresponse:\n{r.text}'
+        mail.send_mail('Overpass API unavailable', body)
         send_queue.put({'type': 'error',
                         'error': "Can't access overpass API"})
-        raise
+        return False
+    except requests.exceptions.Timeout:
+        body = 'Timeout talking to overpass API'
+        mail.send_mail('Overpass API timeout', body)
+        send_queue.put({'type': 'error',
+                        'error': "Can't access overpass API"})
+        return False
 
+    print('status:', status)
     if not status['slots']:
-        return
+        return True
     secs = status['slots'][0]
     if secs <= 0:
-        return
+        return True
     send_queue.put({'type': 'status', 'wait': secs})
     sleep(secs)
+    return True
 
 def process_queue_loop():
     with app.app_context():
@@ -75,7 +84,8 @@ def process_queue():
         }
         if not os.path.exists(filename):
             utils.check_free_space(app.config)
-            wait_for_slot(send_queue)
+            if not wait_for_slot(send_queue):
+                return
             to_client(send_queue, 'run_query', msg)
             print('run query')
             r = overpass.run_query(oql)
@@ -127,16 +137,20 @@ class Request:
             return self.reply_and_close({'type': 'pong'})
 
         self.new_place_request(msg)
+        error = False
         try:
             to_send = self.send_queue.get()
             while to_send:
                 self.send_msg(to_send)
+                if to_send['type'] == 'error':
+                    error = True
                 to_send = self.send_queue.get()
         except BrokenPipeError:
             print('socket closed')
         else:
-            print('request complete')
-            self.send_msg({'type': 'done'})
+            if not error:
+                print('request complete')
+                self.send_msg({'type': 'done'})
 
         self.sock.close()
 

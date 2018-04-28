@@ -29,6 +29,10 @@ class RateLimited(Exception):
 class Timeout(Exception):
     pass
 
+class OverpassError(Exception):
+    def __init__(self, r):
+        self.r = r
+
 def run_query(oql, error_on_rate_limit=True):
     r = requests.post(endpoint(), data=oql, headers=user_agent_headers())
 
@@ -168,13 +172,16 @@ def oql_from_wikidata_tag_or_key(tag_or_key, filters):
     return ['\n    {}({})[{}]{};'.format(t, filters, tag, name_filter)
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
 
-def parse_status(status):
-    lines = status.splitlines()
+def parse_status(r):
+    lines = r.text.splitlines()
     limit = 'Rate limit: '
 
-    assert lines[0].startswith('Connected as: ')
-    assert lines[1].startswith('Current time: ')
-    assert lines[2].startswith(limit)
+    try:
+        assert lines[0].startswith('Connected as: ')
+        assert lines[1].startswith('Current time: ')
+        assert lines[2].startswith(limit)
+    except AssertionError:
+        raise OverpassError(r)
 
     slots = []
     for i in range(3, len(lines)):
@@ -183,9 +190,7 @@ def parse_status(status):
             break
         m = re_slot_available.match(line)
         if not m:
-            subject = 'error parsing overpass status'
-            mail.send_mail(subject, status)
-            print(status)
+            raise OverpassError(r)
         slots.append(int(m.group(2)))
 
     next_line = lines[i]
@@ -198,11 +203,14 @@ def parse_status(status):
         'running': len(lines) - (i + 1)
     }
 
+def status_url():
+    return current_app.config['OVERPASS_URL'] + '/api/status'
+
 def get_status(url=None):
-    if url is None:
-        url = current_app.config['OVERPASS_URL'] + '/api/status'
-    status = requests.get(url, timeout=10).text
-    return parse_status(status)
+    r = requests.get(url or status_url(), timeout=10)
+    if '502 Bad Gateway' in r.text:
+        raise OverpassError(r)
+    return parse_status(r)
 
 def wait_for_slot(status=None, url=None):
     if status is None:

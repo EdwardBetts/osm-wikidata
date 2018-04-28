@@ -185,6 +185,8 @@ class MatcherSocket(object):
             elif msg['type'] == 'done':
                 complete = True
                 self.send('overpass_done')
+            elif msg['type'] == 'error':
+                self.error(msg['error'])
             else:
                 self.status('from network: ' + from_network)
             netstring.write(sock, 'ack')
