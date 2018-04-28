@@ -1387,5 +1387,12 @@
     "check_housename": true,
     "wikidata": "Q7627808",
     "dist": 1
+},
+{
+    "cats": ["Desert by country"],
+    "tags": ["natural=desert"],
+    "trim": ["desert"],
+    "wikidata": "Q8514",
+    "dist": 20
 }
 ]
