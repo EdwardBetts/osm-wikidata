@@ -1005,14 +1005,17 @@ class Place(Base):
         bbox_chunks = list(self.polygon_chunk(size=place_chunk_size))
 
         chunks = []
+        need_self = True  # include self in first non-empty chunk
         for num, chunk in enumerate(bbox_chunks):
             filename = self.chunk_filename(num, bbox_chunks)
-            oql = self.oql_for_chunk(chunk, include_self=(num == 0))
+            oql = self.oql_for_chunk(chunk, include_self=need_self)
             chunks.append({
                 'num': num,
                 'oql': oql,
                 'filename': filename,
             })
+            if need_self and oql:
+                need_self = False
         return chunks
 
     def chunk_filename(self, num, chunks):
