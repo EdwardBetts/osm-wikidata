@@ -190,7 +190,7 @@ def find_matching_tags(osm, wikidata):
                 matching.add(wikidata_tag)
         elif wikidata_tag in osm:
             matching.add(wikidata_tag)
-    return matching
+    return simplify_tags(matching)
 
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
