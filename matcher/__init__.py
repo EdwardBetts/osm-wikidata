@@ -17,6 +17,13 @@ distance_choices = [
     ('km', 'just kilometres'),
 ]
 
+wikipedia_tag_choices = [
+    ('nothing', "don't add wikipedia tags"),
+    ('all', 'all availalble wikipedia tags'),
+    ('local', 'just wikipedia tags for the local language'),
+    ('fallback', 'wikipedia tags for the local language if available, otherwise English Wikipedia'),
+]
+
 country_units = {
     'gb': 'miles_and_metres',  # UK
     'us': 'miles_and_feet',    # USA
