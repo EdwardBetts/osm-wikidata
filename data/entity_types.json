@@ -105,7 +105,7 @@
 },
 {
     "cats": ["Shopping malls by country", "Shopping centres"],
-    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park", "shop=department_store" ],
+    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park", "shop=department_store", "landuse=retail"],
     "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
     "check_housename": true,
     "wikidata": "Q11315",
