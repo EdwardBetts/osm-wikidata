@@ -423,7 +423,7 @@ class Item(Base):
         return names
 
     def first_paragraph(self):
-        extract = self.extracts['enwiki']
+        extract = self.extracts.get('enwiki')
         if not extract:
             return
 
@@ -431,7 +431,6 @@ class Item(Base):
         text = extract.strip()
         if text.startswith(empty_p_span):
             text = text[len(empty_p_span):].strip()
-
 
         close_tag = '</p>'
         first_end_p_tag = text.find(close_tag)
