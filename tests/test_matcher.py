@@ -247,7 +247,8 @@ def test_find_item_matches(monkeypatch):
         'geom': None,
         'identifier_match': False,
         'address_match': True,
-        'name_match': {}
+        'name_match': {},
+        'matching_tags': {'building'},
     }
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix')
