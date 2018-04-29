@@ -292,7 +292,7 @@ class Item(Base):
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
             d[name].append(('extract', 'enwiki'))
-        return d or None
+        return dict(d) or None
 
     def refresh_extract_names(self):
         self.extract_names = wikipedia.html_names(self.extract)
