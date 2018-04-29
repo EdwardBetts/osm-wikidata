@@ -452,10 +452,14 @@ def find_item_matches(place_identifier, qid):
     item = Item.query.get(item_id)
     item.refresh_extract_names()
     database.session.commit()
+    # print('isa:', [isa.label_and_qid() for isa in item.isa])
+    if item.categories:
+        print('categories:', item.categories)
+        print('tags from categories:', matcher.categories_to_tags(item.categories))
     print('label:', item.label())
     print('tags:', item.tags)
     print('extra:', item.get_extra_tags())
-    print('hstore:', item.hstore_query())
+    # print('hstore:', item.hstore_query())
     for k, v in item.names().items():
         print((k, v))
     print('NRHP:', item.ref_nrhp())
