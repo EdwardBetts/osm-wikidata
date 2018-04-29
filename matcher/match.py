@@ -97,6 +97,20 @@ def strip_non_chars_match(osm, wd):
     osm_stripped = re_strip_non_chars.sub('', osm)
     return wc_stripped and osm_stripped and wc_stripped == osm_stripped
 
+def prefix_name_match(osm, wd):
+    wd_lc = wd.lower()
+    osm_lc = osm.lower()
+
+    if osm_lc.startswith(wd_lc):
+        return osm[len(wd):].strip()
+
+    space = osm.find(' ')
+    while space != -1:
+        osm_start = osm_lc[:space]
+        if strip_non_chars_match(osm_start, wd_lc):
+            return osm[space:].strip()
+        space = osm.find(' ', space + 1)
+
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
@@ -330,6 +344,22 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                     intials_matches_other_wikidata_name(w, wikidata_names)):
                 continue
             name[osm_key].append(result)
+    if name:
+        return dict(name)
+
+    for w, source in wikidata_names.items():
+        for osm_key, o in names.items():
+            left_over = prefix_name_match(o, w)
+            if not left_over:
+                continue
+            for second_w, second_source in wikidata_names.items():
+                if second_w == w:
+                    continue
+                m = name_match(left_over, second_w)
+                if not m:
+                    continue
+                name[osm_key].append(('prefix', w, source))
+                break
 
     return dict(name)
 

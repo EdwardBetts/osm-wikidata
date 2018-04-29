@@ -1,6 +1,15 @@
 from matcher import match
 import pytest
 
+def test_prefix_name_match():
+    osm = 'National Museum of Mathematics (MoMath)'
+    wd = 'National Museum of Mathematics'
+    assert match.prefix_name_match(osm, wd) == '(MoMath)'
+
+    osm = 'NationalMuseumOfMathematics (MoMath)'
+    wd = 'National Museum of Mathematics'
+    assert match.prefix_name_match(osm, wd) == '(MoMath)'
+
 def test_tidy_name():
     same = 'no change'
     assert match.tidy_name(same) == same
@@ -294,8 +303,6 @@ def test_check_for_match():
     del wd_names['Baryshnikov Arts Center']
     assert match.check_for_match(osm_tags, wd_names)
 
-    return
-
     osm_tags = {'name': 'National Museum of Mathematics (MoMath)'}
     wd_names = {
         'National Museum of Mathematics': [('label', 'en')],
@@ -304,7 +311,7 @@ def test_check_for_match():
     }
 
     expect = {
-        'name': [('good', 'National Museum of Mathematics', [('label', 'en')])],
+        'name': [('prefix', 'National Museum of Mathematics', [('label', 'en')])],
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
