@@ -203,8 +203,7 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return tag_and_key_if_possible(matching)
 
-def bad_building_match(osm_tags, wikidata_tags):
-    matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+def bad_building_match(osm_tags, matching_tags):
     is_parking = 'parking' in osm_tags.get('amenity', '')
     is_place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
     building_only_match = (matching_tags == {'building'} or
@@ -286,8 +285,9 @@ def find_item_matches(cur, item, prefix, debug=False):
         if not (identifier_match or address_match or name_match):
             continue
 
+        matching_tags = find_matching_tags(osm_tags, wikidata_tags)
         if (name_match and not identifier_match and not address_match and
-                bad_building_match(osm_tags, wikidata_tags)):
+                bad_building_match(osm_tags, matching_tags)):
             continue
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
@@ -310,6 +310,7 @@ def find_item_matches(cur, item, prefix, debug=False):
             'identifier_match': identifier_match,
             'address_match': address_match,
             'name_match': name_match,
+            'matching_tags': matching_tags,
         }
         candidates.append(candidate)
     return filter_distant(candidates)
