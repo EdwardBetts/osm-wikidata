@@ -1344,3 +1344,25 @@ def item_candidate_json(item_id):
 
     return jsonify(qid=item.qid,
                    candidates=candidates)
+
+@app.route('/debug/<osm_type>/<int:osm_id>/Q<int:item_id>')
+def single_item_match(osm_type, osm_id, item_id):
+    place = get_place(osm_type, osm_id)
+
+    # qid = f'Q{item_id}'
+    item = Item.query.get(item_id)
+
+    conn = database.session.bind.raw_connection()
+    cur = conn.cursor()
+
+    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
+
+    for c in candidates:
+        del c['geom']
+        if 'way_area' in c['tags']:
+            del c['tags']['way_area']
+
+    return render_template('single_item_match.html',
+                           item=item,
+                           place=place,
+                           candidates=candidates)
