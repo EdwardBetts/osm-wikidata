@@ -5,10 +5,12 @@ from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
 from sqlalchemy.types import BigInteger, Float, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from .database import session
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia, country_units, utils
@@ -91,6 +93,20 @@ class ItemIsA(Base):
     item = relationship('Item')
     isa = relationship('IsA')
 
+class Extract(Base):
+    __tablename__ = 'extract'
+
+    item_id = Column(Integer,
+                     ForeignKey('item.item_id'),
+                     primary_key=True,
+                     autoincrement=False)
+    site = Column(String, primary_key=True)
+    extract = Column(String, nullable=False)
+
+    def __init__(self, site, extract):
+        self.site = site
+        self.extract = extract
+
 class Item(Base):
     __tablename__ = 'item'
 
@@ -103,7 +119,7 @@ class Item(Base):
     qid = column_property('Q' + cast(item_id, String))
     ewkt = column_property(func.ST_AsEWKT(location), deferred=True)
     query_label = Column(String, index=True)
-    extract = Column(String)
+    # extract = Column(String)
     extract_names = Column(postgresql.ARRAY(String))
 
     db_tags = relationship('ItemTag',
@@ -114,6 +130,19 @@ class Item(Base):
     tags = association_proxy('db_tags', 'tag_or_key')
 
     isa = relationship('IsA', secondary='item_isa')
+    wiki_extracts = relationship('Extract',
+                                 collection_class=attribute_mapped_collection('site'),
+                                 cascade='all, delete-orphan',
+                                 backref='item')
+    extracts = association_proxy('wiki_extracts', 'extract')
+
+    @property
+    def extract(self):
+        return self.extracts.get('enwiki')
+
+    @extract.setter
+    def extract(self, value):
+        self.extracts['enwiki'] = value
 
     @property
     def labels(self):
@@ -394,13 +423,15 @@ class Item(Base):
         return names
 
     def first_paragraph(self):
-        if not self.extract:
+        extract = self.extracts['enwiki']
+        if not extract:
             return
 
         empty_p_span = '<p><span></span></p>'
-        text = self.extract.strip()
+        text = extract.strip()
         if text.startswith(empty_p_span):
             text = text[len(empty_p_span):].strip()
+
 
         close_tag = '</p>'
         first_end_p_tag = text.find(close_tag)
