@@ -463,10 +463,11 @@ def find_item_matches(place_identifier, qid):
     for k, v in item.names().items():
         print((k, v))
     print('NRHP:', item.ref_nrhp())
-    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
+    candidates = matcher.find_item_matches(cur, item, place.prefix, debug=True)
     print('candidate count:', len(candidates))
 
     for c in candidates:
+        del c['geom']
         pprint(c)
         print()
 
