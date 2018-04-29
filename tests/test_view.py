@@ -412,6 +412,7 @@ def test_api_get(monkeypatch):
     }]
 
     data_dir = os.path.normpath(os.path.split(__file__)[0] + '/../data')
+
     class MockApp:
         config = {'DATA_DIR': data_dir}
 
