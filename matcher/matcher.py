@@ -55,11 +55,22 @@ def load_entity_types():
     return json.load(open(filename))
 
 def simplify_tags(tags):
+    ''' remove foo=bar if dict cotains foo '''
     key_only = sorted(t for t in tags if '=' not in t)
     for k in key_only:
         for t in set(tags):
             if t.startswith(k + '='):
                 tags.remove(t)
+    return tags
+
+def tag_and_key_if_possible(tags):
+    ''' remove foo if dict contains foo=bar '''
+    key_only = sorted(t for t in tags if '=' not in t)
+    for k in key_only:
+        for t in set(tags):
+            if t.startswith(k + '='):
+                tags.remove(k)
+                continue
     return tags
 
 def build_cat_map():
@@ -190,7 +201,7 @@ def find_matching_tags(osm, wikidata):
                 matching.add(wikidata_tag)
         elif wikidata_tag in osm:
             matching.add(wikidata_tag)
-    return simplify_tags(matching)
+    return tag_and_key_if_possible(matching)
 
 def bad_building_match(osm_tags, wikidata_tags):
     matching_tags = find_matching_tags(osm_tags, wikidata_tags)
