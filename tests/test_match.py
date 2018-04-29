@@ -163,6 +163,10 @@ def test_name_match():
     assert match.name_match('Rainbow Grocery Coop',
                             'Rainbow Grocery Cooperative')
 
+def test_name_match_trim_both():
+    assert match.name_match('Oxmoor Mall', 'Oxmoor Center',
+                            endings=['mall', 'center'])
+
 def test_match_name_abbreviation():
     wikidata_names = [
         'Bishop Justus Church of England School',

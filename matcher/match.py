@@ -89,8 +89,11 @@ def match_with_words_removed(osm, wd, words):
     x_wd = re_strip_non_chars.sub('', wd)
     x_osm = re_strip_non_chars.sub('', osm)
     words = [re_strip_non_chars.sub('', w) for w in words]
-    return any(x_wd.replace(word, '') == x_osm.replace(word, '')
-               for word in words)
+    for osm_word in words:
+        for wd_word in words:
+            if x_wd.replace(wd_word, '') == x_osm.replace(osm_word, ''):
+                return True
+    return False
 
 def strip_non_chars_match(osm, wd):
     wc_stripped = re_strip_non_chars.sub('', wd)
