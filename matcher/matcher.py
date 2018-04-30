@@ -203,13 +203,17 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return tag_and_key_if_possible(matching)
 
-def bad_building_match(osm_tags, matching_tags):
-    is_parking = 'parking' in osm_tags.get('amenity', '')
-    is_place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
+def bad_building_match(osm_tags, matching_tags, name_match):
+    parking = 'parking' in osm_tags.get('amenity', '')
+    place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
+    trimmed = True
+    for name in name_match.values():
+        if any(result[0] != 'trimmed' for result in name):
+            trimmed = False
+            break
     building_only_match = (matching_tags == {'building'} or
                            matching_tags == {'building=yes'})
-    return (is_parking or is_place_of_worship) and building_only_match
-
+    return (parking or place_of_worship or trimmed) and building_only_match
 
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
@@ -282,12 +286,13 @@ def find_item_matches(cur, item, prefix, debug=False):
             address_match = True
 
         name_match = match.check_for_match(osm_tags, wikidata_names, endings)
+
         if not (identifier_match or address_match or name_match):
             continue
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
         if (name_match and not identifier_match and not address_match and
-                bad_building_match(osm_tags, matching_tags)):
+                bad_building_match(osm_tags, matching_tags, name_match)):
             continue
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
