@@ -12,7 +12,8 @@ re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
 
-MatchType = Enum('Match', ['good', 'trim', 'address', 'initials', 'initials_trim'])
+MatchType = Enum('Match', ['good', 'both_trimmed', 'trim', 'address',
+                           'initials', 'initials_trim'])
 
 abbr = {
     'avenue': 'ave',
@@ -86,19 +87,25 @@ def initials_match(n1, n2, endings=None):
 
 def match_with_words_removed(osm, wd, words):
     if not words:
-        return False
+        return
     wd_char_only = re_strip_non_chars.sub('', wd)
     osm_char_only = re_strip_non_chars.sub('', osm)
     words = [re_strip_non_chars.sub('', w) for w in words]
-    for osm_word in words:
-        osm_filtered = osm_char_only.replace(osm_word, '')
+    osm_versions = {osm_char_only.replace(word, '')
+                    for word in words} | {osm_char_only}
+    wd_versions = {wd_char_only.replace(word, '')
+                    for word in words} | {wd_char_only}
+
+    for osm_filtered in osm_versions:
         if not osm_filtered:
             continue
-        for wd_word in words:
-            wd_filtered = wd_char_only.replace(wd_word, '')
-            if wd_filtered and osm_filtered == wd_filtered:
-                return True
-    return False
+        for wd_filtered in wd_versions:
+            if not wd_filtered or osm_filtered != wd_filtered:
+                continue
+            return Match(MatchType.both_trimmed
+                    if osm_filtered != osm_char_only and
+                        wd_filtered != wd_char_only
+                    else MatchType.good)
 
 def strip_non_chars_match(osm, wd):
     wc_stripped = re_strip_non_chars.sub('', wd)
@@ -136,8 +143,10 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
 
-    if endings and match_with_words_removed(osm_lc, wd_lc, endings):
-        return Match(MatchType.good)
+    if endings:
+        m = match_with_words_removed(osm_lc, wd_lc, endings)
+        if m:
+            return m
 
     wd_lc = tidy_name(wd_lc)
     osm_lc = tidy_name(osm_lc)
@@ -145,8 +154,11 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if not wd_lc or not osm_lc:
         return
 
-    if endings and match_with_words_removed(osm_lc, wd_lc, [tidy_name(e) for e in endings]):
-        return Match(MatchType.good)
+    if endings:
+        tidy_endings = [tidy_name(e) for e in endings]
+        m = match_with_words_removed(osm_lc, wd_lc, tidy_endings)
+        if m:
+            return m
 
     if wd_lc == osm_lc:
         return Match(MatchType.good)
@@ -344,8 +356,13 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                     continue
             else:
                 m = name_match(o, w, endings)
+                # if we had to trim both names and the OSM name is from the
+                # housename or operator it doesn't count
                 if not m:
                     cache[(o, w)] = None
+                    continue
+                if (m.match_type == MatchType.both_trimmed and
+                        osm_key in {'addr:housename', 'operator'}):
                     continue
                 result = (m.match_type.name, w, source)
             if (result[0] == 'initials' and

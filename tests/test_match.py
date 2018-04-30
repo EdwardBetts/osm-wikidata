@@ -163,9 +163,21 @@ def test_name_match():
     assert match.name_match('Rainbow Grocery Coop',
                             'Rainbow Grocery Cooperative')
 
+def test_match_with_words_removed_both():
+    osm = 'Oxmoor Mall'.lower()
+    wd = 'Oxmoor Center'.lower()
+    endings = ['mall', 'center']
+    m = match.match_with_words_removed(osm, wd, endings)
+    assert m.match_type.name == 'both_trimmed'
+
 def test_name_match_trim_both():
-    assert match.name_match('Oxmoor Mall', 'Oxmoor Center',
-                            endings=['mall', 'center'])
+    m = match.name_match('Oxmoor Mall', 'Oxmoor Center',
+                          endings=['mall', 'center'])
+    assert m.match_type.name == 'both_trimmed'
+
+    m = match.name_match('Castle House', 'The Castle Inn',
+                         endings=['house', 'inn'])
+    assert m.match_type.name == 'both_trimmed'
 
 def test_name_match_trim_to_empty():
     osm = 'Hall'
