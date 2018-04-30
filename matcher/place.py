@@ -677,11 +677,9 @@ class Place(Base):
 
     def load_extracts_wiki(self, debug=False, progress=None, code='en'):
         wiki = code + 'wiki'
-        for item in self.items:
-            print(item.sitelinks().get(wiki))
         by_title = {item.sitelinks()[wiki]['title']: item
                     for item in self.items
-                    if wiki in item.sitelinks()}
+                    if wiki in (item.sitelinks() or {})}
 
         query_iter = wikipedia.get_extracts(by_title.keys(), code=code)
         for title, extract in query_iter:
