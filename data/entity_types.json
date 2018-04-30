@@ -208,7 +208,7 @@
 {
     "cats": ["Houses by country"],
     "exclude_cats": ["lower houses", "public houses"],
-    "tags": ["building", "historic=manor"],
+    "tags": ["historic=manor"],
     "trim": ["house", "hall"],
     "check_housename": true,
     "wikidata": "Q3947",
@@ -232,7 +232,7 @@
 },
 {
     "cats": ["Commercial buildings by country", "Office buildings by country"],
-    "tags": ["building", "landuse=commercial", "office"],
+    "tags": ["building=office", "building=commercial", "landuse=commercial", "office"],
     "trim": ["building", "tower", "shopping centre", "shopping center"],
     "wikidata": "Q1021645",
     "check_housename": true,
@@ -250,7 +250,7 @@
 {
     "cats": ["Residential buildings by country"],
     "skip_cats": ["Prisons in"],
-    "tags": ["building", "landuse=residential"],
+    "tags": ["building=house", "building=residential", "landuse=residential"],
     "trim": ["house", "estate"],
     "wikidata": "Q11755880",
     "check_housename": true,
@@ -332,7 +332,7 @@
 {
     "cats": ["Theatres by country"],
     "tags": ["amenity=theatre", "building=theatre"],
-    "trim": ["theatre", "theater", "playhouse", "opera house", "theatre company", "theater company"],
+    "trim": ["theatre", "theater", "playhouse", "opera house", "theatre company", "theater company", "hall"],
     "check_housename": true,
     "dist": 3
 },
@@ -620,7 +620,7 @@
 {
     "cats": ["Campuses"],
     "exclude_cats": ["Railway stations"],
-    "tags": ["amenity=university", "building"],
+    "tags": ["amenity=university", "amenity=college", "type=site"],
     "trim": ["university", "school", "college"],
     "area": true,
     "dist": 1
@@ -669,7 +669,7 @@
 },
 {
     "cats": ["Seats of local government", "City and town halls", "City halls", "Town halls"],
-    "tags": ["amenity=townhall", "amenity=village_hall", "building", "amenity=public_building"],
+    "tags": ["amenity=townhall", "amenity=village_hall", "amenity=public_building"],
     "check_housename": true,
     "trim": [],
     "dist": 0.5
@@ -1075,7 +1075,7 @@
 },
 {
     "cats": ["Skyscrapers by country"],
-    "tags": ["building", "height"],
+    "tags": ["height"],
     "trim": ["tower"],
     "check_housename": true,
     "dist": 1
@@ -1261,7 +1261,7 @@
 },
 {
     "cats": ["Food markets", "Wholesale markets"],
-    "tags": ["building", "landuse=industrial", "amenity=marketplace", "amenity=market"],
+    "tags": ["landuse=industrial", "amenity=marketplace", "amenity=market"],
     "trim": [],
     "check_housename": true,
     "dist": 1
@@ -1357,7 +1357,7 @@
 },
 {
     "cats": ["Research institutes"],
-    "tags": ["building"],
+    "tags": [],
     "check_housename": true,
     "trim": [],
     "dist": 1
@@ -1382,7 +1382,7 @@
 },
 {
     "cats": ["Student activity centers"],
-    "tags": ["building"],
+    "tags": [],
     "trim": [],
     "check_housename": true,
     "wikidata": "Q7627808",
@@ -1397,7 +1397,7 @@
 },
 {
     "cats": ["Garages (parking)", "Parking"],
-    "tags": ["amenity=parking", "parking=multi-storey", "building=parking"],
+    "tags": ["amenity=parking", "parking", "building=parking"],
     "trim": ["garage", "parking", "parking garage", "multistorey car park",
              "multistorey", "parking structure", "parkade", "parking building",
              "indoor parking", "car park", "parking lot", "car lot"],
