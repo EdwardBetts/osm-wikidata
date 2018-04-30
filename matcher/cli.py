@@ -930,3 +930,17 @@ def identifier_match_only():
         if c.name_match:
             continue
         print(c.tags, dict(c.item.names()))
+
+@app.cli.command()
+def refresh_all_extracts():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    for place in Place.query:
+        print(place.display_name)
+
+        def progress(item):
+            print('  ', item.label())
+
+        place.load_extracts(progress=progress)
+        print()
