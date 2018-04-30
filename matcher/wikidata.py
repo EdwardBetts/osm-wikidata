@@ -72,6 +72,7 @@ extra_keys = {
     'Q123705': ['Tag:place=suburb'],            # neighbourhood
     'Q256020': ['Tag:amenity=pub'],             # inn
     'Q41253': ['Tag:amenity=theatre'],          # movie theater
+    'Q17350442': ['Tag:amenity=theatre'],       # venue
 }
 
 # search for items in bounding box that have an English Wikipedia article
