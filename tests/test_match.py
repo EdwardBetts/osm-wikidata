@@ -178,6 +178,10 @@ def test_name_match_trim_to_empty():
 
     assert not match.name_match(osm, wd, endings=endings)
 
+def test_name_match_roman_catholic():
+    assert match.name_match("St. Paul's Roman Catholic Church",
+                            "St. Paul's Catholic Church")
+
 def test_match_name_abbreviation():
     wikidata_names = [
         'Bishop Justus Church of England School',
