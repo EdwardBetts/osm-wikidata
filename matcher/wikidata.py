@@ -71,6 +71,7 @@ extra_keys = {
     'Q3010369': ['Tag:historic=monument'],      # opening ceremony
     'Q123705': ['Tag:place=suburb'],            # neighbourhood
     'Q256020': ['Tag:amenity=pub'],             # inn
+    'Q41253': ['Tag:amenity=theatre'],          # movie theater
 }
 
 # search for items in bounding box that have an English Wikipedia article
