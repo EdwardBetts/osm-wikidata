@@ -14,3 +14,15 @@ def test_item_first_paragraph():
     item = Item(extracts={'enwiki': extract})
     first = item.first_paragraph()
     assert first == '<p><b>IFC Center</b> is an art house movie theater in Greenwich Village, New York City in the United States of America. Located at 323 Sixth Avenue (Also known as 323 Avenue of the Americas) at West 3rd Street, it was formerly the Waverly Theater, a well- known art house movie theater. IFC Center is owned by AMC Networks (known until July 1, 2011 as Rainbow Media), the entertainment company that owns the cable channels AMC, IFC, WE tv and Sundance Channel and the film company IFC Films.</p>'
+
+def test_settlement_not_building():
+    test_entity = {
+        'claims': {},
+        'labels': {'en': {'language': 'en', 'value': 'Capistrano Beach'}},
+        'sitelinks': {},
+    }
+
+    tags = ['place=neighbourhood', 'landuse=residential']
+    item = Item(entity=test_entity, tags=tags)
+
+    assert item.calculate_tags() == set(tags)
