@@ -424,9 +424,11 @@ class Item(Base):
 
     def first_paragraph(self, languages=None):
         if languages is None:
-            return self.first_paragraph_language(self, 'enwiki')
+            return self.first_paragraph_language('enwiki')
         for lang in languages:
-            return self.first_paragraph_language(lang.site_name)
+            extract = self.first_paragraph_language(lang.site_name)
+            if extract:
+                return extract
 
     def first_paragraph_language(self, lang):
         extract = self.extracts.get(lang)
