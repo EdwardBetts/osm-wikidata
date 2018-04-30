@@ -205,6 +205,39 @@ def test_find_item_matches_mall(monkeypatch):
     assert len(candidates) == 1
 
 
+def test_church_is_not_school(monkeypatch):
+    test_entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': "St. Paul's Catholic Church"},
+        },
+        'sitelinks': {},
+    }
+
+    tags = ['amenity=place_of_worship', 'religion=christian']
+    item = Item(entity=test_entity, tags=tags)
+
+    osm_tags = {
+        'name': "Saint Paul's Catholic School",
+        'height': '12',
+        'amenity': 'school',
+        'building': 'school',
+        'religion': 'christian',
+        'denomination': 'catholic',
+    }
+
+    def mock_run_sql(cur, sql, debug):
+        rows = [('polygon', 1, None, osm_tags, 0)]
+        return rows
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix')
+    assert len(candidates) == 0
+
 def test_find_item_matches_parking(monkeypatch):
     osm_tags = {
         'amenity': 'parking',
