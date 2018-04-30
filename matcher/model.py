@@ -422,8 +422,14 @@ class Item(Base):
             names[v].append(('sitelink', k))
         return names
 
-    def first_paragraph(self):
-        extract = self.extracts.get('enwiki')
+    def first_paragraph(self, languages=None):
+        if languages is None:
+            return self.first_paragraph_language(self, 'enwiki')
+        for lang in languages:
+            return self.first_paragraph_language(lang.site_name)
+
+    def first_paragraph_language(self, lang):
+        extract = self.extracts.get(lang)
         if not extract:
             return
 
@@ -801,6 +807,10 @@ class Language(Base):
         elif self.wikimedia_language_code != 'en':  # add name in English
             name = capfirst(name) + ' / ' + capfirst(self.english_name())
         return f'{name} [{self.wikimedia_language_code}]'
+
+    @property
+    def site_name(self):
+        return f'{self.wikimedia_language_code}wiki'
 
 class LanguageLabel(Base):
     __tablename__ = 'language_label'

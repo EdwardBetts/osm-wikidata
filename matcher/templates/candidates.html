@@ -46,7 +46,7 @@
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map" id="map_{{ item.qid }}">[show on map]</a>
 
-  {{ (item.first_paragraph() or '') | safe }}
+  {{ (item.first_paragraph(languages) or '') | safe }}
 
   {% set identifiers = item.identifier_values() %}
   {% if identifiers %}

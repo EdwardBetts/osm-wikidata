@@ -85,9 +85,9 @@ def extracts_query(titles, language_code='en'):
     }
     return run_query(titles, params, language_code)
 
-def get_extracts(titles):
+def get_extracts(titles, code='en'):
     for cur in chunk(titles, extracts_page_size):
-        for page in extracts_query(cur):
+        for page in extracts_query(cur, language_code=code):
             if 'extract' not in page:
                 continue
             extract = page['extract'].strip()

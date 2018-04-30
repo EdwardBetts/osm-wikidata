@@ -672,14 +672,25 @@ class Place(Base):
         session.commit()
 
     def load_extracts(self, debug=False, progress=None):
-        by_title = {item.enwiki: item for item in self.items if item.enwiki}
+        for code, count in self.languages_wikidata():
+            self.load_extracts_wiki(debug=debug, progress=progress, code=code)
 
-        for title, extract in wikipedia.get_extracts(by_title.keys()):
+    def load_extracts_wiki(self, debug=False, progress=None, code='en'):
+        wiki = code + 'wiki'
+        for item in self.items:
+            print(item.sitelinks().get(wiki))
+        by_title = {item.sitelinks()[wiki]['title']: item
+                    for item in self.items
+                    if wiki in item.sitelinks()}
+
+        query_iter = wikipedia.get_extracts(by_title.keys(), code=code)
+        for title, extract in query_iter:
             item = by_title[title]
             if debug:
                 print(title)
-            item.extract = extract
-            item.extract_names = wikipedia.html_names(extract)
+            item.extracts[wiki] = extract
+            if wiki == 'enwiki':
+                item.extract_names = wikipedia.html_names(extract)
             if progress:
                 progress(item)
 
