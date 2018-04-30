@@ -86,12 +86,16 @@ def initials_match(n1, n2, endings=None):
 def match_with_words_removed(osm, wd, words):
     if not words:
         return False
-    x_wd = re_strip_non_chars.sub('', wd)
-    x_osm = re_strip_non_chars.sub('', osm)
+    wd_char_only = re_strip_non_chars.sub('', wd)
+    osm_char_only = re_strip_non_chars.sub('', osm)
     words = [re_strip_non_chars.sub('', w) for w in words]
     for osm_word in words:
+        osm_filtered = osm_char_only.replace(osm_word, '')
+        if not osm_filtered:
+            continue
         for wd_word in words:
-            if x_wd.replace(wd_word, '') == x_osm.replace(osm_word, ''):
+            wd_filtered = wd_char_only.replace(wd_word, '')
+            if wd_filtered and osm_filtered == wd_filtered:
                 return True
     return False
 

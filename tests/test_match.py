@@ -167,6 +167,17 @@ def test_name_match_trim_both():
     assert match.name_match('Oxmoor Mall', 'Oxmoor Center',
                             endings=['mall', 'center'])
 
+def test_name_match_trim_to_empty():
+    osm = 'Hall'
+    wd = 'Post Office'
+    endings = ['hall', 'post office']
+
+    assert not match.match_with_words_removed(osm.lower(),
+                                              wd.lower(),
+                                              endings)
+
+    assert not match.name_match(osm, wd, endings=endings)
+
 def test_match_name_abbreviation():
     wikidata_names = [
         'Bishop Justus Church of England School',
