@@ -208,7 +208,7 @@ def bad_building_match(osm_tags, matching_tags, name_match):
     place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
     trimmed = True
     for name in name_match.values():
-        if any(result[0] != 'trimmed' for result in name):
+        if any(result[0] != 'both_trimmed' for result in name):
             trimmed = False
             break
     building_only_match = (matching_tags == {'building'} or
