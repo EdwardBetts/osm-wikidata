@@ -98,6 +98,8 @@ def get_ending_from_criteria(tags):
     return endings
 
 def could_be_building(tags):
+    if tags == {'place=neighbourhood', 'landuse=residential'}:
+        return False  # human settlement
     if any(tag.startswith('building') for tag in tags):
         return True
 
