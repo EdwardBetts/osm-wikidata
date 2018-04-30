@@ -604,7 +604,7 @@
 {
     "cats": ["Schools by country"],
     "tags": ["amenity=school", "building=school", "type=site", "site=school"],
-    "trim": ["school", "house", "preparatory school"],
+    "trim": ["school", "house", "preparatory school", "catholic school"],
     "check_housename": true,
     "dist": 1.5
 },
@@ -628,7 +628,7 @@
 {
     "cats": ["Colleges by country", "Music schools by country", "Cooking schools by country", "Film schols by country"],
     "tags": ["amenity=college", "type=site", "site=college", "building=college"],
-    "trim": ["college"],
+    "trim": ["college", "music school", "cooking school", "school"],
     "check_housename": true,
     "area": true,
     "dist": 5
