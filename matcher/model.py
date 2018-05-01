@@ -215,10 +215,11 @@ class Item(Base):
 
     def get_extra_tags(self):
         tags = set()
-        for item_id in self.instanceof():
-            for tag in wikidata.extra_keys.get('Q{:d}'.format(item_id), []):
+        for qid in self.instanceof():
+            for tag in wikidata.extra_keys.get(qid, []):
                 if tag:
                     tags.add(tag[4:])
+
         return tags
 
     @property
@@ -244,8 +245,10 @@ class Item(Base):
         # 'amenity'. This is too generic, so we ignore it.
         ignore_tags.add('amenity')
 
+        instanceof = self.instanceof()
+
         tags = (self.get_extra_tags() | set(self.tags)) - ignore_tags
-        if matcher.could_be_building(tags):
+        if matcher.could_be_building(tags, instanceof):
             tags.add('building')
         tags |= self.ref_keys | self.disused_tags()
         tags -= ignore_tags
@@ -255,7 +258,7 @@ class Item(Base):
         if not self.entity:
             return []
 
-        return [i['mainsnak']['datavalue']['value']['numeric-id']
+        return [i['mainsnak']['datavalue']['value']['id']
                 for i in self.entity['claims'].get('P31', [])
                 if 'datavalue' in i['mainsnak']]
 

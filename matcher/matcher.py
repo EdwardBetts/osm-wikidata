@@ -97,7 +97,7 @@ def get_ending_from_criteria(tags):
 
     return endings
 
-def could_be_building(tags):
+def could_be_building(tags, instanceof):
     if tags == {'place=neighbourhood', 'landuse=residential'}:
         return False  # human settlement
     if any(tag.startswith('building') for tag in tags):
@@ -107,6 +107,18 @@ def could_be_building(tags):
 
     if not entity_types:
         entity_types = load_entity_types()
+
+    check_housename = False
+    found_instanceof = False
+    if instanceof:
+        for t in entity_types:
+            if t.get('wikidata') not in instanceof:
+                continue
+            found_instanceof = True
+            if t.get('check_housename'):
+                check_housename = True
+    if found_instanceof:
+        return check_housename
 
     tags = set(tags)
     return any(t.get('check_housename') and tags & set(t['tags'])

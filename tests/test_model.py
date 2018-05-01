@@ -1,4 +1,9 @@
 from matcher.model import Item
+from matcher import matcher
+import os.path
+
+class MockApp:
+    config = {'DATA_DIR': os.path.normpath(os.path.split(__file__)[0] + '/../data')}
 
 def test_item_first_paragraph():
     extract = '<p><b>Gotham Bar and Grill</b> is a New American restaurant located at 12 East 12th Street (between Fifth Avenue and University Place), in Greenwich Village in Manhattan, in New York City. It opened in 1984.</p>\n<p>It is owned by American chef Alfred Portale, one of the founders of New American cuisine, who is also its chef. He arrived at the restaurant in 1985.</p>\n<p></p>'
@@ -26,3 +31,35 @@ def test_settlement_not_building():
     item = Item(entity=test_entity, tags=tags)
 
     assert item.calculate_tags() == set(tags)
+
+def test_calculate_tags(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    test_entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {
+                    'datatype': 'wikibase-item',
+                    'datavalue': {
+                        'type': 'wikibase-entityid',
+                        'value': {
+                              'entity-type': 'item',
+                              'id': 'Q15243209',
+                              'numeric-id': 15243209
+                        }
+                    },
+                },
+            }],
+        },
+        'labels': {
+            'en': {'language': 'en', 'value': 'City Hall Historic District'},
+        },
+        'sitelinks': {},
+    }
+    tags = {'historic', 'boundary=protected_area', 'landuse=residential',
+            'boundary=administrative', 'place', 'protect_class=22',
+            'admin_level'}
+    item = Item(entity=test_entity, tags=tags)
+    result = item.calculate_tags()
+    assert 'building' not in result
+    assert result == tags | {'leisure=park'}
