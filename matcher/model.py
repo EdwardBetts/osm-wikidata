@@ -385,6 +385,11 @@ class Item(Base):
         # proposed building or structure (Q811683)
         return 'Q811683' in (self.instanceof() or [])
 
+    def is_a_historic_district(self):
+        return ('Q15243209' in (self.instanceof() or []) or
+                any(cat.startswith('Historic district')
+                    for cat in (self.categories or [])))
+
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
         best to skip items that are only cebwiki or cebwiki + svwiki

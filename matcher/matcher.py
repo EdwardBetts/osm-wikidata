@@ -243,7 +243,9 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     # item_max_dist = max(max_dist[cat] for cat in item['cats'])
 
-    sql = item_match_sql(item, prefix)
+    item_is_a_historic_district = item.is_a_historic_district()
+    ignore_tags = {'building'} if item_is_a_historic_district else set()
+    sql = item_match_sql(item, prefix, ignore_tags=ignore_tags)
     if not sql:
         return []
     rows = run_sql(cur, sql, debug)
@@ -278,6 +280,9 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         if osm_tags.get('locality') == 'townland' and 'locality=townland' not in item.tags:
             continue  # only match townlands when specifically searching for one
+
+        if item_is_a_historic_district and 'building' in osm_tags:
+            continue  # historic district shouldn't match building
 
         try:
             admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
