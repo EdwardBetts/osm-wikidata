@@ -132,7 +132,7 @@ class Item(Base):
     isa = relationship('IsA', secondary='item_isa')
     wiki_extracts = relationship('Extract',
                                  collection_class=attribute_mapped_collection('site'),
-                                 cascade='all, delete-orphan',
+                                 cascade='save-update, merge, delete, delete-orphan',
                                  backref='item')
     extracts = association_proxy('wiki_extracts', 'extract')
 
