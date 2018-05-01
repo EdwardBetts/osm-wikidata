@@ -392,3 +392,35 @@ def test_filter_distant():
 
     assert len(candidates) == 2
     assert candidates == [close, distant]
+
+def test_bad_building_match():
+    assert not matcher.bad_building_match({}, set(), {})
+
+    name_match = {'name': [('good', 'Test', [('label', 'en')])]}
+
+    osm_tags = {'amenity': 'parking'}
+    assert matcher.bad_building_match(osm_tags, {'building'}, name_match)
+    assert matcher.bad_building_match(osm_tags, {'building=yes'}, name_match)
+
+    osm_tags = {'amenity': 'place_of_worship'}
+    assert matcher.bad_building_match(osm_tags, {'building'}, name_match)
+
+    osm_tags = {'building': 'yes'}
+    assert not matcher.bad_building_match(osm_tags, {'building'}, name_match)
+
+    name_match = {'name': [('both_trimmed', 'Test', [('label', 'en')])]}
+    assert matcher.bad_building_match(osm_tags, {'building'}, name_match)
+
+    name_match = {
+        'name': [('both_trimmed', 'Test', [('label', 'en')])],
+        'old_name': [('good', 'Test', [('label', 'en')])]
+    }
+
+    assert not matcher.bad_building_match(osm_tags, {'building'}, name_match)
+
+    name_match = {
+        'name': [('both_trimmed', 'Test', [('label', 'en')])],
+        'operator': [('wikidata_trimmed', 'Test', [('label', 'en')])]
+    }
+
+    assert matcher.bad_building_match(osm_tags, {'building'}, name_match)

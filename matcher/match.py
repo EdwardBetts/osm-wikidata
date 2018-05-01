@@ -12,8 +12,8 @@ re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
 
-MatchType = Enum('Match', ['good', 'both_trimmed', 'trim', 'address',
-                           'initials', 'initials_trim'])
+MatchType = Enum('Match', ['good', 'wikidata_trimmed', 'both_trimmed', 'trim',
+                           'address', 'initials', 'initials_trim'])
 
 abbr = {
     'avenue': 'ave',
@@ -102,10 +102,12 @@ def match_with_words_removed(osm, wd, words):
         for wd_filtered in wd_versions:
             if not wd_filtered or osm_filtered != wd_filtered:
                 continue
-            return Match(MatchType.both_trimmed
-                    if osm_filtered != osm_char_only and
-                        wd_filtered != wd_char_only
-                    else MatchType.good)
+            if wd_filtered == wd_char_only:
+                return Match(MatchType.good)
+            match_type = (MatchType.both_trimmed
+                          if osm_filtered != osm_char_only
+                          else MatchType.wikidata_trimmed)
+            return Match(match_type)
 
 def strip_non_chars_match(osm, wd):
     wc_stripped = re_strip_non_chars.sub('', wd)

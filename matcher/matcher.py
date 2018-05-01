@@ -219,16 +219,27 @@ def find_matching_tags(osm, wikidata):
     return tag_and_key_if_possible(matching)
 
 def bad_building_match(osm_tags, matching_tags, name_match):
-    parking = 'parking' in osm_tags.get('amenity', '')
-    place_of_worship = 'place_of_worship' in osm_tags.get('amenity', '')
-    trimmed = True
-    for name in name_match.values():
-        if any(result[0] != 'both_trimmed' for result in name):
-            trimmed = False
-            break
     building_only_match = (matching_tags == {'building'} or
                            matching_tags == {'building=yes'})
-    return (parking or place_of_worship or trimmed) and building_only_match
+
+    if not building_only_match:
+        return False
+
+    amenity = osm_tags.get('amenity', '')
+    if 'parking' in amenity or 'place_of_worship' in amenity:
+        return True
+
+    if not name_match:
+        return False
+
+    for osm_key, detail_list in name_match.items():
+        for match_type, value, source in detail_list:
+            if not (match_type == 'both_trimmed' or
+                    (osm_key == 'operator' and
+                     match_type == 'wikidata_trimmed')):
+                return False
+
+    return True
 
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
