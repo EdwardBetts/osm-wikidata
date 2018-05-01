@@ -611,6 +611,8 @@ class Place(Base):
             wikidata_id = int(qid[1:])
             item = Item.query.get(wikidata_id)
 
+            debug(f'saving: {qid}')
+
             if item:
                 item.location = v['location']
             else:
@@ -647,6 +649,7 @@ class Place(Base):
             if not existing:
                 place_item = PlaceItem(item=item, place=self)
                 session.add(place_item)
+            debug(f'saved: {qid}')
 
         for item in self.items:
             if item.qid in seen:
