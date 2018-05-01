@@ -1081,6 +1081,13 @@
     "dist": 1
 },
 {
+    "name": "Historic district",
+    "cats": ["Historic districts"],
+    "tags": ["leisure=park", "boundary=protected_area", "place"],
+    "dist": 2,
+    "wikidata": "Q15243209"
+},
+{
     "name": "Historic sites",
     "cats": ["Heritage registers by country", "Historic sites by country", "National Register of Historic Places"],
     "tags": ["boundary=protected_area", "historic"],
