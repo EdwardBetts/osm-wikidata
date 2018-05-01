@@ -69,7 +69,8 @@ def tag_and_key_if_possible(tags):
     for k in key_only:
         for t in set(tags):
             if t.startswith(k + '='):
-                tags.remove(k)
+                if k in tags:
+                    tags.remove(k)
                 continue
     return tags
 
