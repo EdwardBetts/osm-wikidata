@@ -257,7 +257,7 @@ def check_for_address_in_extract(osm_tags, extract):
         return
 
     def address_in_extract(address):
-        address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + ')', re.escape(address))
+        address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + '\.?)', re.escape(address))
         # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
 
         return bool(re.search(r'\b' + address, extract, re.I))
