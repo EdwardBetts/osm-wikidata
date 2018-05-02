@@ -29,7 +29,7 @@
   <pre>{{ item.names() | pprint }}</pre>
 
   <h4>extracts</h4>
-  {% for site, extract in item.extracts %}
+  {% for site, extract in item.extracts.items() %}
     <h6>{{ site }}</h6>
     <p>{{ item.extracts }}</p>
   {% endfor %}
