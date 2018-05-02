@@ -43,6 +43,7 @@
 <div class="m-3">
   <div class="container">
     {% include "flash_msg.html" %}
+    {% set debug = current_user.is_authenticated and current_user.is_admin %}
 
     <h1>{{ label }} ({{ qid }})</h1>
     <ul>
@@ -50,6 +51,12 @@
       <li>matcher place:
         {% for place in item.places %}
             <a href="{{ place.candidates_url() }}">{{ place.name }}</a> ({{ place.osm_type }} {{ place.osm_id }})
+            {%- if debug %}
+            <a href="{{ url_for('single_item_match',
+                                osm_type=place.osm_type,
+                                osm_id=place.osm_id,
+                                item_id=item.item_id) }}">[debug]</a>
+            {% endif -%}
             {%- if not loop.last %}, {% endif %}
         {% endfor %}
       </li>
