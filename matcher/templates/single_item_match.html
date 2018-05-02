@@ -7,7 +7,7 @@
   <h1>{{ item.label() }}</h1>
 
   <ul>
-    <li>place: <a href="{{ place.candidates_url }}">{{ place.display_name }}</a></li>
+    <li>place: <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a></li>
     <li><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">item page</a></li>
     {% set extra_tags = item.get_extra_tags() %}
     {% if extra_tags %}
@@ -28,10 +28,11 @@
   <h4>names</h4>
   <pre>{{ item.names() | pprint }}</pre>
 
-  {% if item.extract %}
-    <h4>extract</h4>
-    <p>{{ item.extract }}</p>
-  {% endif %}
+  <h4>extracts</h4>
+  {% for site, extract in item.extracts %}
+    <h6>{{ site }}</h6>
+    <p>{{ item.extracts }}</p>
+  {% endfor %}
 
   {% if candidates %}
   <h4>candidates</h4>
