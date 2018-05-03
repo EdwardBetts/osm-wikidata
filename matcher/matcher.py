@@ -326,6 +326,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                 bad_building_match(osm_tags, matching_tags, name_match)):
             continue
 
+        if (matching_tags == {'natural=peak'} and
+                item.is_mountain_range and
+                dist > 100):
+            continue
+
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
                f'where osm_id={src_id}')
