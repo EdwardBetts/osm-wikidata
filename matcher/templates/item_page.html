@@ -223,7 +223,7 @@
                      {% endif %} />
             {% endif %}
             <a href="https://www.openstreetmap.org/{{ c.type }}/{{ c.id }}">
-            {% if m %}{{ m.osm_key + '=' + m.osm_name -}}{% else %}{{ c.tags.name -}}{% endif %}
+            {% if m and 'osm_key' in m %}{{ m.osm_key + '=' + m.osm_name -}}{% else %}{{ c.tags.name -}}{% endif %}
             </a> ({{ c.type}})
 
            <a href="#" class="show_tags_link" data-key="{{ c.key }}">show all tags</a>
