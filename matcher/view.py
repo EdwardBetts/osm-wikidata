@@ -1245,7 +1245,8 @@ def build_item_page(wikidata_id, item):
 @app.route('/Q<int:wikidata_id>')
 def item_page(wikidata_id):
     item = Item.query.get(wikidata_id)
-    item.set_country_code()
+    if item:
+        item.set_country_code()
     try:
         return build_item_page(wikidata_id, item)
     except wikidata.QueryError:
