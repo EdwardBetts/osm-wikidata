@@ -179,6 +179,28 @@ def test_name_match_trim_both():
                          endings=['house', 'inn'])
     assert m.match_type.name == 'both_trimmed'
 
+def test_name_contains_initials():
+    osm = 'RGC – Rainbow Grocery Coop'
+    name = match.drop_initials(osm)
+    assert name == 'Rainbow Grocery Coop'
+
+    osm = 'R.G.C. – Rainbow Grocery Coop'
+    name = match.drop_initials(osm)
+    assert name == 'Rainbow Grocery Coop'
+
+    osm = 'Rainbow Grocery Coop RGC'
+    name = match.drop_initials(osm)
+    assert name == 'Rainbow Grocery Coop'
+
+    osm = 'Rainbow Grocery Coop (RGC)'
+    name = match.drop_initials(osm)
+    assert name == 'Rainbow Grocery Coop'
+
+def test_name_match_initials_then_name():
+    osm = 'RGC – Rainbow Grocery Coop'
+    wd = 'Rainbow Grocery Coop'
+    assert match.name_match(osm, wd)
+
 def test_name_match_trim_to_empty():
     osm = 'Hall'
     wd = 'Post Office'

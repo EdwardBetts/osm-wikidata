@@ -8,6 +8,7 @@ import re
 from enum import Enum
 
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
+re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
@@ -74,7 +75,7 @@ def tidy_name(n):
 
 def initials_match(n1, n2, endings=None):
     n1_lc = n1.lower()
-    initals = ''.join(term[0] for term in n2.split()).upper()
+    initals = ''.join(term[0] for term in n2.split() if term[0].isalnum()).upper()
     if len(initals) < 3 or len(n1) < 3:
         return
     if initals == n1:
@@ -127,6 +128,36 @@ def prefix_name_match(osm, wd):
         if strip_non_chars_match(osm_start, wd_lc):
             return osm[space:].strip()
         space = osm.find(' ', space + 1)
+
+def check_for_intials_match(initials, name):
+    if any(c.islower() for c in initials):
+        print('lowercase:', initials)
+        return
+    if len([c for c in initials if c.isupper()]) < 2:
+        print('not enough uppercase:', initials)
+        return
+    x = bool(initials_match(initials, name))
+    print('match: ', (initials, name, x))
+    return x
+
+def strip_non_char_start(s):
+    return re_non_char_start.sub('', s)
+
+def drop_initials(name):
+    first_space = name.find(' ')
+    if first_space == -1:
+        return
+    tail = strip_non_char_start(name[first_space:])
+
+    if check_for_intials_match(name[:first_space], tail):
+        return tail
+
+    last_space = name.rfind(' ')
+    if last_space == first_space:
+        return
+    head = strip_non_char_start(name[:last_space])
+    if check_for_intials_match(name[last_space:], head):
+        return head
 
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
@@ -211,6 +242,12 @@ def name_match(osm, wd, endings=None, debug=False):
     match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
+
+    osm_no_intitals = drop_initials(osm)
+    if osm_no_intitals:
+        match = name_match_main(osm_no_intitals, wd, endings, debug)
+        if match:
+            return match
 
     for start in 'Tomb of ', 'Statue of ', 'Memorial to ':
         if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
