@@ -105,7 +105,8 @@
 },
 {
     "cats": ["Shopping malls by country", "Shopping centres"],
-    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park", "shop=department_store", "landuse=retail"],
+    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park",
+             "shop=department_store", "landuse=retail"],
     "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
     "check_housename": true,
     "wikidata": "Q11315",
@@ -124,7 +125,8 @@
 {
     "cats": ["Places of worship by country", "Churches"],
     "tags": ["amenity=place_of_worship", "building=church", "man_made=tower", "disused:amenity=place_of_worship"],
-    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of", "mission", "church and cemetery", "congregation"],
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of",
+             "mission", "church and cemetery", "congregation"],
     "check_housename": true,
     "wikidata": "Q1370598",
     "dist": 1
@@ -186,7 +188,8 @@
     "dist": 5
 },
 {
-    "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures", "Triumphal arches", "memorials", "monuments"],
+    "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures",
+             "Triumphal arches", "memorials", "monuments"],
     "tags": ["historic=monument", "tourism"],
     "trim": ["monument", "Statue of"],
     "dist": 3
@@ -240,8 +243,13 @@
 },
 {
     "cats": ["Government buildings by country"],
-    "tags": ["office=government", "amenity=public_building", "building=public", "building=civic", "building=public_building"],
-    "skip_cats": ["Ambassadors by country of origin", "Military installations", "Fire stations by country", "Police stations by country", "Publicly funded schools in the United States", "Prisons in the United States", "Lighthouses in the United States", "Fire stations in the United States", "Police stations in the United States", "Post office buildings in the United States", "Ambassadors by mission country", "Public schools"],
+    "tags": ["office=government", "amenity=public_building", "building=public", "building=civic",
+             "building=public_building"],
+    "skip_cats": ["Ambassadors by country of origin", "Military installations", "Fire stations by country",
+                  "Police stations by country", "Publicly funded schools in the United States",
+                  "Prisons in the United States", "Lighthouses in the United States",
+                  "Fire stations in the United States", "Police stations in the United States",
+                  "Post office buildings in the United States", "Ambassadors by mission country", "Public schools"],
     "trim": [],
     "wikidata": "Q16831714",
     "check_housename": true,
@@ -318,7 +326,8 @@
 {
     "cats": ["Airports by country"],
     "tags": ["aeroway=aerodrome", "site=airport"],
-    "trim": ["airport", "international airport", "aerodome", "regional airport", "municipal airport", "airfield", "air field"],
+    "trim": ["airport", "international airport", "aerodome", "regional airport", "municipal airport", "airfield",
+             "air field"],
     "area": true,
     "dist": 10
 },
@@ -368,14 +377,16 @@
 {
     "cats": ["Arts centres"],
     "tags": ["amenity=arts_centre"],
-    "trim": ["arts centre", "arts centre", "art center", "art centre", "center for the arts", "centre for the arts", "gallery"],
+    "trim": ["arts centre", "arts centre", "art center", "art centre", "center for the arts", "centre for the arts",
+             "gallery"],
     "check_housename": true,
     "wikidata": "Q2190251",
     "dist": 2
 },
 {
     "cats": ["Music venues by country", "Nightclubs by country", "Jazz clubs", "Concert halls", "Opera houses"],
-    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall", "amenity=pub", "amenity=music_venue"],
+    "tags": ["amenity=music_venue", "amenity=nightclub", "amenity=restaurant","amenity=concert_hall", "amenity=pub",
+             "amenity=music_venue"],
     "trim": ["music venue", "club", "night club", "lounge"],
     "check_housename": true,
     "dist": 1
@@ -511,21 +522,25 @@
 {
     "cats": ["Railway depots"],
     "tags": ["landuse=railway"],
-    "trim": ["tmd"],
+    "trim": ["tmd", "depot"],
     "check_housename": false,
     "dist": 2
 },
 {
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
-    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations", "police stations", "radio stations"],
-    "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area", "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
-    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de", "bahnhof", "haltepunkt"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
+                     "police stations", "radio stations"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area",
+             "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
+    "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de",
+             "bahnhof", "haltepunkt", "depot", "transportation center", "transit station"],
     "check_housename": false,
     "dist": 2
 },
 {
     "cats": ["Disused railway stations", "Disused railroad stations", "Disused train stations"],
-    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations", "police stations", "radio stations"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
+                     "police stations", "radio stations"],
     "tags": ["disused=station", "railway=disused_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
@@ -534,9 +549,12 @@
 {
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
-    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations", "police stations", "radio stations"],
-    "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop", "public_transport=station"],
-    "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop", "tram stop", "railway station"],
+    "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
+                     "police stations", "radio stations"],
+    "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop",
+             "public_transport=station"],
+    "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop",
+             "tram stop", "railway station"],
     "check_housename": false,
     "dist": 1
 },
@@ -626,7 +644,8 @@
     "dist": 1
 },
 {
-    "cats": ["Colleges by country", "Music schools by country", "Cooking schools by country", "Film schols by country"],
+    "cats": ["Colleges by country", "Music schools by country", "Cooking schools by country",
+             "Film schols by country"],
     "tags": ["amenity=college", "type=site", "site=college", "building=college"],
     "trim": ["college", "music school", "cooking school", "school"],
     "check_housename": true,
@@ -690,7 +709,8 @@
 },
 {
     "cats": ["Apartment buildings"],
-    "tags": ["building=apartments", "building=mixed_use", "building=house", "building=residential", "landuse=residential"],
+    "tags": ["building=apartments", "building=mixed_use", "building=house", "building=residential",
+             "landuse=residential"],
     "trim": ["house", "apartments", "estate", "tower"],
     "skip_cats": ["Christian communities"],
     "check_housename": true,
@@ -880,7 +900,9 @@
 {
     "cats": ["Tourist attractions by country"],
     "tags": ["tourism=attraction"],
-    "skip_cats": ["Universities and colleges", "Places of worship in ", "Theatres in ", "Zoos in ", "Restaurants in ", "Museums in ", "Mountains of ", "Libraries in ", "Houses in", "Skyscrapers in ", "Historic sites in", "Buildings and structures ", "American architecture", "Entertainment events "],
+    "skip_cats": ["Universities and colleges", "Places of worship in ", "Theatres in ", "Zoos in ", "Restaurants in ",
+                  "Museums in ", "Mountains of ", "Libraries in ", "Houses in", "Skyscrapers in ", "Historic sites in",
+                  "Buildings and structures ", "American architecture", "Entertainment events "],
     "trim": [],
     "check_housename": true,
     "dist": 10
@@ -946,7 +968,9 @@
 {
     "cats": ["Towns by country"],
     "tags": ["place=town", "place=village", "place=suburb"],
-    "skip_cats": ["Categories by town", "Wikipedia categories named after towns", "Lists by towns", "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford", "Barrow-in-Furness", "Cambridge", "city or town", "Visitor attractions in", "Categories by city"],
+    "skip_cats": ["Categories by town", "Wikipedia categories named after towns", "Lists by towns",
+                  "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford",
+                  "Barrow-in-Furness", "Cambridge", "city or town", "Visitor attractions in", "Categories by city"],
     "trim": ["city", "town", "town of", "CP"],
     "area": true,
     "dist": 15
@@ -998,7 +1022,13 @@
 {
     "cats": ["Cities by country"],
     "tags": ["place=city"],
-    "skip_cats": ["Geography of", "Categories by city", "Wikipedia categories named after cities", "Lists by city", "Birmingham, West Midlands", "Leamington Spa", "Local government ", "District", "Rivers of", "Tributaries of", "Local government", "Oxford", "Education in", "Economies by city", "Histories of cities", "National Register of Historic Places", "People by city", "Transportation in", "Tourist attractions", "Buildings and structures in", "city templates", "Images of cities", "Works about cities", "Urban decay in", "Urban politics in", "Mayors of", "Companies based in", "Media in"],
+    "skip_cats": ["Geography of", "Categories by city", "Wikipedia categories named after cities", "Lists by city",
+                  "Birmingham, West Midlands", "Leamington Spa", "Local government ", "District", "Rivers of",
+                  "Tributaries of", "Local government", "Oxford", "Education in", "Economies by city",
+                  "Histories of cities", "National Register of Historic Places", "People by city", "Transportation in",
+                  "Tourist attractions", "Buildings and structures in", "city templates", "Images of cities",
+                  "Works about cities", "Urban decay in", "Urban politics in", "Mayors of", "Companies based in",
+                  "Media in"],
     "trim": ["city"],
     "area": true,
     "dist": 10
@@ -1067,7 +1097,8 @@
 },
 {
     "cats": ["Neighbourhoods by country", "Ethnic enclaves"],
-    "skip_cats": ["Airports", "Airfields", "Aerodromes", "Military installations", "Campuses", "Christian monasteries", "Christian communities", "Parliamentary constituencies"],
+    "skip_cats": ["Airports", "Airfields", "Aerodromes", "Military installations", "Campuses", "Christian monasteries",
+                  "Christian communities", "Parliamentary constituencies"],
     "tags": ["place", "admin_level", "boundary", "landuse", "political_division=ward", "type=boundary"],
     "trim": ["city", "town of", "town", "ward"],
     "area": true,
