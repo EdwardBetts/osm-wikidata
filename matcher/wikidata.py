@@ -74,6 +74,8 @@ extra_keys = {
     'Q41253': ['Tag:amenity=theatre'],          # movie theater
     'Q17350442': ['Tag:amenity=theatre'],       # venue
     'Q156362': ['Tag:amenity=winery'],          # winery
+    'Q14092': ['Tag:leisure=fitness_centre',
+               'leisure=sports_centre'],        # gymnasium
 }
 
 # search for items in bounding box that have an English Wikipedia article
