@@ -131,13 +131,10 @@ def prefix_name_match(osm, wd):
 
 def check_for_intials_match(initials, name):
     if any(c.islower() for c in initials):
-        print('lowercase:', initials)
         return
     if len([c for c in initials if c.isupper()]) < 2:
-        print('not enough uppercase:', initials)
         return
     x = bool(initials_match(initials, name))
-    print('match: ', (initials, name, x))
     return x
 
 def strip_non_char_start(s):
