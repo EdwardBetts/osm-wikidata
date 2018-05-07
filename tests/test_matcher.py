@@ -193,8 +193,9 @@ def test_find_item_matches_mall(monkeypatch):
     item = Item(entity=test_entity, tags=tags)
 
     def mock_run_sql(cur, sql, debug):
-        rows = [('polygon', 59847542, None, osm_tags, 0)]
-        return rows
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 59847542, None, osm_tags, 0)]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
@@ -227,8 +228,9 @@ def test_church_is_not_school(monkeypatch):
     }
 
     def mock_run_sql(cur, sql, debug):
-        rows = [('polygon', 1, None, osm_tags, 0)]
-        return rows
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 1, None, osm_tags, 0)]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
@@ -258,8 +260,9 @@ def test_match_operator_at_start_of_name(monkeypatch):
     item = Item(entity=test_entity, tags=tags)
 
     def mock_run_sql(cur, sql, debug):
-        rows = [('polygon', 64002602, None, osm_tags, 0)]
-        return rows
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 64002602, None, osm_tags, 0)]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
@@ -303,8 +306,9 @@ def test_find_item_matches_parking(monkeypatch):
     item = Item(entity=test_entity, tags=tags)
 
     def mock_run_sql(cur, sql, debug):
-        rows = [('polygon', 116620439, None, osm_tags, 253.7)]
-        return rows
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 116620439, None, osm_tags, 253.7)]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
@@ -352,8 +356,9 @@ def test_find_item_matches(monkeypatch):
     }
 
     def mock_run_sql(cur, sql, debug):
-        rows = [('polygon', 265273006, None, osm_tags, 0.0)]
-        return rows
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 265273006, None, osm_tags, 0.0)]
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
 
@@ -408,6 +413,53 @@ def test_name_and_location_better_than_address_and_building(monkeypatch):
             return [('polygon', 29191381, None, hotel_tags, 0)]
         else:
             return [('point', 600482843, None, tower_tags, 7)]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 2
+
+def test_alcatraz_lighthouse(monkeypatch):
+    lighthouse_tags = {
+        'alt_name': 'United States Coast Guard Lighthouse',
+        'building': 'yes',
+        'man_made': 'lighthouse',
+        'name': 'Alcatraz Island Lighthouse',
+        'start_date': '1909',
+        'wikidata': 'Q4712967',
+    }
+    island_tags = {'name': 'Alcatraz Island', 'tourism': 'attraction'}
+
+    test_entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Alcatraz Island Light'},
+        },
+        'sitelinks': {
+            'commonswiki': {
+                'site': 'commonswiki',
+                'title': 'Category:Alcatraz Island Lighthouse'
+            },
+            'enwiki': {
+                'site': 'enwiki',
+                'title': 'Alcatraz Island Light'
+            },
+        },
+    }
+
+    tags = ['tourism=attraction', 'building', 'man_made=lighthouse']
+    item = Item(entity=test_entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('point', 265562462, None, island_tags, 151),
+            ('polygon', 99202294, None, lighthouse_tags, 0),
+        ]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)

@@ -391,7 +391,8 @@ class Item(Base):
 
     def is_a_historic_district(self):
         return ('Q15243209' in (self.instanceof() or []) or
-                any(cat.startswith('Historic district')
+                any(cat.startswith('Historic district') and
+                    not cat.startswith('Historic district contributing properties')
                     for cat in (self.categories or [])))
 
     def skip_item_during_match(self):
