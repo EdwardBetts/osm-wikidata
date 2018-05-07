@@ -170,7 +170,8 @@ def split_on_upper(name):
         yield text
 
 def split_on_upper_and_tidy(name):
-    return [re_strip_non_chars.sub('', part) for part in split_on_upper(name)]
+    parts = [re_strip_non_chars.sub('', part) for part in split_on_upper(name)]
+    return [part for part in parts if part]
 
 def name_containing_initials(n1, n2):
     n1_split = split_on_upper_and_tidy(n1)

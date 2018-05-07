@@ -114,6 +114,8 @@ def test_match_name_containing_initials():
     n2 = ' PC Christian Methodist Episcopal Church'
     assert match.name_containing_initials(n1, n2)
 
+    assert not match.name_containing_initials("(St John's College)", 'LMBC')
+
 def test_name_match():
     assert not match.name_match('', '')
     assert match.name_match('test', 'test')
