@@ -351,6 +351,41 @@ def test_find_item_matches(monkeypatch):
     print(candidates[0])
     assert candidates[0] == expect
 
+def test_name_and_location_better_than_address_and_building(monkeypatch):
+    tower_tags = {'name': 'Reunion Tower', 'tourism': 'attraction'}
+    hotel_tags = {
+        'addr:housenumber': '300',
+        'addr:street': 'Reunion Boulevard',
+        'building': 'hotel'
+    }
+
+    test_entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Reunion Tower'},
+        },
+        'sitelinks': {},
+    }
+
+    extract = '''<p><b>Reunion Tower</b> is a 561 ft (171 m) observation tower and one of the most recognizable landmarks in Dallas, Texas. Located at 300 Reunion Boulevard in the Reunion district of downtown Dallas.</p>'''
+
+    tags = ['man_made=tower', 'building=tower', 'height']
+    item = Item(entity=test_entity, tags=tags, extract=extract)
+
+    def mock_run_sql(cur, sql, debug):
+        if sql.startswith('select * from'):
+            return [('polygon', 29191381, None, hotel_tags, 0)]
+        else:
+            return [('point', 600482843, None, tower_tags, 7)]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 2
+
 def test_filter_distant():
     close = {
         'address_match': None,

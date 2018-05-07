@@ -156,7 +156,15 @@ def hstore_query(tags):
 
     return ' or\n '.join(cond)
 
-def item_match_sql(item, prefix, ignore_tags=None):
+def nearby_nodes_sql(item, prefix, max_dist=10, limit=50):
+    point = f"ST_TRANSFORM(ST_GeomFromEWKT('{item.ewkt}'), 3857)"
+    sql = (f"select 'point', osm_id, name, tags, "
+           f'ST_Distance({point}, way) as dist '
+           f'from {prefix}_point '
+           f'where ST_DWithin({point}, way, {max_dist})')
+    return sql
+
+def item_match_sql(item, prefix, ignore_tags=None, limit=50):
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
     item_max_dist = get_max_dist_from_criteria(item.tags) or default_max_dist
 
@@ -169,12 +177,13 @@ def item_match_sql(item, prefix, ignore_tags=None):
 
     sql_list = []
     for obj_type in 'point', 'line', 'polygon':
-        obj_sql = ('select \'{}\', osm_id, name, tags, '
-                   'ST_Distance({}, way) as dist '
-                   'from {}_{} '
-                   'where ST_DWithin({}, way, {} * 1000)').format(obj_type, point, prefix, obj_type, point, item_max_dist)
+        obj_sql = (f"select '{obj_type}', osm_id, name, tags, "
+                   f'ST_Distance({point}, way) as dist '
+                   f'from {prefix}_{obj_type} '
+                   f'where ST_DWithin({point}, way, {item_max_dist} * 1000)')
         sql_list.append(obj_sql)
-    sql = 'select * from (' + ' union '.join(sql_list) + ') a where ({}) order by dist limit 50'.format(hstore)
+    sql = ('select * from (' + ' union '.join(sql_list) +
+            f') a where ({hstore}) order by dist limit {limit}')
     return sql
 
 def run_sql(cur, sql, debug=False):
@@ -257,9 +266,12 @@ def find_item_matches(cur, item, prefix, debug=False):
     item_is_a_historic_district = item.is_a_historic_district()
     ignore_tags = {'building'} if item_is_a_historic_district else set()
     sql = item_match_sql(item, prefix, ignore_tags=ignore_tags)
-    if not sql:
+    rows = run_sql(cur, sql, debug) if sql else []
+
+    sql = nearby_nodes_sql(item, prefix)
+    rows += run_sql(cur, sql, debug)
+    if not rows:
         return []
-    rows = run_sql(cur, sql, debug)
 
     if debug:
         print('row count:', len(rows))
