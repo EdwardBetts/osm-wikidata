@@ -173,7 +173,7 @@
 },
 {
     "cats": ["Hotels by country"],
-    "tags": ["tourism=hotel", "building=hotel"],
+    "tags": ["tourism=hotel", "building=hotel", "tourism=hostel"],
     "trim": ["hotel", "resort", "motel"],
     "check_housename": true,
     "wikidata": "Q27686",
