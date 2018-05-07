@@ -190,7 +190,7 @@
 {
     "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures",
              "Triumphal arches", "memorials", "monuments"],
-    "tags": ["historic=monument", "tourism"],
+    "tags": ["historic=monument", "tourism", "historic=memorial"],
     "trim": ["monument", "Statue of"],
     "dist": 3
 },
@@ -362,7 +362,7 @@
 {
     "cats": ["Lighthouses by country"],
     "tags": ["man_made=lighthouse"],
-    "trim": ["light house", "light"],
+    "trim": ["light house", "light", "lighthouse"],
     "check_housename": true,
     "dist": 2
 },
@@ -529,7 +529,7 @@
 {
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations"],
+                     "police stations", "radio stations", "service stations", "filling stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area",
              "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de",
@@ -540,7 +540,7 @@
 {
     "cats": ["Disused railway stations", "Disused railroad stations", "Disused train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations"],
+                     "police stations", "radio stations", "service stations", "filling stations"],
     "tags": ["disused=station", "railway=disused_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
@@ -550,7 +550,7 @@
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations"],
+                     "police stations", "radio stations", "service stations", "filling stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop",
              "public_transport=station"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop",
@@ -744,9 +744,9 @@
     "dist": 4
 },
 {
-    "cats": ["Filling stations"],
-    "tags": ["amenity=fuel"],
-    "trim": ["petrol station", "filling station", "gas station"],
+    "cats": ["Filling stations", "service stations"],
+    "tags": ["amenity=fuel", "highway=services", "landuse=commercial"],
+    "trim": ["petrol station", "filling station", "gas station", "service station"],
     "dist": 5
 },
 {
