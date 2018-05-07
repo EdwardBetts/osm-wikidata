@@ -407,8 +407,8 @@ class Item(Base):
         cats = {'railway stations', 'railroad stations', 'train stations',
                 'metro stations', 'subway stations'}
 
-        for item_cat in (self.categories or []):
-            return any(cat in item_cat.lower() for cat in cats)
+        return any(any(cat in item_cat.lower() for cat in cats)
+                   for item_cat in (self.categories or []))
 
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
