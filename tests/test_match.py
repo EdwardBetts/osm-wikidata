@@ -116,6 +116,35 @@ def test_match_name_containing_initials():
 
     assert not match.name_containing_initials("(St John's College)", 'LMBC')
 
+    assert not match.name_containing_initials('1', '1-й общественный совет')
+
+def test_name_match_numbers():
+    assert match.name_match('Manhattan Community Board 1',
+                            'Manhattan Community Board 1')
+
+    assert not match.name_match('Manhattan Community Board 11',
+                                'Manhattan Community Board 1')
+
+    assert not match.name_match('Manhattan Community Board 1',
+                                'Manhattan Community Board 11')
+
+    assert not match.name_containing_initials('Manhattan Community Board 1',
+                                              'Manhattan Community Board 11')
+
+    osm_tags = {
+        'name': 'Manhattan Community Board 11',
+    }
+    wikidata_names = {
+        '1-й общественный совет': [('label', 'ru')],
+        'Manhattan Community Board 1': [('label', 'en'),
+                                        ('sitelink', 'enwiki'),
+                                        ('extract', 'enwiki')],
+    }
+    assert not match.check_for_match(osm_tags, wikidata_names)
+
+def test_russian_doesnt_match_number():
+    assert not match.name_match_main('1', '1-й общественный совет')
+
 def test_name_match():
     assert not match.name_match('', '')
     assert match.name_match('test', 'test')

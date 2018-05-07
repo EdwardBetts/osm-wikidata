@@ -177,7 +177,7 @@ def name_containing_initials(n1, n2):
     n1_split = split_on_upper_and_tidy(n1)
     n2_split = split_on_upper_and_tidy(n2)
 
-    if len(n1_split) != len(n2_split):
+    if len(n1_split) != len(n2_split) or len(n1_split) < 3:
         return False
 
     for part1, part2 in zip(n1_split, n2_split):
@@ -209,6 +209,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
+
 
     if endings:
         m = match_with_words_removed(osm_lc, wd_lc, endings)
