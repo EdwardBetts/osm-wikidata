@@ -159,11 +159,47 @@ def drop_initials(name):
     if check_for_intials_match(name[last_space:], head):
         return head
 
+def split_on_upper(name):
+    upper_positions = [num for num, char in enumerate(name) if char.isupper()]
+
+    xpos = 0
+    for pos in upper_positions:
+        text = name[xpos:pos].rstrip()
+        if text:
+            yield text
+        xpos = pos
+    text = name[xpos:].rstrip()
+    if text:
+        yield text
+
+def split_on_upper_and_tidy(name):
+    return [re_strip_non_chars.sub('', part) for part in split_on_upper(name)]
+
+def name_containing_initials(n1, n2):
+    n1_split = split_on_upper_and_tidy(n1)
+    n2_split = split_on_upper_and_tidy(n2)
+
+    if len(n1_split) != len(n2_split):
+        return False
+
+    for part1, part2 in zip(n1_split, n2_split):
+        if part1 == part2:
+            continue
+        if len(part1) == 1 and part2[0] == part1:
+            continue
+        if len(part2) == 1 and part1[0] == part2:
+            continue
+        return False
+    return True
+
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
 
     if wd == osm:
+        return Match(MatchType.good)
+
+    if name_containing_initials(osm, wd):
         return Match(MatchType.good)
 
     wd_lc = wd.lower()

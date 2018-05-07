@@ -96,6 +96,24 @@ def test_check_identifiers():
     url = 'https://www.test.org'
     assert match.check_identifier({'website': url}, identifiers)
 
+def test_split_on_upper():
+    name = 'Phillips Chapel CME Church'
+    parts = list(match.split_on_upper(name))
+    assert parts == ['Phillips', 'Chapel', 'C', 'M', 'E', 'Church']
+
+def test_match_name_containing_initials():
+    n1 = 'Phillips Chapel CME Church'
+    n2 = ' Phillips Chapel Christian Methodist Episcopal Church'
+    assert match.name_containing_initials(n1, n2)
+
+    n1 = 'Phillips Chapel C.M.E. Church'
+    n2 = ' Phillips Chapel Christian Methodist Episcopal Church'
+    assert match.name_containing_initials(n1, n2)
+
+    n1 = 'Phillips Chapel CME Church'
+    n2 = ' PC Christian Methodist Episcopal Church'
+    assert match.name_containing_initials(n1, n2)
+
 def test_name_match():
     assert not match.name_match('', '')
     assert match.name_match('test', 'test')
