@@ -400,6 +400,7 @@ def intials_matches_other_wikidata_name(initials, wikidata_names):
 
 def check_for_match(osm_tags, wikidata_names, endings=None):
     names = get_names(osm_tags)
+    operator = names['operator'].lower() if 'operator' in names else None
     if not names or not wikidata_names:
         return {}
 
@@ -431,6 +432,8 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                 m = name_match(o, w, endings)
                 # if we had to trim both names and the OSM name is from the
                 # housename or operator it doesn't count
+                if not m and operator and o.lower().startswith(operator):
+                    m = name_match(o[len(operator):].rstrip(), w, endings)
                 if not m:
                     cache[(o, w)] = None
                     continue

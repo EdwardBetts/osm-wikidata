@@ -238,6 +238,38 @@ def test_church_is_not_school(monkeypatch):
     candidates = matcher.find_item_matches(mock_db, item, 'prefix')
     assert len(candidates) == 0
 
+def test_match_operator_at_start_of_name(monkeypatch):
+    osm_tags = {
+        'highway': 'services',
+        'landuse': 'commercial',
+        'name': 'Welcome Break Gordano Services',
+        'operator': 'Welcome Break',
+    }
+
+    test_entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Gordano services'},
+        },
+        'sitelinks': {}
+    }
+
+    tags = ['highway=services']
+    item = Item(entity=test_entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        rows = [('polygon', 64002602, None, osm_tags, 0)]
+        return rows
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix')
+    assert len(candidates) == 1
+
+
 def test_find_item_matches_parking(monkeypatch):
     osm_tags = {
         'amenity': 'parking',
@@ -348,7 +380,6 @@ def test_find_item_matches(monkeypatch):
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix')
     assert len(candidates) == 1
-    print(candidates[0])
     assert candidates[0] == expect
 
 def test_name_and_location_better_than_address_and_building(monkeypatch):

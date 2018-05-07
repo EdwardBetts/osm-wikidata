@@ -406,3 +406,16 @@ def test_get_all_matches_address():
     names = {'12 Station Road': [('label', 'en')]}
     match_list = match.get_all_matches(tags, names)
     assert len(match_list) == 1
+
+def test_match_operator_at_start_of_name():
+    osm_tags = {
+        'highway': 'services',
+        'landuse': 'commercial',
+        'name': 'Welcome Break Gordano Services',
+        'operator': 'Welcome Break',
+    }
+
+    wd_names = {'Gordano services': [('label', 'en')]}
+    expect = {'name': [('good', 'Gordano services', [('label', 'en')])]}
+
+    assert match.check_for_match(osm_tags, wd_names) == expect
