@@ -227,7 +227,7 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return tag_and_key_if_possible(matching)
 
-def bad_building_match(osm_tags, matching_tags, name_match):
+def bad_building_match(osm_tags, matching_tags, name_match, item):
     building_only_match = (matching_tags == {'building'} or
                            matching_tags == {'building=yes'})
 
@@ -241,11 +241,13 @@ def bad_building_match(osm_tags, matching_tags, name_match):
     if not name_match:
         return False
 
-    for osm_key, detail_list in name_match.items():
+    is_a_station = item.is_a_station()
+
+    for osm, detail_list in name_match.items():
         for match_type, value, source in detail_list:
             if not (match_type == 'both_trimmed' or
-                    (osm_key == 'operator' and
-                     match_type == 'wikidata_trimmed')):
+                    (osm == 'operator' and match_type == 'wikidata_trimmed') or
+                    (match_type == 'wikidata_trimmed' and is_a_station)):
                 return False
 
     return True
@@ -335,7 +337,7 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
         if (name_match and not identifier_match and not address_match and
-                bad_building_match(osm_tags, matching_tags, name_match)):
+                bad_building_match(osm_tags, matching_tags, name_match, item)):
             continue
 
         if (matching_tags == {'natural=peak'} and

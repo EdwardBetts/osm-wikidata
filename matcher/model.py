@@ -395,6 +395,21 @@ class Item(Base):
                     not cat.startswith('Historic district contributing properties')
                     for cat in (self.categories or [])))
 
+    def is_a_station(self):
+        stations = {
+            'Q55488',    # railway station
+            'Q928830',   # metro station
+            'Q4663385',  # former railway station
+        }
+        if set(self.instanceof()) & stations:
+            return True
+
+        cats = {'railway stations', 'railroad stations', 'train stations',
+                'metro stations', 'subway stations'}
+
+        for item_cat in (self.categories or []):
+            return any(cat in item_cat.lower() for cat in cats)
+
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
         best to skip items that are only cebwiki or cebwiki + svwiki
