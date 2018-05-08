@@ -77,6 +77,12 @@ extra_keys = {
     'Q14092': ['Tag:leisure=fitness_centre',
                'leisure=sports_centre'],        # gymnasium
     'Q27686': ['Tag:tourism=hostel'],           # hotel
+    'Q11707': ['Tag:amenity=cafe', 'Tag:amenity=fast_food',
+               'Tag:shop=deli', 'Tag:shop=bakery',
+               'Key:cuisine'],                  # restaurant
+    'Q2360219': ['Tag:amenity=embassy'],        # permanent mission
+    'Q838948': ['Tag:historic=memorial',
+                'Tag:historic=monument'],       # work of art
 }
 
 # search for items in bounding box that have an English Wikipedia article
