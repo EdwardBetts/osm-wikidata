@@ -212,7 +212,6 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
 
-
     if endings:
         m = match_with_words_removed(osm_lc, wd_lc, endings)
         if m:
@@ -275,7 +274,14 @@ def name_match_main(osm, wd, endings=None, debug=False):
             return Match(MatchType.trim)
     return
 
-def name_match(osm, wd, endings=None, debug=False):
+def strip_place_name(name, place_name):
+    for word in 'of', 'de', 'di', 'at':
+        search = f' {word} {place_name}'
+        if search in name:
+            return name.replace(search, '')
+    return name.replace(place_name, '')
+
+def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
@@ -294,10 +300,21 @@ def name_match(osm, wd, endings=None, debug=False):
     if wd.lower().endswith(end) and name_match_main(osm, wd[:-len(end)], endings):
         return Match(MatchType.trim)
 
+    if place_names:
+        for place_name in place_names:
+            if not (place_name in osm or place_name in wd):
+                continue
+            match = name_match_main(strip_place_name(osm, place_name),
+                                    strip_place_name(wd, place_name),
+                                    endings, debug)
+            if match:
+                return match
+
     if ';' not in osm:
         return
     for osm_name in osm.split(';'):
-        match = name_match(osm_name.strip(), wd, endings=endings, debug=debug)
+        match = name_match(osm_name.strip(), wd, endings=endings, debug=debug,
+                           place_names=place_names)
         if match:
             return match
 
@@ -401,7 +418,7 @@ def intials_matches_other_wikidata_name(initials, wikidata_names):
     return any(w != initials and initials_match(initials, w)
                for w in wikidata_names.keys())
 
-def check_for_match(osm_tags, wikidata_names, endings=None):
+def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None):
     names = get_names(osm_tags)
     operator = names['operator'].lower() if 'operator' in names else None
     if not names or not wikidata_names:
@@ -432,9 +449,10 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                 if not result:
                     continue
             else:
-                m = name_match(o, w, endings)
+                m = name_match(o, w, endings, place_names=place_names)
                 if not m and operator and o.lower().startswith(operator):
-                    m = name_match(o[len(operator):].rstrip(), w, endings)
+                    m = name_match(o[len(operator):].rstrip(), w, endings,
+                                   place_names=place_names)
                     if m and m.match_type in (MatchType.both_trimmed,
                                               MatchType.wikidata_trimmed):
                         continue
@@ -462,7 +480,7 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
             for second_w, second_source in wikidata_names.items():
                 if second_w == w:
                     continue
-                m = name_match(left_over, second_w)
+                m = name_match(left_over, second_w, place_names=place_names)
                 if not m:
                     continue
                 name[osm_key].append(('prefix', w, source))

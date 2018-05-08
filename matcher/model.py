@@ -476,6 +476,15 @@ class Item(Base):
 
         return text[:first_end_p_tag + len(close_tag)]
 
+    def place_names(self):
+        names = set()
+        for place in self.places:
+            if not isinstance(place.address, list):
+                continue
+            names.update({i['name'] for i in place.address
+                         if i['type'] != 'country_code'})
+        return names
+
     def set_country_code(self):
         for place in self.places:
             if place.country_code:

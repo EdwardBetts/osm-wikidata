@@ -293,6 +293,8 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     wikidata_tags = item.calculate_tags()
 
+    place_names = item.place_names()
+
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
 
@@ -330,7 +332,8 @@ def find_item_matches(cur, item, prefix, debug=False):
                 match.check_for_address_in_extract(osm_tags, item.extract)):
             address_match = True
 
-        name_match = match.check_for_match(osm_tags, wikidata_names, endings)
+        name_match = match.check_for_match(osm_tags, wikidata_names, endings,
+                                           place_names=place_names)
 
         if not (identifier_match or address_match or name_match):
             continue

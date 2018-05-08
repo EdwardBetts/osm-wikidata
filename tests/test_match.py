@@ -457,3 +457,12 @@ def test_match_operator_at_start_of_name():
     wd_names = {'Roslindale Theatre': [('label', 'en')]}
 
     assert not match.check_for_match(osm_tags, wd_names, ['theatre'])
+
+def test_match_with_place_names():
+    osm = 'Hungarian house'
+    wd = 'Hungarian House of New York'
+
+    place_names = ['Manhattan', 'New York City', 'New York',
+                   'United States of America']
+
+    assert match.name_match(osm, wd, place_names=place_names)
