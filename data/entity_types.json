@@ -116,7 +116,7 @@
     "cats": ["Castles by country"],
     "tags": ["historic=castle", "building=castle", "tourism=attraction",
              "historic=ruins", "historic=tower_house", "building=ruins",
-             "historic=archaeological_site"],
+             "historic=archaeological_site", "place=locality"],
     "trim": ["castle", "castell", "museum"],
     "check_housename": true,
     "wikidata": "Q23413",
@@ -165,7 +165,7 @@
 },
 {
     "cats": ["Restaurants by country"],
-    "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli"],
+    "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli", "shop=bakery"],
     "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge"],
     "check_housename": true,
     "wikidata": "Q11707",

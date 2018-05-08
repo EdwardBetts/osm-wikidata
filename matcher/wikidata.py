@@ -83,6 +83,7 @@ extra_keys = {
     'Q2360219': ['Tag:amenity=embassy'],        # permanent mission
     'Q838948': ['Tag:historic=memorial',
                 'Tag:historic=monument'],       # work of art
+    'Q23413': ['Tag:place=locality'],           # castle
 }
 
 # search for items in bounding box that have an English Wikipedia article
