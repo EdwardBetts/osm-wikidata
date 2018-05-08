@@ -69,6 +69,9 @@ def capfirst(value):
     ''' Uppercase first letter of string, leave rest as is. '''
     return value[0].upper() + value[1:] if value else value
 
+def any_upper(value):
+    return any(c.isupper() for c in value)
+
 def find_log_file(place):
     start = '{}_'.format(place.place_id)
     for f in os.scandir(good_location()):

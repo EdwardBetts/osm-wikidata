@@ -448,3 +448,12 @@ def test_match_operator_at_start_of_name():
     expect = {'name': [('good', 'Gordano services', [('label', 'en')])]}
 
     assert match.check_for_match(osm_tags, wd_names) == expect
+
+    osm_tags = {
+        'name': 'Citizens Bank (Roslindale)',
+        'operator': 'Citizens Bank',
+    }
+
+    wd_names = {'Roslindale Theatre': [('label', 'en')]}
+
+    assert not match.check_for_match(osm_tags, wd_names, ['theatre'])

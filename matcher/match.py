@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from collections import defaultdict
 from unidecode import unidecode
-from .utils import remove_start, normalize_url
+from .utils import remove_start, normalize_url, any_upper
 
 import re
 
@@ -174,6 +174,8 @@ def split_on_upper_and_tidy(name):
     return [part for part in parts if part]
 
 def name_containing_initials(n1, n2):
+    if not any_upper(n1) or not any_upper(n2):
+        return False
     n1_split = split_on_upper_and_tidy(n1)
     n2_split = split_on_upper_and_tidy(n2)
 
@@ -431,13 +433,16 @@ def check_for_match(osm_tags, wikidata_names, endings=None):
                     continue
             else:
                 m = name_match(o, w, endings)
-                # if we had to trim both names and the OSM name is from the
-                # housename or operator it doesn't count
                 if not m and operator and o.lower().startswith(operator):
                     m = name_match(o[len(operator):].rstrip(), w, endings)
+                    if m and m.match_type in (MatchType.both_trimmed,
+                                              MatchType.wikidata_trimmed):
+                        continue
                 if not m:
                     cache[(o, w)] = None
                     continue
+                # if we had to trim both names and the OSM name is from the
+                # housename or operator it doesn't count
                 if (m.match_type == MatchType.both_trimmed and
                         osm_key in {'addr:housename', 'operator'}):
                     continue
