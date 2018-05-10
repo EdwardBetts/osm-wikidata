@@ -753,7 +753,7 @@ class Place(Base):
             # truncate the long tail of languages
             lang_count = {key: count
                           for key, count in lang_count.items()
-                          if count / item_count > 0.1}
+                          if key == 'en' or count / item_count > 0.1}
 
         return sorted(lang_count.items(),
                       key=lambda i: i[1],
