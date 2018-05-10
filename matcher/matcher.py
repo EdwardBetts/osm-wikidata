@@ -227,8 +227,7 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return tag_and_key_if_possible(matching)
 
-def bad_building_match(osm_tags, name_match, item):
-    amenity = osm_tags.get('amenity', '')
+def bad_building_match(amenity, name_match, item):
     if 'parking' in amenity or 'place_of_worship' in amenity:
         return True
 
@@ -343,6 +342,18 @@ def find_item_matches(cur, item, prefix, debug=False):
         building_only_match = (matching_tags == {'building'} or
                                matching_tags == {'building=yes'})
 
+        amenity = set(osm_tags['amenity'].split(';')
+                      if 'amenity' in osm_tags else [])
+
+        if (building_only_match and
+                address_match and
+                not name_match and
+                not identifier_match and
+                'amenity=school' in item.tags and
+                'amenity=restaurant' not in item.tags and
+                'restaurant' in amenity and 'school' not in amenity):
+            continue  # Wikidata school shouldn't match OSM restaurant
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
@@ -354,7 +365,7 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         if (name_match and not identifier_match and not address_match and
                 building_only_match and
-                bad_building_match(osm_tags, name_match, item)):
+                bad_building_match(amenity, name_match, item)):
             continue
 
         if (matching_tags == {'natural=peak'} and
