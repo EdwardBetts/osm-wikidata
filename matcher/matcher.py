@@ -252,6 +252,11 @@ def bad_building_match(osm_tags, matching_tags, name_match, item):
 
     return True
 
+def is_osm_bus_stop(tags):
+    return (tags.get('highway') == 'bus_stop' or
+            (tags.get('bus') == 'yes' and
+             tags.get('public_transport') == 'stop_position'))
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -294,6 +299,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     wikidata_tags = item.calculate_tags()
 
     place_names = item.place_names()
+    instanceof = set(item.instanceof())
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
@@ -339,6 +345,15 @@ def find_item_matches(cur, item, prefix, debug=False):
             continue
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+
+        if not matching_tags and instanceof == {'Q34442'}:
+            continue  # nearby road match
+
+        if (not matching_tags and
+                is_osm_bus_stop(osm_tags) and
+                'Q953806' not in instanceof):
+            continue  # nearby match OSM bus stop matching non-bus stop
+
         if (name_match and not identifier_match and not address_match and
                 bad_building_match(osm_tags, matching_tags, name_match, item)):
             continue
