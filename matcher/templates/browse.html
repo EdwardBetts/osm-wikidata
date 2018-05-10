@@ -21,7 +21,7 @@
     ({{ row.qid }})
   </td>
   <td>
-    {% if not row.area or row.area < 90000 %}
+    {% if not row.area or row.area < config.PLACE_MAX_AREA %}
       <a href="{{ url_for('matcher_wikidata', item_id=row.item_id) }}">match</a>
     {% else %}
       too big for matcher

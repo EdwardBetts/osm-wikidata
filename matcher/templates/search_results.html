@@ -13,7 +13,11 @@
             {% set hit_url = url_for('matcher.matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) %}
         {% endif %}
         <a href="{{ hit_url }}">{{ hit.display_name }}</a>
-      </b><br>
+      </b>
+      {% if hit.place.wikidata and hit.area > config.BROWSE_LINK_MIN_AREA %}
+        &ndash; <a href="{{ hit.place.browse_url() }}">browse next level administrative subdivisions</a>
+      {% endif %}
+      <br>
     {% else %}
        {% if hit.place and hit.place.wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
          <b><a href="{{ hit.place.browse_url() }}">{{ hit.display_name }}</a></b>
