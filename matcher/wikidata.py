@@ -75,7 +75,7 @@ extra_keys = {
     'Q17350442': ['Tag:amenity=theatre'],       # venue
     'Q156362': ['Tag:amenity=winery'],          # winery
     'Q14092': ['Tag:leisure=fitness_centre',
-               'leisure=sports_centre'],        # gymnasium
+               'Tag:leisure=sports_centre'],    # gymnasium
     'Q27686': ['Tag:tourism=hostel'],           # hotel
     'Q11707': ['Tag:amenity=cafe', 'Tag:amenity=fast_food',
                'Tag:shop=deli', 'Tag:shop=bakery',
