@@ -907,7 +907,7 @@
 },
 {
     "cats": ["Tourist attractions by country"],
-    "tags": ["tourism=attraction"],
+    "tags": ["tourism=attraction", "tourism=museum"],
     "skip_cats": ["Universities and colleges", "Places of worship in ", "Theatres in ", "Zoos in ", "Restaurants in ",
                   "Museums in ", "Mountains of ", "Libraries in ", "Houses in", "Skyscrapers in ", "Historic sites in",
                   "Buildings and structures ", "American architecture", "Entertainment events "],
