@@ -17,7 +17,7 @@ def filter_tags(tags):
     ''' Filter out lifecycle prefixes like was: and disused: '''
 
     prefixes = ('disused', 'was', 'abandoned', 'demolished',
-                'destroyed', 'ruins')
+                'destroyed', 'ruins', 'historic')
 
     return {tag for tag in tags
             if not any(tag.startswith(prefix + ':') for prefix in prefixes)}
