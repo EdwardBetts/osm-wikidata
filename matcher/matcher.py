@@ -99,8 +99,11 @@ def get_ending_from_criteria(tags):
     return endings
 
 def could_be_building(tags, instanceof):
-    if tags == {'place=neighbourhood', 'landuse=residential'}:
+    place_tags = {'place', 'place=neighbourhood', 'landuse=residential',
+                  'boundary=administrative', 'admin_level'}
+    if tags.issubset(place_tags):
         return False  # human settlement
+
     if any(tag.startswith('building') for tag in tags):
         return True
 
