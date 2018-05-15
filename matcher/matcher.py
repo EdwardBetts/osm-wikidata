@@ -236,6 +236,9 @@ def bad_building_match(amenity, name_match, item):
 
     is_a_station = item.is_a_station()
 
+    if is_a_station and 'townhall' in amenity:
+        return True
+
     for osm, detail_list in name_match.items():
         for match_type, value, source in detail_list:
             if not (match_type == 'both_trimmed' or
