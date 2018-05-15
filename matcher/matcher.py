@@ -345,8 +345,8 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
-        building_only_match = (matching_tags == {'building'} or
-                               matching_tags == {'building=yes'})
+        building_tags = {'building', 'building=yes', 'historic:building'}
+        building_only_match = matching_tags.issubset(building_tags)
 
         amenity = set(osm_tags['amenity'].split(';')
                       if 'amenity' in osm_tags else [])
