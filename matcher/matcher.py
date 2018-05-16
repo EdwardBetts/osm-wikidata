@@ -372,9 +372,11 @@ def find_item_matches(cur, item, prefix, debug=False):
             continue  # nearby match OSM bus stop matching non-bus stop
 
         if (name_match and not identifier_match and not address_match and
-                building_only_match and
-                bad_building_match(osm_tags, name_match, item)):
-            continue
+                building_only_match):
+            if bad_building_match(osm_tags, name_match, item):
+                continue
+            if item.is_a_stadium() and 'restaurant' in amenity:
+                continue
 
         if (matching_tags == {'natural=peak'} and
                 item.is_mountain_range and
