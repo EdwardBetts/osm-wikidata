@@ -230,23 +230,25 @@ def find_matching_tags(osm, wikidata):
             matching.add(wikidata_tag)
     return tag_and_key_if_possible(matching)
 
-def bad_building_match(amenity, name_match, item):
-    if amenity and ('parking' in amenity or 'place_of_worship' in amenity):
-        return True
+def bad_building_match(osm_tags, name_match, item):
+    if 'amenity' in osm_tags:
+        amenity = set(osm_tags['amenity'].split(';'))
+        if 'parking' in amenity or 'place_of_worship' in amenity:
+            return True
 
     if not name_match:
         return False
 
-    is_a_station = item.is_a_station()
-
-    if is_a_station and 'townhall' in amenity:
-        return True
+    wd_station = item.is_a_station()
+    osm_station = any(k.endswith('railway') and v in {'station', 'halt'}
+                      for k, v in osm_tags.items())
+    is_station = wd_station or osm_station
 
     for osm, detail_list in name_match.items():
         for match_type, value, source in detail_list:
             if not (match_type == 'both_trimmed' or
                     (osm == 'operator' and match_type == 'wikidata_trimmed') or
-                    (match_type == 'wikidata_trimmed' and is_a_station)):
+                    (match_type == 'wikidata_trimmed' and is_station)):
                 return False
 
     return True
@@ -371,7 +373,7 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         if (name_match and not identifier_match and not address_match and
                 building_only_match and
-                bad_building_match(amenity, name_match, item)):
+                bad_building_match(osm_tags, name_match, item)):
             continue
 
         if (matching_tags == {'natural=peak'} and
