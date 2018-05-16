@@ -410,6 +410,24 @@ class Item(Base):
         return any(any(cat in item_cat.lower() for cat in cats)
                    for item_cat in (self.categories or []))
 
+    def is_a_stadium(self):
+        isa = {
+            'Q483110',   # stadium
+            'Q641226',   # arena
+            'Q1076486',  # sports venue
+        }
+        if set(self.instanceof()) & isa:
+            return True
+
+        cats = {'football venues', 'ice rinks', 'stadiums', 'velodromes',
+                'cycling venues', 'grounds'}
+
+        return any(any(cat in item_cat.lower() for cat in cats)
+                   for item_cat in (self.categories or []))
+
+    def is_a_school(self):
+        return 'amenity=school' in self.tags
+
     def skip_item_during_match(self):
         ''' cebwiki and svwiki contain lots of poor quality stubs
         best to skip items that are only cebwiki or cebwiki + svwiki
