@@ -375,7 +375,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                 building_only_match):
             if bad_building_match(osm_tags, name_match, item):
                 continue
-            if item.is_a_stadium() and 'restaurant' in amenity:
+            wd_stadium = item.is_a_stadium()
+            if (wd_stadium and 'amenity=restaurant' not in item.tags and
+                    'restaurant' in amenity):
+                continue
+            if wd_stadium and osm_tags.get('shop') == 'supermarket':
                 continue
 
         if (matching_tags == {'natural=peak'} and
