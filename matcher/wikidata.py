@@ -87,6 +87,7 @@ extra_keys = {
     'Q28045079': ['Tag:historic=archaeological_site',
                   'Tag:site_type=fortification',
                   'Tag:embankment=yes'],        # contour fort
+    'Q515': ['Tag:border_type=city'],           # city
 }
 
 # search for items in bounding box that have an English Wikipedia article
