@@ -166,7 +166,7 @@
 {
     "cats": ["Restaurants by country"],
     "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli", "shop=bakery"],
-    "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge"],
+    "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge", "bakery"],
     "check_housename": true,
     "wikidata": "Q11707",
     "dist": 6
