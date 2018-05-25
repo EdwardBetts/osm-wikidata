@@ -621,16 +621,22 @@ def names_from_entity(entity, skip_lang=None):
 
     commonscats = entity.get('claims', {}).get('P373', [])
     for i in commonscats:
+        if 'datavalue' not in i['mainsnak']:
+            continue
         value = i['mainsnak']['datavalue']['value']
         ret[value].append(('commonscat', None))
 
     officialname = entity.get('claims', {}).get('P1448', [])
     for i in officialname:
+        if 'datavalue' not in i['mainsnak']:
+            continue
         value = i['mainsnak']['datavalue']['value']
         ret[value['text']].append(('officialname', value['language']))
 
     nativelabel = entity.get('claims', {}).get('P1705', [])
     for i in nativelabel:
+        if 'datavalue' not in i['mainsnak']:
+            continue
         value = i['mainsnak']['datavalue']['value']
         ret[value['text']].append(('nativelabel', value['language']))
 
