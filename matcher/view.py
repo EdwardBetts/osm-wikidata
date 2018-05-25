@@ -8,7 +8,7 @@ from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response, session
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
@@ -144,7 +144,6 @@ def navbar():
 
 @app.route('/login')
 def login_route():
-    session.clear()
     return redirect(url_for('social.auth',
                             backend='openstreetmap',
                             next=request.args.get('next')))
