@@ -45,11 +45,11 @@
 
 <td class="text-right">{{ '{:,d}'.format(obj.update_count) }}</td>
 
-<td class="text-right">
+<td class="text-right text-nowrap">
     {% if obj.place %}
       {% set area = obj.place.area_in_sq_km %}
       {% if area %}
-        {{ '{:,.1f}'.format(obj.place.area_in_sq_km) }} km&sup2;
+        {{ '{:,.1f}'.format(obj.place.area_in_sq_km) }}&nbsp;km&sup2;
       {% else %}
         unknown
       {% endif %}
