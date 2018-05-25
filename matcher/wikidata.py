@@ -9,6 +9,7 @@ import os
 import json
 
 page_size = 50
+report_missing_values = False
 wd_entity = 'http://www.wikidata.org/entity/Q'
 enwiki = 'https://en.wikipedia.org/wiki/'
 skip_tags = {'route:road',
@@ -622,7 +623,8 @@ def names_from_entity(entity, skip_lang=None):
     commonscats = entity.get('claims', {}).get('P373', [])
     for i in commonscats:
         if 'datavalue' not in i['mainsnak']:
-            mail.datavalue_missing('commons category', entity)
+            if report_missing_values:
+                mail.datavalue_missing('commons category', entity)
             continue
         value = i['mainsnak']['datavalue']['value']
         ret[value].append(('commonscat', None))
@@ -630,7 +632,8 @@ def names_from_entity(entity, skip_lang=None):
     officialname = entity.get('claims', {}).get('P1448', [])
     for i in officialname:
         if 'datavalue' not in i['mainsnak']:
-            mail.datavalue_missing('official name', entity)
+            if report_missing_values:
+                mail.datavalue_missing('official name', entity)
             continue
         value = i['mainsnak']['datavalue']['value']
         ret[value['text']].append(('officialname', value['language']))
@@ -638,7 +641,8 @@ def names_from_entity(entity, skip_lang=None):
     nativelabel = entity.get('claims', {}).get('P1705', [])
     for i in nativelabel:
         if 'datavalue' not in i['mainsnak']:
-            mail.datavalue_missing('native label', entity)
+            if report_missing_values:
+                mail.datavalue_missing('native label', entity)
             continue
         value = i['mainsnak']['datavalue']['value']
         ret[value['text']].append(('nativelabel', value['language']))
