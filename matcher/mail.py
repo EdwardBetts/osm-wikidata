@@ -1,6 +1,7 @@
 from flask import current_app, g, request, has_request_context
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
+from pprint import pformat
 import smtplib
 import traceback
 import sys
@@ -130,4 +131,11 @@ def send_traceback(info):
     exception_name = sys.exc_info()[0].__name__
     subject = f'osm-wikidata error: {exception_name}'
     body = f'user: {get_username()}\n' + info + '\n' + traceback.format_exc()
+    send_mail(subject, body)
+
+def datavalue_missing(field, entity):
+    qid = entity['title']
+    body = f'https://www.wikidata.org/wiki/{qid}\n\n{pformat(entity)}'
+
+    subject = f'{qid}: datavalue missing in {field}'
     send_mail(subject, body)
