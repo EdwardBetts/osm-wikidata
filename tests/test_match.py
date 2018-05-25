@@ -466,3 +466,9 @@ def test_match_with_place_names():
                    'United States of America']
 
     assert match.name_match(osm, wd, place_names=place_names)
+
+def test_no_trim_s_on_single_term_name():
+    osm = 'Boots'
+    wd = 'The Boot Inn'
+
+    assert not match.name_match(osm, wd, endings=['inn'])

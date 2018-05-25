@@ -57,7 +57,7 @@ def tidy_name(n):
     n = n.replace(' incorporated', ' inc')
     n = n.replace(' cooperative', ' coop')
     n = n.replace(' co-operative', ' coop')
-    if len(n) > 1 and n[-1] == 's':
+    if len(n) > 1 and n[-1] == 's' and ' ' in n:
         n = n[:-1]
     if not n.lstrip().startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '')
