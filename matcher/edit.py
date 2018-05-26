@@ -1,5 +1,4 @@
 from flask import g
-from sqlalchemy import func
 from . import user_agent_headers, database
 from .model import Changeset
 import requests
@@ -56,7 +55,7 @@ def save_element(osm_type, osm_id, element_data):
     return r
 
 def record_changeset(**kwargs):
-    change = Changeset(created=func.now(), user=g.user, **kwargs)
+    change = Changeset(created=database.now_utc(), user=g.user, **kwargs)
 
     database.session.add(change)
     database.session.commit()

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, func
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.engine import reflection
 from social.apps.flask_app.default.models import init_social
@@ -37,3 +37,6 @@ where a.place_id = place.place_id group by place.place_id, display_name, state, 
     engine = session.bind
 
     return engine.execute(text(sql_big_polygon_tables))
+
+def now_utc():
+    return func.timezone('utc', func.now())

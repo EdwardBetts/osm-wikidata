@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
 from sqlalchemy.orm.collections import attribute_mapped_collection
-from .database import session
+from .database import session, now_utc
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia, country_units, utils
 from .overpass import oql_from_tag
@@ -39,7 +39,7 @@ class User(Base, UserMixin):
     name = Column(String)
     email = Column(String)
     active = Column(Boolean, default=True)
-    sign_up = Column(DateTime, default=func.now())
+    sign_up = Column(DateTime, default=now_utc())
     is_admin = Column(Boolean, default=False)
     description = Column(Text)
     img = Column(String)
@@ -814,7 +814,7 @@ class BadMatch(Base):
     osm_id = Column(BigInteger, primary_key=True)
     osm_type = Column(osm_type_enum, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
-    created = Column(DateTime, default=func.now())
+    created = Column(DateTime, default=now_utc())
     comment = Column(Text)
 
     item_candidate = relationship(ItemCandidate,

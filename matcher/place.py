@@ -8,7 +8,7 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
-from .database import session, get_tables
+from .database import session, get_tables, now_utc
 from . import wikidata, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
 from collections import Counter
 from .overpass import oql_from_tag
@@ -95,7 +95,7 @@ class Place(Base):
     override_name = Column(String)
     lat = Column(Float)
     lon = Column(Float)
-    added = Column(DateTime, default=func.now())
+    added = Column(DateTime, default=now_utc())
     wikidata_query_timeout = Column(Boolean, default=False)
     wikidata = Column(String)
     item_types_retrieved = Column(Boolean, default=False)
@@ -1218,7 +1218,7 @@ class Place(Base):
 
 class PlaceMatcher(Base):
     __tablename__ = 'place_matcher'
-    start = Column(DateTime, default=func.now(), primary_key=True)
+    start = Column(DateTime, default=now_utc(), primary_key=True)
     end = Column(DateTime)
     osm_type = Column(osm_type_enum, primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
@@ -1249,7 +1249,7 @@ class PlaceMatcher(Base):
             return self.end - self.start
 
     def complete(self):
-        self.end = func.now()
+        self.end = now_utc()
         session.commit()
 
 def get_top_existing(limit=39):
