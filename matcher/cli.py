@@ -2,7 +2,7 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring, wikidata
+from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
 from datetime import datetime, timedelta
 from tabulate import tabulate
@@ -930,6 +930,23 @@ def identifier_match_only():
         if c.name_match:
             continue
         print(c.tags, dict(c.item.names()))
+
+@app.cli.command()
+def add_missing_edits():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Changeset.query.order_by(Changeset.id)
+    for changeset in q:
+        if changeset.edits:
+            continue
+        changeset_id = changeset.id
+        root = osm_api.get_changeset(changeset_id)
+        edits = osm_api.parse_osm_change(root)
+        print(changeset_id, len(edits))
+        database.session.add_all(edits)
+        database.session.commit()
+        sleep(1)
 
 @app.cli.command()
 def refresh_all_extracts():
