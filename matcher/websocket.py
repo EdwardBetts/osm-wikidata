@@ -3,7 +3,7 @@ from time import time, sleep
 from .place import Place, bbox_chunk
 from . import wikipedia, database, wikidata, netstring, utils, edit, mail
 from flask_login import current_user
-from .model import ItemCandidate
+from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
@@ -489,6 +489,12 @@ def process_match(ws_sock, changeset_id, m):
 
     osm.tags['wikidata'] = m['qid']
     flag_modified(osm, 'tags')
+    db_edit = ChangesetEdit(changeset_id=changeset_id,
+                            item_id=item_id,
+                            osm_id=osm_id,
+                            osm_type=osm_type)
+    database.session.add(db_edit)
+    database.session.commit()
 
     return 'saved'
 
