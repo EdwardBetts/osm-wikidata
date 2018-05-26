@@ -800,7 +800,7 @@ class ChangesetEdit(Base):
     saved = Column(DateTime, default=now_utc(), nullable=False)
 
     changeset = relationship('Changeset',
-                             backref=backref('matches', lazy='dynamic'))
+                             backref=backref('edits', lazy='dynamic'))
 
 class BadMatch(Base):
     __tablename__ = 'bad_match'
