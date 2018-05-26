@@ -797,6 +797,7 @@ class ChangesetEdit(Base):
     item_id = Column(Integer, primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
     osm_type = Column(osm_type_enum, primary_key=True)
+    saved = Column(DateTime, default=now_utc(), nullable=False)
 
     changeset = relationship('Changeset',
                              backref=backref('matches', lazy='dynamic'))
