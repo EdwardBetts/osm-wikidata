@@ -68,5 +68,6 @@ it will be left alone.
 
 * Code: <https://github.com/EdwardBetts/osm-wikidata>
 * Tasks: <https://github.com/EdwardBetts/osm-wikidata/issues>
+* All timestamps stored in the database should be in UTC.
 
 <!--- vim: set syntax=markdown tw=80 spell: --->
