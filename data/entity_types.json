@@ -234,6 +234,22 @@
     "dist": 2
 },
 {
+    "cats": ["Lifeboat stations"],
+    "tags": ["amenity=lifeboat_station"],
+    "trim": ["lifeboat station"],
+    "check_housename": true,
+    "wikidata": "Q11997323",
+    "dist": 1
+},
+{
+    "cats": ["Signal boxes"],
+    "tags": ["railway=signal_box"],
+    "trim": ["signal box"],
+    "check_housename": false,
+    "wikidata": "Q39015397",
+    "dist": 1
+},
+{
     "cats": ["Commercial buildings by country", "Office buildings by country"],
     "tags": ["building=office", "building=commercial", "landuse=commercial", "office"],
     "trim": ["building", "tower", "shopping centre", "shopping center"],
@@ -537,7 +553,7 @@
 {
     "cats": ["Railway stations", "Railroad stations", "Train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations", "service stations", "filling stations"],
+                     "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area",
              "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de",
@@ -548,7 +564,7 @@
 {
     "cats": ["Disused railway stations", "Disused railroad stations", "Disused train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations", "service stations", "filling stations"],
+                     "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["disused=station", "railway=disused_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
@@ -558,7 +574,7 @@
     "name": "Rapid transit stations",
     "cats": ["stations", "rapid transit"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
-                     "police stations", "radio stations", "service stations", "filling stations"],
+                     "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop",
              "public_transport=station"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop",
