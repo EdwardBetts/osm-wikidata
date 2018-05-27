@@ -396,10 +396,13 @@ class Item(Base):
         return 'Q811683' in (self.instanceof() or [])
 
     def is_a_historic_district(self):
-        return ('Q15243209' in (self.instanceof() or []) or
-                any(cat.startswith('Historic district') and
-                    not cat.startswith('Historic district contributing properties')
-                    for cat in (self.categories or [])))
+        cats = self.categories or []
+        return (('Q15243209' in (self.instanceof() or []) or
+                    any(cat.startswith('Historic district') for cat in cats)) and
+                not any(cat.startswith('Historic district contributing properties') or
+                        cat.startswith('Churches') or
+                        cat.startswith('Towers') or
+                        cat.startswith('Buildings and structures') for cat in cats))
 
     def is_a_station(self):
         stations = {
