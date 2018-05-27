@@ -288,6 +288,12 @@ def test_match_name_abbreviation():
     assert match.name_match('St Peter', 'Saint Peter')
     assert match.name_match('Test Roman Catholic church', 'Test RC church')
 
+def test_church_name_match():
+    osm = 'Holy Trinity Church'
+    wd = 'Church Of The Holy Trinity'
+
+    assert match.name_match(osm, wd, endings=['church'])
+
 @pytest.mark.skip(reason="todo")
 def test_match_name_parish_church():
     osm = 'Church of St Peter & St Paul'
