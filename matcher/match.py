@@ -17,7 +17,7 @@ re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
-re_strip_words = re.compile('([ -])(?:the|and|at|of[- ]the|of|de|di|le|la|les|von|pw\.)[ -]')
+re_strip_words = re.compile(r'([ -])(?:the|and|at|of|de|di|le|la|les|von|pw\.)(?=\1)')
 
 MatchType = Enum('Match', ['good', 'wikidata_trimmed', 'both_trimmed', 'trim',
                            'address', 'initials', 'initials_trim'])
