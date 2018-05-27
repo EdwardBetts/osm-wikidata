@@ -968,8 +968,8 @@ def check_saved_edits():
     for edit in q:
         ret = matcher.check_item_candidate(edit.candidate)
         item = edit.candidate.item
-        if not ret:
-            print(item.qid, item.label(), 'no match')
+        if 'reject' in ret:
+            print(item.qid, item.label(), ret['reject'])
         else:
             continue
             print(item.qid, item.label())
