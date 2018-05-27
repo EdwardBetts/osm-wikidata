@@ -412,6 +412,97 @@ def find_item_matches(cur, item, prefix, debug=False):
         candidates.append(candidate)
     return filter_distant(candidates)
 
+def check_item_candidate(candidate):
+    item, osm_tags = candidate.item, candidate.tags
+    cats = item.categories or []
+    item_identifiers = item.get_item_identifiers()
+    wikidata_names = item.names()
+
+    wikidata_tags = item.calculate_tags()
+
+    endings = get_ending_from_criteria(item.tags)
+    endings |= item.more_endings_from_isa()
+
+    place_names = item.place_names()
+    instanceof = set(item.instanceof())
+
+    try:
+        admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
+    except Exception:
+        admin_level = None
+
+    if item.is_a_historic_district() and 'building' in osm_tags:
+        return False  # historic district shouldn't match building
+    identifier_match = match.check_identifier(osm_tags, item_identifiers)
+    if not identifier_match:
+        if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
+            return False
+
+    address_match = match.check_name_matches_address(osm_tags,
+                                                     wikidata_names)
+
+    if address_match is False:  # OSM and Wikidata addresses differ
+        return
+
+    if (not address_match and
+            match.check_for_address_in_extract(osm_tags, item.extract)):
+        address_match = True
+
+    name_match = match.check_for_match(osm_tags, wikidata_names, endings,
+                                       place_names=place_names)
+
+    if not (identifier_match or address_match or name_match):
+        return
+
+    matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+
+    building_tags = {'building', 'building=yes', 'historic:building'}
+    building_only_match = matching_tags.issubset(building_tags)
+
+    amenity = set(osm_tags['amenity'].split(';')
+                  if 'amenity' in osm_tags else [])
+
+    if (building_only_match and
+            address_match and
+            not name_match and
+            not identifier_match and
+            'amenity=school' in item.tags and
+            'amenity=restaurant' not in item.tags and
+            'restaurant' in amenity and 'school' not in amenity):
+        return  # Wikidata school shouldn't match OSM restaurant
+
+    if ((not matching_tags or building_only_match) and
+            instanceof == {'Q34442'}):
+        return  # nearby road match
+
+    if (not matching_tags and
+            is_osm_bus_stop(osm_tags) and
+            'Q953806' not in instanceof):
+        return  # nearby match OSM bus stop matching non-bus stop
+
+    if (name_match and not identifier_match and not address_match and
+            building_only_match):
+        if bad_building_match(osm_tags, name_match, item):
+            return
+        wd_stadium = item.is_a_stadium()
+        if (wd_stadium and 'amenity=restaurant' not in item.tags and
+                'restaurant' in amenity):
+            return
+        if wd_stadium and osm_tags.get('shop') == 'supermarket':
+            return
+
+    if (matching_tags == {'natural=peak'} and
+            item.is_mountain_range and
+            candidate.dist > 100):
+        return
+
+    return {
+        'identifier_match': identifier_match,
+        'address_match': address_match,
+        'name_match': name_match,
+        'matching_tags': matching_tags,
+    }
+
 def run_individual_match(place, item):
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
