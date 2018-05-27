@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from collections import defaultdict
 from unidecode import unidecode
+from num2words import num2words
 from .utils import remove_start, normalize_url, any_upper
 
 import re
@@ -13,6 +14,8 @@ re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
+
+re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
 re_strip_words = re.compile('([ -])(?:the|and|at|of|de|di|le|la|les|von|pw\.)[ -]')
 
@@ -330,6 +333,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
             return match
 
 def normalize_name(name):
+    name = re_ordinal_number.sub(lambda m: num2words(int(m.group(1)), to='ordinal'), name)
     return re_strip_non_chars.sub('', name.lower())
 
 def has_address(osm_tags):
@@ -394,7 +398,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:housenumber'] +
-                                     osm_tags['addr:street'])
+                                     ' ' + osm_tags['addr:street'])
         if any(name == osm_address for name in norm_number_start):
             return True
 

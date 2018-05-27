@@ -352,14 +352,24 @@ def test_check_name_matches_address():
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
     tags = {
+        'name': '100 East Wisconsin',
         'addr:state': 'WI',
         'addr:street': 'East Wisconsin Avenue',
         'addr:city': 'Milwaukee',
         'addr:postcode': '53202',
         'addr:housenumber': '100',
-        'name': '100 East Wisconsin',
     }
     wd_address = '100 East Wisconsin'
+    assert match.check_name_matches_address(tags, [wd_address]) is not False
+
+    tags = {
+        'name': '1000 Second Avenue',
+        'addr:housenumber': '1000',
+        'addr:street': '2nd Avenue',
+        'addr:city': 'Seattle',
+        'addr:postcode': '98104',
+    }
+    wd_address = '1000 Second Avenue'
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
 def test_check_name_matches_address_postcode():
