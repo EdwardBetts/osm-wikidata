@@ -251,7 +251,7 @@ class Item(Base):
         if matcher.could_be_building(tags, instanceof):
             tags.add('building')
             if any(n.lower().endswith(' church') for n in self.names().keys()):
-                tags += {'amenity=place_of_worship', 'building=church'}
+                tags.update({'amenity=place_of_worship', 'building=church'})
 
         tags |= self.ref_keys | self.disused_tags()
         tags -= ignore_tags
