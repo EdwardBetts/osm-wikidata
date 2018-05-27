@@ -400,11 +400,14 @@ class Item(Base):
         return (('Q15243209' in (self.instanceof() or []) or
                     any(cat.startswith('Historic district') for cat in cats)) and
                 not any(cat.startswith('Historic district contributing properties') or
-                        cat.startswith('Churches') or
-                        cat.startswith('Towers') or
-                        cat.startswith('Educational institutions') or
-                        cat.startswith('Schools') or
-                        cat.startswith('Buildings and structures') for cat in cats))
+                        cat.startswith('Churches ') or
+                        cat.startswith('Towers ') or
+                        cat.startswith('Educational institutions ') or
+                        cat.startswith('Schools ') or
+                        cat.startswith('Houses ') or
+                        cat.startswith('Historic house ') or
+                        cat.startswith('Museums ') or
+                        cat.startswith('Buildings and structures ') for cat in cats))
 
     def is_a_station(self):
         stations = {
