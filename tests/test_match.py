@@ -223,6 +223,8 @@ def test_name_match():
     assert match.name_match('Rainbow Grocery Coop',
                             'Rainbow Grocery Cooperative')
 
+    assert match.name_match('Kirkwood Inn', "Kirkwood's", endings=['inn'])
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
