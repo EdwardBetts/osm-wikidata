@@ -1,6 +1,6 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate
+from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate, ChangesetEdit
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
@@ -959,6 +959,21 @@ def add_missing_edits():
             print('missing candidate')
             database.session.rollback()
 
+@app.cli.command()
+def check_saved_edits():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = ChangesetEdit.query.order_by(ChangesetEdit.saved)
+    for edit in q:
+        ret = matcher.check_item_candidate(edit.candidate)
+        item = edit.candidate.item
+        if not ret:
+            print(item.qid, item.label(), 'no match')
+        else:
+            continue
+            print(item.qid, item.label())
+            pprint(ret)
 
 @app.cli.command()
 def refresh_all_extracts():
