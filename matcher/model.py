@@ -402,6 +402,8 @@ class Item(Base):
                 not any(cat.startswith('Historic district contributing properties') or
                         cat.startswith('Churches') or
                         cat.startswith('Towers') or
+                        cat.startswith('Educational institutions') or
+                        cat.startswith('Schools') or
                         cat.startswith('Buildings and structures') for cat in cats))
 
     def is_a_station(self):
