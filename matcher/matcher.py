@@ -432,17 +432,17 @@ def check_item_candidate(candidate):
         admin_level = None
 
     if item.is_a_historic_district() and 'building' in osm_tags:
-        return False  # historic district shouldn't match building
+        return {'reject': "historic district shouldn't match building"}
     identifier_match = match.check_identifier(osm_tags, item_identifiers)
     if not identifier_match:
         if any(c.startswith('Cities ') for c in cats) and admin_level == 10:
-            return False
+            return {'reject': 'bad city match'}
 
     address_match = match.check_name_matches_address(osm_tags,
                                                      wikidata_names)
 
     if address_match is False:  # OSM and Wikidata addresses differ
-        return
+        return {'reject': 'OSM and Wikidata addresses differ'}
 
     if (not address_match and
             match.check_for_address_in_extract(osm_tags, item.extract)):
@@ -452,7 +452,7 @@ def check_item_candidate(candidate):
                                        place_names=place_names)
 
     if not (identifier_match or address_match or name_match):
-        return
+        return {'reject': 'no match'}
 
     matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
@@ -469,32 +469,32 @@ def check_item_candidate(candidate):
             'amenity=school' in item.tags and
             'amenity=restaurant' not in item.tags and
             'restaurant' in amenity and 'school' not in amenity):
-        return  # Wikidata school shouldn't match OSM restaurant
+        return {'reject': "Wikidata school shouldn't match OSM restaurant"}
 
     if ((not matching_tags or building_only_match) and
             instanceof == {'Q34442'}):
-        return  # nearby road match
+        return {'reject': 'nearby road match'}
 
     if (not matching_tags and
             is_osm_bus_stop(osm_tags) and
             'Q953806' not in instanceof):
-        return  # nearby match OSM bus stop matching non-bus stop
+        return {'reject': 'nearby match OSM bus stop matching non-bus stop'}
 
     if (name_match and not identifier_match and not address_match and
             building_only_match):
         if bad_building_match(osm_tags, name_match, item):
-            return
+            return {'reject': 'bad building match'}
         wd_stadium = item.is_a_stadium()
         if (wd_stadium and 'amenity=restaurant' not in item.tags and
                 'restaurant' in amenity):
-            return
+            return {'reject': "stadium shouldn't match restaurant"}
         if wd_stadium and osm_tags.get('shop') == 'supermarket':
-            return
+            return {'reject': "stadium shouldn't match supermarket"}
 
     if (matching_tags == {'natural=peak'} and
             item.is_mountain_range and
             candidate.dist > 100):
-        return
+        return {'reject': "mountain range shouldn't match peak"}
 
     return {
         'identifier_match': identifier_match,
