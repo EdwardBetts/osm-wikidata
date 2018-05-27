@@ -397,6 +397,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
                                      osm_tags['addr:street'])
         if any(name == osm_address for name in norm_number_start):
             return True
+
         for i in number_start:
             name, _, postcode_start = i.rpartition(' ')
 
@@ -406,6 +407,9 @@ def check_name_matches_address(osm_tags, wikidata_names):
             if (re_uk_postcode_start.match(postcode_start) and
                     normalize_name(name) == osm_address):
                 return True
+
+        if any(name.startswith(osm_address) for name in norm_number_start):
+            return  # not sure
 
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])

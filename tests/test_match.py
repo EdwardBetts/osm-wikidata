@@ -341,6 +341,16 @@ def test_check_name_matches_address():
     tags = {'addr:full': 'Station Road'}
     assert not match.check_name_matches_address(tags, ['12 Station Road'])
 
+    tags = {
+        'addr:street': 'Krakowskie Przedmieście',
+        'addr:housenumber': '66',
+        'addr:postcode': '00-322',
+        'name': 'Centralna Biblioteka Rolnicza',
+    }
+
+    wd_address = '66 Krakowskie Przedmieście Street in Warsaw'
+    assert match.check_name_matches_address(tags, [wd_address]) is not False
+
 def test_check_name_matches_address_postcode():
     tags = {
         'addr:housenumber': '12',
