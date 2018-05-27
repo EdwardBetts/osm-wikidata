@@ -372,6 +372,15 @@ def test_check_name_matches_address():
     wd_address = '1000 Second Avenue'
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
+    tags = {
+        'name': '1300 Lafayette East Cooperative',
+        'addr:housenumber': '1300',
+        'addr:street': 'Lafayette Street East',
+        'addr:city': 'Detroit',
+    }
+    wd_address = '1300 Lafayette East Cooperative'
+    assert match.check_name_matches_address(tags, [wd_address]) is not False
+
 def test_check_name_matches_address_postcode():
     tags = {
         'addr:housenumber': '12',

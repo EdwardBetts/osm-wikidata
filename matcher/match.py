@@ -386,6 +386,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
     number_start = {m.group(1) for m in (re_number_start.match(name) for name in wikidata_names) if m}
     if not number_start:
         return
+
     strip_comma = [name[:name.rfind(',')]
                    for name in set(number_start)
                    if ',' in name]
@@ -428,7 +429,11 @@ def check_name_matches_address(osm_tags, wikidata_names):
                     normalize_name(name) == osm_address):
                 return True
 
-    return False
+    # if we find a name from wikidata matches the OSM name we can be more relaxed
+    # about the address
+    name_match = 'name' in osm_tags and any(n == osm_tags['name'] for n in number_start)
+
+    return None if name_match else False
 
 def get_names(osm_tags):
     return {k: v for k, v in osm_tags.items()
