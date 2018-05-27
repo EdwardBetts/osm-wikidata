@@ -142,6 +142,17 @@ def test_name_match_numbers():
     }
     assert not match.check_for_match(osm_tags, wikidata_names)
 
+def test_name_with_dashes():
+    wikidata = "Hôpital Saint-François d'Assise"
+    osm = "Hôpital Saint-François-d'Assise"
+
+    assert match.name_match(osm, wikidata)
+
+    wikidata = 'Walton-on-the-Hill'
+    osm = 'Walton on the Hill'
+
+    assert match.name_match(osm, wikidata)
+
 def test_russian_doesnt_match_number():
     assert not match.name_match_main('1', '1-й общественный совет')
 

@@ -8,10 +8,13 @@ import re
 from enum import Enum
 
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
+re_strip_non_chars_and_dash = re.compile(r'[^@\w]', re.U)
 re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
+
+re_strip_words = re.compile('([ -])(?:the|and|at|of|de|di|le|la|les|von|pw\.)[ -]')
 
 MatchType = Enum('Match', ['good', 'wikidata_trimmed', 'both_trimmed', 'trim',
                            'address', 'initials', 'initials_trim'])
@@ -60,10 +63,8 @@ def tidy_name(n):
     if len(n) > 1 and n[-1] == 's' and ' ' in n:
         n = n[:-1]
     if not n.lstrip().startswith('s '):
-        n = n.replace('s ', ' ').replace("s' ", '')
-    for word in ('the', 'and', 'at', 'of', 'de', 'di', 'le', 'la', 'les',
-                 'von', 'pw.'):
-        n = n.replace(' {} '.format(word), ' ')
+        n = n.replace('s ', ' ').replace("s' ", '').replace('s-', '-')
+    n = re_strip_words.sub(lambda m: m.group(1), n)
     if n.startswith('the '):
         n = n[4:]
     n = n.replace('center', 'centre').replace('theater', 'theatre')
@@ -110,9 +111,12 @@ def match_with_words_removed(osm, wd, words):
                           else MatchType.wikidata_trimmed)
             return Match(match_type)
 
-def strip_non_chars_match(osm, wd):
-    wc_stripped = re_strip_non_chars.sub('', wd)
-    osm_stripped = re_strip_non_chars.sub('', osm)
+def strip_non_chars_match(osm, wd, dash_okay=True):
+    pattern = re_strip_non_chars if dash_okay else re_strip_non_chars_and_dash
+
+    wc_stripped = pattern.sub('', wd)
+    osm_stripped = pattern.sub('', osm)
+
     return wc_stripped and osm_stripped and wc_stripped == osm_stripped
 
 def prefix_name_match(osm, wd):
@@ -205,6 +209,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
     wd_lc = wd.lower()
     osm_lc = osm.lower()
 
+    if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
+        return Match(MatchType.good)
+
     m = initials_match(osm, wd, endings) or initials_match(wd, osm, endings)
     if m:
         return m
@@ -231,6 +238,10 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     if wd_lc == osm_lc:
         return Match(MatchType.good)
+
+    if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
+        return Match(MatchType.good)
+
     if 'washington, d' in wd_lc:  # special case for Washington, D.C.
         wd_lc = wd_lc.replace('washington, d', 'washington d')
     comma = wd_lc.rfind(', ')
