@@ -969,7 +969,11 @@ def check_saved_edits():
         ret = matcher.check_item_candidate(edit.candidate)
         item = edit.candidate.item
         if 'reject' in ret:
-            print(item.qid, item.label(), ret['reject'])
+            if len(ret) == 1:
+                print((item.qid, item.label(), ret['reject']))
+            else:
+                print(item.qid, item.label())
+                pprint(ret)
         else:
             continue
             print(item.qid, item.label())

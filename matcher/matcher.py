@@ -483,7 +483,14 @@ def check_item_candidate(candidate):
     if (name_match and not identifier_match and not address_match and
             building_only_match):
         if bad_building_match(osm_tags, name_match, item):
-            return {'reject': 'bad building match'}
+            return {
+                'identifier_match': identifier_match,
+                'address_match': address_match,
+                'name_match': name_match,
+                'matching_tags': matching_tags,
+                'reject': 'bad building match',
+            }
+
         wd_stadium = item.is_a_stadium()
         if (wd_stadium and 'amenity=restaurant' not in item.tags and
                 'restaurant' in amenity):
