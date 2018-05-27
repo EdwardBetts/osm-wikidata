@@ -34,6 +34,10 @@ abbr = {
     'south': 's',
     'east': 'e',
     'west': 'w',
+    'northwest': 'nw',
+    'northeast': 'ne',
+    'southwest': 'sw',
+    'southeast': 'se',
 }
 re_abbr = re.compile(r'\b(' + '|'.join(abbr.keys()) + r')\b', re.I)
 
