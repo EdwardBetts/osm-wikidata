@@ -802,6 +802,9 @@ class ChangesetEdit(Base):
     changeset = relationship('Changeset',
                              backref=backref('edits', lazy='dynamic'))
 
+    candidate = relationship('ItemCandidate',
+                             backref=backref('edits', lazy='dynamic'))
+
 class BadMatch(Base):
     __tablename__ = 'bad_match'
     __table_args__ = (
