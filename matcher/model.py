@@ -375,7 +375,7 @@ class Item(Base):
             return self.entity.get('sitelinks')
 
     def is_mountain_range(self):
-        return 'Q46831' in self.instanceof
+        return 'Q46831' in self.instanceof()
 
     def is_proposed(self):
         '''is this item a proposed building or structure?'''
