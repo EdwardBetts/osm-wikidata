@@ -383,7 +383,7 @@ def find_item_matches(cur, item, prefix, debug=False):
                 continue
 
         if (matching_tags == {'natural=peak'} and
-                item.is_mountain_range and
+                item.is_mountain_range() and
                 dist > 100):
             continue
 
@@ -492,7 +492,7 @@ def check_item_candidate(candidate):
             return {'reject': "stadium shouldn't match supermarket"}
 
     if (matching_tags == {'natural=peak'} and
-            item.is_mountain_range and
+            item.is_mountain_range() and
             candidate.dist > 100):
         return {'reject': "mountain range shouldn't match peak"}
 
