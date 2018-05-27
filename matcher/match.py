@@ -408,7 +408,8 @@ def check_name_matches_address(osm_tags, wikidata_names):
                     normalize_name(name) == osm_address):
                 return True
 
-        if any(name.startswith(osm_address) for name in norm_number_start):
+        if any(name.startswith(osm_address) or osm_address.startswith(name)
+               for name in norm_number_start):
             return  # not sure
 
     if 'addr:full' in osm_tags:

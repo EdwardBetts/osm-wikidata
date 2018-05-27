@@ -351,6 +351,17 @@ def test_check_name_matches_address():
     wd_address = '66 Krakowskie Przedmieście Street in Warsaw'
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
+    tags = {
+        'addr:state': 'WI',
+        'addr:street': 'East Wisconsin Avenue',
+        'addr:city': 'Milwaukee',
+        'addr:postcode': '53202',
+        'addr:housenumber': '100',
+        'name': '100 East Wisconsin',
+    }
+    wd_address = '100 East Wisconsin'
+    assert match.check_name_matches_address(tags, [wd_address]) is not False
+
 def test_check_name_matches_address_postcode():
     tags = {
         'addr:housenumber': '12',
