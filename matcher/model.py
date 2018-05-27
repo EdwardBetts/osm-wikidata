@@ -354,7 +354,10 @@ class Item(Base):
 
         exclude = {'Defunct baseball venues in the United States',
                    'Defunct National Football League venues',
-                   'Enclosed roller coasters'}
+                   'Enclosed roller coasters',
+                   'Former civil parishes in England',
+                   'Capitals of former nations',
+                   'Former state capitals in the United States'}
 
         found = []
         for item_cat in self.categories or []:
