@@ -2,6 +2,7 @@ import requests
 import lxml.etree
 import os.path
 from . import model, utils
+from time import sleep
 
 base = 'https://www.openstreetmap.org/api/0.6/'
 
@@ -15,6 +16,7 @@ def get_changeset(changeset_id):
     r = requests.get(url)
     r.raise_for_status()
     open(filename, 'wb').write(r.content)
+    sleep(1)
     return lxml.etree.fromstring(r.content)
 
 def parse_osm_change(root):

@@ -13,6 +13,7 @@ from pprint import pprint
 from sqlalchemy.types import Enum
 from sqlalchemy.schema import CreateTable, CreateIndex
 from sqlalchemy.dialects.postgresql.base import CreateEnumType
+import sqlalchemy.exc
 import math
 import os.path
 import re
@@ -937,16 +938,27 @@ def add_missing_edits():
     database.init_app(app)
 
     q = Changeset.query.order_by(Changeset.id)
+    print(q.count())
     for changeset in q:
-        if changeset.edits:
+        if changeset.edits.count():
             continue
         changeset_id = changeset.id
         root = osm_api.get_changeset(changeset_id)
         edits = osm_api.parse_osm_change(root)
-        print(changeset_id, len(edits))
-        database.session.add_all(edits)
-        database.session.commit()
-        sleep(1)
+        missing_count = 0
+        for edit in edits:
+            item_candidate = ItemCandidate.query.get((edit.item_id, edit.osm_id, edit.osm_type))
+            if item_candidate:
+                database.session.add(edit)
+            else:
+                missing_count += 1
+        print(changeset_id, len(edits), missing_count)
+        try:
+            database.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            print('missing candidate')
+            database.session.rollback()
+
 
 @app.cli.command()
 def refresh_all_extracts():
