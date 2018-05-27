@@ -831,6 +831,8 @@ class Place(Base):
             # if this is a refresh we remove candidates that no longer match
             as_set = {(i['osm_type'], i['osm_id']) for i in candidates}
             for c in item.candidates[:]:
+                if c.edits.count():
+                    continue  # foreign keys mean we can't remove saved candidates
                 if (c.osm_type, c.osm_id) not in as_set:
                     c.bad_matches.delete()
                     session.delete(c)
