@@ -489,6 +489,7 @@ def check_item_candidate(candidate):
                 'name_match': name_match,
                 'matching_tags': matching_tags,
                 'place_names': place_names,
+                'osm_tags': osm_tags,
                 'reject': 'bad building match',
             }
 
@@ -510,6 +511,7 @@ def check_item_candidate(candidate):
         'name_match': name_match,
         'matching_tags': matching_tags,
         'place_names': place_names,
+        'osm_tags': osm_tags,
     }
 
 def run_individual_match(place, item):
