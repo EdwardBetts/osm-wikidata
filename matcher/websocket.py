@@ -23,6 +23,9 @@ re_point = re.compile('^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
 # - match found
 # - match not found
 
+class VersionMismatch(Exception):
+    pass
+
 class MatcherSocket(object):
     def __init__(self, socket, place):
         self.socket = socket
@@ -481,6 +484,8 @@ def process_match(ws_sock, changeset_id, m):
     try:
         edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
+        if e.status_code == 409 and 'Version mismatch' in r.text:
+            raise VersionMismatch
         mail.error_mail('error saving element',
                         element_data.decode('utf-8'),
                         e.response)
@@ -528,7 +533,13 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
 
         for num, m in enumerate(data['matches']):
             send('progress', qid=m['qid'], num=num)
-            result = process_match(ws_sock, changeset_id, m)
+            while True:
+                try:
+                    result = process_match(ws_sock, changeset_id, m)
+                except VersionMismatch:  # FIXME: limit number of attempts
+                    continue  # retry
+                else:
+                    break
             if result == 'saved':
                 update_count += 1
                 change.update_count = update_count
