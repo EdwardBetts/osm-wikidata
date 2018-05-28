@@ -69,7 +69,7 @@ def tidy_name(n):
     n = n.replace(' co-operative', ' coop')
     if n.startswith('the '):
         n = n[4:]
-    if len(n) > 1 and n[-1] == 's' and ' ' in n:
+    if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     elif n.endswith("'s"):
         n = n[:-2]
@@ -205,6 +205,12 @@ def name_containing_initials(n1, n2):
         return False
     return True
 
+def plural_word_name_in_other_name(n1, n2):
+    return (' ' not in n1 and
+            ' ' in n2 and n1.endswith('s') and
+            n1 not in n2 and
+            n1[:-1] in n2)
+
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
@@ -236,64 +242,71 @@ def name_match_main(osm, wd, endings=None, debug=False):
         if m:
             return m
 
-    wd_lc = tidy_name(wd_lc)
-    osm_lc = tidy_name(osm_lc)
+    wd_tidy = tidy_name(wd_lc)
+    osm_tidy = tidy_name(osm_lc)
 
-    if not wd_lc or not osm_lc:
+    if not wd_tidy or not osm_tidy:
         return
 
-    if wd_lc == osm_lc:
+    if wd_tidy == osm_tidy:
         return Match(MatchType.good)
+
+    plural_in_other_name = (plural_word_name_in_other_name(osm_lc, wd_lc) or
+                            plural_word_name_in_other_name(wd_lc, osm_lc))
 
     if endings:
         tidy_endings = [tidy_name(e) for e in endings]
-        m = match_with_words_removed(osm_lc, wd_lc, tidy_endings)
-        if m:
+        m = match_with_words_removed(osm_tidy, wd_tidy, tidy_endings)
+        if m and not plural_in_other_name:
             return m
 
-    if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
+    if strip_non_chars_match(osm_tidy, wd_tidy, dash_okay=False):
         return Match(MatchType.good)
 
-    if 'washington, d' in wd_lc:  # special case for Washington, D.C.
-        wd_lc = wd_lc.replace('washington, d', 'washington d')
-    comma = wd_lc.rfind(', ')
-    if comma != -1 and not osm_lc.isdigit():
-        wc_part1 = wd_lc[:comma]
-        if wc_part1 == osm_lc or strip_non_chars_match(osm_lc, wc_part1):
-            return Match(MatchType.good)
-    if wd_lc.split() == list(reversed(osm_lc.split())):
-        return Match(MatchType.good)
-
-    wd_lc = re_keep_commas.sub('', wd_lc)
-    osm_lc = re_keep_commas.sub('', osm_lc)
-
-    comma = wd_lc.rfind(', ')
-    if comma != -1 and not osm_lc.isdigit():
-        if wd_lc[:comma] == osm_lc:
-            return Match(MatchType.good)
-        if remove_start(wd_lc[:comma], 'the ') == remove_start(osm_lc, 'the '):
+    if 'washington, d' in wd_tidy:  # special case for Washington, D.C.
+        wd_tidy = wd_tidy.replace('washington, d', 'washington d')
+    comma = wd_tidy.rfind(', ')
+    if comma != -1 and not osm_tidy.isdigit():
+        wc_part1 = wd_tidy[:comma]
+        if wc_part1 == osm_tidy or strip_non_chars_match(osm_tidy, wc_part1):
             return Match(MatchType.good)
 
-    wd_lc = re_strip_non_chars.sub('', wd_lc)
-    osm_lc = re_strip_non_chars.sub('', osm_lc)
-    if wd_lc == osm_lc:
+    if wd_tidy.split() == list(reversed(osm_tidy.split())):
         return Match(MatchType.good)
 
-    if wd_lc.startswith('the'):
-        wd_lc = wd_lc[3:]
-    if osm_lc.startswith('the'):
-        osm_lc = osm_lc[3:]
-    if wd_lc == osm_lc:
+    wd_tidy = re_keep_commas.sub('', wd_tidy)
+    osm_tidy = re_keep_commas.sub('', osm_tidy)
+
+    comma = wd_tidy.rfind(', ')
+    if comma != -1 and not osm_tidy.isdigit():
+        if wd_tidy[:comma] == osm_tidy:
+            return Match(MatchType.good)
+        if remove_start(wd_tidy[:comma], 'the ') == remove_start(osm_tidy, 'the '):
+            return Match(MatchType.good)
+
+    wd_tidy = re_strip_non_chars.sub('', wd_tidy)
+    osm_tidy = re_strip_non_chars.sub('', osm_tidy)
+    if wd_tidy == osm_tidy:
         return Match(MatchType.good)
+
+    if wd_tidy.startswith('the'):
+        wd_tidy = wd_tidy[3:]
+    if osm_tidy.startswith('the'):
+        osm_tidy = osm_tidy[3:]
+    if wd_tidy == osm_tidy:
+        return Match(MatchType.good)
+
+    if plural_in_other_name:
+        return
 
     for end in ['building', 'complex'] + list(endings or []):
-        if wd_lc.endswith(end) and wd_lc[:-len(end)] == osm_lc:
+        if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
             return Match(MatchType.trim)
-        if wd_lc.startswith(end) and wd_lc[len(end):] == osm_lc:
+        if wd_tidy.startswith(end) and wd_tidy[len(end):] == osm_tidy:
             return Match(MatchType.trim)
-        if osm_lc.endswith(end) and osm_lc[:-len(end)] == wd_lc:
+        if osm_tidy.endswith(end) and osm_tidy[:-len(end)] == wd_tidy:
             return Match(MatchType.trim)
-        if osm_lc.startswith(end) and osm_lc[len(end):] == wd_lc:
+        if osm_tidy.startswith(end) and osm_tidy[len(end):] == wd_tidy:
             return Match(MatchType.trim)
     return
 

@@ -238,13 +238,18 @@ def test_name_match():
     cur = match.name_match(osm, wikidata)
     assert cur.match_type == match.MatchType.good
 
-    osm = 'Lombard Building'
+    osm = 'Lombard Buildings'
     wikidata = 'Lombard Building'
 
     cur = match.name_match(osm, wikidata, endings=['building'])
     assert cur.match_type == match.MatchType.good
 
     assert match.name_match('Boxers', 'The Boxers')
+
+    osm = 'The Landers'
+    wikidata = 'Landers Theatre'
+
+    assert match.name_match('The Landers', 'Landers Theatre', endings=['theatre'])
 
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
