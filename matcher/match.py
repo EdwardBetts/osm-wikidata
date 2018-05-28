@@ -507,9 +507,9 @@ def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None):
                     cache[(o, w)] = None
                     continue
                 # if we had to trim both names and the OSM name is from the
-                # housename or operator it doesn't count
+                # operator tag it doesn't count
                 if (m.match_type == MatchType.both_trimmed and
-                        osm_key in {'addr:housename', 'operator'}):
+                        osm_key == 'operator'):
                     continue
                 result = (m.match_type.name, w, source)
             if (result[0] == 'initials' and

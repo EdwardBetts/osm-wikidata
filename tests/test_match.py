@@ -251,6 +251,12 @@ def test_name_match():
 
     assert match.name_match('The Landers', 'Landers Theatre', endings=['theatre'])
 
+    osm = "St. Michael's Church"
+    wikidata = 'Church Of St Michael'
+
+    trim = ['church', 'church of']
+    assert match.name_match(osm, wikidata, endings=trim)
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
@@ -529,6 +535,22 @@ def test_check_for_match():
     endings = ['building']
     assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
 
+    osm_tags = {
+        'name': 'Westland London',
+        'shop': 'furniture',
+        'building': 'yes',
+        'addr:street': 'Leonard Street',
+        'addr:postcode': 'EC2A 4QX',
+        'addr:housename': "St. Michael's Church",
+    }
+    wd_names = {'Church Of St Michael': [('label', 'en')]}
+
+    expect = {'addr:housename': [('both_trimmed',
+                                  'Church Of St Michael',
+                                  [('label', 'en')])]}
+    endings = ['church', 'church of']
+
+    assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
 
 def test_get_all_matches():
     tags = {'name': 'test'}
