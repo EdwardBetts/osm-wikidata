@@ -21,8 +21,10 @@
     {% endif %}
     {% set identifiers = item.get_item_identifiers() %}
     {% if identifiers %}
-      <li>identifiers: {{ identifiers }}</li>
+      <li>identifiers: {{ dict(identifiers) }}</li>
     {% endif %}
+    <li>place names: {{ item.place_names() | join('; ') }}</li>
+    <li>calculated tags: {{ item.calculate_tags() | join(', ') }}</li>
   </ul>
 
   <h4>names</h4>

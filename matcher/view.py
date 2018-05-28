@@ -1348,6 +1348,8 @@ def item_candidate_json(item_id):
 @app.route('/debug/<osm_type>/<int:osm_id>/Q<int:item_id>')
 def single_item_match(osm_type, osm_id, item_id):
     place = get_place(osm_type, osm_id)
+    if not isinstance(place, Place):
+        return place
 
     # qid = f'Q{item_id}'
     item = Item.query.get(item_id)
@@ -1365,4 +1367,5 @@ def single_item_match(osm_type, osm_id, item_id):
     return render_template('single_item_match.html',
                            item=item,
                            place=place,
+                           dict=dict,
                            candidates=candidates)
