@@ -60,6 +60,13 @@ def test_initials_match():
 
     assert match.initials_match(n1, n2)
 
+def test_reorder():
+    assert match.name_match('Renaissance Center Tower 300',
+                            'Renaissance Center 300 Tower', endings=['tower'])
+
+    assert match.name_match('Renaissance Center Tower 300',
+                            'Renaissance Center 300 Tower')
+
 def test_no_alpha():
     assert not match.no_alpha('abc')
     assert not match.no_alpha('123abc')
@@ -225,6 +232,20 @@ def test_name_match():
 
     assert match.name_match('Kirkwood Inn', "Kirkwood's", endings=['inn'])
 
+    osm = 'ESCOLA DE NAUTICA DE BARCELONA'
+    wikidata = 'Escola de Nàutica de Barcelona'
+
+    cur = match.name_match(osm, wikidata)
+    assert cur.match_type == match.MatchType.good
+
+    osm = 'Lombard Building'
+    wikidata = 'Lombard Building'
+
+    cur = match.name_match(osm, wikidata, endings=['building'])
+    assert cur.match_type == match.MatchType.good
+
+    assert match.name_match('Boxers', 'The Boxers')
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
@@ -289,6 +310,10 @@ def test_match_name_abbreviation():
 
     assert match.name_match('St Peter', 'Saint Peter')
     assert match.name_match('Test Roman Catholic church', 'Test RC church')
+
+    osm = 'Mullard Radio Astronomy Observatory (MRAO)'
+    wikidata = 'Mullard Radio Astronomy Observatory'
+    assert match.name_match(osm, wikidata)
 
 def test_strip_words():
     osm = 'Rio de la Tetta'
@@ -481,6 +506,24 @@ def test_check_for_match():
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
+
+    osm_tags = {
+        'building:levels': '6',
+        'name': 'Lombard Buildings',
+        'building': 'yes',
+    }
+
+    wd_names = {'Lombard Building': [('label', 'en'),
+                                     ('sitelink', 'enwiki'),
+                                     ('extract', 'enwiki')]}
+
+    expect = {'name': [('good', 'Lombard Building', [('label', 'en'),
+                                                     ('sitelink', 'enwiki'),
+                                                     ('extract', 'enwiki')])]}
+
+    endings = ['building']
+    assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
+
 
 def test_get_all_matches():
     tags = {'name': 'test'}

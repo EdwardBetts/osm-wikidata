@@ -67,6 +67,8 @@ def tidy_name(n):
     n = n.replace(' incorporated', ' inc')
     n = n.replace(' cooperative', ' coop')
     n = n.replace(' co-operative', ' coop')
+    if n.startswith('the '):
+        n = n[4:]
     if len(n) > 1 and n[-1] == 's' and ' ' in n:
         n = n[:-1]
     elif n.endswith("'s"):
@@ -74,8 +76,6 @@ def tidy_name(n):
     if not n.lstrip().startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '').replace('s-', '-')
     n = re_strip_words.sub(lambda m: m.group(1), n)
-    if n.startswith('the '):
-        n = n[4:]
     n = n.replace('center', 'centre').replace('theater', 'theatre')
 
     decoded = unidecode(n).strip()
@@ -215,8 +215,11 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if name_containing_initials(osm, wd):
         return Match(MatchType.good)
 
-    wd_lc = wd.lower()
     osm_lc = osm.lower()
+    wd_lc = wd.lower()
+
+    if set(osm_lc.split()) == set(wd_lc.split()):
+        return Match(MatchType.good)
 
     if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
         return Match(MatchType.good)
@@ -239,14 +242,14 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if not wd_lc or not osm_lc:
         return
 
+    if wd_lc == osm_lc:
+        return Match(MatchType.good)
+
     if endings:
         tidy_endings = [tidy_name(e) for e in endings]
         m = match_with_words_removed(osm_lc, wd_lc, tidy_endings)
         if m:
             return m
-
-    if wd_lc == osm_lc:
-        return Match(MatchType.good)
 
     if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
         return Match(MatchType.good)
