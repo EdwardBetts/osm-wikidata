@@ -452,7 +452,7 @@ def check_item_candidate(candidate):
                                        place_names=place_names)
 
     if not (identifier_match or address_match or name_match):
-        return {'reject': 'no match'}
+        return {'reject': 'no match', 'place_names': place_names}
 
     matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
@@ -488,6 +488,7 @@ def check_item_candidate(candidate):
                 'address_match': address_match,
                 'name_match': name_match,
                 'matching_tags': matching_tags,
+                'place_names': place_names,
                 'reject': 'bad building match',
             }
 
@@ -508,6 +509,7 @@ def check_item_candidate(candidate):
         'address_match': address_match,
         'name_match': name_match,
         'matching_tags': matching_tags,
+        'place_names': place_names,
     }
 
 def run_individual_match(place, item):
