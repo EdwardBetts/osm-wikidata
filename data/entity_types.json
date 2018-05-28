@@ -97,7 +97,7 @@
 },
 {
     "cats": ["Astronomical observatories by country"],
-    "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory"],
+    "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory", "amenity=university"],
     "trim": ["telescope", "observatory", "astronomical observatory"],
     "check_housename": true,
     "wikidata": "Q1254933",
@@ -174,7 +174,7 @@
 {
     "cats": ["Hotels by country"],
     "tags": ["tourism=hotel", "building=hotel", "tourism=hostel"],
-    "trim": ["hotel", "resort", "motel"],
+    "trim": ["hotel", "resort", "motel", "house hotel"],
     "check_housename": true,
     "wikidata": "Q27686",
     "dist": 2
@@ -1133,6 +1133,7 @@
     "tags": ["height"],
     "trim": ["tower"],
     "check_housename": true,
+    "wikidata": "Q11303",
     "dist": 1
 },
 {
