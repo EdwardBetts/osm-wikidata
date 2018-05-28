@@ -407,6 +407,7 @@ class Item(Base):
                         cat.startswith('Houses ') or
                         cat.startswith('Historic house ') or
                         cat.startswith('Museums ') or
+                        ' buildings ' in cat or
                         cat.startswith('Buildings and structures ') for cat in cats))
 
     def is_a_station(self):
