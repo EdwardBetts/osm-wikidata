@@ -125,7 +125,7 @@
 {
     "cats": ["Places of worship by country", "Churches"],
     "tags": ["amenity=place_of_worship", "building=church", "man_made=tower", "disused:amenity=place_of_worship"],
-    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "church of",
+    "trim": ["church", "temple", "church centre", "church center", "centre", "center", "catholic church", "rc church", "church of",
              "mission", "church and cemetery", "congregation"],
     "check_housename": true,
     "wikidata": "Q1370598",
@@ -1075,8 +1075,9 @@
     "name": "Sport venues",
     "cats": ["Sports venues by country", "Baseball", "Bullrings", "Stadiums", "Indoor arenas"],
     "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
-    "trim": ["sports centre", "sport center", "track", "stadium"],
+    "trim": ["sports centre", "sport center", "track", "stadium", "ground", "sports ground", "club"],
     "check_housename": true,
+    "wikidata": "Q1076486",
     "dist": 2
 },
 {

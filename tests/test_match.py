@@ -257,6 +257,13 @@ def test_name_match():
     trim = ['church', 'church of']
     assert match.name_match(osm, wikidata, endings=trim)
 
+    osm = 'Saint Vitus Catholic Church'
+    wikidata = "St. Vitus's Church, Cleveland"
+    trim = ['church', 'church of', 'catholic church', 'rc church']
+    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
+
+    assert match.name_match(osm, wikidata, endings=trim, place_names=place_names)
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
@@ -576,6 +583,28 @@ def test_check_for_match():
     endings = ['church', 'church of']
 
     assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
+
+    osm_tags = {
+        'denomination': 'roman_catholic',
+        'name': 'Saint Vitus Catholic Church',
+        'amenity': 'place_of_worship',
+        'religion': 'christian',
+    }
+
+    wd_names = {"St. Vitus's Church, Cleveland": [('label', 'en')]}
+    endings = ['church', 'church of', 'catholic church', 'rc church']
+
+    expect = {'name': [('both_trimmed',
+                        "St. Vitus's Church, Cleveland",
+                        [('label', 'en')])]}
+
+    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
+
+    assert match.check_for_match(osm_tags,
+                                 wd_names,
+                                 place_names=place_names,
+                                 endings=endings) == expect
+
 
 def test_get_all_matches():
     tags = {'name': 'test'}
