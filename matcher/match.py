@@ -405,7 +405,10 @@ def check_name_matches_address(osm_tags, wikidata_names):
         return
     # if 'addr:housenumber' not in osm_tags or 'addr:street' not in osm_tags:
     #     return
-    number_start = {m.group(1) for m in (re_number_start.match(name) for name in wikidata_names) if m}
+    number_start_iter = (re_number_start.match(name)
+                         for name in wikidata_names
+                         if not name.lower().endswith(' building'))
+    number_start = {m.group(1) for m in number_start_iter if m}
     if not number_start:
         return
 
