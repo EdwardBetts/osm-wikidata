@@ -89,6 +89,7 @@ extra_keys = {
                   'Tag:site_type=fortification',
                   'Tag:embankment=yes'],        # contour fort
     'Q515': ['Tag:border_type=city'],           # city
+    'Q1254933': ['Tag:amenity=university'],     # astronomical observatory
 }
 
 # search for items in bounding box that have an English Wikipedia article
