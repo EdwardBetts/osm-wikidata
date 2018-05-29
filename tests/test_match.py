@@ -471,6 +471,14 @@ def test_check_name_matches_address_postcode():
     ]
     assert match.check_name_matches_address(tags, wikidata_names) is not False
 
+    tags = {
+        'name': '510 Marquette',
+        'addr:housenumber': '510',
+        'addr:street': 'Marquette Avenue South',
+    }
+    wikidata_names = ['510 Marquette Building']
+    assert match.check_name_matches_address(tags, wikidata_names) is not False
+
 def test_check_for_address_in_extract():
     osm_tags = {
         'addr:street': 'West 43rd Street',
