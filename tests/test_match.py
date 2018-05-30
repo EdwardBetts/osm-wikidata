@@ -270,6 +270,10 @@ def test_name_match():
 
     assert match.name_match(osm, wikidata, place_names=place_names)
 
+    osm = 'Manor Buildings'
+    wikidata = 'Manor House Buildings'
+    assert match.name_match(osm, wikidata)
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
@@ -622,6 +626,29 @@ def test_check_for_match():
                                  place_names=place_names,
                                  endings=endings) == expect
 
+    wd_names = {'Samson And Lion Public House': [('label', 'en')]}
+    osm_tags = {
+        'addr:city': 'Birmingham',
+        'addr:housenumber': '42',
+        'addr:postcode': 'B9 5QF',
+        'addr:street': 'Yardley Green Road',
+        'amenity': 'place_of_worship',
+        'building': 'yes',
+        'heritage': '2',
+        'heritage:operator': 'Historic England',
+        'listed_status': 'Grade II',
+        'name': 'Masjid Noor-Us-Sunnah',
+        'previous_name': 'Samson & Lion',
+        'previous_use': 'pub',
+        'religion': 'muslim',
+    }
+    endings = ['public house']
+
+    expect = {'previous_name': [('wikidata_trimmed',
+                                 'Samson And Lion Public House',
+                                 [('label', 'en')])]}
+
+    assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
 
 def test_get_all_matches():
     tags = {'name': 'test'}
@@ -677,3 +704,19 @@ def test_no_trim_s_on_single_term_name():
     wd = 'The Boot Inn'
 
     assert not match.name_match(osm, wd, endings=['inn'])
+
+@pytest.mark.skip(reason="not needed")
+def test_church_name_match():
+    n1 = "St. Michael's Church"
+    n2 = 'Church Of St Michael'
+
+    assert match.church_name_match(n1, n2)
+
+    n1 = 'Saint Vitus Catholic Church'
+    n2 = "St. Vitus's Church, Cleveland"
+    assert match.church_name_match(n1, n2, place_names={'Cleveland'})
+
+    n1 = "St. Paul's Roman Catholic Church"
+    n2 = "St. Paul's Catholic Church"
+
+    assert match.church_name_match(n1, n2)

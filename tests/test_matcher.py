@@ -522,9 +522,6 @@ def test_bad_building_match():
     osm_tags = {'amenity': 'parking'}
     assert matcher.bad_building_match(osm_tags, name_match, item)
 
-    osm_tags = {'amenity': 'place_of_worship'}
-    assert matcher.bad_building_match(osm_tags, name_match, item)
-
     assert not matcher.bad_building_match({}, name_match, item)
 
     name_match = {'name': [('both_trimmed', 'Test', [('label', 'en')])]}
@@ -543,3 +540,40 @@ def test_bad_building_match():
     }
 
     assert matcher.bad_building_match({}, name_match, item)
+
+    osm_tags = {
+        'name': 'Westland London',
+        'shop': 'furniture',
+        'building': 'yes',
+        'addr:street': 'Leonard Street',
+        'addr:postcode': 'EC2A 4QX',
+        'addr:housename': "St. Michael's Church",
+    }
+
+    name_match = {'addr:housename': [('good',
+                                      'Church Of St Michael',
+                                      [('label', 'en')])]}
+
+    assert not matcher.bad_building_match(osm_tags, name_match, item)
+
+    osm_tags = {
+        'addr:city': 'Birmingham',
+        'addr:housenumber': '42',
+        'addr:postcode': 'B9 5QF',
+        'addr:street': 'Yardley Green Road',
+        'amenity': 'place_of_worship',
+        'building': 'yes',
+        'heritage': '2',
+        'heritage:operator': 'Historic England',
+        'listed_status': 'Grade II',
+        'name': 'Masjid Noor-Us-Sunnah',
+        'previous_name': 'Samson & Lion',
+        'previous_use': 'pub',
+        'religion': 'muslim',
+    }
+
+    name_match = {'previous_name': [('wikidata_trimmed',
+                                     'Samson And Lion Public House',
+                                     [('label', 'en')])]}
+
+    assert not matcher.bad_building_match(osm_tags, name_match, item)

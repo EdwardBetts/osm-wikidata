@@ -233,7 +233,7 @@ def find_matching_tags(osm, wikidata):
 def bad_building_match(osm_tags, name_match, item):
     if 'amenity' in osm_tags:
         amenity = set(osm_tags['amenity'].split(';'))
-        if 'parking' in amenity or 'place_of_worship' in amenity:
+        if 'parking' in amenity:
             return True
 
     if not name_match:

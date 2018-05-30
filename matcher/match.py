@@ -239,10 +239,12 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
 
-    if endings:
-        m = match_with_words_removed(osm_lc, wd_lc, endings)
-        if m:
-            return m
+    endings = set(endings or []) | {'house'}
+    m = match_with_words_removed(osm_lc, wd_lc, endings)
+    if m:
+        if 'church' in osm_lc and 'church' in wd_lc:
+            m.match_type = MatchType.good
+        return m
 
     wd_tidy = tidy_name(wd_lc)
     osm_tidy = tidy_name(osm_lc)
@@ -301,7 +303,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if plural_in_other_name:
         return
 
-    for end in ['building', 'complex'] + list(endings or []):
+    for end in ['building', 'complex', 'house'] + list(endings or []):
         if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
             return Match(MatchType.trim)
         if wd_tidy.startswith(end) and wd_tidy[len(end):] == osm_tidy:
@@ -492,8 +494,7 @@ def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None):
 
     if 'addr:city' in osm_tags:
         city = osm_tags['addr:city'].lower()
-        if endings is None:
-            endings = set()
+        endings = set(endings or [])
         endings |= {
             city,
             'in ' + city,  # English / German / Dutch
