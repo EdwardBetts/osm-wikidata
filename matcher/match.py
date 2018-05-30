@@ -239,13 +239,6 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if strip_non_chars_match(osm_lc, wd_lc):
         return Match(MatchType.good)
 
-    endings = set(endings or []) | {'house'}
-    m = match_with_words_removed(osm_lc, wd_lc, endings)
-    if m:
-        if 'church' in osm_lc and 'church' in wd_lc:
-            m.match_type = MatchType.good
-        return m
-
     wd_tidy = tidy_name(wd_lc)
     osm_tidy = tidy_name(osm_lc)
 
@@ -254,6 +247,13 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     if wd_tidy == osm_tidy:
         return Match(MatchType.good)
+
+    endings = set(endings or []) | {'house'}
+    m = match_with_words_removed(osm_lc, wd_lc, endings)
+    if m:
+        if 'church' in osm_lc and 'church' in wd_lc:
+            m.match_type = MatchType.good
+        return m
 
     plural_in_other_name = (plural_word_name_in_other_name(osm_lc, wd_lc) or
                             plural_word_name_in_other_name(wd_lc, osm_lc))
