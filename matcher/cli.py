@@ -973,7 +973,11 @@ def check_saved_edits():
                 print((item.qid, item.label(), ret['reject']))
             else:
                 print(item.qid, item.label())
+                if 'place_names' in ret:
+                    print('place names:', ret.pop('place_names'))
                 pprint(ret)
+            if 'osm_tags' not in ret:
+                pprint(edit.candidate.tags)
         else:
             continue
             print(item.qid, item.label())
