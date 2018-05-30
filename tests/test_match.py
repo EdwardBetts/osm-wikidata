@@ -264,6 +264,12 @@ def test_name_match():
 
     assert match.name_match(osm, wikidata, endings=trim, place_names=place_names)
 
+    osm = 'Main Street Station'
+    wikidata = 'Richmond Main Street Station'
+    place_names = {'Richmond City', 'Virginia'}
+
+    assert match.name_match(osm, wikidata, place_names=place_names)
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()

@@ -317,6 +317,14 @@ def strip_place_name(name, place_name):
             return name.replace(search, '')
     return name.replace(place_name, '')
 
+def more_place_name_varients(place_names):
+    place_names = set(place_names)
+    for n in set(place_names):
+        for e in 'city', 'county':
+            if n.lower().endswith(' ' + e) and len(n) > len(e) + 1:
+                place_names.add(n[:-(len(e) + 1)])
+    return place_names
+
 def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
     if match:
@@ -337,7 +345,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
         return Match(MatchType.trim)
 
     if place_names:
-        for place_name in place_names:
+        for place_name in more_place_name_varients(place_names):
             if not (place_name in osm or place_name in wd):
                 continue
             match = name_match_main(strip_place_name(osm, place_name),
