@@ -41,6 +41,8 @@ abbr = {
 }
 re_abbr = re.compile(r'\b(' + '|'.join(abbr.keys()) + r')\b', re.I)
 
+re_address_common_end = re.compile('^(.+)(' + '|'.join(abbr.keys()) + '|plaza)$', re.I)
+
 bad_name_fields = {'tiger:name_base', 'name:right',
                    'name:left', 'gnis:county_name', 'openGeoDB:name'}
 
@@ -431,9 +433,9 @@ def check_name_matches_address(osm_tags, wikidata_names):
         postcode = postcode.lower()
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
-        osm_address = normalize_name(osm_tags['addr:housenumber'] +
-                                     ' ' + osm_tags['addr:street'])
-        if any(name == osm_address for name in norm_number_start):
+        osm_address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']
+        norm_osm_address = normalize_name(osm_address)
+        if any(name == norm_osm_address for name in norm_number_start):
             return True
 
         for i in number_start:
@@ -443,12 +445,18 @@ def check_name_matches_address(osm_tags, wikidata_names):
                 continue
 
             if (re_uk_postcode_start.match(postcode_start) and
-                    normalize_name(name) == osm_address):
+                    normalize_name(name) == norm_osm_address):
                 return True
 
-        if any(name.startswith(osm_address) or osm_address.startswith(name)
+        if any(name.startswith(norm_osm_address) or norm_osm_address.startswith(name)
                for name in norm_number_start):
             return  # not sure
+
+        m = re_address_common_end.match(norm_osm_address)
+        if m:
+            short = m.group(1)
+            if any(name.startswith(short) for name in norm_number_start):
+                return
 
     if 'addr:full' in osm_tags:
         osm_address = normalize_name(osm_tags['addr:full'])
