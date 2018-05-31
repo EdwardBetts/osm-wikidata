@@ -1396,7 +1396,7 @@
 {
     "cats": ["Rest areas", "Motorway service"],
     "tags": ["highway=services"],
-    "trim": [],
+    "trim": ["services", "motorway services", "rest area"],
     "dist": 4
 },
 {
