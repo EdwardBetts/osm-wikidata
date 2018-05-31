@@ -13,7 +13,7 @@ def test_prefix_name_match():
 def test_tidy_name():
     same = 'no change'
     assert match.tidy_name(same) == same
-    assert match.tidy_name("saint andrew's") == "st andrew'"
+    assert match.tidy_name("saint andrew's") == "st andrew"
 
     assert match.tidy_name('the old shop') == 'old shop'
 
@@ -654,6 +654,27 @@ def test_check_for_match():
                                  [('label', 'en')])]}
 
     assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
+
+    osm_tags = {
+        'area': 'yes',
+        'highway': 'services',
+        'name': 'Stop24 Folkestone Services',
+        'operator': 'Stop24'
+    }
+    wd_names = {'Folkestone services': [('sitelink', 'enwiki')],
+                'Stop 24 services': [('label', 'en'), ('extract', 'enwiki')]}
+    expect = {'operator': [('wikidata_trimmed', 'Stop 24 services',
+                           [('label', 'en'), ('extract', 'enwiki')])],
+              'name': [('good', 'Folkestone services', [('sitelink', 'enwiki')]),
+                       ('good', 'Stop 24 services',
+                        [('label', 'en'), ('extract', 'enwiki')])]}
+
+    endings = {'services'}
+    place_names = {'Folkestone', 'Kent'}
+
+    assert match.check_for_match(osm_tags, wd_names,
+                                 place_names=place_names,
+                                 endings=endings) == expect
 
 def test_get_all_matches():
     tags = {'name': 'test'}

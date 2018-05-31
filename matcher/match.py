@@ -71,10 +71,10 @@ def tidy_name(n):
     n = n.replace(' co-operative', ' coop')
     if n.startswith('the '):
         n = n[4:]
-    if len(n) > 1 and n[-1] == 's':
-        n = n[:-1]
     elif n.endswith("'s"):
         n = n[:-2]
+    if len(n) > 1 and n[-1] == 's':
+        n = n[:-1]
     if not n.lstrip().startswith('s '):
         n = n.replace('s ', ' ').replace("s' ", '').replace('s-', '-')
     n = re_strip_words.sub(lambda m: m.group(1), n)
