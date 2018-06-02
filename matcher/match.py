@@ -344,6 +344,11 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
         if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
             return Match(MatchType.trim)
 
+    start = 'site of'
+    if osm.lower().startswith(start):
+        if name_match_main(osm[len(start):], wd, endings):
+            return Match(MatchType.trim)
+
     end = ' And Attached Railings'.lower()
     if wd.lower().endswith(end) and name_match_main(osm, wd[:-len(end)], endings):
         return Match(MatchType.trim)
