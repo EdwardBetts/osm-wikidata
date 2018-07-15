@@ -165,6 +165,12 @@ def reraise(tp, value, tb=None):
         raise value.with_traceback(tb)
     raise value
 
+@app.errorhandler(requests.exceptions.HTTPError)
+def requests_exception(e):
+    if request.endpoint != 'social.auth':
+        raise e
+    return 'OSM token request failed.'
+
 @app.errorhandler(InternalServerError)
 def exception_handler(e):
     tb = get_current_traceback()
