@@ -412,6 +412,9 @@ class QueryError(Exception):
         self.query = query
         self.r = r
 
+class TooManyEntities(Exception):
+    pass
+
 class QueryTimeout(QueryError):
     def __init__(self, query, r):
         self.query = query
@@ -572,6 +575,8 @@ def entity_label(entity):
 def get_entities(ids):
     if not ids:
         return []
+    if len(ids) > 50:
+        raise TooManyEntities
     wikidata_url = 'https://www.wikidata.org/w/api.php'
     params = {
         'format': 'json',
@@ -1114,6 +1119,10 @@ class WikidataItem:
         located_in = [i['mainsnak']['datavalue']['value']['id']
                       for i in self.entity['claims']['P131']]
 
+        # Parc naturel régional des marais du Cotentin et du Bessin (Q2138341)
+        # is in more than 50 locations. The maximum entities in one request is 50.
+        if len(located_in) > 50:
+            return
         for location in get_entities(located_in):
             location_names |= {v['value']
                                for v in location['labels'].values()
