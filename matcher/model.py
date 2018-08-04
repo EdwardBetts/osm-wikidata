@@ -350,7 +350,8 @@ class Item(Base):
     def defunct_cats(self):
         words = {'demolish', 'disestablishment', 'defunct', 'abandon', 'mothballed',
                  'decommission', 'former', 'dismantled', 'disused', 'disassembled',
-                 'abandoned', 'disband', 'scrapped', 'unused', 'closed', 'condemned'}
+                 'abandoned', 'disband', 'scrapped', 'unused', 'closed', 'condemned',
+                 'redundant'}
 
         exclude = {'Defunct baseball venues in the United States',
                    'Defunct National Football League venues',
