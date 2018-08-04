@@ -107,7 +107,7 @@
     "cats": ["Shopping malls by country", "Shopping centres"],
     "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial", "retail=retail_park",
              "shop=department_store", "landuse=retail"],
-    "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre"],
+    "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre", "outlet shopping", "outlet centre"],
     "check_housename": true,
     "wikidata": "Q11315",
     "dist": 5
@@ -277,6 +277,14 @@
     "tags": ["building=house", "building=residential", "landuse=residential"],
     "trim": ["house", "estate"],
     "wikidata": "Q11755880",
+    "check_housename": true,
+    "dist": 0.5
+},
+{
+    "cats": ["Almshouses"],
+    "tags": ["building=house", "building=residential", "landuse=residential"],
+    "trim": [],
+    "wikidata": "Q15548045",
     "check_housename": true,
     "dist": 0.5
 },
@@ -1396,7 +1404,7 @@
 {
     "cats": ["Rest areas", "Motorway service"],
     "tags": ["highway=services"],
-    "trim": ["services", "motorway services", "rest area"],
+    "trim": ["services", "motorway services", "rest area", "motorway service area", "service area"],
     "dist": 4
 },
 {
@@ -1450,6 +1458,14 @@
     "trim": [],
     "check_housename": true,
     "wikidata": "Q7627808",
+    "dist": 1
+},
+{
+    "cats": ["Science parks by country"],
+    "tags": ["landuse=industrial", "amenity=science_park"],
+    "trim": [],
+    "check_housename": false,
+    "wikidata": "Q1976594",
     "dist": 1
 },
 {
