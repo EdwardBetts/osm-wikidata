@@ -351,9 +351,12 @@ def add_tags(osm_type, osm_id):
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
 
+    languages_with_counts = get_place_language_with_counts(place)
+    languages = [l['lang'] for l in languages_with_counts if l['lang']]
+
+    hits = matcher.filter_candidates_more(items, bad=get_bad(items))
     table = [(item, match['candidate'])
-             for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))
-             if 'candidate' in match]
+             for item, match in hits if 'candidate' in match]
 
     items = [{'qid': i.qid,
               'osm_type': c.osm_type,
@@ -363,9 +366,6 @@ def add_tags(osm_type, osm_id):
 
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
-
-    languages_with_counts = get_place_language_with_counts(place)
-    languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
     return render_template('add_tags.html',
                            place=place,
