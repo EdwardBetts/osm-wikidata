@@ -7,6 +7,7 @@ from . import user_agent_headers, overpass, mail, language, match, matcher
 import requests
 import os
 import json
+import simplejson.errors
 
 page_size = 50
 report_missing_values = False
@@ -585,9 +586,12 @@ def get_entities(ids):
         'action': 'wbgetentities',
         'ids': '|'.join(ids),
     }
-    json_data = requests.get(wikidata_url,
-                             params=params,
-                             headers=user_agent_headers()).json()
+    r = requests.get(wikidata_url, params=params,
+                                   headers=user_agent_headers())
+    try:
+        json_data = r.json()
+    except simplejson.errors.JSONDecodeError:
+        raise QueryError(params, r)
     return list(json_data['entities'].values())
 
 def names_from_entity(entity, skip_lang=None):
