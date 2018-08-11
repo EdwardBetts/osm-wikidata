@@ -318,6 +318,58 @@ def test_find_item_matches_parking(monkeypatch):
     candidates = matcher.find_item_matches(mock_db, item, 'prefix')
     assert len(candidates) == 0
 
+def test_embassy_no_match(monkeypatch):
+    osm_tags = {
+        'name': 'Consulate General of Switzerland in San Francisco',
+        'amenity': 'embassy',
+        'country': 'CH',
+        'addr:city': 'San Francisco',
+        'addr:state': 'CA',
+        'addr:street': 'Montgomery Street',
+        'addr:postcode': '94104',
+        'addr:housenumber': '456',
+    }
+
+    en_label = 'Consulate General of Israel to the Pacific Northwest Region'
+    test_entity = {
+        'claims': {
+            'P969': [{
+                'mainsnak': {
+                    'datavalue': {'value': '456 Montgomery Street Suite #2100'},
+                },
+            }],
+            'P17': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q30'}}},
+            }],
+            'P137': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q801'}}},
+            }],
+        },
+        'labels': {'en': {'language': 'en', 'value': en_label}},
+        'sitelinks': {},
+    }
+
+    extract = ('<p>The <b>Consulate General of Israel to the Pacific Northwest ' +
+              'Region</b>, is one of Israel’s diplomatic missions abroad, located at ' +
+              '456 Montgomery Street Suite #2100 in San Francisco, California, United ' +
+              'States of America in the Financial District.</p>')
+
+    tags = ['amenity=embassy']
+    item = Item(entity=test_entity, tags=tags, extract=extract)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [('point', 1, None, osm_tags, 0)]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix')
+    assert len(candidates) == 0
+
 def test_find_item_matches_pub(monkeypatch):
     osm_tags = {
         'amenity': 'university',

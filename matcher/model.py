@@ -368,6 +368,10 @@ class Item(Base):
             found += [item_cat for i in words if i in lc_item_cat]
         return found
 
+    def get_claim(self, pid):
+        return [i['mainsnak']['datavalue']['value']
+                for i in self.entity['claims'].get(pid, [])]
+
     @property
     def criteria(self):
         return {('Tag:' if '=' in t else 'Key:') + t for t in self.tags or []}

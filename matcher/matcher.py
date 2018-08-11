@@ -1,6 +1,6 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from . import match, database
+from . import match, database, wikidata
 
 import os.path
 import json
@@ -346,6 +346,16 @@ def find_item_matches(cur, item, prefix, debug=False):
             continue
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
+
+        if 'amenity=embassy' in matching_tags:
+            codes = set()
+            for qid in {country['id'] for country in item.get_claim('P137')}:
+                codes.update(wikidata.country_iso_codes_from_qid(qid))
+            if 'country' in osm_tags:
+                osm_country = osm_tags['country'].upper()
+                if (len(osm_country) in (2, 3) and
+                        all(iso_code.upper() != osm_country for iso_code in codes)):
+                    continue
 
         building_tags = {'building', 'building=yes', 'historic:building'}
         building_only_match = matching_tags.issubset(building_tags)

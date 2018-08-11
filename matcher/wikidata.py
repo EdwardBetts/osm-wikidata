@@ -996,6 +996,12 @@ def claim_value(claim):
     except KeyError:
         pass
 
+def country_iso_codes_from_qid(qid):
+    item = WikidataItem.retrieve_item(qid)
+    codes = [claim_value(c) for c in item.claims.get('P297')]
+    codes += [claim_value(c) for c in item.claims.get('P298')]
+    return codes
+
 class WikidataItem:
     def __init__(self, qid, entity):
         assert entity
