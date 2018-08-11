@@ -34,7 +34,9 @@ class OverpassError(Exception):
         self.r = r
 
 def run_query(oql, error_on_rate_limit=True):
-    r = requests.post(endpoint(), data=oql, headers=user_agent_headers())
+    r = requests.post(endpoint(),
+                      data=oql.encode('utf-8'),
+                      headers=user_agent_headers())
 
     if (error_on_rate_limit and
             r.status_code == 429 and
@@ -123,7 +125,7 @@ def oql_element_filter(key, values, filters='area.a'):
     else:
         tag = '"{}"'.format(key)
 
-    return ['{}({})[{}];'.format(t, filters, tag)
+    return ['{}({})[{}];'.format(t, filters, tag.replace('␣', ' '))
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
 
 def oql_from_tag(tag, filters='area.a'):
