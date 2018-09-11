@@ -235,7 +235,7 @@
 },
 {
     "cats": ["Lifeboat stations"],
-    "tags": ["amenity=lifeboat_station"],
+    "tags": ["amenity=lifeboat_station", "emergency=lifeboat_station"],
     "trim": ["lifeboat station"],
     "check_housename": true,
     "wikidata": "Q11997323",
