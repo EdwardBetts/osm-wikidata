@@ -759,7 +759,7 @@ def instance_of_page(item_id):
     for row in rows:
         item = {
             'label': row['itemLabel']['value'],
-            'has_coords': bool(row.get('coords', {}).get('value')),
+            'has_coords': bool(row.get('location', {}).get('value')),
             'country': row.get('countryLabel', {}).get('value'),
             'id': wikidata.wd_uri_to_id(row['item']['value']),
         }
