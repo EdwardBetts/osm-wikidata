@@ -130,9 +130,7 @@ class MatcherSocket(object):
         print('done')
         self.send('load_cat_done')
 
-        def print_msg(msg):
-            print(msg)
-        self.place.save_items(wikidata_items, debug=print_msg)
+        self.place.save_items(wikidata_items)
         print('items saved')
         self.send('items_saved')
 
