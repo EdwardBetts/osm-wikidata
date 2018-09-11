@@ -408,11 +408,11 @@ ORDER BY ?itemLabel
 '''
 
 instance_of_query = '''
-SELECT ?item ?itemLabel ?countryLabel ?coords WHERE {
+SELECT DISTINCT ?item ?itemLabel ?countryLabel (SAMPLE(?location) AS ?location) WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en" }
   ?item wdt:P31/wdt:P279* wd:QID .
   OPTIONAL { ?item wdt:P17 ?country }
-  OPTIONAL { ?item wdt:P625 ?coords }
+  OPTIONAL { ?item wdt:P625 ?location }
 }
 '''
 
