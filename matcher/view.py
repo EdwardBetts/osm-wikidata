@@ -1285,11 +1285,12 @@ def db_space():
     items = [{
         'place_id': place_id,
         'size': size,
+        'added': added,
         'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
         'display_name': display_name,
         'state': state,
         'changesets': changeset_count
-    } for place_id, osm_type, osm_id, size, display_name, state, changeset_count in rows]
+    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count in rows]
 
     free_space = utils.get_free_space(app.config)
 
