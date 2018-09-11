@@ -1289,8 +1289,9 @@ def db_space():
         'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
         'display_name': display_name,
         'state': state,
-        'changesets': changeset_count
-    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count in rows]
+        'changesets': changeset_count,
+        'recent': recent,
+    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
 
     free_space = utils.get_free_space(app.config)
 
