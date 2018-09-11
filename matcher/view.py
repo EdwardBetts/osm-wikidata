@@ -752,10 +752,23 @@ def instance_of_page(item_id):
 
     en_label = entity['labels']['en']['value']
 
+    rows = wikidata.run_query(wikidata.instance_of_query)
+
+    items = []
+    for row in rows:
+        item = {
+            'label': row['itemLabel']['value'],
+            'has_coords': bool(row.get('coords', {}).get('value')),
+            'country': row.get('countryLabel', {}).get('value'),
+            'id': wikidata.wd_uri_to_id(row['item']['value']),
+        }
+        items.append(item)
+
     return render_template('instance_of.html',
                            qid=qid,
                            en_label=en_label,
-                           entity=entity)
+                           entity=entity,
+                           items=items)
 
 @app.route('/is_in/way/<way_id>')
 def is_in_way(way_id):

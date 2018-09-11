@@ -8,6 +8,26 @@
 
   <h1>{{ en_label }} ({{ qid }})</h1>
 
+  <p>{{ items|count }} items found.</p>
+
+  {% if items %}
+    <table class="table">
+    {% for item in items %}
+      <tr>
+      <td>Q{{ item.id }}</td>
+      <td>{{ item.label }}</td>
+      <td>{{ item.country or 'n/a' }}</td>
+      <td>
+        [
+        <a href="{{ url_for('item_page', wikidata_id=item.id) }}">item page</a> |
+        <a href="https://www.wikidata.org/wiki/Q{{ item.id }}">Wikidata</a>
+        ]
+      </td>
+    </tr>
+    {% endfor %}
+    </table>
+  {% endif %}
+
 </div>
 </div>
 </div>

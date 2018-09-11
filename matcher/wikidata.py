@@ -407,6 +407,15 @@ GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
+instance_of_query = '''
+SELECT ?item ?itemLabel ?countryLabel ?coords WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  ?item wdt:P31/wdt:P279* wd:Q11997323.
+  OPTIONAL { ?item wdt:P17 ?country }
+  OPTIONAL { ?item wdt:P625 ?coords }
+}
+'''
+
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
 
 class QueryError(Exception):
