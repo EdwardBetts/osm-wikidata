@@ -414,6 +414,7 @@ SELECT DISTINCT ?item ?itemLabel ?countryLabel (SAMPLE(?location) AS ?location) 
   OPTIONAL { ?item wdt:P17 ?country }
   OPTIONAL { ?item wdt:P625 ?location }
 }
+GROUP BY ?item ?itemLabel ?countryLabel
 '''
 
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
