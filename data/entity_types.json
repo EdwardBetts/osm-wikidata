@@ -236,7 +236,7 @@
 {
     "cats": ["Lifeboat stations"],
     "tags": ["amenity=lifeboat_station", "emergency=lifeboat_station"],
-    "trim": ["lifeboat station", "rescue service", "service"],
+    "trim": ["lifeboat station", "rescue service", "service", "rnli"],
     "check_housename": true,
     "wikidata": "Q11997323",
     "dist": 1
@@ -1438,6 +1438,7 @@
     "cats": ["Long-distance footpaths", "Hiking trails"],
     "tags": ["route=hiking"],
     "trim": [],
+    "wikidata": "Q2143825",
     "dist": 4
 },
 {
@@ -1455,14 +1456,14 @@
 {
     "cats": ["Student activity centers"],
     "tags": [],
-    "trim": [],
+    "trim": ["student services centre", "student centre"],
     "check_housename": true,
     "wikidata": "Q7627808",
     "dist": 1
 },
 {
     "cats": ["Science parks by country"],
-    "tags": ["landuse=industrial", "amenity=science_park"],
+    "tags": ["landuse=industrial", "amenity=science_park", "type=multipolygon"],
     "trim": [],
     "check_housename": false,
     "wikidata": "Q1976594",
