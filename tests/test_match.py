@@ -748,3 +748,18 @@ def test_church_name_match():
     n2 = "St. Paul's Catholic Church"
 
     assert match.church_name_match(n1, n2)
+
+def test_embassy_match():
+    tags = {
+        'name': 'Consulate General of Switzerland in San Francisco',
+        'amenity': 'embassy',
+        'country': 'CH',
+        'addr:city': 'San Francisco',
+        'addr:state': 'CA',
+        'addr:street': 'Montgomery Street',
+        'addr:postcode': '94104',
+        'addr:housenumber': '456',
+    }
+
+    wd_address = '456 Montgomery Street Suite #2100'
+    assert match.check_name_matches_address(tags, [wd_address]) is not False

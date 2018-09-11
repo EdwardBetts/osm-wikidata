@@ -1,6 +1,6 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from . import match, database, wikidata
+from . import match, database, wikidata, embassy
 
 import os.path
 import json
@@ -258,6 +258,18 @@ def is_osm_bus_stop(tags):
             (tags.get('bus') == 'yes' and
              tags.get('public_transport') == 'stop_position'))
 
+def is_diplomatic_mission(matching_tags, osm_tags):
+    if 'amenity=embassy' in matching_tags:
+        return True
+    terms = ['embassy', 'diplomatic', 'consulate', 'ambassador']
+    for key, value in osm_tags.items():
+        if 'name' not in key or 'old' in key:
+            continue
+        lc_name = value.lower()
+        if any(term in lc_name for term in terms):
+            return True
+    return False
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -347,14 +359,24 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
-        if 'amenity=embassy' in matching_tags:
-            codes = set()
-            for qid in {country['id'] for country in item.get_claim('P137')}:
-                codes.update(wikidata.country_iso_codes_from_qid(qid))
-            if 'country' in osm_tags:
+        if is_diplomatic_mission(matching_tags, osm_tags):
+            name = osm_tags.get('name:en') or osm_tags.get('name')
+            country = (osm_tags.get('diplomatic:sending_country') or
+                    osm_tags.get('country'))
+            item_countries = {country['id'] for country in item.get_claim('P137')}
+
+            if country:
+                codes = set()
+                for qid in item_countries:
+                    codes.update(wikidata.country_iso_codes_from_qid(qid))
+
                 osm_country = osm_tags['country'].upper()
                 if (len(osm_country) in (2, 3) and
                         all(iso_code.upper() != osm_country for iso_code in codes)):
+                    continue
+            elif name:
+                name_country = embassy.from_name(name)
+                if name_country and name_country['qid'] not in item_countries:
                     continue
 
         building_tags = {'building', 'building=yes', 'historic:building'}

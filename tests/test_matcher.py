@@ -319,7 +319,7 @@ def test_find_item_matches_parking(monkeypatch):
     assert len(candidates) == 0
 
 def test_embassy_no_match(monkeypatch):
-    osm_tags = {
+    osm_tags1 = {
         'name': 'Consulate General of Switzerland in San Francisco',
         'amenity': 'embassy',
         'country': 'CH',
@@ -328,6 +328,15 @@ def test_embassy_no_match(monkeypatch):
         'addr:street': 'Montgomery Street',
         'addr:postcode': '94104',
         'addr:housenumber': '456',
+    }
+
+    osm_tags2 = {
+        'addr:housenumber': '456',
+        'addr:street': 'Montgomery Street',
+        'building': 'yes',
+        'building:levels': '22',
+        'height': '114',
+        'name': 'Consulate General of Switzerland in San Francisco',
     }
 
     en_label = 'Consulate General of Israel to the Pacific Northwest Region'
@@ -360,7 +369,8 @@ def test_embassy_no_match(monkeypatch):
     def mock_run_sql(cur, sql, debug):
         if not sql.startswith('select * from'):
             return []
-        return [('point', 1, None, osm_tags, 0)]
+        return [('point', 1, None, osm_tags1, 0),
+                ('polygon', 2, None, osm_tags2, 0)]
 
     monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
     monkeypatch.setattr(matcher, 'current_app', MockApp)
