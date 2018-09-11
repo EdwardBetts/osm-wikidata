@@ -1485,5 +1485,13 @@
     "check_housename": true,
     "wikidata": "Q6501349",
     "dist": 1
+},
+{
+    "cats": ["Shipyards by country"],
+    "tags": ["waterway=boatyard", "landuse=industrial"],
+    "trim": [],
+    "check_housename": false,
+    "wikidata": "Q190928",
+    "dist": 1
 }
 ]
