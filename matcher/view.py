@@ -1305,7 +1305,8 @@ def db_space():
         'state': state,
         'changesets': changeset_count,
         'recent': recent,
-    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
+        'username': username,
+    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent, username in rows]
 
     free_space = utils.get_free_space(app.config)
 

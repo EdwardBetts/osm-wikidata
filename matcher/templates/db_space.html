@@ -27,7 +27,7 @@
         <td>
           <a href="{{ place.candidates_url }}">{{ place.display_name.replace(';', '; ') }}</a>
           {% if place.recent %}
-            ({{ place.recent.date() }})
+            ({{ place.recent.date() }}, {{ place.username }})
           {% endif %}
         </td>
         <td>{{ place.state }}</td>
