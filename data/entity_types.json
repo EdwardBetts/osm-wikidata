@@ -1488,10 +1488,18 @@
 },
 {
     "cats": ["Shipyards by country"],
-    "tags": ["waterway=boatyard", "landuse=industrial"],
+    "tags": ["waterway=boatyard", "landuse=industrial", "historic=dockyard"],
     "trim": [],
     "check_housename": false,
     "wikidata": "Q190928",
+    "dist": 1
+},
+{
+    "cats": ["Wharves"],
+    "tags": ["man_made=quay", "historic=dockyard"],
+    "trim": ["wharf", "quay"],
+    "check_housename": false,
+    "wikidata": "Q828909",
     "dist": 1
 }
 ]
