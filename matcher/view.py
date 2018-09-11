@@ -1291,7 +1291,9 @@ def db_space():
         'changesets': changeset_count
     } for place_id, osm_type, osm_id, size, display_name, state, changeset_count in rows]
 
-    return render_template('db_space.html', items=items)
+    free_space = utils.get_free_space(app.config)
+
+    return render_template('db_space.html', items=items, free_space=free_space)
 
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
 @login_required

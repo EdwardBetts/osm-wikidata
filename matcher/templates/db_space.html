@@ -7,6 +7,15 @@
     {% include "flash_msg.html" %}
     <h1>{{ self.title() }}</h1>
 
+    <p>free space: {{ free_space | filesizeformat }}
+
+    {% if 'MIN_FREE_SPACE' in config %}
+      {% set min_free_space = config['MIN_FREE_SPACE'] %}
+      (admin alert when less than {{ min_free_space | filesizeformat }})
+    {% endif %}
+
+    </p>
+
     <table class="table">
     {% for place in items %}
     <tr>

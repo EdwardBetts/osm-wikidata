@@ -78,6 +78,10 @@ def find_log_file(place):
         if f.name.startswith(start):
             return f.path
 
+def get_free_space(config):
+    s = os.statvfs(config['FREE_SPACE_PATH'])
+    return s.f_bsize * s.f_bavail
+
 def check_free_space(config=None):
     ''' Check how much disk space is free.
         E-mail admin if free space is low. '''
@@ -92,8 +96,7 @@ def check_free_space(config=None):
     if not min_free_space:  # not configured
         return
 
-    s = os.statvfs('/')
-    free_space = s.f_bsize * s.f_bavail
+    free_space = get_free_space(config)
 
     if free_space > min_free_space:
         return
