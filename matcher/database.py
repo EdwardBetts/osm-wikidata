@@ -26,13 +26,14 @@ def init_app(app, echo=False):
 def get_big_table_list():
     sql_big_polygon_tables = '''
 select place.place_id, place.osm_type, place.osm_id, place.added, size, display_name, state, count(changeset.id)
-from place left outer join changeset ON changeset.place_id = place.place_id, (
+from place left outer join changeset ON changeset.osm_id = place.osm_id and changeset.osm_type = place.osm_type, (
     SELECT cast(substring(relname from '\d+') as integer) as place_id, pg_relation_size(C.oid) AS "size"
     FROM pg_class C
     WHERE relname like 'osm%polygon'
     ORDER BY pg_relation_size(C.oid) DESC
     LIMIT 100) a
-where a.place_id = place.place_id group by place.place_id, display_name, state, size order by size desc;'''
+where a.place_id = place.place_id
+group by place.place_id, place.added, display_name, state, size order by size desc;'''
 
     engine = session.bind
 
