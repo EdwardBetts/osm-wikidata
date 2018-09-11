@@ -8,7 +8,7 @@
 
   <h1>{{ en_label }} ({{ qid }})</h1>
 
-  <p>{{ items|count }} items found.</p>
+  <p>{{ '{:,d}'.format(items|count) }} items found.</p>
 
   {% if items %}
     <table class="table">
@@ -17,7 +17,7 @@
       <td>Q{{ item.id }}</td>
       <td>{{ item.label }}</td>
       <td>{{ item.country or 'n/a' }}</td>
-      <td>
+      <td class="text-nowrap">
         [
         <a href="{{ url_for('item_page', wikidata_id=item.id) }}">item page</a> |
         <a href="https://www.wikidata.org/wiki/Q{{ item.id }}">Wikidata</a>

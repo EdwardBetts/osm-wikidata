@@ -752,7 +752,8 @@ def instance_of_page(item_id):
 
     en_label = entity['labels']['en']['value']
 
-    rows = wikidata.run_query(wikidata.instance_of_query)
+    query = wikidata.instance_of_query.replace('QID', qid)
+    rows = wikidata.run_query(query)
 
     items = []
     for row in rows:
