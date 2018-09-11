@@ -15,7 +15,10 @@
     {% for item in items %}
       <tr>
       <td>Q{{ item.id }}</td>
-      <td>{{ item.label }}</td>
+      <td>
+        {{ item.label }}
+        {% if not item.has_coords %}(no coordinates){% endif %}
+      </td>
       <td>{{ item.country or 'n/a' }}</td>
       <td class="text-nowrap">
         [
