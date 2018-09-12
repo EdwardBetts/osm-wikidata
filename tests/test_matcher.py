@@ -1,5 +1,5 @@
 from matcher import matcher
-from matcher.model import Item
+from matcher.model import Item, IsA
 import os.path
 
 class MockApp:
@@ -639,3 +639,48 @@ def test_bad_building_match():
                                      [('label', 'en')])]}
 
     assert not matcher.bad_building_match(osm_tags, name_match, item)
+
+def test_cottage_church_bad_match(monkeypatch):
+    church_tags = {
+        'amenity': 'place_of_worship',
+        'building': 'yes',
+        'denomination': 'anglican',
+        'name': 'Saint Anne',
+        'religion': 'christian',
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': "St Anne's Cottage"},
+        },
+        'sitelinks': {}
+    }
+
+    cottage_item = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': "cottage"},
+        },
+        'sitelinks': {}
+    }
+
+    isa = IsA(item_id=5783996, entity=cottage_item)
+
+    tags = ['building', 'building=yes']
+    item = Item(entity=entity, tags=tags, isa=[isa])
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('polygon', 111491387, None, church_tags, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 0

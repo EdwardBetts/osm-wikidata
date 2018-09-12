@@ -184,8 +184,12 @@ class Item(Base):
     def more_endings_from_isa(self):
         endings = set()
         langs = self.languages()
+        # avoid trimming "cottage", it produces too many mismatches
+        skip_isa = {
+            5783996,  # cottage
+        }
         for isa in self.isa:
-            if not isa.entity:
+            if isa.item_id in skip_isa or not isa.entity:
                 continue
             for lang, label in isa.entity['labels'].items():
                 if lang in langs:
