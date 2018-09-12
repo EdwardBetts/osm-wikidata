@@ -388,11 +388,16 @@ def find_item_matches(cur, item, prefix, debug=False):
         if (building_only_match and
                 address_match and
                 not name_match and
-                not identifier_match and
-                'amenity=school' in item.tags and
-                'amenity=restaurant' not in item.tags and
-                'restaurant' in amenity and 'school' not in amenity):
-            continue  # Wikidata school shouldn't match OSM restaurant
+                not identifier_match):
+            if ('amenity=school' in item.tags and
+                    'amenity=restaurant' not in item.tags and
+                    'restaurant' in amenity and 'school' not in amenity):
+                continue  # Wikidata school shouldn't match OSM restaurant
+
+            if ('man_made=windmill' in item.tags and
+                    'amenity=pub' not in item.tags and
+                    'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
+                continue  # Wikidata windmill shouldn't match OSM pub
 
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
