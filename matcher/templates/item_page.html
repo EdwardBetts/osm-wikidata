@@ -113,7 +113,7 @@
         {% if overpass_reply['elements'] | count > 10 %}
             <p>more than 10 results</p>
         {% else %}
-            <pre>{{ overpass_reply['elements'] | pprint }}</pre>
+            <pre>{{ overpass_reply | pprint }}</pre>
         {% endif %}
     {% endif %}
 
