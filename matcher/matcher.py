@@ -394,6 +394,10 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'restaurant' in amenity and 'school' not in amenity):
                 continue  # Wikidata school shouldn't match OSM restaurant
 
+        if (building_only_match and
+                not address_match and
+                name_match and
+                not identifier_match):
             if ('man_made=windmill' in item.tags and
                     'amenity=pub' not in item.tags and
                     'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
