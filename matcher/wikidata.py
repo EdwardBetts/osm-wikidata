@@ -92,6 +92,8 @@ extra_keys = {
     'Q515': ['Tag:border_type=city'],           # city
     'Q1254933': ['Tag:amenity=university'],     # astronomical observatory
     'Q1976594': ['Tag:landuse=industrial'],     # science park
+    'Q190928': ['Tag:landuse=industrial'],      # shipyard
+    'Q11997323': ['Tag:emergency=lifeboat_station'], # lifeboat station
 }
 
 # search for items in bounding box that have an English Wikipedia article
