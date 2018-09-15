@@ -63,6 +63,7 @@ def tidy_name(n):
     n = n.replace(' church of england ', ' ce ')
     n = n.replace(' cofe ', ' ce ')
     n = n.replace(' c of e ', ' ce ')
+    n = n.replace(' @ ', ' at ')
     n = n.replace(' roman catholic ', ' rc ')
     n = n.replace(' catholic ', ' rc ')
     n = n.replace(' preparatory school', ' prep school')

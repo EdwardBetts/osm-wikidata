@@ -286,6 +286,12 @@ def test_number_bad_match():
     assert not match.name_match_main('1 & 2', '12, Downside')
     assert not match.name_match_main('5.', '5, High Street')
 
+def test_at_symbol_match():
+    a = 'HEB Center @ Cedar Park'
+    b = 'H-E-B Center at Cedar Park'
+    assert match.name_match(a, b)
+    assert match.name_match(b, a)
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
