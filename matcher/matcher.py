@@ -410,7 +410,8 @@ def find_item_matches(cur, item, prefix, debug=False):
 
             if ('historic=castle' in item.tags and
                     'railway=station' not in item.tags and
-                    osm_tags.get('railway') == 'station' and
+                    (osm_tags.get('railway') == 'station' or
+                    osm_tags.get('building') == 'train_station') and
                     osm_tags.get('historic') != 'castle'):
                 continue  # castle shouldn't railway station
 
