@@ -406,7 +406,13 @@ def find_item_matches(cur, item, prefix, debug=False):
             if ('amenity=lifeboat_station' in item.tags and
                     'amenity=place_of_worship' not in item.tags and
                     'place_of_worship' in amenity):
-                continue  # Wikidata windmill shouldn't match OSM pub
+                continue  # lifeboat station shouldn't match place of worship
+
+            if ('historic=castle' in item.tags and
+                    'railway=station' not in item.tags and
+                    osm_tags.get('railway') == 'station' and
+                    osm_tags.get('historic') != 'castle'):
+                continue  # castle shouldn't railway station
 
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
