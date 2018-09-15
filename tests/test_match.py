@@ -286,6 +286,9 @@ def test_number_bad_match():
     assert not match.name_match_main('1 & 2', '12, Downside')
     assert not match.name_match_main('5.', '5, High Street')
 
+def test_match_with_missing_house_number():
+    assert match.name_match('1-3 Rectory Cottages', 'Rectory Cottages')
+
 def test_at_symbol_match():
     a = 'HEB Center @ Cedar Park'
     b = 'H-E-B Center at Cedar Park'

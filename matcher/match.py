@@ -11,6 +11,7 @@ from enum import Enum
 re_strip_non_chars = re.compile(r'[^-@\w]', re.U)
 re_strip_non_chars_and_dash = re.compile(r'[^@\w]', re.U)
 re_non_char_start = re.compile(r'^[^@\w]*', re.U)
+re_non_letter_start = re.compile(r'^[^A-Z]+', re.I | re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
@@ -157,6 +158,9 @@ def check_for_intials_match(initials, name):
 
 def strip_non_char_start(s):
     return re_non_char_start.sub('', s)
+
+def strip_non_letter_start(s):
+    return re_non_letter_start.sub('', s)
 
 def drop_initials(name):
     first_space = name.find(' ')
@@ -337,6 +341,16 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
+
+    terms = ['cottages', 'buildings', 'houses']
+    # OSM might have building number, while Wikidata doesn't
+    # Example: '1-3 Rectory Cottages' matches 'Rectory Cottages'
+    if osm and osm[0].isdigit() and any(t in wd.lower() for t in terms):
+        no_number_osm = strip_non_letter_start(osm)
+        print(no_number_osm)
+        match = name_match_main(no_number_osm, wd, endings, debug)
+        if match:
+            return match
 
     osm_no_intitals = drop_initials(osm)
     if osm_no_intitals:
