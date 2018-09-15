@@ -755,3 +755,56 @@ def test_castle_station_bad_match(monkeypatch):
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
     assert len(candidates) == 0
+
+def test_church_pub_bad_match(monkeypatch):
+    osm_tags = {
+        'amenity': 'pub',
+        'building': 'commercial',
+        'name': 'The Broadwater',
+    }
+
+    entity = {
+        'claims': {
+            'P373': [{
+                'mainsnak': {
+                    'datavalue': {'value': 'Broadwater Church, West Sussex'},
+                }
+            }]
+        },
+        'labels': {
+            'en': {'language': 'en', 'value': "St. Mary's Church, Broadwater"},
+        },
+        'sitelinks': {
+            'commonswiki': {
+                'site': 'commonswiki',
+                'title': 'Category:Broadwater Church, West Sussex',
+            },
+            'enwiki': {
+                'site': 'enwiki',
+                'title': "St Mary's Church, Broadwater",
+            }
+        },
+    }
+
+    tags = ['religion=christian', 'building=yes', 'building', 'amenity=place_of_worship',
+            'building=shrine', 'building=temple', 'building=church']
+    item = Item(entity=entity, tags=tags)
+
+    def place_names():
+        return ['West Sussex']
+    monkeypatch.setattr(item, 'place_names', place_names)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('polygon', 91013361, None, osm_tags, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 0

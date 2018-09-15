@@ -415,6 +415,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                     osm_tags.get('historic') != 'castle'):
                 continue  # castle shouldn't railway station
 
+            if ('amenity=place_of_worship' in item.tags and
+                    'amenity=pub' not in item.tags and
+                    'pub' in amenity):
+                continue  # place of worship shouldn't match pub
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
