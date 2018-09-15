@@ -684,3 +684,39 @@ def test_cottage_church_bad_match(monkeypatch):
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
     assert len(candidates) == 0
+
+def test_lifeboat_station_church_bad_match(monkeypatch):
+    osm_tags = {
+        'amenity': 'place_of_worship',
+        'building': 'yes',
+        'denomination': 'anglican',
+        'name': "St Agnes'",
+        'religion': 'christian',
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'St Agnes Lifeboat Station'},
+        },
+        'sitelinks': {}
+    }
+
+    tags = ['amenity=lifeboat_station', 'building', 'building=yes',
+            'emergency=lifeboat_station']
+    item = Item(entity=entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('polygon', 234155614, None, osm_tags, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 0

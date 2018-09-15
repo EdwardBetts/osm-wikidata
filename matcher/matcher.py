@@ -403,6 +403,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
                 continue  # Wikidata windmill shouldn't match OSM pub
 
+            if ('amenity=lifeboat_station' in item.tags and
+                    'amenity=place_of_worship' not in item.tags and
+                    'place_of_worship' in amenity):
+                continue  # Wikidata windmill shouldn't match OSM pub
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
