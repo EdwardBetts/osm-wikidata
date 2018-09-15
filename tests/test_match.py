@@ -274,12 +274,14 @@ def test_name_match():
     wikidata = 'Manor House Buildings'
     assert match.name_match(osm, wikidata)
 
+    assert match.name_match('site of Pegwell Lodge', 'Pegwell Lodge')
+
+def test_ignore_apostrophe_s_in_match():
     osm = 'Augustine Steward House'
     wikidata = "Augustine Steward's House"
     cur = match.name_match(osm, wikidata)
     assert cur.match_type == match.MatchType.good
 
-    assert match.name_match('site of Pegwell Lodge', 'Pegwell Lodge')
 
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()

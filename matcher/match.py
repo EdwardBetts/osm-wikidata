@@ -109,6 +109,7 @@ def match_with_words_removed(osm, wd, words):
     wd_versions = {wd_char_only.replace(word, '')
                     for word in words} | {wd_char_only}
 
+    best_match = None
     for osm_filtered in osm_versions:
         if not osm_filtered:
             continue
@@ -120,7 +121,8 @@ def match_with_words_removed(osm, wd, words):
             match_type = (MatchType.both_trimmed
                           if osm_filtered != osm_char_only
                           else MatchType.wikidata_trimmed)
-            return Match(match_type)
+            best_match = Match(match_type)
+    return best_match
 
 def strip_non_chars_match(osm, wd, dash_okay=True):
     pattern = re_strip_non_chars if dash_okay else re_strip_non_chars_and_dash
