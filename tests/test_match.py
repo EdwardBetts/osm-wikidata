@@ -282,6 +282,8 @@ def test_ignore_apostrophe_s_in_match():
     cur = match.name_match(osm, wikidata)
     assert cur.match_type == match.MatchType.good
 
+def test_number_bad_match():
+    assert not match.name_match_main('1 & 2', '12, Downside')
 
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
