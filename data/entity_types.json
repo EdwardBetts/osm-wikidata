@@ -1212,7 +1212,7 @@
 },
 {
     "cats": ["Country houses", "Manor houses"],
-    "tags": ["historic=manor"],
+    "tags": ["historic=manor", "castle_type=stately"],
     "trim": ["house", "hall", "manor"],
     "check_housename": true,
     "dist": 5

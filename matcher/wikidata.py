@@ -93,7 +93,10 @@ extra_keys = {
     'Q1254933': ['Tag:amenity=university'],     # astronomical observatory
     'Q1976594': ['Tag:landuse=industrial'],     # science park
     'Q190928': ['Tag:landuse=industrial'],      # shipyard
-    'Q11997323': ['Tag:emergency=lifeboat_station'], # lifeboat station
+    'Q11997323': ['Tag:emergency=lifeboat_station'],  # lifeboat station
+    'Q16884952': ['Tag:castle_type=stately'],   # country house
+    'Q1343246': ['Tag:castle_type=stately'],    # English country house
+    'Q4919932': ['Tag:castle_type=stately'],    # stately home
 }
 
 # search for items in bounding box that have an English Wikipedia article
