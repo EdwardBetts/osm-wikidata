@@ -420,6 +420,13 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'pub' in amenity):
                 continue  # place of worship shouldn't match pub
 
+            if ('railway=station' in item.tags and
+                    'amenity=cafe' not in item.tags and
+                    'cafe' in amenity and
+                    osm_tags.get('railway') != 'station' and
+                    osm_tags.get('building') != 'train_station'):
+                continue  # station shouldn't match cafe
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match

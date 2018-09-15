@@ -808,3 +808,58 @@ def test_church_pub_bad_match(monkeypatch):
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
     assert len(candidates) == 0
+
+def test_railway_station_cafe_bad_match(monkeypatch):
+    osm_tags = {
+        'addr:city': 'Gillingham',
+        'addr:housename': 'Gillingham (Kent) Railway Station',
+        'addr:postcode': 'ME7 1XE',
+        'addr:street': 'Railway Street',
+        'amenity': 'cafe',
+        'building': 'yes',
+        'cuisine': 'coffee_shop',
+        'name': 'BeeZoo Coffee Shop',
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': "Gillingham railway station"},
+        },
+        'sitelinks': {
+            'commonswiki': {
+                'site': 'commonswiki',
+                'title': 'Category:Gillingham (Kent) railway station',
+            },
+            'enwiki': {
+                'site': 'enwiki',
+                'title': 'Gillingham railway station (Kent)',
+            },
+            'nlwiki': {
+                'site': 'nlwiki',
+                'title': 'Station Gillingham (Kent)',
+            },
+            'simplewiki': {
+                'site': 'simplewiki',
+                'title': 'Gillingham (Kent) railway station',
+            },
+        },
+    }
+
+    tags = ['building=train_station', 'railway=station', 'railway=halt']
+    item = Item(entity=entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('polygon', 1, None, osm_tags, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 0
