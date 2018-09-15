@@ -1082,7 +1082,7 @@
 {
     "name": "Sport venues",
     "cats": ["Sports venues by country", "Baseball", "Bullrings", "Stadiums", "Indoor arenas"],
-    "tags": ["leisure=sports_centre", "sport", "leisure=stadium"],
+    "tags": ["leisure=sports_centre", "sport", "leisure=stadium", "amenity=community_centre"],
     "trim": ["sports centre", "sport center", "track", "stadium", "ground", "sports ground", "club"],
     "check_housename": true,
     "wikidata": "Q1076486",
