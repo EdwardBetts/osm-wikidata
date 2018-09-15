@@ -272,7 +272,8 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if 'washington, d' in wd_tidy:  # special case for Washington, D.C.
         wd_tidy = wd_tidy.replace('washington, d', 'washington d')
     comma = wd_tidy.rfind(', ')
-    if comma != -1 and not osm_tidy.replace('&', '').replace(' ', '').isdigit():
+    osm_char_only = re_strip_non_chars.sub('', osm_tidy)
+    if comma != -1 and not osm_char_only.isdigit():
         wc_part1 = wd_tidy[:comma]
         if wc_part1 == osm_tidy or strip_non_chars_match(osm_tidy, wc_part1):
             return Match(MatchType.good)
