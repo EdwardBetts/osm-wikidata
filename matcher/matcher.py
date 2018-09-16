@@ -434,6 +434,12 @@ def find_item_matches(cur, item, prefix, debug=False):
                     osm_tags.get('building') != 'train_station'):
                 continue  # station shouldn't match supermarket
 
+            if ('amenity=school' in item.tags and
+                    'leisure=ice_rink' not in item.tags and
+                    osm_tags.get('leisure') == 'ice_rink' and
+                    'school' not in amenity):
+                continue  # school shouldn't match ice rink
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
