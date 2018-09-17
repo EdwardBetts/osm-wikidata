@@ -1074,6 +1074,14 @@
     "wikidata": "Q131596"
 },
 {
+    "cats": ["Farmhouses"],
+    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm"],
+    "trim": ["farm", "farmhouse", "farm house"],
+    "area": true,
+    "dist": 2,
+    "wikidata": "Q489357"
+},
+{
     "cats": ["Horse racing venues by country"],
     "tags": ["sport=horse_racing"],
     "trim": ["track"],
