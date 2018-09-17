@@ -863,3 +863,57 @@ def test_railway_station_cafe_bad_match(monkeypatch):
 
     candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
     assert len(candidates) == 0
+
+def test_prefer_tag_match_over_building_only_match(monkeypatch):
+    tags1 = {
+        'name': 'Shepperton',
+        'network': 'National Rail',
+        'railway': 'station',
+    }
+    tags2 = {
+        'building': 'yes',
+        'name': 'Shepperton Station'
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Shepperton railway station'},
+            'nl': {'language': 'nl', 'value': 'station Shepperton'},
+        },
+        'sitelinks': {},
+    }
+
+    tags = ['building=train_station', 'railway=station', 'building']
+    item = Item(entity=entity, tags=tags)
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('point', 3397249904, None, tags1, 26.78),
+            ('polygon', 246812406, None, tags2, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
+    assert len(candidates) == 1
+    c = candidates[0]
+    del c['name_match']
+    assert c == {
+        'osm_type': 'node',
+        'osm_id': 3397249904,
+        'name': None,
+        'tags': tags1,
+        'dist': 26.78,
+        'planet_table': 'point',
+        'src_id': 3397249904,
+        'geom': None,
+        'identifier_match': False,
+        'address_match': None,
+        'matching_tags': {'railway=station'}
+    }

@@ -270,6 +270,10 @@ def is_diplomatic_mission(matching_tags, osm_tags):
             return True
     return False
 
+def is_building_only_match(matching_tags):
+    building_tags = {'building', 'building=yes', 'historic:building'}
+    return matching_tags.issubset(building_tags)
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -379,8 +383,7 @@ def find_item_matches(cur, item, prefix, debug=False):
                 if name_country and name_country['qid'] not in item_countries:
                     continue
 
-        building_tags = {'building', 'building=yes', 'historic:building'}
-        building_only_match = matching_tags.issubset(building_tags)
+        building_only_match = is_building_only_match(matching_tags)
 
         amenity = set(osm_tags['amenity'].split(';')
                       if 'amenity' in osm_tags else [])
@@ -488,7 +491,16 @@ def find_item_matches(cur, item, prefix, debug=False):
             'matching_tags': matching_tags,
         }
         candidates.append(candidate)
-    return filter_distant(candidates)
+    candidates = filter_distant(candidates)
+    candidates = prefer_tag_match_over_building_only_match(candidates)
+    return candidates
+
+def prefer_tag_match_over_building_only_match(candidates):
+    if len(candidates) == 1:
+        return candidates
+    quality = [c for c in candidates
+               if c['name_match'] and not is_building_only_match(c['matching_tags'])]
+    return quality or candidates
 
 def check_item_candidate(candidate):
     item, osm_tags = candidate.item, candidate.tags
@@ -534,8 +546,7 @@ def check_item_candidate(candidate):
 
     matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
-    building_tags = {'building', 'building=yes', 'historic:building'}
-    building_only_match = matching_tags.issubset(building_tags)
+    building_only_match = is_building_only_match(matching_tags)
 
     amenity = set(osm_tags['amenity'].split(';')
                   if 'amenity' in osm_tags else [])
