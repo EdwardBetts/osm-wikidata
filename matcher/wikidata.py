@@ -1152,6 +1152,8 @@ class WikidataItem:
         if len(located_in) > 50:
             return
         for location in get_entities(located_in):
+            if 'labels' not in location:
+                continue
             location_names |= {v['value']
                                for v in location['labels'].values()
                                if v['value'] not in wikidata_names}
