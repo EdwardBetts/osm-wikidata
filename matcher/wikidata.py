@@ -1182,8 +1182,10 @@ class WikidataItem:
     def languages_from_country(self):
         langs = []
         for country in self.claims.get('P17', []):
-            c = claim_value(country)['numeric-id']
-            for l in language.get_country_lanaguage(c):
+            c = claim_value(country)
+            if not c:
+                continue
+            for l in language.get_country_lanaguage(c['numeric-id']):
                 if l not in langs:
                     langs.append(l)
         return langs
