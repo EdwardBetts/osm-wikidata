@@ -369,7 +369,7 @@ def find_item_matches(cur, item, prefix, debug=False):
                     osm_tags.get('country'))
             item_countries = {country['id'] for country in item.get_claim('P137')}
 
-            if country:
+            if country and 'country' in osm_tags:
                 codes = set()
                 for qid in item_countries:
                     codes.update(wikidata.country_iso_codes_from_qid(qid))
