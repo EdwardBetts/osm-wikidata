@@ -747,6 +747,12 @@ def test_no_trim_s_on_single_term_name():
 
     assert not match.name_match(osm, wd, endings=['inn'])
 
+def test_strip_place_name():
+    osm = 'Danmarks ambassade'
+    wd = 'Danmarks ambassade i Oslo'
+
+    assert match.name_match(osm, wd, place_names=['Oslo'])
+
 @pytest.mark.skip(reason="not needed")
 def test_church_name_match():
     n1 = "St. Michael's Church"

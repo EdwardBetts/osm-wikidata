@@ -323,7 +323,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     return
 
 def strip_place_name(name, place_name):
-    for word in 'of', 'de', 'di', 'at':
+    for word in 'of', 'de', 'di', 'at', 'i':
         search = f' {word} {place_name}'
         if search in name:
             return name.replace(search, '')
