@@ -137,6 +137,13 @@ class Place(Base):
         session.commit()
         return place
 
+    @property
+    def type_label(self):
+        cat = self.category.replace('_', ' ')
+        if self.type == 'yes':
+            return cat
+        return self.type.replace('_', ' ') + ' ' + cat
+
     @classmethod
     def get_by_wikidata(cls, qid):
         q = cls.query.filter_by(wikidata=qid)
@@ -1212,6 +1219,8 @@ class Place(Base):
             place = Place.from_osm(osm_type, osm_id)
             if not place:
                 continue
+            admin_level = e['tags'].get('admin_level')
+            place.admin_level = admin_level if admin_level else None
             ret.append(place)
 
         ret.sort(key=lambda place: place.area_in_sq_km)

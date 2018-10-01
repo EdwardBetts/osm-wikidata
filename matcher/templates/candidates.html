@@ -298,9 +298,18 @@ function zoom_to_item(e) {
     {% if larger_areas %}
       <p>{{ place.name }} is small ({{ '{:,.2f}'.format(place.area_in_sq_km) }} km&sup2;), you might consider a larger enclosing area:</p>
       <ul>
-        {% for p in larger_areas %}
-        <li><a href="{{ p.candidates_url() }}">{{ p.name }}</a>
-          ({{ '{:,.2f}'.format(p.area_in_sq_km) }} km&sup2;)</li>
+        {% for hit in larger_areas %}
+        <li><a href="{{ hit.candidates_url() }}">{{ hit.name }}</a>
+
+    {{ hit.type_label }}
+    {% set admin_level = hit.admin_level %}
+    {% if admin_level %}
+      (admin level: {{ admin_level }})
+    {% endif %}
+    &mdash;
+    area: {{ '{:,.2f}'.format(hit.area_in_sq_km) }} km&sup2;
+    </li>
+
         {% endfor %}
       </ul>
     {% endif %}
