@@ -1222,8 +1222,7 @@ class Place(Base):
             place = Place.from_osm(osm_type, osm_id)
             if not place:
                 continue
-            admin_level = e['tags'].get('admin_level')
-            place.admin_level = admin_level if admin_level else None
+            place.admin_level = e['tags'].get('admin_level') or None if 'tags' in e else None
             ret.append(place)
 
         ret.sort(key=lambda place: place.area_in_sq_km)
