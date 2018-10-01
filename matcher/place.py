@@ -139,10 +139,13 @@ class Place(Base):
 
     @property
     def type_label(self):
+        t = self.type.replace('_', ' ')
         cat = self.category.replace('_', ' ')
-        if self.type == 'yes':
+        if cat == 'place':
+            return t
+        if t == 'yes':
             return cat
-        return self.type.replace('_', ' ') + ' ' + cat
+        return t + ' ' + cat
 
     @classmethod
     def get_by_wikidata(cls, qid):
