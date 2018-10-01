@@ -1,6 +1,6 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate, ChangesetEdit
+from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract, ChangesetEdit
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
@@ -13,6 +13,7 @@ from pprint import pprint
 from sqlalchemy.types import Enum
 from sqlalchemy.schema import CreateTable, CreateIndex
 from sqlalchemy.dialects.postgresql.base import CreateEnumType
+import unicodedata
 import sqlalchemy.exc
 import math
 import os.path
@@ -50,7 +51,7 @@ def mail_recent():
 
     # this works if run from cron once per hour
     # better to report new items since last run
-    since = datetime.now() - timedelta(hours=1)
+    since = datetime.utcnow() - timedelta(hours=1)
 
     q = (Changeset.query.filter(Changeset.update_count > 0,
                                 Changeset.created > since)
@@ -358,6 +359,15 @@ def srid(place_identifier):
 
 @app.cli.command()
 @click.argument('place_identifier')
+def show_chunks(place_identifier):
+    place = get_place(place_identifier)
+    for chunk in place.get_chunks():
+        oql = chunk['oql']
+        if oql:
+            print(oql)
+
+@app.cli.command()
+@click.argument('place_identifier')
 def add_to_queue(place_identifier):
     place = get_place(place_identifier)
 
@@ -534,13 +544,28 @@ def next_level(qid):
     app.config.from_object('config.default')
     entity = wikidata.get_entity(qid)
     rows = wikidata.next_level_places(qid, entity)
+    isa_list = set()
     isa = {i['mainsnak']['datavalue']['value']['id']
            for i in entity.get('claims', {}).get('P31', [])}
 
     print(qid, entity['labels']['en']['value'], isa)
 
     for row in rows:
+        isa_list.update(row['isa'])
         print(row)
+
+    print()
+    for row in wikidata.get_item_labels(isa_list):
+        print(row)
+
+@app.cli.command()
+@click.argument('qid')
+def next_level_query(qid):
+    app.config.from_object('config.default')
+    entity = wikidata.get_entity(qid)
+    query = wikidata.get_next_level_query(qid, entity)
+
+    print(query)
 
 @app.cli.command()
 def geojson_chunks():
@@ -648,7 +673,7 @@ def show_polygons(place_identifier):
     print(q)
 
     for num, area, box2d in q:
-        # west, south, east, noth
+        # west, south, east, north
         # BOX(135.8536855 20.2145811,136.3224209 20.6291059)
 
         size = wikidata_chunk_size(area)
@@ -904,6 +929,23 @@ def load_isa(place_identifier):
     place.load_isa()
 
 @app.cli.command()
+@click.argument('place_identifier')
+def detect_language(place_identifier):
+    place = get_place(place_identifier)
+    for item in place.items_with_candidates():
+        for c in item.candidates:
+            if 'name' not in c.tags:
+                continue
+            name = c.tags['name']
+            print(name)
+            for c in name:
+                print(c, unicodedata.name(c))
+
+            continue
+            name_tags = {k: v for k, v in c.tags.items() if k.startswith('name')}
+            print(name_tags)
+
+@app.cli.command()
 def load_all_isa():
     app.config.from_object('config.default')
     database.init_app(app)
@@ -995,4 +1037,46 @@ def refresh_all_extracts():
             print('  ', item.label())
 
         place.load_extracts(progress=progress)
+        print()
+
+@app.cli.command()
+def db_now_utc():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = database.session.query(func.timezone('utc', func.now()))
+    print(q.scalar())
+
+@app.cli.command()
+@click.argument('filename')
+def get_changeset_edits(filename):
+    ids = sorted(int(line) for line in open(filename))
+
+    for changeset_id in ids:
+        print(changeset_id)
+        osm_api.get_changeset(changeset_id)
+        sleep(1)
+
+@app.cli.command()
+@click.argument('changeset_dir')
+def parse_changesets(changeset_dir):
+    for f in os.scandir(changeset_dir):
+        changeset_id = f.name[:-4]
+        root = osm_api.get_changeset(changeset_id)
+        edits = osm_api.parse_osm_change(root)
+        print(edits)
+
+@app.cli.command()
+def larger_areas():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Place.query.filter(Place.state == 'ready',
+                           Place.overpass_is_in.isnot(None))
+    print(q.count())
+
+    for p in q:
+        print(p.name)
+        for a in p.is_in():
+            print(a['tags'].get('name:en', a['tags']['name']))
         print()
