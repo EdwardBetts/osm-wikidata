@@ -22,7 +22,9 @@ import re
 
 place_chunk_size = 32
 degrees = '(-?[0-9.]+)'
-re_box = re.compile(f'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
+re_box = re.compile(rf'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
+
+base_osm_url = 'https://www.openstreetmap.org'
 
 overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
@@ -117,6 +119,10 @@ class Place(Base):
     __table_args__ = (
         UniqueConstraint('osm_type', 'osm_id'),
     )
+
+    @property
+    def osm_url(self):
+        return f'{base_osm_url}/{self.osm_type}/{self.osm_id}'
 
     @classmethod
     def get_by_osm(cls, osm_type, osm_id):
