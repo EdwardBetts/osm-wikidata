@@ -660,7 +660,7 @@
 },
 {
     "cats": ["Universities by country", "University"],
-    "exclude_cats": ["History of", "Sport at", "Streets associated with", "affiliated with universities"],
+    "exclude_cats": ["History of", "Sport at", "Streets associated with", "affiliated with universities", "College golf"],
     "tags": ["amenity=university", "type=site", "site=university", "building=university"],
     "trim": ["university", "school", "college"],
     "area": true,
