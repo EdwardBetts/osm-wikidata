@@ -443,6 +443,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'school' not in amenity):
                 continue  # school shouldn't match ice rink
 
+            if ('leisure=stadium' in item.tags and
+                    'building=train_station' not in item.tags and
+                    osm_tags.get('building') == 'train_station'):
+                continue  # Wikidata stadium shouldn't match OSM station building
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
