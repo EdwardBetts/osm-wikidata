@@ -749,7 +749,8 @@ class ItemCandidate(Base):
 
     def checkbox_ticked(self):
         max_dist = 500
-        if any(tag != 'place=farm' and tag.startswith('place=') for tag in self.matching_tags()):
+        if any(tag == 'place' or (tag != 'place=farm' and tag.startswith('place='))
+               for tag in self.matching_tags()):
             max_dist = 2000
         elif self.item.is_nhle:
             max_dist = 75
