@@ -94,8 +94,10 @@ extra_keys = {
     'Q1976594': ['Tag:landuse=industrial'],     # science park
     'Q190928': ['Tag:landuse=industrial'],      # shipyard
     'Q11997323': ['Tag:emergency=lifeboat_station'],  # lifeboat station
-    'Q16884952': ['Tag:castle_type=stately'],   # country house
-    'Q1343246': ['Tag:castle_type=stately'],    # English country house
+    'Q16884952': ['Tag:castle_type=stately',
+                  'Tag:building=country_house'],  # country house
+    'Q1343246': ['Tag:castle_type=stately',
+                 'Tag:building=country_house'],   # English country house
     'Q4919932': ['Tag:castle_type=stately'],    # stately home
     'Q1763828': ['Tag:amenity=community_centre'],  # multi-purpose hall
     'Q489357': ['Tag:landuse=farmyard', 'Tag:place=farm'],  # farmhouse
