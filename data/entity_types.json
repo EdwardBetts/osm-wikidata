@@ -211,7 +211,7 @@
 {
     "cats": ["Houses by country"],
     "exclude_cats": ["lower houses", "public houses"],
-    "tags": ["historic=manor"],
+    "tags": ["historic=manor", "building=country_house"],
     "trim": ["house", "hall"],
     "check_housename": true,
     "wikidata": "Q3947",
@@ -1221,7 +1221,7 @@
 },
 {
     "cats": ["Country houses", "Manor houses"],
-    "tags": ["historic=manor", "castle_type=stately"],
+    "tags": ["historic=manor", "castle_type=stately", "building=country_house"],
     "trim": ["house", "hall", "manor"],
     "check_housename": true,
     "dist": 5
