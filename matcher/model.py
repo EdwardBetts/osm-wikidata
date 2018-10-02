@@ -533,6 +533,11 @@ class Item(Base):
                 g.country_code = place.country_code
                 return
 
+    @property
+    def is_nhle(self):
+        '''Is this a National Heritage List for England item?'''
+        return self.entity and 'P1216' in self.entity.get('claims', {})
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 
