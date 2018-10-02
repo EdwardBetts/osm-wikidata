@@ -748,8 +748,11 @@ class ItemCandidate(Base):
         return utils.display_distance(units, self.dist)
 
     def checkbox_ticked(self):
+        max_dist = 500
+        if 'place=village' in self.matching_tags():
+            max_dist = 2000
         return ((not self.dist or
-                 self.dist < 500 and
+                 self.dist < max_dist and
                  'designation=civil_parish' not in self.matching_tags()) or
                  self.item.candidates.count() > 1)
 
