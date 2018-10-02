@@ -408,14 +408,14 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <div class="my-3">
     {% for item in candidates %}
         {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if picked and not picked.checked_ticked() %}
+        {% if picked and not picked.checkbox_ticked() %}
             {{ candidate_item(item) }}
         {% endif %}
     {% endfor %}
 
     {% for item in candidates %}
         {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if not picked or picked.checked_ticked() %}
+        {% if not picked or picked.checkbox_ticked() %}
             {{ candidate_item(item) }}
         {% endif %}
     {% endfor %}
