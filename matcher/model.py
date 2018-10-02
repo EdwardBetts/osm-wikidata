@@ -751,6 +751,8 @@ class ItemCandidate(Base):
         max_dist = 500
         if 'place=village' in self.matching_tags():
             max_dist = 2000
+        elif self.item.is_nhle:
+            max_dist = 50
         return ((not self.dist or
                  self.dist < max_dist and
                  'designation=civil_parish' not in self.matching_tags()) or
