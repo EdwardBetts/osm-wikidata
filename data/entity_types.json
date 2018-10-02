@@ -190,7 +190,7 @@
 {
     "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures",
              "Triumphal arches", "memorials", "monuments"],
-    "tags": ["historic=monument", "tourism", "historic=memorial"],
+    "tags": ["historic=monument", "tourism", "historic=memorial", "memorial=statue"],
     "trim": ["monument", "Statue of"],
     "dist": 3
 },

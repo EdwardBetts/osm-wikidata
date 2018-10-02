@@ -103,6 +103,7 @@ extra_keys = {
     'Q489357': ['Tag:landuse=farmyard', 'Tag:place=farm'],  # farmhouse
     'Q44494': ['Tag:historic=mill'],            # mill
     'Q56822897': ['Tag:historic=mill'],         # mill building
+    'Q179700': ['Tag:memorial=statue'],         # statue
 }
 
 # search for items in bounding box that have an English Wikipedia article
