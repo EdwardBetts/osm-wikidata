@@ -747,6 +747,12 @@ class ItemCandidate(Base):
 
         return utils.display_distance(units, self.dist)
 
+    def checkbox_ticked(self):
+        return ((not self.dist or
+                 self.dist < 500 and
+                 'designation=civil_parish' not in self.matching_tags()) or
+                 self.item.candidates.count() > 1)
+
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'
 #     __table_args__ = (

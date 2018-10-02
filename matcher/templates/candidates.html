@@ -11,11 +11,7 @@
   <div class="card-body">
 <p>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
-  {% if upload_okay and picked %}
-      {% set checked = (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
-  {% else %}
-      {% set checked = false %}
-  {% endif %}
+  {% set checked = upload_okay and picked and picked.checkbox_ticked() %}
   {% if upload_okay %}
       {% if picked %}
         {% if checked %}
@@ -412,14 +408,14 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <div class="my-3">
     {% for item in candidates %}
         {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if picked and not ((not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1) %}
+        {% if picked and not picked.checked_ticked() %}
             {{ candidate_item(item) }}
         {% endif %}
     {% endfor %}
 
     {% for item in candidates %}
         {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if not picked or (not picked.dist or picked.dist < 500 and 'designation=civil_parish' not in picked.matching_tags()) or item.candidates.count() > 1 %}
+        {% if not picked or picked.checked_ticked() %}
             {{ candidate_item(item) }}
         {% endif %}
     {% endfor %}
