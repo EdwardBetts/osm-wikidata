@@ -980,10 +980,17 @@
 },
 {
     "cats": ["Art museums and galleries by country", "Art galleries", "Art museums"],
-    "tags": ["tourism=gallery", "tourism=museum", "amenity=arts_centre"],
+    "tags": ["tourism=gallery", "tourism=museum", "amenity=arts_centre", "shop=art"],
     "trim": ["gallery", "space", "museum"],
     "check_housename": true,
-    "dist": 2
+    "dist": 1
+},
+{
+    "cats": ["Art dealers"],
+    "tags": ["shop=art"],
+    "trim": ["gallery", "space"],
+    "check_housename": true,
+    "dist": 1
 },
 {
     "cats": ["City walls"],
