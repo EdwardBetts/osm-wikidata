@@ -358,6 +358,9 @@ def find_item_matches(cur, item, prefix, debug=False):
         name_match = match.check_for_match(osm_tags, wikidata_names, endings,
                                            place_names=place_names)
 
+        if 'seamark:name' in name_match and 'man_made=lighthouse' not in item.tags:
+            del name_match['seamark:name']  # not a lighthouse
+
         if not (identifier_match or address_match or name_match):
             continue
 
