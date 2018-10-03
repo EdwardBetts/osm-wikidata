@@ -249,8 +249,7 @@ def bad_building_match(osm_tags, name_match, item):
             if match_type == 'both_trimmed':
                 continue
             if len(source) == 1 and source[0][0] == 'extract':
-                pass
-                # continue
+                continue
             if osm == 'operator' and match_type == 'wikidata_trimmed':
                 continue
             if match_type == 'wikidata_trimmed' and is_station:
