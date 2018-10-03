@@ -246,10 +246,16 @@ def bad_building_match(osm_tags, name_match, item):
 
     for osm, detail_list in name_match.items():
         for match_type, value, source in detail_list:
-            if not (match_type == 'both_trimmed' or
-                    (osm == 'operator' and match_type == 'wikidata_trimmed') or
-                    (match_type == 'wikidata_trimmed' and is_station)):
-                return False
+            if match_type == 'both_trimmed':
+                continue
+            if len(source) == 1 and source[0][0] == 'extract':
+                pass
+                # continue
+            if osm == 'operator' and match_type == 'wikidata_trimmed':
+                continue
+            if match_type == 'wikidata_trimmed' and is_station:
+                continue
+            return False
 
     return True
 
