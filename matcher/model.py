@@ -525,7 +525,9 @@ class Item(Base):
                 continue
             names.update({i['name'] for i in place.address
                          if i['type'] != 'country_code'})
-        return names
+        start = 'Isle of '
+        trimmed = {utils.drop_start(n, start) for n in names if n.startswith(start)}
+        return names | trimmed
 
     def set_country_code(self):
         for place in self.places:
