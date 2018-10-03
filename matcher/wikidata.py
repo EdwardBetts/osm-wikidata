@@ -104,6 +104,7 @@ extra_keys = {
     'Q44494': ['Tag:historic=mill'],            # mill
     'Q56822897': ['Tag:historic=mill'],         # mill building
     'Q179700': ['Tag:memorial=statue'],         # statue
+    'Q277760': ['Tag:historic=city_gate'],      # gatehouse
 }
 
 # search for items in bounding box that have an English Wikipedia article
