@@ -481,6 +481,9 @@ def find_item_matches(cur, item, prefix, debug=False):
                 dist > 100):
             continue
 
+        if item.is_nhle and dist > 500:
+            continue  # NHLE items normally have quite precise coordinates
+
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
                f'where osm_id={src_id}')
