@@ -13,8 +13,8 @@ re_strip_non_chars_and_dash = re.compile(r'[^@\w]', re.U)
 re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_non_letter_start = re.compile(r'^[^A-Z]+', re.I | re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
-re_number_start = re.compile('^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
-re_uk_postcode_start = re.compile('^[a-z][a-z]\d+[a-z]?$', re.I)
+re_number_start = re.compile(r'^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
+re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
@@ -422,7 +422,7 @@ def check_for_address_in_extract(osm_tags, extract):
         return
 
     def address_in_extract(address):
-        address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + '\.?)', re.escape(address))
+        address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + r'\.?)', re.escape(address))
         # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
 
         return bool(re.search(r'\b' + address, extract, re.I))
