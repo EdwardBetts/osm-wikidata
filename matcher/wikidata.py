@@ -68,7 +68,8 @@ extra_keys = {
     'Q856584': ['Tag:amenity=library'],         # library building
     'Q11315': ['Tag:landuse=retail'],           # shopping mall
     'Q39658032': ['Tag:landuse=retail'],        # open air shopping centre
-    'Q277760': ['Tag:historic=folly'],          # gatehouse
+    'Q277760': ['Tag:historic=folly',
+                'Tag:historic=city_gate'],      # gatehouse
     'Q15243209': ['Tag:leisure=park'],          # historic district
     'Q3010369': ['Tag:historic=monument'],      # opening ceremony
     'Q123705': ['Tag:place=suburb'],            # neighbourhood
@@ -100,11 +101,14 @@ extra_keys = {
                  'Tag:building=country_house'],   # English country house
     'Q4919932': ['Tag:castle_type=stately'],    # stately home
     'Q1763828': ['Tag:amenity=community_centre'],  # multi-purpose hall
-    'Q489357': ['Tag:landuse=farmyard', 'Tag:place=farm'],  # farmhouse
+    'Q489357': ['Tag:landuse=farmyard',
+                'Tag:place=farm'],              # farmhouse
     'Q44494': ['Tag:historic=mill'],            # mill
     'Q56822897': ['Tag:historic=mill'],         # mill building
     'Q179700': ['Tag:memorial=statue'],         # statue
-    'Q277760': ['Tag:historic=city_gate'],      # gatehouse
+    'Q1076486': ['Tag:landuse=recreation_ground'],  # sports venue
+    'Q55004558': ['Tag:service=yard', 'Tag:landuse=railway'], # car barn
+    'Q19563580': ['Tag:landuse=railway'],       # rail yard
 }
 
 # search for items in bounding box that have an English Wikipedia article
@@ -618,7 +622,7 @@ def get_entities(ids):
     return list(json_data['entities'].values())
 
 def names_from_entity(entity, skip_lang=None):
-    if not entity:
+    if not entity or 'labels' not in entity:
         return
     if skip_lang is None:
         skip_lang = set()

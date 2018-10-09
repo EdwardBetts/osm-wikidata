@@ -13,7 +13,7 @@ from sqlalchemy.sql.expression import cast
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from .database import session, now_utc
 from flask_login import UserMixin
-from . import wikidata, matcher, match, wikipedia, country_units, utils
+from . import wikidata, matcher, match, wikipedia, country_units, utils, mail
 from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
@@ -74,7 +74,13 @@ class IsA(Base):
             return list(labels.values())[0]['value']
 
     def label_and_qid(self):
-        return f'{self.entity_label()} ({self.qid})'
+        if self.entity and 'labels' not in self.entity:
+            subject = f'missing labels: {self.qid}'
+            body = f'Wikidata entity is missing labels\n\n{self.url}'
+            mail.send_mail(subject, body)
+            return self.qid
+        else:
+            return f'{self.entity_label()} ({self.qid})'
 
     def labels(self):
         return self.entity['labels']
@@ -203,7 +209,10 @@ class Item(Base):
 
     def label_and_qid(self, lang='en'):
         label = self.label(lang=lang)
-        return '{label} ({item.qid})'.format(label=label, item=self)
+        if label:
+            return '{label} ({item.qid})'.format(label=label, item=self)
+        else:
+            return self.qid
 
     @property
     def wikidata_uri(self):
@@ -262,7 +271,16 @@ class Item(Base):
         return tags
 
     def instanceof(self):
-        if not self.entity:
+        if self.entity and 'claims' not in self.entity:
+            subject = f'missing claims: {self.qid}'
+            body = f'''
+Wikidata entity is missing claims
+
+https://www.wikidata.org/wiki/{self.qid}
+'''
+            mail.send_mail(subject, body)
+
+        if not self.entity or 'claims' not in self.entity:
             return []
 
         return [i['mainsnak']['datavalue']['value']['id']
