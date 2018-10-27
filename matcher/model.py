@@ -195,9 +195,9 @@ class Item(Base):
             5783996,  # cottage
         }
         for isa in self.isa:
-            if isa.item_id in skip_isa or not isa.entity:
+            if isa.item_id in skip_isa or not isa.entity or 'missing' in isa.entity:
                 continue
-            for lang, label in isa.entity['labels'].items():
+            for lang, label in isa.entity.get('labels', {}).items():
                 if lang in langs:
                     endings.add(label['value'])
         return endings
