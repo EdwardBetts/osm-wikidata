@@ -3,7 +3,7 @@
 {% set detail = 0 %}
 {% for hit in results %}
   <div class="box">
-    {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary', 'natural', 'leisure') and
+    {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary', 'natural', 'leisure', 'amenity') and
         (not hit.area or config.PLACE_MIN_AREA < hit.area < config.PLACE_MAX_AREA) and
         not hit.geotext.startswith('LINESTRING(') %}
       <b>
@@ -32,7 +32,7 @@
          </b>
        {% endif %}
        <br>
-        {% if hit.category not in ('place', 'boundary', 'natural', 'leisure') %}
+        {% if hit.category not in ('place', 'boundary', 'natural', 'leisure', 'amenity') %}
             [matcher only works with place or boundary]<br>
         {% elif hit.osm_type in ('way', 'relation') and hit.area %}
             {% if hit.area >= config.PLACE_MAX_AREA %}
