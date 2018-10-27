@@ -1041,7 +1041,7 @@ def country_iso_codes_from_qid(qid):
     item = WikidataItem.retrieve_item(qid)
     codes = [claim_value(c) for c in item.claims.get('P297')]
     codes += [claim_value(c) for c in item.claims.get('P298')]
-    return codes
+    return [i for i in codes if i is not None]
 
 class WikidataItem:
     def __init__(self, qid, entity):
@@ -1104,29 +1104,27 @@ class WikidataItem:
     @property
     def has_coords(self):
         try:
-            claim_value(self.claims['P625'][0])
+            self.first_claim_value('P625')
         except (IndexError, KeyError):
             return False
         return True
 
     @property
     def has_earth_coords(self):
-        if not self.has_coords:
-            return
-        globe = claim_value(self.claims['P625'][0])['globe']
-        return globe == 'http://www.wikidata.org/entity/Q2'
+        earth = 'http://www.wikidata.org/entity/Q2'
+        return self.has_coords and self.first_claim_value('P625')['globe'] == earth
 
     @property
     def coords(self):
         if not self.has_coords:
             return None, None
-        c = claim_value(self.claims['P625'][0])
+        c = self.first_claim_value('P625')
         return c['latitude'], c['longitude']
 
     @property
     def nrhp(self):
         try:
-            nrhp = claim_value(self.claims['P649'][0])
+            nrhp = self.first_claim_value('P649')
         except (IndexError, KeyError):
             return
         if nrhp.isdigit():
