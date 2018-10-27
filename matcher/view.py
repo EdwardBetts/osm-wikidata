@@ -77,7 +77,10 @@ tab_pages = [
     {'route': 'already_tagged', 'label': 'Already tagged'},
     {'route': 'no_match', 'label': 'No match'},
     {'route': 'wikidata_page', 'label': 'Wikidata query'},
-    {'route': 'overpass_query', 'label': 'Overpass query'},
+]
+
+disabled_tab_pages = [
+    {'route': 'overpass_query', 'label': 'Overpass query'}
 ]
 
 webassets.filter.register_filter(BabelJS)
