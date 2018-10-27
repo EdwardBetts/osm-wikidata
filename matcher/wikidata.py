@@ -5,6 +5,7 @@ from .utils import chunk, drop_start, cache_filename
 from .language import get_language_label
 from . import user_agent_headers, overpass, mail, language, match, matcher
 import requests
+import requests.exceptions
 import os
 import json
 import simplejson.errors
@@ -477,31 +478,42 @@ def get_point_query(lat, lon, radius):
                                   radius=float(radius) / 1000.0)
 
 def run_query(query, name=None, timeout=None, send_error_mail=True):
+    attempts = 5
+
+    def error_mail(subject, r):
+        if send_error_mail:
+            mail.error_mail('wikidata query error', query, r)
+
     if name:
         filename = cache_filename(name + '.json')
         if os.path.exists(filename):
             return json.load(open(filename))['results']['bindings']
 
-    r = requests.post(wikidata_query_api_url,
-                      data={'query': query, 'format': 'json'},
-                      timeout=timeout,
-                      headers=user_agent_headers())
-    if r.status_code == 200:
-        if name:
-            open(filename, 'wb').write(r.content)
-        return r.json()['results']['bindings']
+    for attempt in range(attempts):
+        try:  # retry if we get a ChunkedEncodingError
+            r = requests.post(wikidata_query_api_url,
+                              data={'query': query, 'format': 'json'},
+                              timeout=timeout,
+                              headers=user_agent_headers())
+            if r.status_code != 200:
+                break
+            if name:
+                open(filename, 'wb').write(r.content)
+            return r.json()['results']['bindings']
+        except requests.exceptions.ChunkedEncodingError:
+            if attempt == attempts - 1:
+                error_mail('wikidata query error', r)
+                raise QueryError(query, r)
 
     # query timeout generates two different exceptions
     # java.lang.RuntimeException: java.util.concurrent.ExecutionException: com.bigdata.bop.engine.QueryTimeoutException: Query deadline is expired.
     # java.util.concurrent.TimeoutException
     if ('Query deadline is expired.' in r.text or
             'java.util.concurrent.TimeoutException' in r.text):
-        if send_error_mail:
-            mail.error_mail('wikidata query timeout', query, r)
+        error_mail('wikidata query timeout', r)
         raise QueryTimeout(query, r)
 
-    if send_error_mail:
-        mail.error_mail('wikidata query error', query, r)
+    error_mail('wikidata query error', r)
     raise QueryError(query, r)
 
 def flatten_criteria(items):
