@@ -164,16 +164,16 @@
     "dist": 1
 },
 {
-    "cats": ["Restaurants by country"],
+    "cats": ["Restaurants by country", "Coffee houses"],
     "tags": ["amenity=restaurant", "amenity=fast_food", "amenity=cafe", "cuisine", "shop=deli", "shop=bakery"],
-    "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "inn", "grill", "lounge", "bakery"],
+    "trim": ["cafe", "restaurant", "diner", "tea room", "coffee shop", "coffee house", "inn", "grill", "lounge", "bakery"],
     "check_housename": true,
     "wikidata": "Q11707",
-    "dist": 6
+    "dist": 1
 },
 {
     "cats": ["Hotels by country"],
-    "tags": ["tourism=hotel", "building=hotel", "tourism=hostel"],
+    "tags": ["tourism=hotel", "building=hotel", "tourism=hostel", "tourism=guest_house"],
     "trim": ["hotel", "resort", "motel", "house hotel"],
     "check_housename": true,
     "wikidata": "Q27686",
@@ -552,9 +552,9 @@
     "dist": 10
 },
 {
-    "cats": ["Railway depots"],
-    "tags": ["landuse=railway"],
-    "trim": ["tmd", "depot"],
+    "cats": ["Railway depots", "Rail yards"],
+    "tags": ["landuse=railway", "service=yard"],
+    "trim": ["tmd", "depot", "subway yard", "yard", "complex", "railway yard", "railroad yard"],
     "check_housename": false,
     "dist": 2
 },
@@ -1098,7 +1098,7 @@
 {
     "name": "Sport venues",
     "cats": ["Sports venues by country", "Baseball", "Bullrings", "Stadiums", "Indoor arenas"],
-    "tags": ["leisure=sports_centre", "sport", "leisure=stadium", "amenity=community_centre"],
+    "tags": ["leisure=sports_centre", "sport", "leisure=stadium", "amenity=community_centre", "landuse=recreation_ground"],
     "trim": ["sports centre", "sport center", "track", "stadium", "ground", "sports ground", "club"],
     "check_housename": true,
     "wikidata": "Q1076486",
