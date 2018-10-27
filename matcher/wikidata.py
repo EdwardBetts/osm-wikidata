@@ -627,13 +627,19 @@ def get_entities(ids):
         'action': 'wbgetentities',
         'ids': '|'.join(ids),
     }
-    r = requests.get(wikidata_url, params=params,
-                                   headers=user_agent_headers())
-    try:
-        json_data = r.json()
-    except simplejson.errors.JSONDecodeError:
-        raise QueryError(params, r)
-    return list(json_data['entities'].values())
+    attempts = 5
+    for attempt in range(attempts):
+        try:  # retry if we get a ChunkedEncodingError
+            r = requests.get(wikidata_url, params=params,
+                                           headers=user_agent_headers())
+            try:
+                json_data = r.json()
+            except simplejson.errors.JSONDecodeError:
+                raise QueryError(params, r)
+            return list(json_data['entities'].values())
+        except requests.exceptions.ChunkedEncodingError:
+            if attempt == attempts - 1:
+                raise QueryError(query, r)
 
 def names_from_entity(entity, skip_lang=None):
     if not entity or 'labels' not in entity:
