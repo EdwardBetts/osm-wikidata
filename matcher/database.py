@@ -35,7 +35,7 @@ place_matcher ON place_matcher.osm_id = place.osm_id and place_matcher.osm_type 
         FROM pg_class C
         WHERE relname like 'osm%polygon'
         ORDER BY pg_relation_size(C.oid) DESC
-        LIMIT 100) a
+        LIMIT 200) a
 where a.place_id = place.place_id
 group by place.place_id, place.added, display_name, state, size order by size desc;'''
 
