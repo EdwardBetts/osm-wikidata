@@ -936,9 +936,6 @@ def item_types_graph(items, name=None):
 
     return graph
 
-    return {i: row_qid_and_label(row, i)
-            for i in ('item', 'type', 'country')}
-
 def find_superclasses(items, name=None):
     query_items = ' '.join(f'(wd:{qid})' for qid in items)
     query = subclasses.replace('ITEMS', query_items)
