@@ -204,8 +204,17 @@ def add_wikidata_tag():
     assert user.is_authenticated
 
     url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
-    r = requests.get(url, headers=user_agent_headers())
-    root = etree.fromstring(r.content)
+    attempts = 5
+    for attempt in attempts:
+        try:
+            r = requests.get(url, headers=user_agent_headers())
+            root = etree.fromstring(r.content)
+            break
+        except etree.XMLSyntaxError:
+            if attempt == attempts - 1:
+                mail.error_mail('error requesting element', url, r)
+                raise
+            sleep(1)
 
     if root.find('.//tag[@k="wikidata"]') is not None:
         flash('no edit needed: OSM element already had wikidata tag')
