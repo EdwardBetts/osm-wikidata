@@ -477,7 +477,7 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
-def run_query(query, name=None, timeout=None, send_error_mail=True):
+def run_query(query, name=None, return_json=True, timeout=None, send_error_mail=True):
     attempts = 5
 
     def error_mail(subject, r):
@@ -499,7 +499,10 @@ def run_query(query, name=None, timeout=None, send_error_mail=True):
                 break
             if name:
                 open(filename, 'wb').write(r.content)
-            return r.json()['results']['bindings']
+            if return_json:
+                return r.json()['results']['bindings']
+            else:
+                return r
         except requests.exceptions.ChunkedEncodingError:
             if attempt == attempts - 1:
                 error_mail('wikidata query error', r)
@@ -805,7 +808,13 @@ def next_level_places(qid, entity, name=None):
     query = get_next_level_query(qid, entity)
 
     rows = []
-    for row in run_query(query, name=name):
+    r = run_query(query, name=name, return_json=True, send_error_mail=True)
+    query_rows = r.json()['results']['bindings']
+    if any('isa_list' not in row for row in query_rows):
+        mail.error_mail('wikidata browse query error', query, r)
+        raise QueryError(query, r)
+
+    for row in query_rows:
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
         isa_list = []
