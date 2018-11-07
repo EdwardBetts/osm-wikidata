@@ -361,20 +361,25 @@ SELECT DISTINCT ?item
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
 WHERE {
   VALUES ?start { wd:QID } .
-  VALUES (?country) {
+  VALUES (?region) {
     (wd:Q3624078)  # sovereign state
     (wd:Q161243)   # dependent territory
     (wd:Q179164)   # unitary state
     (wd:Q1763527)  # constituent country
+    (wd:Q734818)   # condominium
+    (wd:Q82794)    # geographic region
   }
 
   ?item wdt:P30 ?start .
+  ?item wdt:P31 ?region .
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
