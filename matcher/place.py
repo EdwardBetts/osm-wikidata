@@ -195,7 +195,8 @@ class Place(Base):
     @property
     def too_big(self):
         max_area = current_app.config['PLACE_MAX_AREA']
-        return self.area_in_sq_km > max_area
+        antarctica = 2186646
+        return int(self.osm_id) != antarctica and self.area_in_sq_km > max_area
 
     def update_from_nominatim(self, hit):
         if self.place_id != int(hit['place_id']):
