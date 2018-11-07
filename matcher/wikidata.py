@@ -755,16 +755,21 @@ def up_one_level(qid, name=None):
     except requests.Timeout:
         return
 
-    if rows:
-        row = rows[0]
-        return {
-            'name': row['startLabel']['value'],
-            'up': row['itemLabel']['value'],
-            'country_qid': wd_to_qid(row['country1']),
-            'country_name': row['country1Label']['value'],
-            'up_country_qid': wd_to_qid(row['country2']),
-            'up_country_name': row['country2Label']['value'],
-        }
+    if not rows:
+        return
+    row = rows[0]
+
+    c1 = 'country1' in row
+    c2 = 'country2' in row
+
+    return {
+        'name': row['startLabel']['value'],
+        'up': row['itemLabel']['value'],
+        'country_qid': wd_to_qid(row['country1']) if c1 else None,
+        'country_name': row['country1Label']['value'] if c1 else None,
+        'up_country_qid': wd_to_qid(row['country2']) if c2 else None,
+        'up_country_name': row['country2Label']['value'] if c2 else None,
+    }
 
 def next_level_types(types):
     types = list(types)
