@@ -4,7 +4,7 @@
 {% for hit in results %}
   <div class="box">
     {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary', 'natural', 'leisure', 'amenity', 'landuse') and
-        (not hit.area or (hit.osm_id | int == 2186646 or config.PLACE_MIN_AREA < hit.area < config.PLACE_MAX_AREA)) and
+        (not hit.area or config.PLACE_MIN_AREA < hit.area < config.PLACE_MAX_AREA) and
         not hit.geotext.startswith('LINESTRING(') %}
       <b>
         {% if hit.place and hit.place.state == 'ready' %}
