@@ -273,7 +273,7 @@ ORDER BY ?itemLabel
 item_labels_query = '''
 SELECT ?item ?itemLabel
 WHERE {
-  VALUES (?item) { ITEMS }
+  VALUES ?item { ITEMS }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }'''
 
@@ -311,8 +311,8 @@ SELECT DISTINCT ?item ?itemLabel ?country ?countryLabel ?type ?typeLabel WHERE {
 
 subclasses = '''
 SELECT DISTINCT ?item ?itemLabel ?type ?typeLabel WHERE {
-  VALUES (?item) { ITEMS }
-  VALUES (?type) { ITEMS }
+  VALUES ?item { ITEMS }
+  VALUES ?type { ITEMS }
   ?item wdt:P279* ?type .
   FILTER (?item != ?type)
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
@@ -849,11 +849,8 @@ def next_level_places(qid, entity, name=None):
 
 def query_for_items(query, items):
     assert items
-    query_items = ' '.join(f'(wd:{qid})' for qid in items)
+    query_items = ' '.join(f'wd:{qid}' for qid in items)
     return query.replace('ITEMS', query_items)
-
-def get_item_labels_query(items):
-    return query_for_items(item_labels_query, items)
 
 def get_item_labels(items):
     query = query_for_items(item_labels_query, items)
