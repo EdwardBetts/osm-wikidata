@@ -808,7 +808,7 @@ def next_level_places(qid, entity, name=None):
     query = get_next_level_query(qid, entity)
 
     rows = []
-    r = run_query(query, name=name, return_json=True, send_error_mail=True)
+    r = run_query(query, name=name, return_json=False, send_error_mail=True)
     query_rows = r.json()['results']['bindings']
     if any('isa_list' not in row for row in query_rows):
         mail.error_mail('wikidata browse query error', query, r)
@@ -837,13 +837,16 @@ def next_level_places(qid, entity, name=None):
 
     return rows
 
-def get_item_labels_query(items):
+def query_for_items(query, items):
     assert items
     query_items = ' '.join(f'(wd:{qid})' for qid in items)
-    return item_labels_query.replace('ITEMS', query_items)
+    return query.replace('ITEMS', query_items)
+
+def get_item_labels_query(items):
+    return query_for_items(item_labels_query, items)
 
 def get_item_labels(items):
-    query = get_item_labels_query(items)
+    query = query_for_items(item_labels_query, items)
     rows = []
     for row in run_query(query):
         item_id = wd_uri_to_id(row['item']['value'])
@@ -905,12 +908,12 @@ def get_isa(items, name=None):
         ret[qid] = [i for i in result if i['qid'] not in all_children]
     return ret
 
-def item_types_graph(items, name=None):
-    query_items = ' '.join(f'wd:{qid}' for qid in items)
-    query = item_types_tree.replace('ITEMS', query_items)
-
+def item_types_graph(items, name=None, rows=None):
+    if rows is None:
+        query = query_for_items(item_types_tree, items)
+        rows = run_query(query, name=name, send_error_mail=False)
     graph = {}
-    for row in run_query(query, name=name, send_error_mail=False):
+    for row in rows:
         item_qid = wd_to_qid(row['item'])
         type_qid = wd_to_qid(row['type'])
         if not item_qid or not type_qid:
@@ -937,9 +940,7 @@ def item_types_graph(items, name=None):
     return graph
 
 def find_superclasses(items, name=None):
-    query_items = ' '.join(f'(wd:{qid})' for qid in items)
-    query = subclasses.replace('ITEMS', query_items)
-
+    query = query_for_items(subclasses, items)
     return {(wd_to_qid(row['item']), wd_to_qid(row['type']))
             for row in run_query(query, name=name)}
 
