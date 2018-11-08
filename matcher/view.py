@@ -205,7 +205,7 @@ def add_wikidata_tag():
 
     url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
     attempts = 5
-    for attempt in attempts:
+    for attempt in range(attempts):
         try:
             r = requests.get(url, headers=user_agent_headers())
             root = etree.fromstring(r.content)
