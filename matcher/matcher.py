@@ -414,6 +414,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
                 continue  # Wikidata windmill shouldn't match OSM pub
 
+            if ('historic=castle' in item.tags and
+                    'amenity=pub' not in item.tags and
+                    'pub' in amenity and osm_tags.get('historic') != 'castle'):
+                continue  # Wikidata castle shouldn't match OSM pub
+
             if ('amenity=lifeboat_station' in item.tags and
                     'amenity=place_of_worship' not in item.tags and
                     'place_of_worship' in amenity):
