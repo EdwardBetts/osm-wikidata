@@ -43,14 +43,13 @@
     {{ form.units(class="form-control") }}
   </div>
 
-  {#
   <h4>Editing</h4>
 
-  <div class="form-group">
-    {{ form.wikipedia_tag.label }}
-    {{ form.wikipedia_tag(class="form-control") }}
-  </div>
-  #}
+  <div class="form-check">
+    {{ form.wikipedia_tag(class="form-check-input") }}
+    {{ form.wikipedia_tag.label(class="form-check-label") }}
+  </label>
+</div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
   </form>
