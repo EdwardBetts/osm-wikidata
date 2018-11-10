@@ -3,6 +3,12 @@
 
 {% block title %}{{ place.display_name }}:{% endblock %}
 
+{% block style %}
+<style>
+.osm-highlight { background: #eee; padding: 2px }
+</style>
+{% endblock %}
+
 {% block content %}
   <div class="container my-2">
   <div class="row">
@@ -20,6 +26,10 @@
   <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
   <p>If in doubt, <strong>contact the local mapping community</strong> before adding Wikidata tags.</p>
 </div>
+{% endif %}
+
+{% if add_wikipedia_tags %}
+  <p>This upload to OSM will include wikipedia tags.</p>
 {% endif %}
 
 {% if table %}
@@ -62,6 +72,7 @@
         <th>OSM</th>
         <th>distance</th>
         <th>matching tags</th>
+        <th>wikipedia</th>
       </tr>
     </thead>
     <tbody>
@@ -85,6 +96,17 @@
           {{ ', '.join(c.matching_tags()) }}
         </td>
       </tr>
+      {% if add_wikipedia_tags %}
+      {% set code, sitelink = c.new_wikipedia_tag(languages) %}
+      {% if code %}
+      <tr>
+        <td></td>
+        <td colspan="4">
+          Also adding <span class="osm-highlight">wikipedia:{{ code }}</span>=<span class="osm-highlight">{{ sitelink }}</span>
+        </td>
+      </tr>
+      {% endif %}
+      {% endif %}
     {% endfor %}
     </table>
     </div>
