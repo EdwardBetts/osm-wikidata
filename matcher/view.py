@@ -1373,7 +1373,7 @@ def account_settings_page():
         if g.user.units:
             form.units.data = g.user.units
 
-        form.wikipedia_tag.data = g.user.wikidata_tag
+        form.wikipedia_tag.data = g.user.wikipedia_tag
 
     if form.validate_on_submit():
         form.populate_obj(g.user)
