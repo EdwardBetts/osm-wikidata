@@ -47,6 +47,7 @@ class User(Base, UserMixin):
     single = Column(String)
     multi = Column(String)
     units = Column(String)
+    wikipedia_tag = Column(Boolean, default=False)
 
     def is_active(self):
         return self.active
@@ -778,6 +779,17 @@ class ItemCandidate(Base):
                  self.dist < max_dist and
                  'designation=civil_parish' not in self.matching_tags()) or
                  self.item.candidates.count() > 1)
+
+    def new_wikipedia_tag(self, languages):
+        sitelinks = {code[:-4]: link['title']
+                     for code, link in self.item.sitelinks().items()
+                     if code.endswith('wiki')}
+
+        for lang in languages:
+            code = lang if isinstance(lang, str) else lang.wikimedia_language_code
+            if code in sitelinks:
+                return (code, sitelinks[code])
+        return (None, None)
 
 # class ItemCandidateTag(Base):
 #     __tablename__ = 'item_candidate_tag'

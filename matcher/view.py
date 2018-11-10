@@ -370,11 +370,23 @@ def add_tags(osm_type, osm_id):
     table = [(item, match['candidate'])
              for item, match in hits if 'candidate' in match]
 
-    items = [{'qid': i.qid,
-              'osm_type': c.osm_type,
-              'osm_id': c.osm_id,
-              'description': '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid)}
-            for i, c in table]
+    items = []
+    add_wikipedia_tags = g.user.wikipedia_tag
+    for i, c in table:
+        description = '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid)
+        item = {
+            'qid': i.qid,
+            'osm_type': c.osm_type,
+            'osm_id': c.osm_id,
+            'description': description,
+        }
+        if add_wikipedia_tags:
+            wiki_lang, wiki_title = c.new_wikipedia_tag(languages)
+            if wiki_lang:
+                item['wiki_lang'] = wiki_lang
+                item['wiki_title'] = wiki_title
+
+        items.append(item)
 
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
@@ -385,7 +397,10 @@ def add_tags(osm_type, osm_id):
                            ws_scheme=ws_scheme,
                            items=items,
                            table=table,
-                           languages=languages)
+                           languages=languages,
+                           add_wikipedia_tags=add_wikidata_tags)
+
+
 
 @app.route('/places/<name>')
 def place_redirect(name):
@@ -1357,6 +1372,8 @@ def account_settings_page():
             form.multi.data = g.user.multi
         if g.user.units:
             form.units.data = g.user.units
+
+        form.wikipedia_tag.data = g.user.wikidata_tag
 
     if form.validate_on_submit():
         form.populate_obj(g.user)

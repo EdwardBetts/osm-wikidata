@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
 
-from wtforms.fields import StringField, SelectField
+from wtforms.fields import StringField, SelectField, BooleanField
 from wtforms import validators
-from . import default_change_comments, distance_choices, wikipedia_tag_choices
+from . import default_change_comments, distance_choices
 
 multi_help = 'PLACE will be replaced by the name of the place.'
-wikipedia_tag_help = 'Add wikipedia tags in addition to wikidata tags.'
+add_wikipedia_tag = 'Add wikipedia tags in addition to wikidata tags'
 
 class AccountSettingsForm(FlaskForm):
     single = StringField('Single item change comment',
@@ -18,7 +18,4 @@ class AccountSettingsForm(FlaskForm):
     units = SelectField('Distance units',
                        choices=distance_choices,
                        default='local')
-    wikipedia_tag = SelectField('Add wikipedia tag to OSM',
-                       choices=wikipedia_tag_choices,
-                       description=wikipedia_tag_help,
-                       default='nothing')
+    wikipedia_tag = BooleanField(add_wikipedia_tag, default=False)

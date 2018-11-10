@@ -16,7 +16,7 @@ import os.path
 import shutil
 
 ws = Blueprint('ws', __name__)
-re_point = re.compile('^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
+re_point = re.compile(r'^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
 
 # TODO: different coloured icons
 # - has enwiki article
@@ -477,6 +477,14 @@ def process_match(ws_sock, changeset_id, m):
     tag = etree.Element('tag', k='wikidata', v=m['qid'])
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
+
+    if 'wiki_lang' in m:
+        existing = root.find('.//tag[@k="wikipedia"]')
+        if existing is None:
+            tag = etree.Element('tag',
+                                k='wikipedia:' + m['wiki_lang'],
+                                v=m['wiki_title'])
+            root[0].append(tag)
 
     element_data = etree.tostring(root)
     try:
