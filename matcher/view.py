@@ -398,9 +398,7 @@ def add_tags(osm_type, osm_id):
                            items=items,
                            table=table,
                            languages=languages,
-                           add_wikipedia_tags=add_wikidata_tags)
-
-
+                           add_wikipedia_tags=add_wikipedia_tags)
 
 @app.route('/places/<name>')
 def place_redirect(name):
