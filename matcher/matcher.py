@@ -792,6 +792,13 @@ def filter_churches(candidates):
 def filter_station(candidates):
     if len(candidates) < 2:
         return
+
+    station = [c for c in candidates if 'railway=station' in c.matching_tags()]
+    tram_stop = [c for c in candidates if 'railway=tram_stop' in c.matching_tags()]
+
+    if len(station) == 1 and len(tram_stop) + 1 == len(candidates):
+        return station[0]
+
     if all('public_transport=station' not in c.matching_tags() for c in candidates):
         return
 
