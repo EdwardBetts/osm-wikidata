@@ -514,6 +514,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         candidates.append(candidate)
     candidates = filter_distant(candidates)
     candidates = prefer_tag_match_over_building_only_match(candidates)
+    candidates = prefer_station_over_tram_stop(candidates)
     return candidates
 
 def prefer_tag_match_over_building_only_match(candidates):
@@ -878,6 +879,17 @@ def filter_candidates_more(items, bad=None):
             continue
 
         yield (item, {'candidate': candidate})
+
+def prefer_station_over_tram_stop(candidates):
+    station = [c for c in candidates
+               if 'railway=station' in c['matching_tags']]
+
+    if len(station) != 1:
+        return candidates
+
+    tram_stop = sum(1 for c in candidates if 'railway=tram_stop' in c['matching_tags'])
+
+    return station if tram_stop + 1 == len(candidates) else candidates
 
 def filter_distant(candidates):
     if any(c['tags'].keys() & {'place', 'admin_level'} for c in candidates):
