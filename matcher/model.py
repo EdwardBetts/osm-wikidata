@@ -411,6 +411,9 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_mountain_range(self):
         return 'Q46831' in self.instanceof()
 
+    def is_farmhouse(self):
+        return 'Q489357' in self.instanceof()
+
     def is_proposed(self):
         '''is this item a proposed building or structure?'''
 

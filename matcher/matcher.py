@@ -11,6 +11,8 @@ patterns = {}
 entity_types = {}
 default_max_dist = 4
 
+re_farmhouse = re.compile('^(.*) farm ?house$', re.I)
+
 def get_pattern(key):
     if key in patterns:
         return patterns[key]
@@ -515,6 +517,8 @@ def find_item_matches(cur, item, prefix, debug=False):
     candidates = filter_distant(candidates)
     candidates = prefer_tag_match_over_building_only_match(candidates)
     candidates = prefer_station_over_tram_stop(candidates)
+    if candidates and item.is_farmhouse():
+        candidates = prefer_farmhouse(candidates)
     return candidates
 
 def prefer_tag_match_over_building_only_match(candidates):
@@ -523,6 +527,24 @@ def prefer_tag_match_over_building_only_match(candidates):
     quality = [c for c in candidates
                if c['name_match'] and not is_building_only_match(c['matching_tags'])]
     return quality or candidates
+
+def prefer_farmhouse(candidates):
+    if len(candidates) != 2:
+        return candidates
+
+    house, farmhouse = sorted(candidates, key=lambda c: len(c['name']))
+
+    m = re_farmhouse.match(farmhouse['name'])
+    if not m:
+        return candidates
+    farmhouse_start = m.group(1).lower()
+    house_name = house['name'].lower()
+
+    if (house_name == farmhouse_start or
+            house_name == farmhouse_start + ' house'):
+        return [farmhouse]
+    else:
+        return candidates
 
 def check_item_candidate(candidate):
     item, osm_tags = candidate.item, candidate.tags
