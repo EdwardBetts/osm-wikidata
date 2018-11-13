@@ -814,8 +814,9 @@ def get_next_level_query(qid, entity, name=None):
 
     return query.replace('QID', qid)
 
-def next_level_places(qid, entity, name=None):
-    query = get_next_level_query(qid, entity)
+def next_level_places(qid, entity, query=None, name=None):
+    if not query:
+        query = get_next_level_query(qid, entity)
 
     rows = []
     r = run_query(query, name=name, return_json=False, send_error_mail=True)

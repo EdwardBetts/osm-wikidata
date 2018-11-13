@@ -56,6 +56,11 @@
   <p>No subregions were found.</p>
 {% endif %}
 
+{% if extra_type_places %}
+  <h3>{{ extra_type_label }}</h3>
+{{ place_table(extra_type_places) }}
+{% endif %}
+
 {% if former_places %}
 <h3>former places</h3>
 {{ place_table(former_places) }}

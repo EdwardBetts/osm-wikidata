@@ -1074,9 +1074,18 @@ def browse_page(item_id):
 
     rows = wikidata.next_level_places(qid, entity)
 
+    if qid == 'Q21':
+        types = wikidata.next_level_types(['Q48091'])
+        query = (wikidata.next_level_query2
+                    .replace('TYPES', types)
+                    .replace('QID', qid))
+        extra_rows = wikidata.next_level_places(qid, entity, query=query)
+    else:
+        extra_rows = []
+
     isa_map = {}
     download_isa = set()
-    for row in rows:
+    for row in rows + extra_rows:
         for isa_qid in row['isa']:
             if isa_qid in isa_map:
                 continue
@@ -1105,6 +1114,19 @@ def browse_page(item_id):
 
     current_places = [row for row in rows if not (set(row['isa']) & former_type)]
     former_places = [row for row in rows if set(row['isa']) & former_type]
+
+    if qid == 'Q21':
+        extra_type_label = 'Regions of England'
+
+        return render_template('browse.html',
+                               qid=qid,
+                               place=place,
+                               name=name,
+                               current_places=current_places,
+                               former_places=former_places,
+                               isa_map=isa_map,
+                               extra_type_label=extra_type_label,
+                               extra_type_places=extra_rows)
 
     return render_template('browse.html',
                            qid=qid,
