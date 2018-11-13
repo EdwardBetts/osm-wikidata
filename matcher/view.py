@@ -1405,6 +1405,13 @@ def single_item_match(osm_type, osm_id, item_id):
     # qid = f'Q{item_id}'
     item = Item.query.get(item_id)
 
+    tables = database.get_tables()
+    ready = all(f'osm_{place.place_id}_{i}' in tables
+                for i in ('line', 'point', 'polygon'))
+
+    if not ready:
+        return render_template('place_not_ready.html', item=item, place=place)
+
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 

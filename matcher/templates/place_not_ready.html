@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Matcher: {{ item.label() }}{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+  <h1>{{ item.label() }}</h1>
+
+  <ul>
+    <li>place: <a href="{{ place.candidates_url() }}">{{ place.display_name }}</a></li>
+    <li><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">item page</a></li>
+    {% set extra_tags = item.get_extra_tags() %}
+    {% if extra_tags %}
+      <li>extra tags: {{ extra_tags | join(', ') }}</li>
+    {% endif %}
+    {% if item.categories %}
+      <li>categories: {{ item.categories | join(', ') }}</li>
+    {% endif %}
+    {% if item.tags %}
+      <li>tags: {{ item.tags | join(', ') }}</li>
+    {% endif %}
+    {% set identifiers = item.get_item_identifiers() %}
+    {% if identifiers %}
+      <li>identifiers: {{ dict(identifiers) }}</li>
+    {% endif %}
+    <li>place names: {{ item.place_names() | join('; ') }}</li>
+    <li>calculated tags: {{ item.calculate_tags() | join(', ') }}</li>
+  </ul>
+
+  <p>Place not ready.</p>
+
+</div>
+
+{% endblock %}
