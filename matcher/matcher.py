@@ -519,6 +519,8 @@ def find_item_matches(cur, item, prefix, debug=False):
     candidates = prefer_station_over_tram_stop(candidates)
     if candidates and item.is_farmhouse():
         candidates = prefer_farmhouse(candidates)
+    if 'man_made=bridge' in item.tags:
+        candidates = filter_bridge(candidates)
     return candidates
 
 def prefer_tag_match_over_building_only_match(candidates):
@@ -545,6 +547,13 @@ def prefer_farmhouse(candidates):
         return [farmhouse]
     else:
         return candidates
+
+def filter_bridge(candidates):
+    if not any(c['tags'].get('man_made') == 'bridge' for c in candidates):
+        return candidates
+
+    return [c for c in candidates
+            if 'man_made' in c['tags'] or 'bridge' not in c['tags']]
 
 def check_item_candidate(candidate):
     item, osm_tags = candidate.item, candidate.tags
