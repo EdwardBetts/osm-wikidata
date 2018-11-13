@@ -29,6 +29,8 @@
 
   <p>Place not ready.</p>
 
+  <a class="btn btn-info" href="{{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) }}">Refresh cached data about this place</a>
+
 </div>
 
 {% endblock %}
