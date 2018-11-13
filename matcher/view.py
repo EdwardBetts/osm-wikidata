@@ -1393,8 +1393,7 @@ def item_candidate_json(item_id):
         'key': c.key,
     } for c in item.candidates if c.geojson]
 
-    return jsonify(qid=item.qid,
-                   candidates=candidates)
+    return jsonify(qid=item.qid, candidates=candidates)
 
 @app.route('/debug/<osm_type>/<int:osm_id>/Q<int:item_id>')
 def single_item_match(osm_type, osm_id, item_id):
