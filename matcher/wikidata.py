@@ -407,7 +407,11 @@ SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label 
 '''
 
 next_level_type_map = {
-    'Q48091': 'Q180673',  # English region -> ceremonial county of England
+    'Q48091': ['Q1136601',    # unitary authority of England
+               'Q211690',     # London borough
+               'Q1002812',    # metropolitan borough
+               'Q643815',     # (non-)metropolitan county of England
+               'Q180673'],    # ceremonial county of England
 }
 
 next_level_by_type = '''
@@ -798,7 +802,9 @@ def get_next_level_query(qid, entity, name=None):
 
     if types_from_isa:
         # use first match in type map
-        types = isa_list(next_level_type_map[t] for t in types_from_isa)
+        type_list = next_level_type_map[list(types_from_isa)[0]]
+        type_values = ' '.join(f'wd:{type_qid}' for type_qid in type_list)
+        types = 'VALUES ?type {' + type_values + '} .\n?item wdt:P31 ?type .\n'
         query = next_level_by_type.replace('TYPES', types)
     elif isa & isa_continent:
         query = countries_in_continent_query
