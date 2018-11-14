@@ -408,7 +408,7 @@
 },
 {
     "cats": ["Arts centres"],
-    "tags": ["amenity=arts_centre"],
+    "tags": ["amenity=arts_centre", "amenity=theatre"],
     "trim": ["arts centre", "arts centre", "art center", "art centre", "center for the arts", "centre for the arts",
              "gallery"],
     "check_housename": true,
