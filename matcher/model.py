@@ -324,7 +324,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P2253', ['ref:edubase'], 'EDUBase URN'),
             ('P2815', ['esr:user', 'ref', 'ref:train'], 'ESR station code'),
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
-            ('P4755', ['ref', 'ref:train'], 'UK railway station code'),
+            ('P4755', ['ref', 'ref:train', 'ref:crs'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
         ]
 
