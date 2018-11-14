@@ -920,8 +920,7 @@ def filter_candidates_more(items, bad=None):
 def prefer_railway_station(candidates):
     if len(candidates) == 1:
         return candidates
-    station = [c for c in candidates
-               if 'railway=station' in c['matching_tags']]
+    station = [c for c in candidates if 'railway=station' in c['matching_tags']]
 
     if len(station) != 1:
         return candidates
@@ -929,6 +928,7 @@ def prefer_railway_station(candidates):
     other = sum(1 for c in candidates
                 if 'railway=tram_stop' in c['matching_tags'] or
                     'railway=depot' in c['matching_tags'] or
+                    'landuse=railway' in c['matching_tags'] or
                     'public_transport=stop_position' in c['matching_tags'])
 
     return station if other + 1 == len(candidates) else candidates
