@@ -174,6 +174,11 @@ def requests_exception(e):
         raise e
     return 'OSM token request failed.'
 
+@app.errorhandler(wikidata.QueryError)
+def query_error(e):
+    tb = get_current_traceback()
+    return render_template('show_query_error.html', e=e, tb=tb), 500
+
 @app.errorhandler(InternalServerError)
 def exception_handler(e):
     tb = get_current_traceback()
