@@ -9,6 +9,7 @@ import requests.exceptions
 import os
 import json
 import simplejson.errors
+import time
 
 page_size = 50
 report_missing_values = False
@@ -585,6 +586,8 @@ def parse_item_tag_query(rows, items):
         items[qid]['tags'].add(tag_or_key)
 
 def entity_iter(ids, debug=False):
+    attempts = 5
+
     wikidata_url = 'https://www.wikidata.org/w/api.php'
     params = {
         'format': 'json',
@@ -595,9 +598,16 @@ def entity_iter(ids, debug=False):
         if debug:
             print('entity_iter: {}/{}'.format(num * page_size, len(ids)))
         params['ids'] = '|'.join(cur)
-        r = requests.get(wikidata_url,
-                         params=params,
-                         headers=user_agent_headers())
+        for attempt in range(attempts):
+            try:
+                r = requests.get(wikidata_url,
+                                 params=params,
+                                 headers=user_agent_headers())
+                break
+            except requests.exceptions.ChunkedEncodingError:
+                if attempt == attempts - 1:
+                    raise
+                time.sleep(1)
         r.raise_for_status()
         json_data = r.json()
         for qid, entity in json_data['entities'].items():
