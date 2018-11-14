@@ -938,10 +938,12 @@ def prefer_railway_station(candidates):
         return candidates
 
     other = sum(1 for c in candidates
-                if 'railway=tram_stop' in c['matching_tags'] or
+                if 'railway=station' not in c['matching_tags'] and
+                    ('railway=tram_stop' in c['matching_tags'] or
                     'railway=depot' in c['matching_tags'] or
                     'landuse=railway' in c['matching_tags'] or
-                    'public_transport=stop_position' in c['matching_tags'])
+                    'building=train_station' in c['matching_tags'] or
+                    'public_transport=stop_position' in c['matching_tags']))
 
     return station if other + 1 == len(candidates) else candidates
 
