@@ -1346,8 +1346,28 @@ def space():
     return render_template('space.html', files=files)
 
 @app.route('/db_space')
+@login_required
 def db_space():
     rows = database.get_big_table_list()
+    items = [{
+        'place_id': place_id,
+        'size': size,
+        'added': added,
+        'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
+        'display_name': display_name,
+        'state': state,
+        'changesets': changeset_count,
+        'recent': recent,
+    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
+
+    free_space = utils.get_free_space(app.config)
+
+    return render_template('db_space.html', items=items, free_space=free_space)
+
+@app.route('/old_places')
+@login_required
+def old_places():
+    rows = database.get_old_place_list()
     items = [{
         'place_id': place_id,
         'size': size,
