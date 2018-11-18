@@ -552,6 +552,9 @@ def prefer_farmhouse(candidates):
     if len(candidates) != 2:
         return candidates
 
+    if any(not c.get('name') for c in candidates):
+        return candidates
+
     house, farmhouse = sorted(candidates, key=lambda c: len(c['name']))
 
     m = re_farmhouse.match(farmhouse['name'])
