@@ -37,15 +37,16 @@ edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school',
 tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
-    'Q1021290': edu,                            # music school
-    'Q5167149': edu,                            # cooking school
-    'Q383092': edu,                             # film school
-    'Q2143781': edu,                            # drama school
     'Q322563': edu,                             # vocational school
-    'Q2385804': edu,                            # educational institution
-    'Q47530379': edu,                           # agricultural college
+    'Q383092': edu,                             # film school
+    'Q1021290': edu,                            # music school
+    'Q1244442': edu,                            # school building
     'Q1469420': edu,                            # adult education centre
+    'Q2143781': edu,                            # drama school
+    'Q2385804': edu,                            # educational institution
+    'Q5167149': edu,                            # cooking school
     'Q7894959': edu,                            # University Technical College
+    'Q47530379': edu,                           # agricultural college
     'Q11303': tall,                             # skyscraper
     'Q18142': tall,                             # high-rise building
     'Q33673393': tall,                          # multi-storey building
@@ -72,6 +73,7 @@ extra_keys = {
     'Q39658032': ['Tag:landuse=retail'],        # open air shopping centre
     'Q277760': ['Tag:historic=folly',
                 'Tag:historic=city_gate'],      # gatehouse
+    'Q180174': ['Tag:historic=folly'],          # folly
     'Q15243209': ['Tag:leisure=park'],          # historic district
     'Q3010369': ['Tag:historic=monument'],      # opening ceremony
     'Q123705': ['Tag:place=suburb'],            # neighbourhood
