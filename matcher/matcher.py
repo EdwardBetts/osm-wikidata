@@ -462,6 +462,9 @@ def find_item_matches(cur, item, prefix, debug=False):
                     osm_tags.get('building') == 'train_station'):
                 continue  # non-station shouldn't match station
 
+            if ('amenity=fuel' not in item.tags and 'fuel' in amenity):
+                continue  # petrol station
+
             if ('amenity=library' in item.tags and
                     'amenity=place_of_worship' not in item.tags and
                     'place_of_worship' in amenity and
