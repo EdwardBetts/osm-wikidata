@@ -483,6 +483,12 @@ def find_item_matches(cur, item, prefix, debug=False):
                     'cinema' not in amenity):
                 continue  # Wikidata cinema shouldn't match OSM petrol station
 
+            if ('artwork_type=statue' in item.tags and
+                    'tourism=museum' not in item.tags and
+                    osm_tags.get('leisure') == 'museum' and
+                    osm_tags.get('artwork_type') != 'statue'):
+                continue  # Wikidata statue shouldn't match OSM museum
+
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
             continue  # nearby road match
