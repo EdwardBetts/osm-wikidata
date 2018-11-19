@@ -490,7 +490,7 @@ def process_match(ws_sock, changeset_id, m):
     try:
         edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
-        if e.status_code == 409 and 'Version mismatch' in r.text:
+        if e.response.status_code == 409 and 'Version mismatch' in r.text:
             raise VersionMismatch
         mail.error_mail('error saving element',
                         element_data.decode('utf-8'),
