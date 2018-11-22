@@ -412,6 +412,18 @@ def run_matcher(place, m):
     m.send('done')
     m.mark_log_good()
 
+def add_wikipedia_tag(root, m):
+    if 'wiki_lang' not in m or root.find('.//tag[@k="wikipedia"]') is not None:
+        return
+    key = 'wikipedia:' + m['wiki_lang']
+    value = m['wiki_title']
+    existing = root.find(f'.//tag[@k="{key}"]')
+    if existing is not None:
+        existing.set('v', value)
+        return
+    tag = etree.Element('tag', k=key, v=value)
+    root[0].append(tag)
+
 @ws.route('/websocket/matcher/<osm_type>/<int:osm_id>')
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
@@ -478,13 +490,7 @@ def process_match(ws_sock, changeset_id, m):
     root[0].set('changeset', changeset_id)
     root[0].append(tag)
 
-    if 'wiki_lang' in m:
-        existing = root.find('.//tag[@k="wikipedia"]')
-        if existing is None:
-            tag = etree.Element('tag',
-                                k='wikipedia:' + m['wiki_lang'],
-                                v=m['wiki_title'])
-            root[0].append(tag)
+    add_wikipedia_tag(root, m)
 
     element_data = etree.tostring(root)
     try:
@@ -500,6 +506,7 @@ def process_match(ws_sock, changeset_id, m):
 
     osm.tags['wikidata'] = m['qid']
     flag_modified(osm, 'tags')
+    # TODO: also update wikipedia tag if appropriate
     db_edit = ChangesetEdit(changeset_id=changeset_id,
                             item_id=item_id,
                             osm_id=osm_id,
