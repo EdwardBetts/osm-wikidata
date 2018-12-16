@@ -1008,7 +1008,7 @@ def check_saved_edits():
     app.config.from_object('config.default')
     database.init_app(app)
 
-    q = ChangesetEdit.query.order_by(ChangesetEdit.saved)
+    q = ChangesetEdit.query.order_by(ChangesetEdit.saved.desc())
     total = q.count()
     report_timestamp = datetime.now()
     reject_count = 0
@@ -1018,7 +1018,7 @@ def check_saved_edits():
         item = edit.candidate.item
         if num % 100 == 0:
             status = f'{num:6,d}/{total:6,d}  {num/total:5.1%}'
-            status += f'  bad: {reject_count}  {item.qid} {item.label()}'
+            status += f'  bad: {reject_count:3d}  {item.qid:10s} {item.label()}'
             click.echo(status)
             stdout.flush()
         if 'reject' not in ret:
