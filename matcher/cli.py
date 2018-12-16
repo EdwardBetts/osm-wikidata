@@ -1024,11 +1024,18 @@ def check_saved_edits():
         if 'reject' not in ret:
             continue
 
-        reject = EditMatchReject(edit=edit,
-                                 report_timestamp=report_timestamp,
-                                 matcher_result=ret)
-        database.session.add(reject)
-        database.session.commit()
+        if 'matching_tags' in ret and isinstance(ret['matching_tags'], set):
+            ret['matching_tags'] = list(ret['matching_tags'])
+
+        try:
+            reject = EditMatchReject(edit=edit,
+                                     report_timestamp=report_timestamp,
+                                     matcher_result=ret)
+            database.session.add(reject)
+            database.session.commit()
+        except sqlalchemy.exc.StatementError:
+            pprint(ret)
+            raise
         reject_count += 1
 
         continue
