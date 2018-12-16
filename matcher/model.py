@@ -881,6 +881,29 @@ class ChangesetEdit(Base):
     candidate = relationship('ItemCandidate',
                              backref=backref('edits', lazy='dynamic'))
 
+class EditMatchReject(Base):
+    __tablename__ = 'edit_match_reject'
+
+    __table_args__ = (
+        ForeignKeyConstraint(['changeset_id',
+                              'item_id',
+                              'osm_id',
+                              'osm_type'],
+                             [ChangesetEdit.changeset_id,
+                              ChangesetEdit.item_id,
+                              ChangesetEdit.osm_id,
+                              ChangesetEdit.osm_type]),
+    )
+
+    changeset_id = Column(BigInteger, primary_key=True)
+    item_id = Column(Integer, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    report_timestamp = Column(DateTime, nullable=False)
+    matcher_result = Column(postgresql.JSON, nullable=False)
+
+    edit = relationship('ChangesetEdit')
+
 class BadMatch(Base):
     __tablename__ = 'bad_match'
     __table_args__ = (

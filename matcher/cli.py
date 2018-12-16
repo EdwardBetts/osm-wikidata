@@ -1,6 +1,8 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
-from .model import Item, Changeset, get_bad, Base, ItemCandidate, Language, LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract, ChangesetEdit
+from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
+                    LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract,
+                    ChangesetEdit, EditMatchReject)
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
@@ -1007,23 +1009,36 @@ def check_saved_edits():
     database.init_app(app)
 
     q = ChangesetEdit.query.order_by(ChangesetEdit.saved)
-    for edit in q:
+    total = q.count()
+    report_timestamp = datetime.now()
+    reject_count = 0
+    for num, edit in enumerate(q):
         ret = matcher.check_item_candidate(edit.candidate)
         item = edit.candidate.item
-        if 'reject' in ret:
-            if len(ret) == 1:
-                print((item.qid, item.label(), ret['reject']))
-            else:
-                print(item.qid, item.label())
-                if 'place_names' in ret:
-                    print('place names:', ret.pop('place_names'))
-                pprint(ret)
-            if 'osm_tags' not in ret:
-                pprint(edit.candidate.tags)
-        else:
+        if num % 100 == 0:
+            status = f'{num:6,d}/{total:6,d}  {num/total:5.1%}'
+            status += f'  bad: {reject_count}  {item.qid, item.label()}'
+            click.echo(status)
+        if 'reject' not in ret:
             continue
+
+        reject = EditMatchReject(edit=edit,
+                                 report_timestamp=report_timestamp,
+                                 matcher_result=ret)
+        database.session.add(reject)
+        database.session.commit()
+
+        continue
+
+        if len(ret) == 1:
+            print((item.qid, item.label(), ret['reject']))
+        else:
             print(item.qid, item.label())
+            if 'place_names' in ret:
+                print('place names:', ret.pop('place_names'))
             pprint(ret)
+        if 'osm_tags' not in ret:
+            pprint(edit.candidate.tags)
 
 @app.cli.command()
 def refresh_all_extracts():
