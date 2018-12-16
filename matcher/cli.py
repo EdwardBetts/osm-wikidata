@@ -1024,8 +1024,9 @@ def check_saved_edits():
         if 'reject' not in ret:
             continue
 
-        if 'matching_tags' in ret and isinstance(ret['matching_tags'], set):
-            ret['matching_tags'] = list(ret['matching_tags'])
+        for f in 'matching_tags', 'place_names':
+            if f in ret and isinstance(ret[f], set):
+                ret[f] = list(ret[f])
 
         try:
             reject = EditMatchReject(edit=edit,
