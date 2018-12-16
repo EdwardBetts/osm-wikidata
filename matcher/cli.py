@@ -1012,13 +1012,15 @@ def check_saved_edits():
     total = q.count()
     report_timestamp = datetime.now()
     reject_count = 0
+    stdout = click.get_text_stream('stdout')
     for num, edit in enumerate(q):
         ret = matcher.check_item_candidate(edit.candidate)
         item = edit.candidate.item
         if num % 100 == 0:
             status = f'{num:6,d}/{total:6,d}  {num/total:5.1%}'
-            status += f'  bad: {reject_count}  {item.qid, item.label()}'
+            status += f'  bad: {reject_count}  {item.qid} {item.label()}'
             click.echo(status)
+            stdout.flush()
         if 'reject' not in ret:
             continue
 
@@ -1027,6 +1029,7 @@ def check_saved_edits():
                                  matcher_result=ret)
         database.session.add(reject)
         database.session.commit()
+        reject_count += 1
 
         continue
 
