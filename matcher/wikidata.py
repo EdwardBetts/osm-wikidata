@@ -1004,14 +1004,22 @@ def claim_value(claim):
 
 def country_iso_codes_from_qid(qid):
     item = WikidataItem.retrieve_item(qid)
+    extra = {'Q159583': 'VA'}  # Holy See
+    no_iso_3166_code = {'Q23427'}  # South Ossetia
+
+    if qid in no_iso_3166_code:
+        return
+
     for wikidata_property in ('P297', 'P298'):
-        if item.claims.get('P297'):
+        if qid in extra or item.claims.get(wikidata_property):
             continue
         body = 'https://www.wikidata.org/wiki/' + qid
-        mail.send_mail(f'{qid}: P297 is missing', body)
+        mail.send_mail(f'{qid}: {wikidata_property} is missing', body)
 
     codes = [claim_value(c) for c in item.claims.get('P297') or []]
     codes += [claim_value(c) for c in item.claims.get('P298') or []]
+    if qid in extra:
+        codes.append(extra[qid])
     return [i for i in codes if i is not None]
 
 class WikidataItem:
