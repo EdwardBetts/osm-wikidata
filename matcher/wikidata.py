@@ -358,6 +358,30 @@ GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
+small_island_nations = {
+    'Q672',  # Tuvalu
+}
+
+small_island_nations_query = '''
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(?isa) as ?isa_list)
+WHERE {
+  VALUES ?start { wd:QID } .
+  ?item wdt:P17 ?start .
+  ?item wdt:P31/wdt:P279* wd:Q205895 .  # landform
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?item ?itemLabel ?startLabel
+ORDER BY ?itemLabel
+'''
+
 countries_in_continent_query = '''
 SELECT DISTINCT ?item
                 ?itemLabel
@@ -820,6 +844,8 @@ def get_next_level_query(qid, entity, name=None):
         query = next_level_by_type.replace('TYPES', types)
     elif isa & isa_continent:
         query = countries_in_continent_query
+    elif qid in small_island_nations:
+        query = small_island_nations_query
     elif qid in admin_area_map:
         types = next_level_types(admin_area_map[qid])
         query = next_level_query2.replace('TYPES', types)
