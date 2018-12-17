@@ -12,13 +12,15 @@
       {% set item = c.item %}
       <h4>{{ item.label() }} ({{ item.qid }})</h4>
       <p>
-      <a href="/{{ item.qid }}">detail</a>
-      | <a href="{{ item.wikipedia_uri }}">Wikidata</a>
+      {{ reject.matcher_result.reject }}
+      | <a href="/{{ item.qid }}">detail</a>
+      | <a href="{{ item.wikidata_uri }}">Wikidata</a>
       | <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">OSM</a>
       </p>
+      <pre>{{ item.names() | pprint }}</pre>
       <pre>{{ reject.matcher_result | pprint }}</pre>
-      {% if 'osm_tags' not in item.matcher_result %}
-        <pre>{{ c.osm_tags | pprint }}</pre>
+      {% if 'osm_tags' not in reject.matcher_result %}
+        <pre>{{ c.tags | pprint }}</pre>
       {% endif %}
     {% endfor %}
 
