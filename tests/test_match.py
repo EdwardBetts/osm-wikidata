@@ -783,3 +783,8 @@ def test_embassy_match():
 
     wd_address = '456 Montgomery Street Suite #2100'
     assert match.check_name_matches_address(tags, [wd_address]) is not False
+
+def test_name_match_dash_and_both_trim():
+    n2 = 'Museum Sint-Pieters'
+    n1 = 'Sint Pieters Museum'
+    assert match.name_match(n1, n2, endings=['museum'])
