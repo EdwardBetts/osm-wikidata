@@ -8,15 +8,16 @@
     <h1>{{ self.title() }}</h1>
 
     {% for reject in q %}
-      {% set item = reject.item %}
-      {% set c = reject.candidate %}
+      {% set edit = reject.edit %}
+      {% set item = reject.edit.item %}
+      {% set c = reject.edit.candidate %}
       <h4>{{ item.label() }} ({{ item.qid }})</h4>
       <p>
       <a href="/{{ item.qid }}">detail</a>
       | <a href="{{ item.wikipedia_uri }}">Wikidata</a>
       | <a href="https://www.openstreetmap.org/{{ c.osm_type }}/{{ c.osm_id }}">OSM</a>
       </p>
-      <pre>{{ item.matcher_result | pprint }}</pre>
+      <pre>{{ reject.matcher_result | pprint }}</pre>
       {% if 'osm_tags' not in item.matcher_result %}
         <pre>{{ c.osm_tags | pprint }}</pre>
       {% endif %}
