@@ -1347,8 +1347,13 @@ def space():
 
 @app.route('/reports/edit_match')
 def reports_view():
-    return render_template('reports/edit_match.html',
-                           q=EditMatchReject.query)
+    timestamp = request.args.get('timestamp')
+    if timestamp:
+        q = EditMatchReject.query.filter_by(report_timestamp=timestamp)
+        return render_template('reports/edit_match.html', q=q)
+    q = (database.session.query(EditMatchReject.report_timestamp, func.count)
+                         .group_by(EditMatchReject.report_timestamp))
+    return render_template('reports/list.html', q=q)
 
 @app.route('/db_space')
 @login_required
