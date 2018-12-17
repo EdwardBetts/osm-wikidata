@@ -1,7 +1,7 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
                overpass, mail, browse, edit, utils)
 from .utils import cache_filename, get_int_arg
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language, IsA
+from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language, IsA, EditMatchReject
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -1344,6 +1344,11 @@ def space():
         place_lookup[place_id]['changesets'] = num
 
     return render_template('space.html', files=files)
+
+@app.route('/reports/edit_match')
+def reports_view():
+    return render_template('reports/edit_match.html',
+                           q=EditMatchReject.query)
 
 @app.route('/db_space')
 @login_required
