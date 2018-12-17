@@ -74,7 +74,7 @@ extra_keys = {
     'Q277760': ['Tag:historic=folly',
                 'Tag:historic=city_gate'],      # gatehouse
     'Q180174': ['Tag:historic=folly'],          # folly
-    'Q15243209': ['Tag:leisure=park'],          # historic district
+    'Q15243209': ['Tag:leisure=park', 'Tag:boundary=national_park'],          # historic district
     'Q3010369': ['Tag:historic=monument'],      # opening ceremony
     'Q123705': ['Tag:place=suburb'],            # neighbourhood
     'Q256020': ['Tag:amenity=pub'],             # inn
@@ -112,9 +112,12 @@ extra_keys = {
     'Q56822897': ['Tag:historic=mill'],         # mill building
     'Q179700': ['Tag:memorial=statue'],         # statue
     'Q1076486': ['Tag:landuse=recreation_ground'],  # sports venue
-    'Q55004558': ['Tag:service=yard', 'Tag:landuse=railway'],  # car barn
+    'Q55004558': ['Tag:service=yard',
+                  'Tag:landuse=railway'],       # car barn
     'Q19563580': ['Tag:landuse=railway'],       # rail yard
     'Q134447': ['Tag:generator:source=nuclear'],  # nuclear power plant
+    'Q1258086': ['Tag:leisure=park',
+                 'Tag:boundary=national_park'],  # National Historic Site
 }
 
 # search for items in bounding box that have an English Wikipedia article
