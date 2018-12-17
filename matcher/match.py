@@ -311,7 +311,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if plural_in_other_name:
         return
 
-    for end in ['building', 'complex', 'house'] + list(endings or []):
+    for end in ['building', 'complex', 'house', 'office'] + list(endings or []):
         if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
             return Match(MatchType.trim)
         if wd_tidy.startswith(end) and wd_tidy[len(end):] == osm_tidy:
