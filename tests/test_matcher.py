@@ -1,5 +1,5 @@
 from matcher import matcher
-from matcher.model import Item, IsA
+from matcher.model import Item, IsA, ItemCandidate
 import os.path
 
 class MockApp:
@@ -917,3 +917,34 @@ def test_prefer_tag_match_over_building_only_match(monkeypatch):
         'address_match': None,
         'matching_tags': {'railway=station'}
     }
+
+
+def test_name_match_church(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'amenity': 'place_of_worship',
+        'name': 'St Andrew',
+    }
+
+    entity = {
+        "claims": {},
+        "id": "Q23302351",
+        "labels": {"en": {"value": "St Andrews, Great Finborough"}},
+        "sitelinks": {},
+    }
+
+    categories = ['Church of England church buildings in Suffolk']
+
+    item = Item(item_id=23302351,
+                entity=entity,
+                extract_names=["St Andrew's Church"],
+                categories=categories)
+
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    for t in matcher.categories_to_tags(item.categories):
+        item.tags.add(t)
+
+    ret = matcher.check_item_candidate(candidate)
+    assert 'reject' not in ret
