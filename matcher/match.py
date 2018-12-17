@@ -89,16 +89,26 @@ def tidy_name(n):
 
 def initials_match(n1, n2, endings=None):
     n1_lc = n1.lower()
-    initals = ''.join(term[0] for term in n2.split() if term[0].isalnum()).upper()
-    if len(initals) < 3 or len(n1) < 3:
+    terms = [term for term in n2.split() if term[0].isalnum()]
+    initials = ''.join(term[0] for term in terms).upper()
+    if len(initials) < 3 or len(n1) < 3:
         return
-    if initals == n1:
+    if initials == n1:
         return Match(MatchType.initials)
-    if initals == ''.join(c for c in n1 if c.isalnum()):
+    if initials == ''.join(c for c in n1 if c.isalnum()):
         return Match(MatchType.initials)
-    if any(initals == trim for trim in
+    if any(initials == trim for trim in
             [n1[:-len(end)].strip() for end in endings or [] if n1_lc.endswith(end.lower())]):
         return Match(MatchType.initials_trim)
+
+    filter_words = {'of', 'de', 'di', 'at', 'i'}
+    lc_terms = set(term.lower() for term in terms)
+    for word in filter_words:
+        if word not in lc_terms:
+            continue
+        ret = initials_match(n1, ' '.join(t for t in terms if t.lower() != word))
+        if ret:
+            return ret
 
 def match_with_words_removed(osm, wd, words):
     if not words:

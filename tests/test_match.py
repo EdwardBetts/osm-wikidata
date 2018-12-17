@@ -60,6 +60,11 @@ def test_initials_match():
 
     assert match.initials_match(n1, n2)
 
+    n1 = 'CRM'
+    n2 = 'Centre de Recerca Matemàtica'
+
+    assert match.initials_match(n1, n2)
+
 def test_reorder():
     assert match.name_match('Renaissance Center Tower 300',
                             'Renaissance Center 300 Tower', endings=['tower'])
