@@ -10,6 +10,7 @@ cat_to_ending = {}
 patterns = {}
 entity_types = {}
 default_max_dist = 4
+extract_name_good_enough = True
 
 re_farmhouse = re.compile('^(.*) farm ?house$', re.I)
 
@@ -250,7 +251,9 @@ def bad_building_match(osm_tags, name_match, item):
         for match_type, value, source in detail_list:
             if match_type == 'both_trimmed':
                 continue
-            if len(source) == 1 and source[0][0] == 'extract':
+            if (not extract_name_good_enough and
+                    len(source) == 1 and
+                    source[0][0] == 'extract'):
                 continue
             if osm == 'operator' and match_type == 'wikidata_trimmed':
                 continue
