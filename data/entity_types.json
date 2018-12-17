@@ -132,6 +132,12 @@
     "dist": 1
 },
 {
+    "cats": ["Church of England"],
+    "tags": ["denomination=anglican"],
+    "check_housename": true,
+    "dist": 1
+},
+{
     "cats": ["Hindu temples"],
     "tags": ["amenity=place_of_worship"],
     "trim": ["temple"],
@@ -274,7 +280,7 @@
 {
     "cats": ["Residential buildings by country"],
     "skip_cats": ["Prisons in"],
-    "tags": ["building=house", "building=residential", "landuse=residential"],
+    "tags": ["building=house", "building=residential", "landuse=residential", "building=apartments"],
     "trim": ["house", "estate"],
     "wikidata": "Q11755880",
     "check_housename": true,
