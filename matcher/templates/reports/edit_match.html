@@ -8,9 +8,8 @@
     <h1>{{ self.title() }}</h1>
 
     {% for reject in q %}
-      {% set edit = reject.edit %}
-      {% set item = reject.edit.item %}
       {% set c = reject.edit.candidate %}
+      {% set item = c.item %}
       <h4>{{ item.label() }} ({{ item.qid }})</h4>
       <p>
       <a href="/{{ item.qid }}">detail</a>
