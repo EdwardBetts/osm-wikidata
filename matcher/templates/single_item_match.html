@@ -16,6 +16,9 @@
     {% if item.categories %}
       <li>categories: {{ item.categories | join(', ') }}</li>
     {% endif %}
+    {% if endings %}
+      <li>endings: {{ endings | join(', ') }}</li>
+    {% endif %}
     {% if item.tags %}
       <li>tags: {{ item.tags | join(', ') }}</li>
     {% endif %}

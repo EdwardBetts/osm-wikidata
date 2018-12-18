@@ -1468,6 +1468,9 @@ def single_item_match(osm_type, osm_id, item_id):
     if not ready:
         return render_template('place_not_ready.html', item=item, place=place)
 
+    endings = matcher.get_ending_from_criteria(item.tags)
+    endings |= item.more_endings_from_isa()
+
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
@@ -1480,6 +1483,7 @@ def single_item_match(osm_type, osm_id, item_id):
 
     return render_template('single_item_match.html',
                            item=item,
+                           endings=endings,
                            place=place,
                            dict=dict,
                            candidates=candidates)
