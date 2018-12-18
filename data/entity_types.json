@@ -1088,8 +1088,8 @@
 },
 {
     "cats": ["Farmhouses"],
-    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm"],
-    "trim": ["farm", "farmhouse", "farm house"],
+    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm", "building=house"],
+    "trim": [],
     "area": true,
     "dist": 2,
     "wikidata": "Q489357"
