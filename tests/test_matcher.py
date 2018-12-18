@@ -465,7 +465,9 @@ def test_name_and_location_better_than_address_and_building(monkeypatch):
         'sitelinks': {},
     }
 
-    extract = '''<p><b>Reunion Tower</b> is a 561 ft (171 m) observation tower and one of the most recognizable landmarks in Dallas, Texas. Located at 300 Reunion Boulevard in the Reunion district of downtown Dallas.</p>'''
+    extract = ('<p><b>Reunion Tower</b> is a 561 ft (171 m) observation tower and ' +
+               'one of the most recognizable landmarks in Dallas, Texas. Located at ' +
+               '300 Reunion Boulevard in the Reunion district of downtown Dallas.</p>')
 
     tags = ['man_made=tower', 'building=tower', 'height']
     item = Item(entity=test_entity, tags=tags, extract=extract)
