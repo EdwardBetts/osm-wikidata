@@ -7,6 +7,8 @@
     {% include "flash_msg.html" %}
     <h1>{{ self.title() }}</h1>
 
+    <p>Reject count: {{ q.count() }}</p>
+
     {% for reject in q %}
       {% set c = reject.edit.candidate %}
       {% set item = c.item %}
