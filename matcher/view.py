@@ -1351,7 +1351,7 @@ def reports_view():
     if timestamp:
         q = EditMatchReject.query.filter_by(report_timestamp=timestamp)
         return render_template('reports/edit_match.html', q=q)
-    q = (database.session.query(EditMatchReject.report_timestamp, func.count)
+    q = (database.session.query(EditMatchReject.report_timestamp, func.count())
                          .group_by(EditMatchReject.report_timestamp))
     return render_template('reports/list.html', q=q)
 
