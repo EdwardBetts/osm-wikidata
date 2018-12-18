@@ -413,6 +413,9 @@ https://www.wikidata.org/wiki/{self.qid}
                 any(cat.startswith('Hamlets ')
                     for cat in self.categories or []))
 
+    def is_farm_house(self):
+        return 'Q489357' in self.instanceof()
+
     def is_mountain_range(self):
         return 'Q46831' in self.instanceof()
 

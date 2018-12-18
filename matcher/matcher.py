@@ -323,6 +323,9 @@ def find_item_matches(cur, item, prefix, debug=False):
     endings = get_ending_from_criteria(item.tags)
     endings |= item.more_endings_from_isa()
 
+    if item.is_farmhouse():
+        endings = set()
+
     wikidata_tags = item.calculate_tags()
 
     place_names = item.place_names()
