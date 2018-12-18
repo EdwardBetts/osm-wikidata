@@ -327,6 +327,9 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     place_names = item.place_names()
     instanceof = set(item.instanceof())
+    is_hamlet = item.is_hamlet()
+    if is_hamlet:
+        endings.discard('house')
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
@@ -365,8 +368,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                 match.check_for_address_in_extract(osm_tags, item.extract)):
             address_match = True
 
-        name_match = match.check_for_match(osm_tags, wikidata_names, endings,
-                                           place_names=place_names)
+        name_match = match.check_for_match(osm_tags,
+                                           wikidata_names,
+                                           endings,
+                                           place_names=place_names,
+                                           trim_house=not is_hamlet)
 
         if 'seamark:name' in name_match and 'man_made=lighthouse' not in item.tags:
             del name_match['seamark:name']  # not a lighthouse
@@ -633,8 +639,14 @@ def check_item_candidate(candidate):
             match.check_for_address_in_extract(osm_tags, item.extract)):
         address_match = True
 
+    is_hamlet = item.is_hamlet()
+
+    if is_hamlet:
+        endings.discard('house')
+
     name_match = match.check_for_match(osm_tags, wikidata_names, endings,
-                                       place_names=place_names)
+                                       place_names=place_names,
+                                       trim_house=not is_hamlet)
 
     if not (identifier_match or address_match or name_match):
         return {'reject': 'no match', 'place_names': place_names}

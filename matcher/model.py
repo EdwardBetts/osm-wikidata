@@ -408,6 +408,11 @@ https://www.wikidata.org/wiki/{self.qid}
         if self.entity:
             return self.entity.get('sitelinks')
 
+    def is_hamlet(self):
+        return ('Q5084' in self.instanceof() or
+                any(cat.startswith('Hamlets ')
+                    for cat in self.categories or []))
+
     def is_mountain_range(self):
         return 'Q46831' in self.instanceof()
 

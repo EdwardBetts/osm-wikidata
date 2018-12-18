@@ -265,7 +265,6 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if wd_tidy == osm_tidy:
         return Match(MatchType.good)
 
-    endings = set(endings or []) | {'house'}
     m = match_with_words_removed(osm_lc, wd_lc, endings)
     if m:
         if 'church' in osm_lc and 'church' in wd_lc:
@@ -321,7 +320,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if plural_in_other_name:
         return
 
-    for end in ['building', 'complex', 'house', 'office'] + list(endings or []):
+    for end in ['building', 'complex', 'office'] + list(endings or []):
         if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
             return Match(MatchType.trim)
         if wd_tidy.startswith(end) and wd_tidy[len(end):] == osm_tidy:
@@ -357,7 +356,6 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
     # Example: '1-3 Rectory Cottages' matches 'Rectory Cottages'
     if osm and osm[0].isdigit() and any(t in wd.lower() for t in terms):
         no_number_osm = strip_non_letter_start(osm)
-        print(no_number_osm)
         match = name_match_main(no_number_osm, wd, endings, debug)
         if match:
             return match
@@ -519,7 +517,11 @@ def intials_matches_other_wikidata_name(initials, wikidata_names):
     return any(w != initials and initials_match(initials, w)
                for w in wikidata_names.keys())
 
-def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None):
+def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None, trim_house=True):
+    endings = set(endings or [])
+    if trim_house:
+        endings.add('house')
+
     names = get_names(osm_tags)
     operator = names['operator'].lower() if 'operator' in names else None
     if not names or not wikidata_names:

@@ -277,7 +277,7 @@ def test_name_match():
 
     osm = 'Manor Buildings'
     wikidata = 'Manor House Buildings'
-    assert match.name_match(osm, wikidata)
+    assert match.name_match(osm, wikidata, endings={'house'})
 
     assert match.name_match('site of Pegwell Lodge', 'Pegwell Lodge')
 
