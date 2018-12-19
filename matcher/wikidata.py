@@ -437,11 +437,13 @@ SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label 
 '''
 
 next_level_type_map = {
-    'Q48091': ['Q1136601',    # unitary authority of England
-               'Q211690',     # London borough
-               'Q1002812',    # metropolitan borough
-               'Q643815',     # (non-)metropolitan county of England
-               'Q180673'],    # ceremonial county of England
+    'Q48091': ['Q1136601',     # unitary authority of England
+               'Q211690',      # London borough
+               'Q1002812',     # metropolitan borough
+               'Q643815',      # (non-)metropolitan county of England
+               'Q180673'],     # ceremonial county of England
+    'Q1136601': ['Q1115575'],  # civil parish
+    'Q1187580': ['Q1115575'],  # civil parish
 }
 
 next_level_by_type = '''
