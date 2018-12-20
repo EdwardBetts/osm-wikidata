@@ -196,7 +196,7 @@
 {
     "cats": ["Monuments and memorials by country", "Outdoor sculptures by country", "Statues", "sculptures",
              "Triumphal arches", "memorials", "monuments"],
-    "tags": ["historic=monument", "tourism", "historic=memorial", "memorial=statue"],
+    "tags": ["historic=monument", "tourism", "historic=memorial", "memorial=statue", "memorial:type=statue"],
     "trim": ["monument", "Statue of"],
     "dist": 3
 },
@@ -1080,7 +1080,7 @@
 },
 {
     "cats": ["Farms by country"],
-    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm"],
+    "tags": ["place=farm", "landuse=farm", "building=farm", "historic=farm", "landuse=farmland"],
     "trim": ["farm", "farmhouse", "farm house"],
     "area": true,
     "dist": 10,
