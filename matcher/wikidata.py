@@ -118,6 +118,7 @@ extra_keys = {
     'Q134447': ['Tag:generator:source=nuclear'],  # nuclear power plant
     'Q1258086': ['Tag:leisure=park',
                  'Tag:boundary=national_park'],  # National Historic Site
+    'Q32350958': ['Tag:leisure=bingo'],         # Bingo hall
 }
 
 # search for items in bounding box that have an English Wikipedia article
