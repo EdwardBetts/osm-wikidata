@@ -1353,6 +1353,9 @@ def reports_view():
         return render_template('reports/edit_match.html', q=q)
     q = (database.session.query(EditMatchReject.report_timestamp, func.count())
                          .group_by(EditMatchReject.report_timestamp))
+    hide = request.args.get('hide')
+    if hide == 'farmhouse':
+        q = q.filter(~EditMatchReject.edit.candidate.item.query_label.like('%farm%house%'))
     return render_template('reports/list.html', q=q)
 
 @app.route('/db_space')
