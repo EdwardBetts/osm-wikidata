@@ -907,7 +907,7 @@ class EditMatchReject(Base):
     item_id = Column(Integer, primary_key=True)
     osm_id = Column(BigInteger, primary_key=True)
     osm_type = Column(osm_type_enum, primary_key=True)
-    report_timestamp = Column(DateTime, nullable=False)
+    report_timestamp = Column(DateTime, primary_key=True)
     matcher_result = Column(postgresql.JSON, nullable=False)
 
     edit = relationship('ChangesetEdit')
