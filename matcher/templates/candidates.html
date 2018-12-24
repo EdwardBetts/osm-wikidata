@@ -139,7 +139,6 @@ var bounds = [[{{ place.north }}, {{place.west }}],
               [{{ place.south}}, {{ place.east}}]];
 map.fitBounds(bounds);
 {% endif %}
-// map.setView(new L.LatLng(37.7749, -122.4194), 12);
 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 tiles.addTo(map);
 var group = L.featureGroup();
