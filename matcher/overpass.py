@@ -9,8 +9,8 @@ from time import sleep
 from . import user_agent_headers, mail
 from collections import defaultdict
 
-re_slot_available = re.compile('^Slot available after: ([^,]+), in (-?\d+) seconds?\.$')
-re_available_now = re.compile('^\d+ slots available now.$')
+re_slot_available = re.compile(r'^Slot available after: ([^,]+), in (-?\d+) seconds?\.$')
+re_available_now = re.compile(r'^\d+ slots available now.$')
 
 name_only_tag = {'area=yes', 'type=tunnel', 'leisure=park', 'leisure=garden',
         'site=aerodome', 'amenity=hospital', 'boundary', 'amenity=pub',
