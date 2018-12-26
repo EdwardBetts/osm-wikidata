@@ -96,6 +96,12 @@
     "dist": 2
 },
 {
+    "cats": ["Gates"],
+    "tags": ["barrier=gate", "historic=gate", "tourism=attraction"],
+    "wikidata": "Q53060",
+    "dist": 1
+},
+{
     "cats": ["Astronomical observatories by country"],
     "tags": ["amenity=astronomical_observatory", "man_made=telescope", "landuse=observatory", "amenity=university"],
     "trim": ["telescope", "observatory", "astronomical observatory"],

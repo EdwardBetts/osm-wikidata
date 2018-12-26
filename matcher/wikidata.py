@@ -119,6 +119,8 @@ extra_keys = {
     'Q1258086': ['Tag:leisure=park',
                  'Tag:boundary=national_park'],  # National Historic Site
     'Q32350958': ['Tag:leisure=bingo'],         # Bingo hall
+    'Q53060': ['Tag:historic=gate',             # gate
+               'Tag:tourism=attraction'],
 }
 
 # search for items in bounding box that have an English Wikipedia article
