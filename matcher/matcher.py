@@ -93,6 +93,7 @@ def get_ending_from_criteria(tags):
     if not entity_types:
         entity_types = load_entity_types()
     tags = set(tags)
+    tags.discard('type=site')  # too generic
 
     endings = set()
     for t in entity_types:

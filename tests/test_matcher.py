@@ -170,6 +170,19 @@ def test_item_match_sql(monkeypatch):
     sql = matcher.item_match_sql(item, 'test')
     assert "(tags ? 'building')" in sql
 
+def find_item_matches(monkeypatch, osm_tags, item):
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [('node', 1, None, osm_tags, 0)]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    mock_db = MockDatabase()
+
+    return matcher.find_item_matches(mock_db, item, 'prefix')
+
 def test_find_item_matches_mall(monkeypatch):
     osm_tags = {
         'landuse': 'retail',
@@ -192,19 +205,9 @@ def test_find_item_matches_mall(monkeypatch):
     tags = ['landuse=retail']
     item = Item(entity=test_entity, tags=tags)
 
-    def mock_run_sql(cur, sql, debug):
-        if not sql.startswith('select * from'):
-            return []
-        return [('polygon', 59847542, None, osm_tags, 0)]
-
-    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
-    monkeypatch.setattr(matcher, 'current_app', MockApp)
-
-    mock_db = MockDatabase()
-
-    candidates = matcher.find_item_matches(mock_db, item, 'prefix')
+    candidates = find_item_matches(monkeypatch, osm_tags, item)
     assert len(candidates) == 1
-
+    return
 
 def test_church_is_not_school(monkeypatch):
     test_entity = {
@@ -971,6 +974,40 @@ def test_hamlet_shouldnt_match_house(monkeypatch):
     item = Item(item_id=7159326,
                 entity=entity,
                 extract_names=['Pednor'],
+                categories=categories)
+
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    for t in matcher.categories_to_tags(item.categories):
+        item.tags.add(t)
+
+    ret = matcher.check_item_candidate(candidate)
+    assert 'reject' in ret
+
+def test_station_shouldnt_match_school(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'addr:city': 'Cummersdale',
+        'building': 'school',
+        'name': 'Cummersdale School',
+    }
+
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q55488'}}},
+            }],
+        },
+        'labels': {'en': {'value': 'Cummersdale railway station'}},
+        'sitelinks': {},
+    }
+
+    categories = ['Disused railway stations in Cumbria']
+
+    item = Item(item_id=5194098,
+                entity=entity,
+                extract_names=['Cummersdale'],
                 categories=categories)
 
     candidate = ItemCandidate(item=item, tags=osm_tags)
