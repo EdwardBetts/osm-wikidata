@@ -1017,3 +1017,42 @@ def test_station_shouldnt_match_school(monkeypatch):
 
     ret = matcher.check_item_candidate(candidate)
     assert 'reject' in ret
+
+def test_school_shouldnt_match_church(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'amenity': 'place_of_worship',
+        'building': 'yes',
+        'denomination': 'roman_catholic',
+        'name': 'Our Lady of Lourdes',
+        'religion': 'christian',
+    }
+
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q3914'}}},
+            }],
+        },
+        'labels': {'en': {'value': 'Our Lady of Lourdes School'}},
+        'sitelinks': {},
+    }
+
+    categories = ['Catholic primary schools in the Archdiocese of Westminster',
+                  'Primary schools in the London Borough of Enfield',
+                  'Voluntary aided schools in London']
+
+    item = Item(item_id=7110870,
+                entity=entity,
+                extract_names=[],
+                categories=categories)
+
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    for t in matcher.categories_to_tags(item.categories):
+        item.tags.add(t)
+
+    ret = matcher.check_item_candidate(candidate)
+    print(ret)
+    assert 'reject' in ret

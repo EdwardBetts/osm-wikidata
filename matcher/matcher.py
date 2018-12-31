@@ -285,6 +285,112 @@ def is_building_only_match(matching_tags):
     building_tags = {'building', 'building=yes', 'historic:building'}
     return matching_tags.issubset(building_tags)
 
+def is_bad_match(item, osm_tags):
+    amenity = set(osm_tags['amenity'].split(';')
+                  if 'amenity' in osm_tags else [])
+
+    if ('man_made=windmill' in item.tags and
+            'amenity=pub' not in item.tags and
+            'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
+        return True  # Wikidata windmill shouldn't match OSM pub
+
+    if ('historic=castle' in item.tags and
+            'amenity=pub' not in item.tags and
+            'pub' in amenity and osm_tags.get('historic') != 'castle'):
+        return True  # Wikidata castle shouldn't match OSM pub
+
+    if ('amenity=lifeboat_station' in item.tags and
+            'amenity=place_of_worship' not in item.tags and
+            'place_of_worship' in amenity):
+        return True  # lifeboat station shouldn't match place of worship
+
+    if ('historic=castle' in item.tags and
+            'railway=station' not in item.tags and
+            (osm_tags.get('railway') == 'station' or
+            osm_tags.get('building') == 'train_station') and
+            osm_tags.get('historic') != 'castle'):
+        return True  # castle shouldn't railway station
+
+    if ('amenity=place_of_worship' in item.tags and
+            'amenity=pub' not in item.tags and
+            'pub' in amenity):
+        return True  # place of worship shouldn't match pub
+
+    if ('amenity=school' in item.tags and
+            'amenity=place_of_worship' not in item.tags and
+            'place_of_worship' in amenity and
+            'school' not in amenity):
+        return True  # place of worship shouldn't match pub
+
+    if ('amenity=place_of_worship' in item.tags and
+            'amenity=school' not in item.tags and
+            'school' in amenity and
+            'place_of_worship' not in amenity):
+        return True  # place of worship shouldn't match school
+
+    if ('railway=station' in item.tags and
+            'amenity=cafe' not in item.tags and
+            'cafe' in amenity and
+            osm_tags.get('railway') != 'station' and
+            osm_tags.get('building') != 'train_station'):
+        return True  # station shouldn't match cafe
+
+    if ('railway=station' in item.tags and
+            'shop=supermarket' not in item.tags and
+            'supermarket' == osm_tags.get('shop') and
+            osm_tags.get('railway') != 'station' and
+            osm_tags.get('building') != 'train_station'):
+        return True  # station shouldn't match supermarket
+
+    if ('amenity=school' in item.tags and
+            'leisure=ice_rink' not in item.tags and
+            osm_tags.get('leisure') == 'ice_rink' and
+            'school' not in amenity):
+        return True  # school shouldn't match ice rink
+
+    if ('building=train_station' not in item.tags and
+            osm_tags.get('building') == 'train_station'):
+        return True  # non-station shouldn't match station
+
+    if ('amenity=fuel' not in item.tags and 'fuel' in amenity):
+        return True  # petrol station
+
+    if ('amenity=library' in item.tags and
+            'amenity=place_of_worship' not in item.tags and
+            'place_of_worship' in amenity and
+            'library' not in amenity):
+        return True  # Wikidata library shouldn't match OSM church
+
+    if ('amenity=library' in item.tags and
+            'amenity=pub' not in item.tags and
+            'pub' in amenity and
+            'library' not in amenity):
+        return True  # Wikidata library shouldn't match OSM pub
+
+    if ('amenity=cinema' in item.tags and
+            'amenity=fuel' not in item.tags and
+            'fuel' in amenity and
+            'cinema' not in amenity):
+        return True  # Wikidata cinema shouldn't match OSM petrol station
+
+    if ('artwork_type=statue' in item.tags and
+            'tourism=museum' not in item.tags and
+            osm_tags.get('leisure') == 'museum' and
+            osm_tags.get('artwork_type') != 'statue'):
+        return True  # Wikidata statue shouldn't match OSM museum
+
+    if ('amenity=place_of_worship' in item.tags and
+            'amenity=cafe' not in item.tags and
+            'cafe' in amenity and 'place_of_worship' not in amenity):
+        return True  # place of worship shouldn't match cafe
+
+    if ('place' in item.tags and
+            not any(t.startswith('railway') for t in item.tags) and
+            'place' not in osm_tags and 'railway' in osm_tags):
+        return True  # place shouldn't match railway
+
+    return False
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -423,94 +529,9 @@ def find_item_matches(cur, item, prefix, debug=False):
         if (building_only_match and
                 not address_match and
                 name_match and
-                not identifier_match):
-            if ('man_made=windmill' in item.tags and
-                    'amenity=pub' not in item.tags and
-                    'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
-                continue  # Wikidata windmill shouldn't match OSM pub
-
-            if ('historic=castle' in item.tags and
-                    'amenity=pub' not in item.tags and
-                    'pub' in amenity and osm_tags.get('historic') != 'castle'):
-                continue  # Wikidata castle shouldn't match OSM pub
-
-            if ('amenity=lifeboat_station' in item.tags and
-                    'amenity=place_of_worship' not in item.tags and
-                    'place_of_worship' in amenity):
-                continue  # lifeboat station shouldn't match place of worship
-
-            if ('historic=castle' in item.tags and
-                    'railway=station' not in item.tags and
-                    (osm_tags.get('railway') == 'station' or
-                    osm_tags.get('building') == 'train_station') and
-                    osm_tags.get('historic') != 'castle'):
-                continue  # castle shouldn't railway station
-
-            if ('amenity=place_of_worship' in item.tags and
-                    'amenity=pub' not in item.tags and
-                    'pub' in amenity):
-                continue  # place of worship shouldn't match pub
-
-            if ('railway=station' in item.tags and
-                    'amenity=cafe' not in item.tags and
-                    'cafe' in amenity and
-                    osm_tags.get('railway') != 'station' and
-                    osm_tags.get('building') != 'train_station'):
-                continue  # station shouldn't match cafe
-
-            if ('railway=station' in item.tags and
-                    'shop=supermarket' not in item.tags and
-                    'supermarket' == osm_tags.get('shop') and
-                    osm_tags.get('railway') != 'station' and
-                    osm_tags.get('building') != 'train_station'):
-                continue  # station shouldn't match supermarket
-
-            if ('amenity=school' in item.tags and
-                    'leisure=ice_rink' not in item.tags and
-                    osm_tags.get('leisure') == 'ice_rink' and
-                    'school' not in amenity):
-                continue  # school shouldn't match ice rink
-
-            if ('building=train_station' not in item.tags and
-                    osm_tags.get('building') == 'train_station'):
-                continue  # non-station shouldn't match station
-
-            if ('amenity=fuel' not in item.tags and 'fuel' in amenity):
-                continue  # petrol station
-
-            if ('amenity=library' in item.tags and
-                    'amenity=place_of_worship' not in item.tags and
-                    'place_of_worship' in amenity and
-                    'library' not in amenity):
-                continue  # Wikidata library shouldn't match OSM church
-
-            if ('amenity=library' in item.tags and
-                    'amenity=pub' not in item.tags and
-                    'pub' in amenity and
-                    'library' not in amenity):
-                continue  # Wikidata library shouldn't match OSM pub
-
-            if ('amenity=cinema' in item.tags and
-                    'amenity=fuel' not in item.tags and
-                    'fuel' in amenity and
-                    'cinema' not in amenity):
-                continue  # Wikidata cinema shouldn't match OSM petrol station
-
-            if ('artwork_type=statue' in item.tags and
-                    'tourism=museum' not in item.tags and
-                    osm_tags.get('leisure') == 'museum' and
-                    osm_tags.get('artwork_type') != 'statue'):
-                continue  # Wikidata statue shouldn't match OSM museum
-
-            if ('amenity=place_of_worship' in item.tags and
-                    'amenity=cafe' not in item.tags and
-                    'cafe' in amenity and 'place_of_worship' not in amenity):
-                continue  # place of worship shouldn't match cafe
-
-            if ('place' in item.tags and
-                    not any(t.startswith('railway') for t in item.tags) and
-                    'place' not in osm_tags and 'railway' in osm_tags):
-                continue  # place shouldn't match railway
+                not identifier_match and
+                is_bad_match(item, osm_tags)):
+            continue
 
         if ((not matching_tags or building_only_match) and
                 instanceof == {'Q34442'}):
@@ -670,6 +691,13 @@ def check_item_candidate(candidate):
             'amenity=restaurant' not in item.tags and
             'restaurant' in amenity and 'school' not in amenity):
         return {'reject': "Wikidata school shouldn't match OSM restaurant"}
+
+    if (building_only_match and
+            not address_match and
+            name_match and
+            not identifier_match and
+            is_bad_match(item, osm_tags)):
+        return {'reject': 'bad match'}
 
     if ((not matching_tags or building_only_match) and
             instanceof == {'Q34442'}):
