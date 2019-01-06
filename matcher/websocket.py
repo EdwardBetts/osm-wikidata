@@ -86,7 +86,7 @@ class MatcherSocket(object):
             print(msg)
             self.status(msg)
             try:
-                items.update(self.place.items_from_wikidata(bbox))
+                items.update(self.place.bbox_wikidata_items(bbox))
             except wikidata.QueryTimeout:
                 msg = f'wikidata timeout, splitting chunk {num} info four'
                 print(msg)
@@ -95,15 +95,13 @@ class MatcherSocket(object):
 
         return items
 
-    def get_items(self):
-        self.send('get_wikidata_items')
-        print('items from wikidata')
+    def get_items_bbox(self):
         place = self.place
         chunk_size = place.wikidata_chunk_size()
         if chunk_size == 1:
             print('wikidata unchunked')
             try:
-                wikidata_items = place.items_from_wikidata()
+                wikidata_items = place.bbox_wikidata_items()
             except wikidata.QueryTimeout:
                 place.wikidata_query_timeout = True
                 database.session.commit()
@@ -117,6 +115,21 @@ class MatcherSocket(object):
             msg = f'downloading wikidata in {len(chunks)} chunks'
             self.status(msg)
             wikidata_items = self.wikidata_chunked(chunks)
+
+        return wikidata_items
+
+    def get_items_point(self):
+        return self.place.point_wikidata_items()
+
+    def get_items(self):
+        self.send('get_wikidata_items')
+        print('items from wikidata')
+
+        if self.place.is_point:
+            wikidata_items = self.get_items_point()
+        else:
+            wikidata_items = self.get_items_bbox()
+
         self.status('wikidata query complete')
         print('done')
         pins = build_item_list(wikidata_items)
@@ -346,8 +359,12 @@ def run_matcher(place, m):
         place.state = 'wbgetentities'
         database.session.commit()
 
-    chunks = place.get_chunks()
-    m.report_empty_chunks(chunks)
+    if place.osm_type == 'node':
+        oql = place.get_oql()
+        chunks = [{'filename': f'{place.place_id}.xml', 'num': 0, 'oql': oql}]
+    else:
+        chunks = place.get_chunks()
+        m.report_empty_chunks(chunks)
 
     if place.overpass_done:
         m.status('using existing overpass data')

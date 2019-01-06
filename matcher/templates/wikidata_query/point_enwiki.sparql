@@ -1,0 +1,19 @@
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
+    SERVICE wikibase:around {
+        ?place wdt:P625 ?location .
+        bd:serviceParam wikibase:center "Point({{ lon }} {{ lat }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:radius "{{ '{:.1f}'.format(radius) }}" .
+    }
+    ?article schema:about ?place .
+    ?article schema:inLanguage "en" .
+    ?article schema:isPartOf <https://en.wikipedia.org/> .
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q18340550 } .          # ignore timeline article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q13406463 } .          # ignore list article
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q17362920 } .          # ignore Wikimedia duplicated page
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .  # ignore constituency
+    FILTER NOT EXISTS { ?place wdt:P31 wd:Q811683 } .            # ignore proposed building or structure
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?article
+
+# vim: ft=sparql

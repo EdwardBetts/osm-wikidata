@@ -1,0 +1,17 @@
+# search for items in bounding box that have OSM tags in the subclass tree
+# look for coordinates in the headquarters location (P159)
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?address ?street ?item ?itemLabel ?tag WHERE {
+    ?place p:P159 ?statement .
+    SERVICE wikibase:around {
+        ?place pq:P625 ?location .
+        bd:serviceParam wikibase:center "Point({{ lon }} {{ lat }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:radius "{{ '{:.1f}'.format(radius) }}" .
+    }
+    ?place wdt:P31/wdt:P279* ?item .
+    ?item ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
+    OPTIONAL { ?place wdt:P969 ?address } .
+    OPTIONAL { ?place wdt:P669 ?street } .
+    FILTER NOT EXISTS { ?place wdt:P31/wdt:P279* wd:Q192611 } .     # ignore constituencies
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag

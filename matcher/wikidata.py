@@ -1,4 +1,4 @@
-from flask import render_template_string
+from flask import render_template_string, render_template
 from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start, cache_filename
@@ -506,6 +506,20 @@ def get_query(q, south, north, west, east):
                                   north=north,
                                   west=west,
                                   east=east)
+
+def query_map(prefix, **kwargs):
+    return {
+        name: render_template(f'wikidata_query/{prefix}_{name}.sparql',
+                              **kwargs)
+        for name in ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
+    }
+
+
+def bbox_query_map(south, north, west, east):
+    return query_map('bbox', south=south, north=north, west=west, east=east)
+
+def point_query_map(lat, lon, radius_m):
+    return query_map('point', lat=lat, lon=lon, radius=radius_m / 1_000)
 
 def get_enwiki_query(*args):
     return get_query(wikidata_enwiki_query, *args)

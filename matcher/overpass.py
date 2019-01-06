@@ -54,7 +54,52 @@ def name_only(t):
             ('=' in t and any(t.startswith(key + '=') for key in name_only_key)))
 
 def get_name_filter(tags):
-    return '[name]' if all(name_only(t) for t in tags) else '[~"^(addr:housenumber|.*name.*)$"~".",i]'
+    return ('[name]'
+            if all(name_only(t) for t in tags)
+            else '[~"^(addr:housenumber|.*name.*)$"~".",i]')
+
+def oql_for_point(lat, lon, radius, tags, buildings):
+    union = []
+
+    for key, values in sorted(group_tags(tags).items()):
+        u = oql_point_element_filter(key, values, filters='.a')
+        if u:
+            union += u
+    name_filter = get_name_filter(tags)
+
+    if buildings:
+        oql_building = '''
+    node["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+    way["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+    rel["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
+'''.strip().format(buildings, buildings, buildings)
+    else:
+        oql_building = ''
+
+    oql_template = '''
+[timeout:600][out:xml];
+(
+node(around:{radius},{lat},{lon});
+way(around:{radius},{lat},{lon});
+rel(around:{radius},{lat},{lon});
+) -> .a;
+(
+{tags}
+) -> .b;
+(
+    node.b{name_filter};
+    way.b{name_filter};
+    rel.b{name_filter};
+{oql_building}
+);
+(._;>;);
+out;'''
+    return oql_template.format(lat=lat,
+                               lon=lon,
+                               radius=radius,
+                               tags='\n'.join(union),
+                               name_filter=name_filter,
+                               oql_building=oql_building)
 
 def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True):
     union = []
@@ -64,8 +109,10 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
         if u:
             union += u
 
-    offset = {'way': 2400000000, 'rel': 3600000000}
-    area_id = offset[overpass_type] + int(osm_id)
+    if overpass_type == 'node':
+        area_id = None
+    else:
+        area_id = int(osm_id) + {'way': 2400000000, 'rel': 3600000000}[overpass_type]
 
     name_filter = get_name_filter(tags)
 
@@ -126,6 +173,21 @@ def oql_element_filter(key, values, filters='area.a'):
         tag = '"{}"'.format(key)
 
     return ['{}({})[{}];'.format(t, filters, tag.replace('␣', ' '))
+            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
+
+def oql_point_element_filter(key, values, filters=''):
+    # optimisation: we only expect route, type or site on relations
+    relation_only = key in {'site', 'type', 'route'}
+
+    if values:
+        if len(values) == 1:
+            tag = '"{}"="{}"'.format(key, values[0])
+        else:
+            tag = '"{}"~"^({})$"'.format(key, '|'.join(values))
+    else:
+        tag = '"{}"'.format(key)
+
+    return ['{}{}[{}];'.format(t, filters, tag.replace('␣', ' '))
             for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
 
 def oql_from_tag(tag, filters='area.a'):

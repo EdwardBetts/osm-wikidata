@@ -1,0 +1,13 @@
+SELECT ?place ?placeLabel (SAMPLE(?location) AS ?location) ?article WHERE {
+    ?place p:P159 ?statement .
+    SERVICE wikibase:box {
+        ?statement pq:P625 ?location .
+        bd:serviceParam wikibase:cornerWest "Point({{ west }} {{ south }})"^^geo:wktLiteral .
+        bd:serviceParam wikibase:cornerEast "Point({{ east }} {{ north }})"^^geo:wktLiteral .
+    }
+    ?article schema:about ?place .
+    ?article schema:inLanguage "en" .
+    ?article schema:isPartOf <https://en.wikipedia.org/> .
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+GROUP BY ?place ?placeLabel ?article

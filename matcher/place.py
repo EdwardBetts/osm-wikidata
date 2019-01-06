@@ -13,12 +13,13 @@ from . import wikidata, matcher, wikipedia, overpass, utils, nominatim, default_
 from collections import Counter
 from .overpass import oql_from_tag
 from time import time
-from collections import defaultdict
 
 import json
 import subprocess
 import os.path
 import re
+
+radius_default = 1_000  # in metres, only for nodes
 
 place_chunk_size = 32
 degrees = '(-?[0-9.]+)'
@@ -77,7 +78,7 @@ class Place(Base):
     place_id = Column(BigInteger, primary_key=True, autoincrement=False)
     osm_type = Column(osm_type_enum, nullable=False)
     osm_id = Column(BigInteger, nullable=False)
-    radius = Column(Integer)  # only for nodes
+    radius = Column(Integer)  # in metres, only for nodes
     display_name = Column(String, nullable=False)
     category = Column(String, nullable=False)
     type = Column(String, nullable=False)
@@ -178,10 +179,9 @@ class Place(Base):
 
     @classmethod
     def get_or_abort(cls, osm_type, osm_id):
-        if osm_type in {'way', 'relation'}:
-            place = cls.get_by_osm(osm_type, osm_id)
-            if place:
-                return place
+        place = cls.get_by_osm(osm_type, osm_id)
+        if place:
+            return place
         abort(404)
 
     @hybrid_property
@@ -299,46 +299,59 @@ class Place(Base):
         return (self.south, self.north, self.west, self.east)
 
     @property
+    def is_point(self):
+        return self.osm_type == 'node'
+
+    @property
     def display_area(self):
         return '{:.1f} km²'.format(self.area_in_sq_km)
 
     def get_wikidata_query(self):
+        # this is an old function, it isn't used by the matcher
         if self.osm_type == 'node':
-            query = wikidata.get_point_query(self.lat, self.lon, self.radius)
+            radius = self.radius or radius_default
+            query = wikidata.get_point_query(self.lat, self.lon, radius)
         else:
             query = wikidata.get_enwiki_query(*self.bbox)
         return query
 
-    def items_from_wikidata(self, bbox=None):
+    def point_wikidata_items(self):
+        radius = self.radius or radius_default
+        query_map = wikidata.point_query_map(self.lat, self.lon, radius)
+        return self.items_from_wikidata(query_map)
+
+    def bbox_wikidata_items(self, bbox=None):
         if bbox is None:
             bbox = self.bbox
 
-        q = wikidata.get_enwiki_query(*bbox)
-        rows = wikidata.run_query(q)
+        query_map = wikidata.bbox_query_map(*bbox)
+        items = self.items_from_wikidata(query_map)
 
+        # Would be nice to include OSM chunk information with each
+        # item. Not doing it at this point because it means lots
+        # of queries. Easier once the items are loaded into the database.
+        return {k: v for k, v in items.items() if self.covers(v)}
+
+    def items_from_wikidata(self, query_map):
+        rows = wikidata.run_query(query_map['enwiki'])
         items = wikidata.parse_enwiki_query(rows)
 
         try:  # add items with the coordinates in the HQ field
-            q = wikidata.get_enwiki_hq_query(*bbox)
+            rows = wikidata.run_query(query_map['hq_enwiki'])
             items.update(wikidata.parse_enwiki_query(rows))
         except wikidata.QueryError:
             pass  # HQ query timeout isn't fatal
 
-        q = wikidata.get_item_tag_query(*bbox)
-        rows = wikidata.run_query(q)
+        rows = wikidata.run_query(query_map['item_tag'])
         wikidata.parse_item_tag_query(rows, items)
 
         try:  # add items with the coordinates in the HQ field
-            q = wikidata.get_hq_item_tag_query(*bbox)
-            rows = wikidata.run_query(q)
+            rows = wikidata.run_query(query_map['hq_item_tag'])
             wikidata.parse_item_tag_query(rows, items)
         except wikidata.QueryError:
             pass  # HQ query timeout isn't fatal
 
-        # would be nice to include OSM chunk information with each
-        # item not doing it at this point because it means lots
-        # of queries easier once the items are loaded into the database
-        return {k: v for k, v in items.items() if self.covers(v)}
+        return items
 
     def covers(self, item):
         ''' Is the given item within the geometry of this place. '''
@@ -534,14 +547,24 @@ class Place(Base):
                 names.add(n)
                 names.add(re_drop.sub('', n))
 
-        names = sorted(n.replace(' ', '\W*') for n in names)
+        names = sorted(n.replace(' ', r'\W*') for n in names)
         if names:
             return '({})'.format('|'.join(names))
 
-    def get_oql(self, buildings_special=False):
-        assert self.osm_type != 'node'
+    def get_point_oql(self, buildings_special=False):
+        tags = self.all_tags
 
-        bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
+        if buildings_special and 'building' in tags:
+            buildings = self.building_names()
+            tags.remove('building')
+        else:
+            buildings = None
+
+        radius = self.radius or radius_default
+        return overpass.oql_for_point(self.lat, self.lon, radius, tags, buildings)
+
+    def get_bbox_oql(self, buildings_special=False):
+        bbox = f'{self.south:f},{self.west:f},{self.north:f},{self.east:f}'
 
         tags = self.all_tags
 
@@ -583,6 +606,12 @@ class Place(Base):
                '(._;>;);\n' +
                'out qt;').format(bbox, area_id, ''.join(union))
         return oql
+
+    def get_oql(self, buildings_special=False):
+        if self.is_point:
+            return self.get_point_oql(buildings_special=False)
+        else:
+            return self.get_bbox_oql(buildings_special=False)
 
     def candidates_url(self, **kwargs):
         if g.get('filter'):
@@ -680,7 +709,7 @@ class Place(Base):
         if bbox is None:
             bbox = self.bbox
 
-        items = self.items_from_wikidata(bbox)
+        items = self.bbox_wikidata_items(bbox)
         if debug:
             print('{:d} items'.format(len(items)))
 
@@ -1117,6 +1146,9 @@ class Place(Base):
         return chunks
 
     def wikidata_chunk_size(self):
+        if self.osm_type == 'node':
+            return 1
+
         area = self.area_in_sq_km
         if area < 5000 and not self.wikidata_query_timeout:
             return 1
