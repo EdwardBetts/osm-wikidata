@@ -83,8 +83,9 @@ extra_keys = {
     'Q156362': ['Tag:amenity=winery'],          # winery
     'Q14092': ['Tag:leisure=fitness_centre',
                'Tag:leisure=sports_centre'],    # gymnasium
-    'Q27686': ['Tag:tourism=hostel',
-               'Tag:tourism=guest_house'],      # hotel
+    'Q27686': ['Tag:tourism=hostel',            # hotel
+               'Tag:tourism=guest_house',
+               'Tag:building=hotel'],
     'Q11707': ['Tag:amenity=cafe', 'Tag:amenity=fast_food',
                'Tag:shop=deli', 'Tag:shop=bakery',
                'Key:cuisine'],                  # restaurant
@@ -121,6 +122,9 @@ extra_keys = {
     'Q32350958': ['Tag:leisure=bingo'],         # Bingo hall
     'Q53060': ['Tag:historic=gate',             # gate
                'Tag:tourism=attraction'],
+    'Q3947': ['Tag:tourism=hotel',              # house
+              'Tag:building=hotel',
+              'Tag:tourism=guest_house'],
 }
 
 # search for items in bounding box that have an English Wikipedia article
