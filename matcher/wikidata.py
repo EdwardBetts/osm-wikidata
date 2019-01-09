@@ -411,7 +411,8 @@ WHERE {
   }
 
   ?item wdt:P30 ?start .
-  ?item wdt:P31 ?region .
+  ?item p:P31 ?statement .
+  ?statement ps:P31 ?region .
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
