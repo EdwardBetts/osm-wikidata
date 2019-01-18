@@ -212,6 +212,9 @@ def test_name_match():
 
     assert match.name_match('Sliabh Liag', 'Sliabh a Liag')
 
+    assert match.name_match('Beulah', 'Beulah, Powys')
+    assert match.name_match('Four Crosses', 'Four Crosses, Powys')
+
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)

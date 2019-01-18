@@ -78,7 +78,10 @@ def tidy_name(n):
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
     if not n.lstrip().startswith('s '):
-        n = n.replace('s ', ' ').replace("s' ", '').replace('s-', '-')
+        n = (n.replace('s ', ' ')
+              .replace("s' ", '')
+              .replace('s-', '-')
+              .replace('s,', ','))
     n = re_strip_words.sub(lambda m: m.group(1), n)
     n = n.replace('center', 'centre').replace('theater', 'theatre')
 
