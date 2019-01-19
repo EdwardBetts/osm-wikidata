@@ -14,6 +14,7 @@ re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_non_letter_start = re.compile(r'^[^A-Z]+', re.I | re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile(r'^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
+re_article = re.compile(r'^(\W*)(the|le|la|les)[- ]')
 re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
@@ -51,8 +52,9 @@ def no_alpha(s):
     return all(not c.isalpha() for c in s)
 
 class Match(object):
-    def __init__(self, match_type):
+    def __init__(self, match_type, debug=None):
         self.match_type = match_type
+        self.debug = debug
         self.wikidata_name = None
         self.wikidata_source = None
         self.osm_name = None
@@ -60,6 +62,7 @@ class Match(object):
 
 def tidy_name(n):
     # expects to be passed a name in lowercase
+    n = unidecode(n).strip().rstrip("'")
     n = n.replace('saint ', 'st ')
     n = n.replace(' church of england ', ' ce ')
     n = n.replace(' cofe ', ' ce ')
@@ -71,9 +74,8 @@ def tidy_name(n):
     n = n.replace(' incorporated', ' inc')
     n = n.replace(' cooperative', ' coop')
     n = n.replace(' co-operative', ' coop')
-    if n.startswith('the '):
-        n = n[4:]
-    elif n.endswith("'s"):
+    n = n.replace('ss', 's')
+    if n.endswith("'s"):
         n = n[:-2]
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
@@ -82,13 +84,17 @@ def tidy_name(n):
               .replace("s' ", '')
               .replace('s-', '-')
               .replace('s,', ','))
-    n = re_strip_words.sub(lambda m: m.group(1), n)
     n = n.replace('center', 'centre').replace('theater', 'theatre')
+    return n
 
-    decoded = unidecode(n).strip()
-    if not any(c.isalnum() for c in decoded):
-        return n.strip()
-    return decoded
+def drop_article(n):
+    m = re_article.match(n)
+    if m:
+        return m.group(1) + n[m.end():]
+    return n
+
+def strip_words(n):
+    return re_strip_words.sub(lambda m: m.group(1), n)
 
 def initials_match(n1, n2, endings=None):
     n1_lc = n1.lower()
@@ -132,15 +138,17 @@ def match_with_words_removed(osm, wd, words):
             if not wd_filtered or osm_filtered != wd_filtered:
                 continue
             if wd_filtered == wd_char_only:
-                return Match(MatchType.good)
+                return Match(MatchType.good, 'match with words removed')
             match_type = (MatchType.both_trimmed
                           if osm_filtered != osm_char_only
                           else MatchType.wikidata_trimmed)
-            best_match = Match(match_type)
+            best_match = Match(match_type, 'match with words removed')
     return best_match
 
-def strip_non_chars_match(osm, wd, dash_okay=True):
-    pattern = re_strip_non_chars if dash_okay else re_strip_non_chars_and_dash
+def strip_non_chars_match(osm, wd, strip_dash=False):
+    pattern = (re_strip_non_chars_and_dash
+               if strip_dash
+               else re_strip_non_chars)
 
     wc_stripped = pattern.sub('', wd)
     osm_stripped = pattern.sub('', osm)
@@ -237,41 +245,59 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
 
+    wd, osm = wd.strip(), osm.strip()
+
     if wd == osm:
-        return Match(MatchType.good)
+        return Match(MatchType.good, 'identical')
 
-    if name_containing_initials(osm, wd):
-        return Match(MatchType.good)
-
-    osm_lc = osm.lower()
-    wd_lc = wd.lower()
+    osm_lc, wd_lc = osm.lower(), wd.lower()
 
     if set(osm_lc.split()) == set(wd_lc.split()):
-        return Match(MatchType.good)
+        return Match(MatchType.good, 'matching term sets')
 
-    if strip_non_chars_match(osm_lc, wd_lc, dash_okay=False):
-        return Match(MatchType.good)
+    if strip_non_chars_match(osm_lc, wd_lc, strip_dash=True):
+        return Match(MatchType.good, 'strip non chars and dash')
+
+    if name_containing_initials(osm, wd):
+        return Match(MatchType.good, 'name containing initials')
 
     m = initials_match(osm, wd, endings) or initials_match(wd, osm, endings)
     if m:
         return m
 
     if strip_non_chars_match(osm_lc, wd_lc):
-        return Match(MatchType.good)
+        return Match(MatchType.good, 'strip non chars')
 
-    wd_tidy = tidy_name(wd_lc)
-    osm_tidy = tidy_name(osm_lc)
+    # tidy names, but don't drop lead article yet
+    wd_tidy1 = tidy_name(wd_lc)
+    osm_tidy1 = tidy_name(osm_lc)
 
-    if not wd_tidy or not osm_tidy:
+    if not wd_tidy1 or not osm_tidy1:
         return
 
+    if wd_tidy1 == osm_tidy1:
+        return Match(MatchType.good, 'tidy')
+
+    wd_tidy2 = strip_words(wd_tidy1)
+    osm_tidy2 = strip_words(osm_tidy1)
+
+    if wd_tidy2 == osm_tidy2:
+        return Match(MatchType.good, 'strip words')
+
+    wd_tidy = drop_article(wd_tidy2)
+    osm_tidy = drop_article(osm_tidy2)
+
+    wd_names = {wd_tidy, wd_tidy1, wd_tidy2}
+    osm_names = {osm_tidy, osm_tidy1, osm_tidy2}
+
     if wd_tidy == osm_tidy:
-        return Match(MatchType.good)
+        return Match(MatchType.good, 'drop article')
 
     m = match_with_words_removed(osm_lc, wd_lc, endings)
     if m:
         if 'church' in osm_lc and 'church' in wd_lc:
             m.match_type = MatchType.good
+            m.debug = 'words removed church'
         return m
 
     plural_in_other_name = (plural_word_name_in_other_name(osm_lc, wd_lc) or
@@ -283,20 +309,25 @@ def name_match_main(osm, wd, endings=None, debug=False):
         if m and not plural_in_other_name:
             return m
 
-    if strip_non_chars_match(osm_tidy, wd_tidy, dash_okay=False):
-        return Match(MatchType.good)
+    for osm_name in osm_names:
+        for wd_name in wd_names:
+            if strip_non_chars_match(osm_name, wd_name, strip_dash=True):
+                return Match(MatchType.good, 'strip non chars and dash after tidy')
 
     if 'washington, d' in wd_tidy:  # special case for Washington, D.C.
         wd_tidy = wd_tidy.replace('washington, d', 'washington d')
-    comma = wd_tidy.rfind(', ')
-    osm_char_only = re_strip_non_chars.sub('', osm_tidy)
-    if comma != -1 and not osm_char_only.isdigit():
-        wc_part1 = wd_tidy[:comma]
-        if wc_part1 == osm_tidy or strip_non_chars_match(osm_tidy, wc_part1):
-            return Match(MatchType.good)
+
+    for wd_name in wd_names:
+        comma = wd_name.rfind(', ')
+        for osm_name in osm_names:
+            osm_char_only = re_strip_non_chars.sub('', osm_name)
+            if comma != -1 and not osm_char_only.isdigit():
+                wc_part1 = wd_name[:comma]
+                if wc_part1 == osm_name or strip_non_chars_match(osm_name, wc_part1):
+                    return Match(MatchType.good, 'comma strip 1')
 
     if wd_tidy.split() == list(reversed(osm_tidy.split())):
-        return Match(MatchType.good)
+        return Match(MatchType.good, 'tidy name terms reversed')
 
     wd_tidy = re_keep_commas.sub('', wd_tidy)
     osm_tidy = re_keep_commas.sub('', osm_tidy)
@@ -304,21 +335,10 @@ def name_match_main(osm, wd, endings=None, debug=False):
     comma = wd_tidy.rfind(', ')
     if comma != -1 and not osm_tidy.isdigit():
         if wd_tidy[:comma] == osm_tidy:
-            return Match(MatchType.good)
-        if remove_start(wd_tidy[:comma], 'the ') == remove_start(osm_tidy, 'the '):
-            return Match(MatchType.good)
+            return Match(MatchType.good, 'comma strip 2')
 
     wd_tidy = re_strip_non_chars.sub('', wd_tidy)
     osm_tidy = re_strip_non_chars.sub('', osm_tidy)
-    if wd_tidy == osm_tidy:
-        return Match(MatchType.good)
-
-    if wd_tidy.startswith('the'):
-        wd_tidy = wd_tidy[3:]
-    if osm_tidy.startswith('the'):
-        osm_tidy = osm_tidy[3:]
-    if wd_tidy == osm_tidy:
-        return Match(MatchType.good)
 
     if plural_in_other_name:
         return
@@ -361,26 +381,30 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
         no_number_osm = strip_non_letter_start(osm)
         match = name_match_main(no_number_osm, wd, endings, debug)
         if match:
+            match.debug = ((match.debug + ' ' if match.debug else '') +
+                          '+ strip non letter start')
             return match
 
     osm_no_intitals = drop_initials(osm)
     if osm_no_intitals:
         match = name_match_main(osm_no_intitals, wd, endings, debug)
         if match:
+            match.debug = ((match.debug + ' ' if match.debug else '') +
+                          '+ drop initials')
             return match
 
     for start in 'Tomb of ', 'Statue of ', 'Memorial to ':
         if wd.startswith(start) and name_match_main(osm, wd[len(start):], endings):
-            return Match(MatchType.trim)
+            return Match(MatchType.trim, start.lower().strip())
 
     start = 'site of'
     if osm.lower().startswith(start):
         if name_match_main(osm[len(start):], wd, endings):
-            return Match(MatchType.trim)
+            return Match(MatchType.trim, 'site of')
 
     end = ' And Attached Railings'.lower()
     if wd.lower().endswith(end) and name_match_main(osm, wd[:-len(end)], endings):
-        return Match(MatchType.trim)
+        return Match(MatchType.trim, 'and attached railings')
 
     if place_names:
         for place_name in more_place_name_varients(place_names):

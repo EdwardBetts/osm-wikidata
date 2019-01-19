@@ -14,12 +14,12 @@ def test_tidy_name():
     same = 'no change'
     assert match.tidy_name(same) == same
     assert match.tidy_name("saint andrew's") == "st andrew"
-
-    assert match.tidy_name('the old shop') == 'old shop'
-
     assert match.tidy_name(' ? ') == '?'
-
     assert match.tidy_name(' s ') == 's'
+    assert match.tidy_name('Թի Դի Գարդեն'.lower()) == 't`i di garden'
+
+def test_drop_article():
+    assert match.drop_article('the old shop') == 'old shop'
 
 def test_match_with_words_removed():
     same = 'no change'
@@ -154,6 +154,10 @@ def test_name_match_numbers():
     }
     assert not match.check_for_match(osm_tags, wikidata_names)
 
+def test_name_containing_initials():
+    assert match.name_containing_initials('ČSOB centrála', 'ČSOB')
+    assert not match.name_containing_initials('ČSOB Centrála', 'ČSOB')
+
 def test_name_with_dashes():
     wikidata = "Hôpital Saint-François d'Assise"
     osm = "Hôpital Saint-François-d'Assise"
@@ -214,6 +218,18 @@ def test_name_match():
 
     assert match.name_match('Beulah', 'Beulah, Powys')
     assert match.name_match('Four Crosses', 'Four Crosses, Powys')
+
+    assert match.name_match('The Ship', "'The Ship', Derriford")
+    assert match.name_match('Place Bellecour', ' La Place Bellecour')
+
+    assert match.name_match('Lamott', 'La Mott, Pennsylvania')
+
+    assert match.name_match('Ті-Ді гарден', 'Թի Դի Գարդեն')
+    assert match.name_match('Maria-Hilf-Kirche', 'Mariahilfkirche, Munich')
+    assert match.name_match('Kunkelspass', 'Кункелспас')
+    assert match.name_match('Bethanien-Kirche', 'Bethanienkirche, Berlin')
+    assert match.name_match('Tricketts Cross', "Trickett's Cross, Dorset")
+    assert match.name_match('Кастелец', 'Кастелець')
 
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
@@ -795,6 +811,11 @@ def test_embassy_match():
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
 def test_name_match_dash_and_both_trim():
-    n2 = 'Museum Sint-Pieters'
     n1 = 'Sint Pieters Museum'
+    n2 = 'Museum Sint-Pieters'
     assert match.name_match(n1, n2, endings=['museum'])
+
+def test_name_match_church():
+    n1 = "St Andrew"
+    n2 = "St Andrew's Church"
+    assert match.name_match(n1, n2, endings=['church'])
