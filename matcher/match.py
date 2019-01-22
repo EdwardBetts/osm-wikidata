@@ -378,8 +378,7 @@ def more_place_name_varients(place_names):
     return place_names
 
 def match_two_streets(osm, wd, endings=None, **kwargs):
-    if endings is None:
-        endings = []
+    endings = set(endings or [])
     osm_and_list = [sep for sep in ('&', ' and ', ' And ') if sep in osm]
     if len(osm_and_list) != 1:
         return
@@ -395,7 +394,7 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     for n in osm_part1, wd_part1:
         m = re_road_end.match(n)
         if m:
-            part1_endings.append(m.group(2).lower())
+            part1_endings.add(m.group(2).lower())
 
     part1 = name_match_main(osm_part1, wd_part1, endings=part1_endings, **kwargs)
     if not part1:
@@ -405,7 +404,7 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     for n in osm_part2, wd_part2:
         m = re_road_end.match(n)
         if m:
-            part2_endings.append(m.group(2).lower())
+            part2_endings.add(m.group(2).lower())
 
     part2 = name_match_main(osm_part2, wd_part2, endings=part2_endings, **kwargs)
     if part2:
