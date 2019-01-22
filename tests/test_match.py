@@ -231,6 +231,8 @@ def test_name_match():
     assert match.name_match('Tricketts Cross', "Trickett's Cross, Dorset")
     assert match.name_match('Кастелец', 'Кастелець')
 
+    assert match.name_match('Church and 18th Street', 'Church Street & 18th Street')
+
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)

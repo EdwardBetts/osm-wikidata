@@ -24,7 +24,7 @@ re_strip_words = re.compile(r'([ -])(?:the|and|a|an|at|of|de|di|le|la|les|von|pw
 MatchType = Enum('Match', ['good', 'wikidata_trimmed', 'both_trimmed', 'trim',
                            'address', 'initials', 'initials_trim'])
 
-abbr = {
+road_abbr = {
     'avenue': 'ave',
     'street': 'st',
     'road': 'rd',
@@ -32,6 +32,9 @@ abbr = {
     'drive': 'dr',
     'lane': 'ln',
     'square': 'sq',
+}
+
+directions = {
     'north': 'n',
     'south': 's',
     'east': 'e',
@@ -41,9 +44,14 @@ abbr = {
     'southwest': 'sw',
     'southeast': 'se',
 }
+
+abbr = {**road_abbr, **directions}
+
 re_abbr = re.compile(r'\b(' + '|'.join(abbr.keys()) + r')\b', re.I)
 
 re_address_common_end = re.compile('^(.+)(' + '|'.join(abbr.keys()) + '|plaza)$', re.I)
+
+re_road_end = re.compile('^(.+)(' + '|'.join(list(road_abbr.keys()) + list(road_abbr.values())) + ') *$', re.I)
 
 bad_name_fields = {'tiger:name_base', 'name:right',
                    'name:left', 'gnis:county_name', 'openGeoDB:name'}
@@ -369,8 +377,46 @@ def more_place_name_varients(place_names):
                 place_names.add(n[:-(len(e) + 1)])
     return place_names
 
+def match_two_streets(osm, wd, endings=None, **kwargs):
+    if endings is None:
+        endings = []
+    osm_and_list = [sep for sep in ('&', ' and ', ' And ') if sep in osm]
+    if len(osm_and_list) != 1:
+        return
+
+    wd_and_list = [sep for sep in ('&', ' and ', ' And ') if sep in wd]
+    if len(wd_and_list) != 1:
+        return
+
+    osm_part1, _, osm_part2 = [n.strip() for n in osm.partition(osm_and_list[0])]
+    wd_part1, _, wd_part2 = [n.strip() for n in wd.partition(wd_and_list[0])]
+
+    part1_endings = endings[:]
+    for n in osm_part1, wd_part1:
+        m = re_road_end.match(n)
+        if m:
+            part1_endings.append(m.group(2).lower())
+
+    part1 = name_match_main(osm_part1, wd_part1, endings=part1_endings, **kwargs)
+    if not part1:
+        return
+
+    part2_endings = endings[:]
+    for n in osm_part2, wd_part2:
+        m = re_road_end.match(n)
+        if m:
+            part2_endings.append(m.group(2).lower())
+
+    part2 = name_match_main(osm_part2, wd_part2, endings=part2_endings, **kwargs)
+    if part2:
+        return part1
+
 def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
+    if match:
+        return match
+
+    match = match_two_streets(osm, wd, endings=endings, debug=debug)
     if match:
         return match
 
