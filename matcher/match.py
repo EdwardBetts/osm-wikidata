@@ -391,7 +391,7 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     osm_part1, _, osm_part2 = [n.strip() for n in osm.partition(osm_and_list[0])]
     wd_part1, _, wd_part2 = [n.strip() for n in wd.partition(wd_and_list[0])]
 
-    part1_endings = endings[:]
+    part1_endings = endings.copy()
     for n in osm_part1, wd_part1:
         m = re_road_end.match(n)
         if m:
@@ -401,7 +401,7 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     if not part1:
         return
 
-    part2_endings = endings[:]
+    part2_endings = endings.copy()
     for n in osm_part2, wd_part2:
         m = re_road_end.match(n)
         if m:
