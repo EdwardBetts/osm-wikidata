@@ -340,7 +340,7 @@
 },
 {
     "cats": ["Beer brewing"],
-    "tags": ["amenity=pub", "craft=brewery"],
+    "tags": ["amenity=pub", "craft=brewery", "industrial=brewery"],
     "trim": ["brewery", "brewery and alehouse"],
     "check_housename": true,
     "dist": 1,
