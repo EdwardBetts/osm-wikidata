@@ -795,9 +795,12 @@ def parse_osm_keys(rows):
             if tag.startswith(i):
                 tag = tag[4:]
 
-        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
-        # 'amenity'. This is too generic, so we ignore it.
-        if tag == 'amenity':
+        # Ignore some overly generic tags from Wikidata objects:
+        # facility (Q13226383)            - osm tag: amenity
+        # geographic location (Q2221906)  - osm tag: location
+        # artificial entity (Q16686448)   - osm tag: man_made
+
+        if tag in {'amenity', 'location', 'man_made'}:
             continue
         if qid not in items:
             items[qid] = {
@@ -1281,9 +1284,14 @@ SELECT DISTINCT ?code WHERE {
         for is_a in self.is_a:
             items |= set(extra_keys.get(is_a, []))
 
-        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
-        # 'amenity'. This is too generic, so we discard it.
+        # Ignore some overly generic tags from Wikidata objects:
+        # facility (Q13226383)            - osm tag: amenity
+        # geographic location (Q2221906)  - osm tag: location
+        # artificial entity (Q16686448)   - osm tag: man_made
+
         items.discard('Key:amenity')
+        items.discard('Key:location')
+        items.discard('Key:man_made')
         return items
 
     def report_broken_wikidata_osm_tags(self):

@@ -255,9 +255,12 @@ class Item(Base):
     def calculate_tags(self, ignore_tags=None):
         ignore_tags = set(ignore_tags or [])
 
-        # On Wikidata the item for 'facility' (Q13226383), has an OSM key of
-        # 'amenity'. This is too generic, so we ignore it.
-        ignore_tags.add('amenity')
+        # Ignore some overly generic tags from Wikidata objects:
+        # facility (Q13226383)            - osm tag: amenity
+        # geographic location (Q2221906)  - osm tag: location
+        # artificial entity (Q16686448)   - osm tag: man_made
+
+        ignore_tags.update('amenity', 'location', 'man_made')
 
         instanceof = self.instanceof()
 
