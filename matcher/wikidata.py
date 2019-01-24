@@ -126,6 +126,7 @@ extra_keys = {
               'Tag:building=hotel',
               'Tag:tourism=guest_house'],
     'Q77115': ['Tag:leisure=sports_centre'],    # community center
+    'Q35535': ['Tag:amenity=police'],           # police
 }
 
 # search for items in bounding box that have an English Wikipedia article
