@@ -2,25 +2,20 @@
 
 {% set detail = 0 %}
 {% for hit in results %}
+  {% set place = hit.place %}
+  {% set wikidata = hit.place.wikidata if place else None %}
   <div class="box">
-    {% if hit.osm_id and hit.osm_type != 'node' and hit.category in ('place', 'boundary', 'natural', 'leisure', 'amenity', 'landuse') and
-        (not hit.area or config.PLACE_MIN_AREA < hit.area < config.PLACE_MAX_AREA) and
-        not hit.geotext.startswith('LINESTRING(') %}
+    {% if place and place.matcher_allowed %}
       <b>
-        {% if hit.place and hit.place.state == 'ready' %}
-            {% set hit_url = hit.place.candidates_url() %}
-        {% else %}
-            {% set hit_url = url_for('matcher.matcher_progress', osm_type=hit.osm_type, osm_id=hit.osm_id) %}
-        {% endif %}
-        <a href="{{ hit_url }}">{{ hit.display_name }}</a>
+        <a href="{{ place.next_state_url() }}">{{ hit.display_name }}</a>
       </b>
-      {% if hit.place.wikidata and hit.area > config.BROWSE_LINK_MIN_AREA %}
-        &ndash; <a href="{{ hit.place.browse_url() }}">browse next level administrative subdivisions</a>
+      {% if hit.area != None and wikidata and hit.area > config.BROWSE_LINK_MIN_AREA %}
+        &ndash; <a href="{{ place.browse_url() }}">browse next level administrative subdivisions</a>
       {% endif %}
       <br>
     {% else %}
-       {% if hit.place and hit.place.wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
-         <b><a href="{{ hit.place.browse_url() }}">{{ hit.display_name }}</a></b>
+       {% if wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
+         <b><a href="{{ place.browse_url() }}">{{ hit.display_name }}</a></b>
          (browse next level administrative subdivisions)
        {% else %}
          <b>
@@ -32,7 +27,7 @@
          </b>
        {% endif %}
        <br>
-        {% if hit.category not in ('place', 'boundary', 'natural', 'leisure', 'amenity', 'landuse') %}
+       {% if place and not place.allowed_cat %}
             [matcher only works with place or boundary]<br>
         {% elif hit.osm_type in ('way', 'relation') and hit.area %}
             {% if hit.area >= config.PLACE_MAX_AREA %}

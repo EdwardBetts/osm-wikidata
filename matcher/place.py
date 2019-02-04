@@ -106,6 +106,7 @@ class Place(Base):
     overpass_is_in = deferred(Column(JSON))
 
     area = column_property(func.ST_Area(geom))
+    geometry_type = column_property(func.GeometryType(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
     srid = column_property(func.ST_SRID(geom))
     # match_ratio = column_property(candidate_count / item_count)
@@ -196,6 +197,31 @@ class Place(Base):
     def too_big(self):
         max_area = current_app.config['PLACE_MAX_AREA']
         return self.area_in_sq_km > max_area
+
+    @property
+    def bad_geom_type(self):
+        return self.geometry_type in {'LINESTRING', 'MULTILINESTRING'}
+
+    @property
+    def area_in_range(self):
+        min_area = current_app.config['PLACE_MIN_AREA']
+        max_area = current_app.config['PLACE_MAX_AREA']
+
+        return min_area < self.area_in_sq_km < max_area
+
+    @property
+    def allowed_cat(self):
+        cats = {'place', 'boundary', 'natural', 'leisure', 'amenity', 'landuse'}
+        return self.category in cats
+
+    @property
+    def matcher_allowed(self):
+        '''Are we allowd to run the matcher for this place?'''
+
+        allow_node = bool(current_app.config.get('ALLOW_NODE_MATCH'))
+        if self.osm_type == 'node':
+            return allow_node
+        return (not self.bad_geom_type and self.allowed_cat and self.area_in_range)
 
     def update_from_nominatim(self, hit):
         if self.place_id != int(hit['place_id']):
@@ -529,6 +555,11 @@ class Place(Base):
     def overpass_filter(self):
         return 'around:{0.radius},{0.lat},{0.lon}'.format(self)
 
+    @property
+    def wikidata_item_id(self):
+        if self.wikidata:
+            return int(self.wikidata[1:])
+
     def building_names(self):
         re_paren = re.compile(r'\(.+\)')
         re_drop = re.compile(r'\b(the|and|at|of|de|le|la|les|von)\b')
@@ -630,7 +661,12 @@ class Place(Base):
 
     def browse_url(self):
         if self.wikidata:
-            return url_for('browse_page', item_id=int(self.wikidata[1:]))
+            return url_for('browse_page', item_id=self.wikidata_item_id)
+
+    def next_state_url(self):
+        return (self.candidates_url()
+                if self.state == 'ready'
+                else self.matcher_progress_url())
 
     def matcher_progress_url(self):
         return self.place_url('matcher.matcher_progress')
