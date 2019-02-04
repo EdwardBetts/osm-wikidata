@@ -236,6 +236,8 @@ def name_containing_initials(n1, n2):
     for part1, part2 in zip(n1_split, n2_split):
         if part1 == part2:
             continue
+        if part1.isdigit() or part2.isdigit():
+            return False
         if len(part1) == 1 and part2[0] == part1:
             continue
         if len(part2) == 1 and part1[0] == part2:

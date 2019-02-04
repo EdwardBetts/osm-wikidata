@@ -325,6 +325,9 @@ def test_at_symbol_match():
     assert match.name_match(a, b)
     assert match.name_match(b, a)
 
+def test_street_address():
+    assert not match.name_match('17 Mill Lane', '1, Mill Lane')
+
 def test_match_with_words_removed_both():
     osm = 'Oxmoor Mall'.lower()
     wd = 'Oxmoor Center'.lower()
