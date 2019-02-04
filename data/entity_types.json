@@ -1145,7 +1145,7 @@
 },
 {
     "cats": ["Squares and plazas by country", "Squares", "Plazas"],
-    "tags": ["area=yes", "leisure=park", "place=square"],
+    "tags": ["area=yes", "leisure=park", "place=square", "highway=pedestrian", "foot=yes", "amenity=market"],
     "trim": [],
     "dist": 1
 },
