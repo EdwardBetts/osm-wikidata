@@ -65,6 +65,7 @@ extra_keys = {
     'Q174782': ['Tag:leisure=park',
                 'Tag:highway=pedestrian',
                 'Tag:foot=yes',
+                'Tag:area=yes',
                 'Tag:amenity=market'],          # square
     'Q34627': ['Tag:religion=jewish'],          # synagogue
     'Q16970': ['Tag:religion=christian'],       # church
