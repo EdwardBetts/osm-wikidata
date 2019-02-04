@@ -1091,5 +1091,4 @@ def test_school_shouldnt_match_church(monkeypatch):
         item.tags.add(t)
 
     ret = matcher.check_item_candidate(candidate)
-    print(ret)
     assert 'reject' in ret
