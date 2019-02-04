@@ -954,6 +954,43 @@ def test_name_match_church(monkeypatch):
     ret = matcher.check_item_candidate(candidate)
     assert 'reject' not in ret
 
+def test_stable_shouldnt_match_house(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'addr:street': 'Back Lane',
+        'building': 'house',
+        'name': 'Nazeing Park',
+    }
+
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q214252'}}},
+            }],
+        },
+        'labels': {'en': {'value': 'Stable At Nazeing Park'}},
+        'sitelinks': {},
+    }
+
+    cottage_item = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': "stable"},
+        },
+        'sitelinks': {}
+    }
+
+    isa = IsA(item_id=214252, entity=cottage_item)
+
+    tags = ['building=stable']
+    item = Item(item_id=26404858, entity=entity, tags=tags, isa=[isa])
+
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    ret = matcher.check_item_candidate(candidate)
+    assert 'reject' in ret
+
 def test_hamlet_shouldnt_match_house(monkeypatch):
     monkeypatch.setattr(matcher, 'current_app', MockApp)
 

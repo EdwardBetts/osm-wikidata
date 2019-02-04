@@ -289,6 +289,15 @@ def is_bad_match(item, osm_tags):
     amenity = set(osm_tags['amenity'].split(';')
                   if 'amenity' in osm_tags else [])
 
+    building = set(osm_tags['building'].split(';')
+                   if 'building' in osm_tags else [])
+
+    for building_type in ('stable', 'barn', 'farm_auxiliary'):
+        if ('building=' + building_type in item.tags and
+                'building=house' not in item.tags and
+                'house' in building and building_type not in building):
+            return True  # Wikidata stable shoudn't match OSM house
+
     if ('man_made=windmill' in item.tags and
             'amenity=pub' not in item.tags and
             'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
