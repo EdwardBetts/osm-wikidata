@@ -1055,6 +1055,33 @@ def test_station_shouldnt_match_school(monkeypatch):
     ret = matcher.check_item_candidate(candidate)
     assert 'reject' in ret
 
+def test_no_match_cottage(monkeypatch):
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'addr:housename': 'Stonehaven',
+        'addr:housenumber': '6',
+        'addr:street': 'High St',
+        'building': 'yes',
+    }
+
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q5783996'}}},
+            }],
+        },
+        'labels': {'en': {'value': 'Stonehaven Cottage'}},
+        'sitelinks': {},
+    }
+
+    item = Item(item_id=26573554, entity=entity, tags=['building'])
+
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    ret = matcher.check_item_candidate(candidate)
+    assert 'reject' in ret
+
 def test_school_shouldnt_match_church(monkeypatch):
     monkeypatch.setattr(matcher, 'current_app', MockApp)
 
