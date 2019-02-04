@@ -722,7 +722,7 @@ def get_entities(ids):
             return list(json_data['entities'].values())
         except requests.exceptions.ChunkedEncodingError:
             if attempt == attempts - 1:
-                raise QueryError(query, r)
+                raise QueryError(params, r)
 
 def names_from_entity(entity, skip_lang=None):
     if not entity or 'labels' not in entity:
