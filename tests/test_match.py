@@ -332,6 +332,11 @@ def test_match_with_words_removed_both():
     m = match.match_with_words_removed(osm, wd, endings)
     assert m.match_type.name == 'both_trimmed'
 
+def test_strict_stable_name_match():
+    assert not match.name_match('Nazeing Park',
+                                'Stable At Nazeing Park',
+                                endings=['stable'])
+
 def test_name_match_trim_both():
     m = match.name_match('Oxmoor Mall', 'Oxmoor Center',
                           endings=['mall', 'center'])

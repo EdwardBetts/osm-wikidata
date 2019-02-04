@@ -269,6 +269,13 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if name_containing_initials(osm, wd):
         return Match(MatchType.good, 'name containing initials')
 
+    if endings:
+        at_pos = wd_lc.find(' at ')
+        if at_pos != -1:
+            start = wd_lc[:at_pos]
+            if start in endings:
+                endings.remove(start)
+
     m = initials_match(osm, wd, endings) or initials_match(wd, osm, endings)
     if m:
         return m
