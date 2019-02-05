@@ -18,6 +18,10 @@ from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
 
+import re
+
+re_lau_code = re.compile(r'^[A-Z]{2}([^A-Z].+)$')
+
 Base = declarative_base()
 Base.query = session.query_property()
 
@@ -317,6 +321,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
             ('P722', ['uic_ref'], 'UIC station code'),
+            ('P782', ['ref'], 'LAU (local administrative unit)'),
             ('P836', ['ref:gss'], 'UK Government Statistical Service code'),
             ('P856', ['website', 'contact:website', 'url'], 'website'),
             ('P882', ['nist:fips_code'], 'FIPS 6-4 (US counties)'),
@@ -338,6 +343,8 @@ https://www.wikidata.org/wiki/{self.qid}
                       if 'datavalue' in i['mainsnak']]
             if not values:
                 continue
+            if claim == 'P782':
+                values += [m.group(1) for m in (re_lau_code.match(v) for v in values) if m]
             for osm_key in osm_keys:
                 tags[osm_key].append((tuple(values), label))
         return tags
