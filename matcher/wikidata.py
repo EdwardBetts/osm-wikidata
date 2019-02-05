@@ -802,9 +802,11 @@ def names_from_entity(entity, skip_lang=None):
         m = re.search(r'\.[a-z]{3,4}$', value)
         if m:
             value = value[:m.start()]
-        m = re.search(r' - geograph\.org\.uk - \d+$', value)
-        if m:
-            value = value[:m.start()]
+        for pattern in r' - geograph\.org\.uk - \d+$', r'[, -]*0\d{2,}$':
+            m = re.search(pattern, value)
+            if m:
+                value = value[:m.start()]
+                break
         ret[value].append(('image', None))
 
     return ret
