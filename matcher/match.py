@@ -262,6 +262,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     osm_lc, wd_lc = osm.lower(), wd.lower()
 
+    if wd_lc == osm_lc:
+        return Match(MatchType.good, 'identical except case')
+
     if set(osm_lc.split()) == set(wd_lc.split()):
         return Match(MatchType.good, 'matching term sets')
 
@@ -423,6 +426,12 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
+
+    for osm_prefix in 'old ', 'the old ':
+        if osm.lower().startswith(osm_prefix):
+            match = name_match_main(osm[len(osm_prefix):], wd, endings, debug)
+            if match:
+                return match
 
     match = match_two_streets(osm, wd, endings=endings, debug=debug)
     if match:
