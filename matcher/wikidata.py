@@ -10,6 +10,7 @@ import os
 import json
 import simplejson.errors
 import time
+import re
 
 page_size = 50
 report_missing_values = False
@@ -787,6 +788,21 @@ def names_from_entity(entity, skip_lang=None):
             continue
         value = i['mainsnak']['datavalue']['value']
         ret[value['text']].append(('nativelabel', value['language']))
+
+    image = entity.get('claims', {}).get('P18', [])
+    for i in image:
+        if 'datavalue' not in i['mainsnak']:
+            if report_missing_values:
+                mail.datavalue_missing('image', entity)
+            continue
+        value = i['mainsnak']['datavalue']['value']
+        m = re.search(r'\.[a-z]{3,4}$', value)
+        if m:
+            value = value[:m.start()]
+        m = re.search(r' - geograph\.org\.uk - \d+$', value)
+        if m:
+            value = value[:m.start()]
+        ret[value].append(('image', None))
 
     return ret
 
