@@ -444,11 +444,14 @@ SELECT ?item ?itemLabel ?country ?countryLabel WHERE {
 '''
 
 up_one_level_query = '''
-SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label WHERE {
+SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label ?isa WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
   VALUES ?start { wd:QID } .
   OPTIONAL { ?start wdt:P17 ?country1 }
-  OPTIONAL { ?start wdt:P131 ?item }
+  OPTIONAL {
+    ?start wdt:P131 ?item .
+    ?item wdt:P31 ?isa .
+  }
   OPTIONAL { ?item wdt:P17 ?country2 }
 }
 '''
@@ -851,6 +854,14 @@ def up_one_level(qid, name=None):
 
     if not rows:
         return
+
+    skip = {
+        'Q180673',  # ceremonial county of England
+        'Q1138494',  # historic county of England
+    }
+
+    ignore_up = any(wd_to_qid(row['isa']) in skip for row in rows)
+
     row = rows[0]
 
     c1 = 'country1' in row
@@ -858,7 +869,7 @@ def up_one_level(qid, name=None):
 
     return {
         'name': row['startLabel']['value'],
-        'up': row['itemLabel']['value'],
+        'up': row['itemLabel']['value'] if not ignore_up else None,
         'country_qid': wd_to_qid(row['country1']) if c1 else None,
         'country_name': row['country1Label']['value'] if c1 else None,
         'up_country_qid': wd_to_qid(row['country2']) if c2 else None,
