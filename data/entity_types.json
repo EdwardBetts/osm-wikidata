@@ -632,7 +632,7 @@
 {
     "cats": ["Parks by country", "National Natural Landmarks", "National Historical Parks"],
     "tags": ["leisure=park", "landuse=recreation_ground", "leisure=common", "boundary=national_park"],
-    "trim": ["park", "gardens", "common", "estate", "national natural landmark", "state park", "national park"],
+    "trim": ["park", "gardens", "common", "estate", "national natural landmark", "state park", "national park", "community garden"],
     "area": true,
     "dist": 5
 },
@@ -810,7 +810,7 @@
 {
     "cats": ["Gardens by country"],
     "tags": ["leisure=garden", "natural=wood"],
-    "trim": ["garden"],
+    "trim": ["garden", "community garden"],
     "dist": 5
 },
 {
