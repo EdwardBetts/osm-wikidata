@@ -605,9 +605,24 @@ def find_item_matches(cur, item, prefix, debug=False):
 def prefer_tag_match_over_building_only_match(candidates):
     if len(candidates) == 1:
         return candidates
-    quality = [c for c in candidates
-               if c['name_match'] and not is_building_only_match(c['matching_tags'])]
-    return quality or candidates
+    more_good = []
+    less_good = []
+    for c in candidates:
+        good = c['name_match'] and not is_building_only_match(c['matching_tags'])
+        (more_good if good else less_good).append(c)
+
+    if not more_good or not less_good:
+        return candidates
+
+    # consider distance
+    # Q18160107 has a nearby building only match and a name+tag match 300m away
+    # the nearby match is correct
+
+    if (all(c['dist'] > 100 for c in more_good) and
+            any(c['dist'] < 10 for c in less_good)):
+        return candidates
+
+    return more_good
 
 def prefer_farmhouse(candidates):
     if len(candidates) != 2:
