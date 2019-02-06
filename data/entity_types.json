@@ -1211,11 +1211,12 @@
     "dist": 2
 },
 {
-    "cats": ["Prisons by country"],
+    "cats": ["Prisons by country", "Jail"],
     "tags": ["amenity=prison", "landuse=prison", "building=prison"],
+    "trim": ["detention complex", "detention centre", "detention center", "correctional facility", "jail", "prison", "gaol"],
     "check_housename": true,
     "trim": [],
-    "dist": 5
+    "dist": 1
 },
 {
     "cats": ["Courthouses", "Court buildings"],
