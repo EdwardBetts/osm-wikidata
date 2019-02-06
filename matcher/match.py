@@ -427,7 +427,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
     if match:
         return match
 
-    for osm_prefix in 'old ', 'the old ':
+    for osm_prefix in 'old ', 'the old ', 'former ', 'disused ':
         if osm.lower().startswith(osm_prefix):
             match = name_match_main(osm[len(osm_prefix):], wd, endings, debug)
             if match:
