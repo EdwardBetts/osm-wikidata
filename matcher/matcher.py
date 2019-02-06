@@ -292,6 +292,9 @@ def is_bad_match(item, osm_tags):
     building = set(osm_tags['building'].split(';')
                    if 'building' in osm_tags else [])
 
+    if 'car_rental' in amenity or 'car_sharing' in amenity:
+        return True  # building only not good enough
+
     for building_type in ('stable', 'barn', 'farm_auxiliary'):
         if ('building=' + building_type in item.tags and
                 'building=house' not in item.tags and
@@ -525,6 +528,10 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         amenity = set(osm_tags['amenity'].split(';')
                       if 'amenity' in osm_tags else [])
+
+        if ('building' in item.tags and 'amenity=car_sharing' not in item.tags and
+                'building' not in osm_tags and 'car_sharing' in amenity):
+            continue  # Wikidata building shouldn't match car sharing
 
         if (building_only_match and
                 address_match and
@@ -960,13 +967,25 @@ def filter_station(candidates):
 
 def filter_candidates_more(items, bad=None):
     osm_count = Counter()
+    by_osm = defaultdict(list)
 
     if bad is None:
         bad = {}
 
     for item in items:
         for c in item.candidates:
+            by_osm[(c.osm_type, c.osm_id)].append(item)
+
+    remove_items = []
+    for osm, item_list in by_osm.items():
+        if len(item_list) == 1:
+            continue
+        defunct = [item for item in item_list if item.defunct_cats]
+
+    for item in items:
+        for c in item.candidates:
             osm_count[(c.osm_type, c.osm_id)] += 1
+            by_osm[(c.osm_type, c.osm_id)].append(item)
 
     for item in items:
         if item.item_id in bad:
