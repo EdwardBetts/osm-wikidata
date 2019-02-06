@@ -422,6 +422,19 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     if part2:
         return part1
 
+def name_road_end_match(osm, wd, **kwargs):
+    osm = osm.strip()
+    wd = wd.strip()
+    if not (osm and osm[0].isdigit() and wd and wd[0].isdigit()):
+        return
+    m_osm = re_road_end.match(osm)
+    m_wd = re_road_end.match(wd)
+    if not m_osm and not m_wd:
+        return
+    x_osm = m_osm.group(1) if m_osm else osm
+    x_wd = m_wd.group(1) if m_wd else wd
+    return name_match_main(x_osm, x_wd, **kwargs)
+
 def name_match(osm, wd, endings=None, debug=False, place_names=None):
     match = name_match_main(osm, wd, endings, debug)
     if match:
@@ -435,6 +448,11 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
 
     match = match_two_streets(osm, wd, endings=endings, debug=debug)
     if match:
+        return match
+
+    match = name_road_end_match(osm, wd, endings=endings, debug=debug)
+    if match:
+        print('name_road_end_match')
         return match
 
     terms = ['cottages', 'buildings', 'houses']

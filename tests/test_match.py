@@ -328,6 +328,9 @@ def test_at_symbol_match():
 def test_street_address():
     assert not match.name_match('17 Mill Lane', '1, Mill Lane')
 
+    assert match.name_match('110 Livingston', '110 Livingston Street')
+    assert not match.name_match('Livingston', 'Livingston Street')
+
 def test_name_starts_with_the_old():
     assert match.name_match('The Old Rectory', 'The Rectory')
 
