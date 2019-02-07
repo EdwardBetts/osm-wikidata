@@ -126,6 +126,7 @@ extra_keys = {
                 'Tag:memorial:type=statue',
                 'Tag:historic=memorial'],
     'Q1076486': ['Tag:landuse=recreation_ground'],  # sports venue
+    'Q988108': ['Tag:amenity=community_centre'],  # club
     'Q55004558': ['Tag:service=yard',
                   'Tag:landuse=railway'],       # car barn
     'Q19563580': ['Tag:landuse=railway'],       # rail yard
