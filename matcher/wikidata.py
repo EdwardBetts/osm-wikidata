@@ -116,7 +116,8 @@ extra_keys = {
     'Q3469910': ['Tag:amenity=community_centre'],  # performing arts center
     'Q57660343': ['Tag:amenity=community_centre'],  # performing arts building
     'Q163740': ['Tag:amenity=community_centre',  # nonprofit organization
-                'Tag:amenity=social_facility'],
+                'Tag:amenity=social_facility',
+                'Key:social_facility'],
     'Q41176': ['Key:building:levels'],          # building
     'Q44494': ['Tag:historic=mill'],            # mill
     'Q56822897': ['Tag:historic=mill'],         # mill building
