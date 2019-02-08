@@ -135,13 +135,13 @@
              "mission", "church and cemetery", "congregation", "the parish church of", "parish church of"],
     "check_housename": true,
     "wikidata": "Q1370598",
-    "dist": 1
+    "dist": 0.5
 },
 {
     "cats": ["Church of England"],
     "tags": ["denomination=anglican"],
     "check_housename": true,
-    "dist": 1
+    "dist": 0.5
 },
 {
     "cats": ["Hindu temples"],
@@ -157,7 +157,7 @@
     "trim": ["chapel"],
     "check_housename": true,
     "wikidata": "Q108325",
-    "dist": 1
+    "dist": 0.5
 },
 {
     "cats": ["Mosques by country"],
@@ -596,7 +596,7 @@
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
                      "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop",
-             "public_transport=station"],
+             "public_transport=station", "public_transport=stop_area"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop",
              "tram stop", "railway station"],
     "check_housename": false,
@@ -740,7 +740,7 @@
 {
     "cats": "Tram stops",
     "cats": ["Tram stops", "stops"],
-    "tags": ["railway=tram_stop"],
+    "tags": ["railway=tram_stop", "public_transport=stop_area"],
     "trim": ["tram stop", "stop"],
     "dist": 4
 },
@@ -1167,7 +1167,7 @@
 },
 {
     "cats": ["Skyscrapers by country"],
-    "tags": ["height"],
+    "tags": ["height", "building:levels"],
     "trim": ["tower"],
     "check_housename": true,
     "wikidata": "Q11303",
@@ -1255,7 +1255,7 @@
 },
 {
     "cats": ["Clubs and societies by country"],
-    "tags": ["club", "leisure=social_club", "sport", "amenity=bar"],
+    "tags": ["club", "leisure=social_club", "sport", "amenity=bar", "amenity=community_centre"],
     "trim": ["club", "lounge"],
     "check_housename": true,
     "dist": 5
