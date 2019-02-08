@@ -122,6 +122,7 @@ extra_keys = {
     'Q41176': ['Key:building:levels'],          # building
     'Q44494': ['Tag:historic=mill'],            # mill
     'Q56822897': ['Tag:historic=mill'],         # mill building
+    'Q2175765': ['Tag:public_transport=stop_area'],  # tram stop
     'Q179700': ['Tag:memorial=statue',          # statue
                 'Tag:memorial:type=statue',
                 'Tag:historic=memorial'],
