@@ -235,6 +235,11 @@ def test_name_match():
     assert match.name_match('Church and 18th Street',
                             'Church Street & 18th Street', endings={'test'})
 
+    assert match.name_match('Boulder Railroad Depot (Historic)',
+                            'Boulder Railroad Depot')
+
+    assert match.name_match('Times Furnishing', 'Times Furnishing Company Building')
+
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)
@@ -305,6 +310,10 @@ def test_name_match():
     assert match.name_match(osm, wikidata, endings={'house'})
 
     assert match.name_match('site of Pegwell Lodge', 'Pegwell Lodge')
+
+    n1 = 'City of Birmingham Symphony Orchestra'
+    n2 = 'CBSO Centre'
+    assert match.name_match(n1, n2)
 
 def test_ignore_apostrophe_s_in_match():
     osm = 'Augustine Steward House'

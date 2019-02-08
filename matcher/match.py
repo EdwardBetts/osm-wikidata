@@ -231,6 +231,21 @@ def name_containing_initials(n1, n2):
     n2_split = split_on_upper_and_tidy(n2)
 
     if len(n1_split) != len(n2_split) or len(n1_split) < 3:
+        endings = [' centre', ' center']
+        for end in endings:
+            if not n1.lower().endswith(end):
+                continue
+            m = name_containing_initials(n1[:-len(end)], n2)
+            if m:
+                return m
+
+        for end in endings:
+            if not n2.lower().endswith(end):
+                continue
+            m = name_containing_initials(n1, n2[:-len(end)])
+            if m:
+                return m
+
         return False
 
     for part1, part2 in zip(n1_split, n2_split):
@@ -262,6 +277,11 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     osm_lc, wd_lc = osm.lower(), wd.lower()
 
+    historic = ' (historic)'
+    if osm_lc.endswith(historic):
+        osm = osm[:-len(historic)]
+        osm_lc = osm_lc[:-len(historic)]
+
     if wd_lc == osm_lc:
         return Match(MatchType.good, 'identical except case')
 
@@ -281,7 +301,8 @@ def name_match_main(osm, wd, endings=None, debug=False):
             if start in endings:
                 endings.remove(start)
 
-    m = initials_match(osm, wd, endings) or initials_match(wd, osm, endings)
+    m = (initials_match(osm, wd, endings) or
+            initials_match(wd, osm, endings))
     if m:
         return m
 
@@ -363,7 +384,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if plural_in_other_name:
         return
 
-    for end in ['building', 'complex', 'office'] + list(endings or []):
+    generic = ['companybuilding', 'building', 'complex', 'office']
+
+    for end in generic + list(endings or []):
         if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
             return Match(MatchType.trim)
         if wd_tidy.startswith(end) and wd_tidy[len(end):] == osm_tidy:
