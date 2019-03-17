@@ -96,6 +96,7 @@ extra_keys = {
                'Tag:shop=deli', 'Tag:shop=bakery',
                'Key:cuisine'],                  # restaurant
     'Q2360219': ['Tag:amenity=embassy'],        # permanent mission
+    'Q27995042': ['Tag:protection_title=Wilderness Area'],  # wilderness area
     'Q838948': ['Tag:historic=memorial',
                 'Tag:historic=monument'],       # work of art
     'Q23413': ['Tag:place=locality'],           # castle
