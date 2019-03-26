@@ -14,6 +14,35 @@ extract_name_good_enough = True
 
 re_farmhouse = re.compile('^(.*) farm ?house$', re.I)
 
+db_tags = [
+    'access', 'addr:housename', 'addr:housenumber', 'addr:interpolation', 'admin_level',
+    'aerialway', 'aeroway', 'amenity', 'area',
+    'barrier', 'bicycle', 'brand', 'bridge', 'boundary', 'building',
+    'construction', 'covered', 'culvert', 'cutting',
+    'denomination', 'disused',
+    'embankment',
+    'foot',
+    'generator:source',
+    'harbour', 'highway', 'historic', 'horse',
+    'intermittent',
+    'junction',
+    'landuse', 'layer', 'leisure', 'lock',
+    'man_made', 'military', 'motorcar',
+    'name',
+    'natural',
+    'office',
+    'oneway',
+    'operator',
+    'place', 'population', 'power', 'power_source', 'public_transport',
+    'railway', 'ref', 'religion', 'route',
+    'service', 'shop', 'sport', 'surface',
+    'toll', 'tourism', 'tower:type', 'tunnel',
+    'water', 'waterway', 'wetland', 'width', 'wood',
+]
+
+def remove_nulls(osm_tags):
+    return {k: v for k, v in osm_tags.items() if v is not None}
+
 def get_pattern(key):
     if key in patterns:
         return patterns[key]
@@ -182,9 +211,12 @@ def item_match_sql(item, prefix, ignore_tags=None, limit=50):
     hstore = hstore_query(tags)
     assert hstore
 
+    field_list = ', '.join(f"['{field}', \"{field}\"]" for field in db_tags)
+    combine_tags = f"hstore(ARRAY[{field_list}]) || tags as tags"
+
     sql_list = []
     for obj_type in 'point', 'line', 'polygon':
-        obj_sql = (f"select '{obj_type}', osm_id, name, tags, "
+        obj_sql = (f"select '{obj_type}', osm_id, name, {combine_tags}, "
                    f'ST_Distance({point}, way) as dist '
                    f'from {prefix}_{obj_type} '
                    f'where ST_DWithin({point}, way, {item_max_dist} * 1000)')
@@ -204,6 +236,7 @@ def find_nrhp_match(nrhp_numbers, rows):
     nrhp_numbers = set(nrhp_numbers)
     nrhp_match = []
     for src_type, src_id, osm_name, osm_tags, dist in rows:
+        osm_tags = remove_nulls(osm_tags)
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
 
         if osm_tags.get('ref:nrhp') not in nrhp_numbers:
@@ -460,6 +493,7 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
+        osm_tags = remove_nulls(osm_tags)
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
             continue
