@@ -22,7 +22,7 @@
   </td>
   <td>
     {% if not row.area or row.area < config.PLACE_MAX_AREA %}
-      <a href="{{ url_for('matcher_wikidata', item_id=row.item_id) }}">match</a>
+      <a href="{{ url_for('matcher_wikidata', item_id=row.item_id) }}">match</a><br>
     {% else %}
       too big for matcher
     {% endif %}
