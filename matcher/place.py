@@ -1,5 +1,5 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, ItemIsA, osm_type_enum, get_bad
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
@@ -8,15 +8,12 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
-from .database import session, get_tables, now_utc
-from . import wikidata, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
+from .database import session, now_utc
+from . import database, wikidata, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
 from collections import Counter
-from .overpass import oql_from_tag
 from time import time
 
 import json
-import subprocess
-import os.path
 import re
 
 radius_default = 1_000  # in metres, only for nodes
@@ -26,8 +23,6 @@ degrees = '(-?[0-9.]+)'
 re_box = re.compile(rf'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
 
 base_osm_url = 'https://www.openstreetmap.org'
-
-overpass_types = {'way': 'way', 'relation': 'rel', 'node': 'node'}
 
 skip_tags = {'route:road',
              'highway=primary',
@@ -396,46 +391,11 @@ class Place(Base):
 
     @property
     def prefix(self):
-        return f'osm_{self.place_id}'
+        return 'planet_osm'
 
     @property
     def identifier(self):
         return f'{self.osm_type}/{self.osm_id}'
-
-    @property
-    def overpass_filename(self):
-        overpass_dir = current_app.config['OVERPASS_DIR']
-        return os.path.join(overpass_dir, '{}.xml'.format(self.place_id))
-
-    def is_overpass_filename(self, f):
-        ''' Does the overpass filename belongs to this place. '''
-        place_id = str(self.place_id)
-        return f == place_id + '.xml' or f.startswith(place_id + '_')
-
-    def delete_overpass(self):
-        for f in os.scandir(current_app.config['OVERPASS_DIR']):
-            if self.is_overpass_filename(f.name):
-                os.remove(f.path)
-
-    def clean_up(self):
-        place_id = self.place_id
-
-        engine = session.bind
-        for t in get_tables():
-            if not t.startswith(self.prefix):
-                continue
-            engine.execute(f'drop table if exists {t}')
-        engine.execute('commit')
-
-        overpass_dir = current_app.config['OVERPASS_DIR']
-        for f in os.listdir(overpass_dir):
-            if not any(f.startswith(str(place_id) + end) for end in ('_', '.')):
-                continue
-            os.remove(os.path.join(overpass_dir, f))
-
-    @property
-    def overpass_done(self):
-        return os.path.exists(self.overpass_filename)
 
     def items_with_candidates(self):
         return self.items.join(ItemCandidate)
@@ -496,48 +456,6 @@ class Place(Base):
     def items_with_instanceof(self):
         return [item for item in self.items if item.instanceof()]
 
-    def osm2pgsql_cmd(self, filename=None):
-        if filename is None:
-            filename = self.overpass_filename
-        return ['osm2pgsql', '--create', '--drop', '--slim',
-                '--hstore-all', '--hstore-add-index',
-                '--prefix', self.prefix,
-                '--cache', '1000',
-                '--multi-geometry',
-                '--host', current_app.config['DB_HOST'],
-                '--username', current_app.config['DB_USER'],
-                '--database', current_app.config['DB_NAME'],
-                filename]
-
-    def load_into_pgsql(self, filename=None, capture_stderr=True):
-        if filename is None:
-            filename = self.overpass_filename
-
-        if not os.path.exists(filename):
-            return 'no data from overpass to load with osm2pgsql'
-
-        if os.stat(filename).st_size == 0:
-            return 'no data from overpass to load with osm2pgsql'
-
-        cmd = self.osm2pgsql_cmd(filename)
-
-        if not capture_stderr:
-            p = subprocess.run(cmd,
-                               env={'PGPASSWORD': current_app.config['DB_PASS']})
-            return
-        p = subprocess.run(cmd,
-                           stderr=subprocess.PIPE,
-                           env={'PGPASSWORD': current_app.config['DB_PASS']})
-        if p.returncode != 0:
-            if b'Out of memory' in p.stderr:
-                return 'out of memory'
-            else:
-                return p.stderr.decode('utf-8')
-
-    def save_overpass(self, content):
-        with open(self.overpass_filename, 'wb') as out:
-            out.write(content)
-
     @property
     def all_tags(self):
         tags = set()
@@ -546,14 +464,6 @@ class Place(Base):
             tags |= item.disused_tags()
         tags.difference_update(skip_tags)
         return matcher.simplify_tags(tags)
-
-    @property
-    def overpass_type(self):
-        return overpass_types[self.osm_type]
-
-    @property
-    def overpass_filter(self):
-        return 'around:{0.radius},{0.lat},{0.lon}'.format(self)
 
     @property
     def wikidata_item_id(self):
@@ -581,68 +491,6 @@ class Place(Base):
         names = sorted(n.replace(' ', r'\W*') for n in names)
         if names:
             return '({})'.format('|'.join(names))
-
-    def get_point_oql(self, buildings_special=False):
-        tags = self.all_tags
-
-        if buildings_special and 'building' in tags:
-            buildings = self.building_names()
-            tags.remove('building')
-        else:
-            buildings = None
-
-        radius = self.radius or radius_default
-        return overpass.oql_for_point(self.lat, self.lon, radius, tags, buildings)
-
-    def get_bbox_oql(self, buildings_special=False):
-        bbox = f'{self.south:f},{self.west:f},{self.north:f},{self.east:f}'
-
-        tags = self.all_tags
-
-        if buildings_special and 'building' in tags:
-            buildings = self.building_names()
-            tags.remove('building')
-        else:
-            buildings = None
-
-        return overpass.oql_for_area(self.overpass_type,
-                                     self.osm_id,
-                                     tags,
-                                     bbox,
-                                     buildings)
-
-        union = ['{}({});'.format(self.overpass_type, self.osm_id)]
-
-        for tag in self.all_tags:
-            u = (oql_from_tag(tag, filters=self.overpass_filter)
-                 if self.osm_type == 'node'
-                 else oql_from_tag(tag))
-            if u:
-                union += u
-
-        if self.osm_type == 'node':
-            oql = ('[timeout:300][out:xml];\n' +
-                   '({});\n' +
-                   '(._;>;);\n' +
-                   'out qt;').format(''.join(union))
-            return oql
-
-        bbox = '{:f},{:f},{:f},{:f}'.format(self.south, self.west, self.north, self.east)
-        offset = {'way': 2400000000, 'relation': 3600000000}
-        area_id = offset[self.osm_type] + int(self.osm_id)
-
-        oql = ('[timeout:300][out:xml][bbox:{}];\n' +
-               'area({})->.a;\n' +
-               '({});\n' +
-               '(._;>;);\n' +
-               'out qt;').format(bbox, area_id, ''.join(union))
-        return oql
-
-    def get_oql(self, buildings_special=False):
-        if self.is_point:
-            return self.get_point_oql(buildings_special=False)
-        else:
-            return self.get_bbox_oql(buildings_special=False)
 
     def candidates_url(self, **kwargs):
         if g.get('filter'):
@@ -883,7 +731,8 @@ class Place(Base):
         if progress is None:
             def progress(candidates, item):
                 pass
-        conn = session.bind.raw_connection()
+        osm_db_url = current_app.config['OSM_DB_URL']
+        conn = database.osm_connection(osm_db_url)
         cur = conn.cursor()
 
         place_items = self.matcher_query()
@@ -901,7 +750,7 @@ class Place(Base):
                 candidates = []
             else:
                 t0 = time()
-                candidates = matcher.find_item_matches(cur, item, self.prefix, debug=debug)
+                candidates = matcher.find_item_matches(cur, item, 'planet_osm', debug=debug)
                 seconds = time() - t0
                 if debug:
                     print('find_item_matches took {:.1f}'.format(seconds))
@@ -991,42 +840,16 @@ class Place(Base):
             self.wbgetentities(debug=debug)
             print('load extracts')
             self.load_extracts(debug=debug)
-            self.state = 'wbgetentities'
-            session.commit()
-
-        if self.state in ('wbgetentities', 'overpass_error', 'overpass_timeout'):
-            print('loading_overpass')
-            self.get_overpass()
-            self.state = 'postgis'
-            session.commit()
-
-        if self.state == 'postgis':
-            print('running osm2pgsql')
-            self.load_into_pgsql(capture_stderr=False)
-            self.state = 'osm2pgsql'
-            session.commit()
-
-        if self.state == 'osm2pgsql':
-            print('run matcher')
-            self.run_matcher(debug=debug)
             self.state = 'load_isa'
             session.commit()
 
         if self.state == 'load_isa':
             print('load isa')
             self.load_isa()
+            self.run_matcher()
             print('ready')
             self.state = 'ready'
             session.commit()
-
-    def get_overpass(self):
-        oql = self.get_oql()
-        if self.area_in_sq_km < 800:
-            r = overpass.run_query_persistent(oql)
-            assert r
-            self.save_overpass(r.content)
-        else:
-            self.chunk()
 
     def get_items(self):
         items = [item for item in self.items_with_candidates()
@@ -1095,76 +918,6 @@ class Place(Base):
                     chunks.append(chunk)
 
         return chunks
-
-    def get_chunks(self):
-        bbox_chunks = list(self.polygon_chunk(size=place_chunk_size))
-
-        chunks = []
-        need_self = True  # include self in first non-empty chunk
-        for num, chunk in enumerate(bbox_chunks):
-            filename = self.chunk_filename(num, bbox_chunks)
-            oql = self.oql_for_chunk(chunk, include_self=need_self)
-            chunks.append({
-                'num': num,
-                'oql': oql,
-                'filename': filename,
-            })
-            if need_self and oql:
-                need_self = False
-        return chunks
-
-    def chunk_filename(self, num, chunks):
-        if len(chunks) == 1:
-            return '{}.xml'.format(self.place_id)
-        return '{}_{:03d}_{:03d}.xml'.format(self.place_id, num, len(chunks))
-
-    def chunk(self):
-        chunk_size = utils.calc_chunk_size(self.area_in_sq_km)
-        chunks = self.chunk_n(chunk_size)
-
-        print('chunk size:', chunk_size)
-
-        files = []
-        for num, chunk in enumerate(chunks):
-            filename = self.chunk_filename(num, len(chunks))
-            # print(num, q.count(), len(tags), filename, list(tags))
-            full = os.path.join('overpass', filename)
-            files.append(full)
-            if os.path.exists(full):
-                continue
-            oql = self.oql_for_chunk(chunk, include_self=(num == 0))
-
-            r = overpass.run_query_persistent(oql)
-            if not r:
-                print(oql)
-            assert r
-            open(full, 'wb').write(r.content)
-
-        cmd = ['osmium', 'merge'] + files + ['-o', self.overpass_filename]
-        print(' '.join(cmd))
-        subprocess.run(cmd)
-
-    def oql_for_chunk(self, chunk, include_self=False):
-        q = self.items.filter(cast(Item.location, Geometry).contained(envelope(chunk)))
-
-        tags = set()
-        for item in q:
-            tags |= set(item.tags)
-        tags.difference_update(skip_tags)
-        tags = matcher.simplify_tags(tags)
-        if not(tags):
-            print('no tags, skipping')
-            return
-
-        ymin, ymax, xmin, xmax = chunk
-        bbox = '{:f},{:f},{:f},{:f}'.format(ymin, xmin, ymax, xmax)
-
-        oql = overpass.oql_for_area(self.overpass_type,
-                                    self.osm_id,
-                                    tags,
-                                    bbox, None,
-                                    include_self=include_self)
-        return oql
 
     def chunk_count(self):
         return sum(1 for _ in self.polygon_chunk(size=place_chunk_size))

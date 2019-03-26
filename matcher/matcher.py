@@ -460,7 +460,6 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
-
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
             continue
@@ -778,8 +777,10 @@ def check_item_candidate(candidate):
         'osm_tags': osm_tags,
     }
 
-def run_individual_match(place, item):
-    conn = database.session.bind.raw_connection()
+def run_individual_match(place, item, osm_db_url=None):
+    if osm_db_url is None:
+        osm_db_url = current_app.config['OSM_DB_URL']
+    conn = database.osm_connection(osm_db_url)
     cur = conn.cursor()
 
     candidates = find_item_matches(cur, item, place.prefix, debug=False)

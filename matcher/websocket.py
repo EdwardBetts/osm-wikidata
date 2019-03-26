@@ -1,7 +1,7 @@
-from flask import Blueprint, current_app, g
+from flask import Blueprint, g
 from time import time, sleep
 from .place import Place, bbox_chunk
-from . import wikipedia, database, wikidata, netstring, utils, edit, mail
+from . import wikipedia, database, wikidata, utils, edit, mail
 from flask_login import current_user
 from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
@@ -10,8 +10,6 @@ from sqlalchemy.orm.attributes import flag_modified
 import requests
 import re
 import json
-import socket
-import subprocess
 import os.path
 import shutil
 
@@ -37,8 +35,6 @@ class MatcherSocket(object):
         self.log_full_path = os.path.join(utils.log_location(),
                                           self.log_filename)
         self.log = open(self.log_full_path, 'w')
-
-        self.task_host, self.task_port = 'localhost', 6020
 
     def mark_log_good(self):
         self.log.close()
@@ -147,81 +143,6 @@ class MatcherSocket(object):
         print('items saved')
         self.send('items_saved')
 
-    def task_queue_address(self):
-        return (self.task_host, self.task_port)
-
-    def connect_to_task_queue(self):
-        address = self.task_queue_address()
-        sock = socket.create_connection(address)
-        sock.setblocking(True)
-        return sock
-
-    def check_task_queue_running(self):
-        try:
-            sock = self.connect_to_task_queue()
-        except ConnectionRefusedError:
-            return False
-        msg = {'type': 'ping'}
-        netstring.write(sock, json.dumps(msg))
-        reply = json.loads(netstring.read(sock))
-        sock.close()
-        return reply['type'] == 'pong'
-
-    def overpass_request(self, chunks):
-        sock = self.connect_to_task_queue()
-
-        fields = ['place_id', 'osm_id', 'osm_type', 'area']
-        msg = {
-            'place': {f: getattr(self.place, f) for f in fields},
-            'chunks': chunks,
-        }
-
-        netstring.write(sock, json.dumps(msg))
-        complete = False
-        while True:
-            print('read')
-            from_network = netstring.read(sock)
-            print('read complete')
-            if from_network is None:
-                print('done')
-                break
-            msg = json.loads(from_network)
-            print('message type {}'.format(repr(msg['type'])))
-            if msg['type'] == 'connected':
-                print('task runnner connected')
-                self.send('connected')
-            elif msg['type'] == 'run_query':
-                chunk_num = msg['num']
-                self.send('get_chunk', chunk_num=chunk_num)
-            elif msg['type'] == 'chunk':
-                chunk_num = msg['num']
-                self.send('chunk_done', chunk_num=chunk_num)
-            elif msg['type'] == 'done':
-                complete = True
-                self.send('overpass_done')
-            elif msg['type'] == 'error':
-                self.error(msg['error'])
-            else:
-                self.status('from network: ' + from_network)
-            netstring.write(sock, 'ack')
-        return complete
-
-    def merge_chunks(self, chunks):
-        files = [os.path.join('overpass', chunk['filename'])
-                 for chunk in chunks
-                 if chunk.get('oql')]
-
-        cmd = ['osmium', 'merge'] + files + ['-o', self.place.overpass_filename]
-        # status(' '.join(cmd))
-        p = subprocess.run(cmd,
-                           encoding='utf-8',
-                           universal_newlines=True,
-                           stderr=subprocess.PIPE,
-                           stdout=subprocess.PIPE)
-        msg = p.stdout if p.returncode == 0 else p.stderr
-        if msg:
-            self.status(msg)
-
     def send_pins(self, pins, item_count):
         self.send('pins', pins=pins)
         self.status('{:,d} Wikidata items found'.format(item_count))
@@ -245,15 +166,6 @@ class MatcherSocket(object):
         self.status('loading wikipedia extracts')
         self.place.load_extracts(progress=extracts_progress)
         self.item_line('extracts loaded')
-
-    def run_osm2pgsql(self):
-        self.status('running osm2pgsql')
-        cmd = self.place.osm2pgsql_cmd()
-        env = {'PGPASSWORD': current_app.config['DB_PASS']}
-        subprocess.run(cmd, env=env, check=True)
-        print('osm2pgsql done')
-        self.status('osm2pgsql done')
-        # could echo osm2pgsql output via websocket
 
     def run_matcher(self):
         def progress(candidates, item):
@@ -311,12 +223,6 @@ def replay_log(ws_sock, log_filename):
         prev_time = t
 
 def run_matcher(place, m):
-    running = m.check_task_queue_running()
-    if not running:
-        m.status("error: unable to connect to task queue")
-        database.session.commit()
-        return
-
     if not place:
         m.status('error: place not found')
         # FIXME - send error mail
@@ -356,57 +262,6 @@ def run_matcher(place, m):
 
     if place.state == 'tags':
         m.get_item_detail(db_items)
-        place.state = 'wbgetentities'
-        database.session.commit()
-
-    if place.osm_type == 'node':
-        oql = place.get_oql()
-        chunks = [{'filename': f'{place.place_id}.xml', 'num': 0, 'oql': oql}]
-    else:
-        chunks = place.get_chunks()
-        m.report_empty_chunks(chunks)
-
-    if place.overpass_done:
-        m.status('using existing overpass data')
-    else:
-        m.status('downloading data from overpass')
-        try:
-            overpass_good = m.overpass_request(chunks)
-        except ConnectionRefusedError:
-            m.error("unable to connect to task queue")
-            database.session.commit()
-            return
-        if not overpass_good:
-            m.error('overpass error')
-            # FIXME: e-mail admin
-            return
-
-        overpass_dir = current_app.config['OVERPASS_DIR']
-        for chunk in chunks:
-            if not chunk['oql']:
-                continue  # empty chunk
-            filename = os.path.join(overpass_dir, chunk['filename'])
-            if (os.path.getsize(filename) > 2000 or
-                    "<remark> runtime error" not in open(filename).read()):
-                continue
-            root = etree.parse(filename).getroot()
-            remark = root.find('.//remark')
-            m.error('overpass: ' + remark.text)
-            return  # FIXME report error to admin
-
-        if len(chunks) > 1:
-            m.merge_chunks(chunks)
-        place.state = 'postgis'
-        database.session.commit()
-
-    if place.state == 'postgis':
-        m.run_osm2pgsql()
-        place.state = 'osm2pgsql'
-        database.session.commit()
-
-    if place.state == 'osm2pgsql':
-        m.status('adding item type information')
-        place.load_isa()
         place.state = 'load_isa'
         database.session.commit()
 

@@ -61,3 +61,7 @@ group by place.place_id, place.added, display_name, state, size order by size de
 
 def now_utc():
     return func.timezone('utc', func.now())
+
+def osm_connection(osm_db_url):
+    engine = create_engine(osm_db_url)
+    return engine.raw_connection()

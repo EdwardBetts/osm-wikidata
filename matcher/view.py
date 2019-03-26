@@ -656,25 +656,14 @@ def refresh_place(osm_type, osm_id):
     place.reset_all_items_to_not_done()
 
     if refresh_type == 'matcher':
-        place.state = 'osm2pgsql'
+        place.state = 'load_isa'
         database.session.commit()
         return redirect_to_matcher(place)
 
     assert refresh_type == 'full'
-    place.delete_overpass()
     place.state = 'refresh'
 
-    engine = database.session.bind
-    for t in database.get_tables():
-        if not t.startswith(place.prefix):
-            continue
-        engine.execute('drop table if exists {}'.format(t))
-    engine.execute('commit')
     database.session.commit()
-
-    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
-    tables = database.get_tables()
-    assert not any(t in tables for t in expect)
 
     place.refresh_nominatim()
     database.session.commit()
@@ -1358,54 +1347,6 @@ def reports_view():
         q = q.filter(~EditMatchReject.edit.candidate.item.query_label.like('%farm%house%'))
     return render_template('reports/list.html', q=q)
 
-@app.route('/db_space')
-@login_required
-def db_space():
-    rows = database.get_big_table_list()
-    items = [{
-        'place_id': place_id,
-        'size': size,
-        'added': added,
-        'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
-        'display_name': display_name,
-        'state': state,
-        'changesets': changeset_count,
-        'recent': recent,
-    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
-
-    free_space = utils.get_free_space(app.config)
-
-    return render_template('db_space.html', items=items, free_space=free_space)
-
-@app.route('/old_places')
-@login_required
-def old_places():
-    rows = database.get_old_place_list()
-    items = [{
-        'place_id': place_id,
-        'size': size,
-        'added': added,
-        'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
-        'display_name': display_name,
-        'state': state,
-        'changesets': changeset_count,
-        'recent': recent,
-    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
-
-    free_space = utils.get_free_space(app.config)
-
-    return render_template('db_space.html', items=items, free_space=free_space)
-
-@app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
-@login_required
-def delete_place(place_id):
-    place = Place.query.get(place_id)
-    place.clean_up()
-
-    flash('{} deleted'.format(place.display_name))
-    to_next = request.args.get('next', 'space')
-    return redirect(url_for(to_next))
-
 @app.route('/user/<path:username>')
 def user_page(username):
     user = User.query.filter(User.username.ilike(username)).one_or_none()
@@ -1474,7 +1415,8 @@ def single_item_match(osm_type, osm_id, item_id):
     endings = matcher.get_ending_from_criteria(item.tags)
     endings |= item.more_endings_from_isa()
 
-    conn = database.session.bind.raw_connection()
+    osm_db_url = app.config['OSM_DB_URL']
+    conn = database.osm_connection(osm_db_url)
     cur = conn.cursor()
 
     candidates = matcher.find_item_matches(cur, item, place.prefix, debug=False)
