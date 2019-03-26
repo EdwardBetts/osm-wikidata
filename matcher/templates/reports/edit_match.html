@@ -9,6 +9,8 @@
 
     <p>Reject count: {{ q.count() }}</p>
 
+    <p><a href="{{ url_for(request.endpoint, timestamp=request.args.timestamp, hide='farmhouse') }}">hide farmhouse</a></p>
+
     {% for reject in q %}
       {% set c = reject.edit.candidate %}
       {% set item = c.item %}

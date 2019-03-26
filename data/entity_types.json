@@ -575,7 +575,7 @@
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
                      "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "public_transport=stop_area",
-             "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station"],
+             "railway=facility", "type=site", "site=railway", "site=station", "site=railway_station", "railway=historic_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station", "gare de",
              "bahnhof", "haltepunkt", "depot", "transportation center", "transit station"],
     "check_housename": false,
@@ -585,7 +585,7 @@
     "cats": ["Disused railway stations", "Disused railroad stations", "Disused train stations"],
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
                      "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
-    "tags": ["disused=station", "railway=disused_station"],
+    "tags": ["disused=station", "railway=disused_station", "railway=historic_station"],
     "trim": ["station", "metro station", "dlr station", "tube station", "halt", "stop", "railway station"],
     "check_housename": false,
     "dist": 2
@@ -596,7 +596,7 @@
     "exclude_cats": ["power stations", "ski stations", "Air Force stations", "bus stations", "fire stations",
                      "police stations", "radio stations", "service stations", "filling stations", "lifeboat stations"],
     "tags": ["railway=station", "railway=halt", "building=train_station", "railway=tram_stop",
-             "public_transport=station", "public_transport=stop_area"],
+             "public_transport=station", "public_transport=stop_area", "railway=historic_station"],
     "trim": ["station", "metro station", "dlr station", "metrotram station", "tube station", "halt", "stop",
              "tram stop", "railway station"],
     "check_housename": false,
@@ -741,7 +741,7 @@
     "cats": "Tram stops",
     "cats": ["Tram stops", "stops"],
     "tags": ["railway=tram_stop", "public_transport=stop_area"],
-    "trim": ["tram stop", "stop"],
+    "trim": ["tram stop", "stop", "station", "loop"],
     "dist": 4
 },
 {

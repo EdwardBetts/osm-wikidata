@@ -238,7 +238,7 @@ class Place(Base):
     def change_comment(self, item_count):
         if item_count == 1:
             return g.user.single or default_change_comments['single']
-        comment = g.user.multi or default_change_comments['multi']
+        comment = getattr(g.user, 'multi', None) or default_change_comments['multi']
         return comment.replace('PLACE', self.name_for_change_comment)
 
     @property
@@ -1031,8 +1031,7 @@ class Place(Base):
 
     def suggest_larger_areas(self):
         ret = []
-        is_in = self.is_in() or []
-        for e in reversed(is_in):
+        for e in reversed(self.is_in() or []):
             osm_type, osm_id, bounds = e['type'], e['id'], e['bounds']
             if osm_type == self.osm_type and osm_id == self.osm_id:
                 continue
