@@ -2,7 +2,7 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place, PlaceMatcher
-import requests
+import dateutil.parser
 import re
 
 re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
@@ -78,7 +78,6 @@ def matcher_progress(osm_type, osm_id):
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/done')
 def matcher_done(osm_type, osm_id):
     refresh = request.args.get('refresh') == '1'
-    start = request.args.get('start')
     place = Place.get_or_abort(osm_type, osm_id)
     if place.state != 'ready':
         if place.too_big:
@@ -87,16 +86,22 @@ def matcher_done(osm_type, osm_id):
         # place isn't ready so redirect to matcher progress
         return redirect(place.matcher_progress_url())
 
+    start_arg = request.args.get('start')
+    if start_arg:
+        try:
+            start = dateutil.parser.parse(start_arg)
+        except ValueError:
+            start = None
+    else:
+        start = None
+
     if start:
         q = place.matcher_runs.filter(PlaceMatcher.start == start)
         run = q.one_or_none()
         if run:
             run.complete()
 
-    if refresh:
-        msg = 'Matcher refresh complete.'
-    else:
-        msg = 'The matcher has finished.'
+    msg = 'Matcher refresh complete.' if refresh else 'The matcher has finished.'
     flash(msg)
     return redirect(place.candidates_url())
 
