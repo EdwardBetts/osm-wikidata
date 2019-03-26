@@ -13,7 +13,6 @@ from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
@@ -21,7 +20,6 @@ from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
 from dogpile.cache import make_region
-from dukpy.webassets import BabelJS
 from werkzeug.debug.tbtools import get_current_traceback
 
 from .matcher_view import matcher_blueprint
@@ -83,24 +81,19 @@ disabled_tab_pages = [
     {'route': 'overpass_query', 'label': 'Overpass query'}
 ]
 
-webassets.filter.register_filter(BabelJS)
 js_lib = webassets.Bundle('jquery/jquery.js',
                           'bootstrap4/js/bootstrap.js',
                           filters='jsmin')
-js_app = webassets.Bundle('js/app.js',
-                          filters='babeljs')
+js_app = webassets.Bundle('js/app.js')
 
 env.register('js', js_lib, js_app, output='gen/pack.js')
 
 env.register('style', 'css/style.css', 'bootstrap4/css/bootstrap.css',
              filters='cssmin', output='gen/pack.css')
 
-env.register('add_tags', 'js/add_tags.js',
-             filters='babeljs', output='gen/add_tags.js')
-env.register('matcher', 'js/matcher.js',
-             filters='babeljs', output='gen/matcher.js')
-env.register('node_is_in', 'js/node_is_in.js',
-             filters='babeljs', output='gen/node_is_in.js')
+env.register('add_tags', 'js/add_tags.js', output='gen/add_tags.js')
+env.register('matcher', 'js/matcher.js', output='gen/matcher.js')
+env.register('node_is_in', 'js/node_is_in.js', output='gen/node_is_in.js')
 
 @app.template_filter()
 @evalcontextfilter
