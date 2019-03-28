@@ -274,7 +274,8 @@ class Item(Base):
             if any(n.lower().endswith(' church') for n in self.names().keys()):
                 tags.update({'amenity=place_of_worship', 'building=church'})
 
-        tags |= self.ref_keys | self.disused_tags()
+        # disable disused tag checking for performance reasons
+        tags |= self.ref_keys # | self.disused_tags()
         tags -= ignore_tags
         return tags
 
@@ -333,7 +334,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P2815', ['esr:user', 'ref', 'ref:train'], 'ESR station code'),
             ('P3425', ['ref', 'ref:SIC'], 'Natura 2000 site ID'),
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
-            ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs'], 'UK railway station code'),
+            ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs', 'nat_ref'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
         ]
 
