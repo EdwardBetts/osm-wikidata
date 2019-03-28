@@ -333,7 +333,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P2815', ['esr:user', 'ref', 'ref:train'], 'ESR station code'),
             ('P3425', ['ref', 'ref:SIC'], 'Natura 2000 site ID'),
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
-            ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs'], 'UK railway station code'),
+            ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs', 'nat_ref'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
         ]
 
