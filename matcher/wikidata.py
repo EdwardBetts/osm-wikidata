@@ -321,7 +321,7 @@ SELECT DISTINCT ?item ?type WHERE {
   {
       ?item wdt:P31/wdt:P279* ?type .
       ?type ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
-      FILTER(?tag != 'Key:amenity' && ?tag != 'Key:room' && ?tag != 'Key:man_made' && ?tag != Key:location)
+      FILTER(?tag != 'Key:amenity' && ?tag != 'Key:room' && ?tag != 'Key:man_made' && ?tag != 'Key:location')
   } UNION {
       ?item wdt:P31 ?type .
       VALUES (?type) { TYPES }
