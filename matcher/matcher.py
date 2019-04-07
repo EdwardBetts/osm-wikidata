@@ -333,6 +333,12 @@ def is_bad_match(item, osm_tags):
             'pub' in amenity):
         return True  # place of worship shouldn't match pub
 
+    if ('amenity=place_of_worship' in item.tags and
+            'man_made=bridge' not in item.tags and
+            osm_tags.get('man_made') == 'bridge' and
+            'place_of_worship' not in amenity):
+        return True  # place of worship shouldn't match bridge
+
     if ('amenity=school' in item.tags and
             'amenity=place_of_worship' not in item.tags and
             'place_of_worship' in amenity and
