@@ -321,7 +321,7 @@ SELECT DISTINCT ?item ?type WHERE {
   {
       ?item wdt:P31/wdt:P279* ?type .
       ?type ((p:P1282/ps:P1282)|wdt:P641/(p:P1282/ps:P1282)|wdt:P140/(p:P1282/ps:P1282)|wdt:P366/(p:P1282/ps:P1282)) ?tag .
-      FILTER(?tag != 'Key:amenity')
+      FILTER(?tag != 'Key:amenity' && ?tag != 'Key:room' && ?tag != 'Key:man_made' && ?tag != Key:location)
   } UNION {
       ?item wdt:P31 ?type .
       VALUES (?type) { TYPES }
@@ -1336,13 +1336,15 @@ SELECT DISTINCT ?code WHERE {
             items |= set(extra_keys.get(is_a, []))
 
         # Ignore some overly generic tags from Wikidata objects:
-        # facility (Q13226383)            - osm tag: amenity
-        # geographic location (Q2221906)  - osm tag: location
-        # artificial entity (Q16686448)   - osm tag: man_made
+        # facility (Q13226383)            - osm key: amenity
+        # geographic location (Q2221906)  - osm key: location
+        # artificial entity (Q16686448)   - osm key: man_made
+        # room (Q180516)                  - osm key: room
 
         items.discard('Key:amenity')
         items.discard('Key:location')
         items.discard('Key:man_made')
+        items.discard('Key:room')
         return items
 
     def report_broken_wikidata_osm_tags(self):
