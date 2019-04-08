@@ -306,6 +306,10 @@ def is_bad_match(item, osm_tags):
             'pub' in amenity and osm_tags.get('man_made') != 'windmill'):
         return True  # Wikidata windmill shouldn't match OSM pub
 
+    if ('amenity=school' in item.tags and 'amenity=pub' not in item.tags and
+            'pub' in amenity and 'school' not in amenity):
+        return True  # Wikidata school shouldn't match OSM pub
+
     if ('amenity=market' in item.tags and 'amenity=pub' not in item.tags and
             'pub' in amenity and 'market' not in amenity and
             'marketplace' not in amenity):
@@ -340,7 +344,7 @@ def is_bad_match(item, osm_tags):
             'amenity=place_of_worship' not in item.tags and
             'place_of_worship' in amenity and
             'school' not in amenity):
-        return True  # place of worship shouldn't match pub
+        return True  # school shouldn't match place of worship
 
     if ('amenity=place_of_worship' in item.tags and
             'amenity=school' not in item.tags and
