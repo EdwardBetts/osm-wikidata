@@ -467,6 +467,8 @@ def find_item_matches(cur, item, prefix, debug=False):
     if is_hamlet:
         endings.discard('house')
 
+    endings.discard('street')
+
     candidates = []
     for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
 

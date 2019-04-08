@@ -251,6 +251,8 @@ class Item(Base):
         for i in self.tags:
             if i == 'amenity':  # too generic
                 continue
+            if i == 'shop' and self.is_shopping_street():
+                continue
             key = i.split('=')[0] if '=' in i else i
             if key in disused_prefix_key:
                 tags |= {prefix + ':' + i for prefix in prefixes}
@@ -273,6 +275,9 @@ class Item(Base):
             tags.add('building')
             if any(n.lower().endswith(' church') for n in self.names().keys()):
                 tags.update({'amenity=place_of_worship', 'building=church'})
+
+        if 'shop' in tags and self.is_shopping_street():
+            tags.discard('shop')
 
         tags |= self.ref_keys | self.disused_tags()
         tags -= ignore_tags
@@ -423,6 +428,10 @@ https://www.wikidata.org/wiki/{self.qid}
         return ('Q5084' in self.instanceof() or
                 any(cat.startswith('Hamlets ')
                     for cat in self.categories or []))
+
+    def is_shopping_street(self):
+        return any(cat.startswith('Shopping street ')
+                   for cat in self.categories or [])
 
     def is_farm_house(self):
         return 'Q489357' in self.instanceof()
