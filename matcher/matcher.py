@@ -359,6 +359,13 @@ def is_bad_match(item, osm_tags):
         return True  # station shouldn't match cafe
 
     if ('railway=station' in item.tags and
+            'amenity=ferry_terminal' not in item.tags and
+            'ferry_terminal' in amenity and
+            osm_tags.get('railway') != 'station' and
+            osm_tags.get('building') != 'train_station'):
+        return True  # station shouldn't match ferry terminal
+
+    if ('railway=station' in item.tags and
             'shop=supermarket' not in item.tags and
             'supermarket' == osm_tags.get('shop') and
             osm_tags.get('railway') != 'station' and
