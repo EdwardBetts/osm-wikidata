@@ -9,7 +9,7 @@
       <b>
         <a href="{{ place.next_state_url() }}">{{ hit.display_name }}</a>
       </b>
-      {% if hit.area != None and wikidata and hit.area > config.BROWSE_LINK_MIN_AREA %}
+      {% if wikidata and hit.area and hit.area > config.BROWSE_LINK_MIN_AREA %}
         &ndash; <a href="{{ place.browse_url() }}">browse next level administrative subdivisions</a>
       {% endif %}
       <br>
