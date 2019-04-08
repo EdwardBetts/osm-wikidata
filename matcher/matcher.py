@@ -610,6 +610,13 @@ def find_item_matches(cur, item, prefix, debug=False):
                 osm_tags.get('building') not in ('apartments', 'residential')):
             continue  # apartment building shouldn't match shop
 
+        if (not name_match and address_match and
+                'studio=audio' in item.tags and
+                not any(tag.startswith('shop') for tag in item.tags) and
+                'shop' in osm_tags and
+                osm_tags.get('studio') != 'audio'):
+            continue  # recording studio shouldn't match shop
+
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
                f'where osm_id={src_id}')
