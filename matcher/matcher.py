@@ -311,10 +311,13 @@ def is_bad_match(item, osm_tags):
             'marketplace' not in amenity):
         return True  # Wikidata market shouldn't match OSM pub
 
-    if ('historic=castle' in item.tags and
-            'amenity=pub' not in item.tags and
+    if ('historic=castle' in item.tags and 'amenity=pub' not in item.tags and
             'pub' in amenity and osm_tags.get('historic') != 'castle'):
         return True  # Wikidata castle shouldn't match OSM pub
+
+    if ('building=tower' in item.tags and 'amenity=pub' not in item.tags and
+            'pub' in amenity and 'man_made' not in osm_tags):
+        return True  # Wikidata tower shouldn't match OSM pub
 
     if ('amenity=lifeboat_station' in item.tags and
             'amenity=place_of_worship' not in item.tags and
