@@ -406,6 +406,12 @@ def is_bad_match(item, osm_tags):
             'place' not in osm_tags and 'railway' in osm_tags):
         return True  # place shouldn't match railway
 
+    if ('man_made=monitoring_station' in item.tags and
+            'amenity=townhall' not in item.tags and
+            'townhall' in amenity and
+            osm_tags.get('man_made') != 'monitoring_station'):
+        return True  # Wikidata monitoring station shouldn't match townhall
+
     return False
 
 def find_item_matches(cur, item, prefix, debug=False):
