@@ -333,12 +333,6 @@ def is_bad_match(item, osm_tags):
             'pub' in amenity):
         return True  # place of worship shouldn't match pub
 
-    if ('amenity=place_of_worship' in item.tags and
-            'man_made=bridge' not in item.tags and
-            osm_tags.get('man_made') == 'bridge' and
-            'place_of_worship' not in amenity):
-        return True  # place of worship shouldn't match bridge
-
     if ('amenity=school' in item.tags and
             'amenity=place_of_worship' not in item.tags and
             'place_of_worship' in amenity and
@@ -357,13 +351,6 @@ def is_bad_match(item, osm_tags):
             osm_tags.get('railway') != 'station' and
             osm_tags.get('building') != 'train_station'):
         return True  # station shouldn't match cafe
-
-    if ('railway=station' in item.tags and
-            'amenity=ferry_terminal' not in item.tags and
-            'ferry_terminal' in amenity and
-            osm_tags.get('railway') != 'station' and
-            osm_tags.get('building') != 'train_station'):
-        return True  # station shouldn't match ferry terminal
 
     if ('railway=station' in item.tags and
             'shop=supermarket' not in item.tags and
@@ -594,6 +581,20 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         if item.is_nhle and dist > 500:
             continue  # NHLE items normally have quite precise coordinates
+
+        if (not identifier_match and
+                'railway=station' in item.tags and
+                'amenity=ferry_terminal' not in item.tags and
+                'ferry_terminal' in amenity and
+                osm_tags.get('railway') != 'station' and
+                osm_tags.get('building') != 'train_station'):
+            continue  # station shouldn't match ferry terminal
+
+        if ('amenity=place_of_worship' in item.tags and
+                'man_made=bridge' not in item.tags and
+                osm_tags.get('man_made') == 'bridge' and
+                'place_of_worship' not in amenity):
+            continue  # place of worship shouldn't match bridge
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
