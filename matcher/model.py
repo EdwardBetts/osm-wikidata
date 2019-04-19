@@ -371,12 +371,17 @@ https://www.wikidata.org/wiki/{self.qid}
         # We try to determine if this is the case and avoid using the filename of the
         # single building photo as a name for matching.
 
+        def has_digit(s):
+            return any(c.isdigit() for c in s)
+
         image_names = {name for name, sources in d.items()
-                       if len(sources) == 1 and sources[0][0] == 'image'}
+                       if len(sources) == 1 and
+                          sources[0][0] == 'image' and
+                          has_digit(name)}
         if not image_names:
             return dict(d) or None
 
-        other_names = set(d.keys()) - image_names
+        other_names = {n for n in d.keys() if n not in image_names and has_digit(n)}
         for image_name in image_names:
             for other in other_names:
                 if not utils.is_in_range(other, image_name):
