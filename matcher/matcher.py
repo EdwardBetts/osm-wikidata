@@ -406,7 +406,7 @@ def is_bad_match(item, osm_tags):
 
     if ('artwork_type=statue' in item.tags and
             'tourism=museum' not in item.tags and
-            osm_tags.get('leisure') == 'museum' and
+            osm_tags.get('tourism') == 'museum' and
             osm_tags.get('artwork_type') != 'statue'):
         return True  # Wikidata statue shouldn't match OSM museum
 
