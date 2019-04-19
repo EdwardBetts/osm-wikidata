@@ -404,12 +404,6 @@ def is_bad_match(item, osm_tags):
             'cinema' not in amenity):
         return True  # Wikidata cinema shouldn't match OSM petrol station
 
-    if ('artwork_type=statue' in item.tags and
-            'tourism=museum' not in item.tags and
-            osm_tags.get('tourism') == 'museum' and
-            osm_tags.get('artwork_type') != 'statue'):
-        return True  # Wikidata statue shouldn't match OSM museum
-
     if ('amenity=place_of_worship' in item.tags and
             'amenity=cafe' not in item.tags and
             'cafe' in amenity and 'place_of_worship' not in amenity):
@@ -632,6 +626,12 @@ def find_item_matches(cur, item, prefix, debug=False):
                 'shop' in osm_tags and
                 osm_tags.get('studio') != 'audio'):
             continue  # recording studio shouldn't match shop
+
+        if ('artwork_type=statue' in item.tags and
+                'tourism=museum' not in item.tags and
+                osm_tags.get('tourism') == 'museum' and
+                osm_tags.get('artwork_type') != 'statue'):
+            continue  # statue shouldn't match museum
 
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
