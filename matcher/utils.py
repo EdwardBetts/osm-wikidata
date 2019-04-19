@@ -139,8 +139,8 @@ def display_distance(units, dist):
         return f'{dist / 1000:,.2f} km'
 
 
-re_range = re.compile(r'\b(\d+) ?- ?(\d+)\b')
-re_number_list = re.compile(r'\b([\d, ]+) and (\d+)\b', re.I)
+re_range = re.compile(r'\b(\d+) ?(?:to|-) ?(\d+)\b', re.I)
+re_number_list = re.compile(r'\b([\d, ]+) (?:and|&) (\d+)\b', re.I)
 re_number = re.compile(r'^(\d+)\b')
 
 def is_in_range(address_range, address):
