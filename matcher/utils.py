@@ -155,7 +155,7 @@ def is_in_range(address_range, address):
             return False
         return start <= int(m_number.group(1)) <= end
 
-    m_list = re_number_list.match(address_range)
+    m_list = re_number_list.search(address_range)
     if m_list:
         numbers = {n.strip() for n in m_list.group(1).split(',')} | {m_list.group(2)}
         if re_number_list.search(address):

@@ -53,3 +53,8 @@ def test_display_distance():
     assert utils.display_distance(units, 500) == '500 metres'
     assert utils.display_distance(units, 1000) == '0.62 miles'
     assert utils.display_distance(units, 10_000) == '6.21 miles'
+
+def test_is_in_range():
+    address_range = 'Numbers 51 And 53 And Attached Front Railings'
+    address = '51 Park Street, Bristol (whole facade)'
+    assert utils.is_in_range(address_range, address)
