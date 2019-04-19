@@ -141,7 +141,7 @@ def display_distance(units, dist):
 
 re_range = re.compile(r'\b(\d+) ?(?:to|-) ?(\d+)\b', re.I)
 re_number_list = re.compile(r'\b([\d, ]+) (?:and|&) (\d+)\b', re.I)
-re_number = re.compile(r'^(\d+)\b')
+re_number = re.compile(r'^(?:No\.?|Number)? ?(\d+)\b')
 
 def is_in_range(address_range, address):
     m_number = re_number.match(address)
