@@ -366,6 +366,24 @@ https://www.wikidata.org/wiki/{self.qid}
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
             d[name].append(('extract', 'enwiki'))
+
+        # A terrace of buildings can be illustrated with a photo of a single building.
+        # We try to determine if this is the case and avoid using the filename of the
+        # single building photo as a name for matching.
+
+        image_names = {name for name, sources in d.items()
+                       if len(sources) == 1 and sources[0][0] == 'image'}
+        if not image_names:
+            return dict(d) or None
+
+        other_names = set(d.keys()) - image_names
+        for image_name in image_names:
+            for other in other_names:
+                if not utils.is_in_range(other, image_name):
+                    continue
+                del d[image_name]
+                break
+
         return dict(d) or None
 
     def refresh_extract_names(self):
