@@ -499,8 +499,8 @@ def process_match(ws_sock, changeset_id, m):
         if existing is not None:
             osm.tags['wikidata'] = existing.get('v')
             flag_modified(osm, 'tags')
-        database.session.commit()
-        return 'already_tagged'
+            database.session.commit()
+            return 'already_tagged'
 
     root = etree.fromstring(r.content)
     tag = etree.Element('tag', k='wikidata', v=m['qid'])
