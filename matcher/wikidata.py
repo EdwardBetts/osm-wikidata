@@ -153,6 +153,7 @@ extra_keys = {
     'Q828909': ['Tag:landuse=commercial',
                 'Tag:landuse=industrial',
                 'Tag:historic=dockyard'],       # wharf
+    'Q10283556': ['Tag:landuse=railway'],       # motive power depot
 }
 
 # search for items in bounding box that have an English Wikipedia article
