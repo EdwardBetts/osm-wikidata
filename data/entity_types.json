@@ -470,6 +470,13 @@
     "dist": 4
 },
 {
+    "cats": ["Cricket grounds"],
+    "tags": ["leisure=stadium", "sport=cricket"],
+    "trim": ["stadium", "cricket ground", "cricket field", "cricket oval", "field", "oval", "ground"],
+    "wikidata": "Q682943",
+    "dist": 1
+},
+{
     "cats": ["Stadiums"],
     "tags": ["leisure=stadium"],
     "trim": ["stadium"],
@@ -779,8 +786,6 @@
     "trim": ["interchange"],
     "dist": 1
 },
-
-
 {
     "cats": ["Playgrounds"],
     "tags": ["leisure=playground"],
@@ -1525,7 +1530,7 @@
 },
 {
     "cats": ["Wharves"],
-    "tags": ["man_made=quay", "historic=dockyard"],
+    "tags": ["man_made=quay", "historic=dockyard", "landuse=commercial", "landuse=industrial"],
     "trim": ["wharf", "quay"],
     "check_housename": false,
     "wikidata": "Q828909",

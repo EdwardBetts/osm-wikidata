@@ -148,8 +148,11 @@ extra_keys = {
     'Q35535': ['Tag:amenity=police'],           # police
     'Q16560': ['Tag:tourism=attraction',        # palace
                'Tag:historic=yes'],
-    'Q131734': ["Tag:amenity=pub",              # brewery
-                "Tag:industrial=brewery"],
+    'Q131734': ['Tag:amenity=pub',              # brewery
+                'Tag:industrial=brewery'],
+    'Q828909': ['Tag:landuse=commercial',
+                'Tag:landuse=industrial',
+                'Tag:historic=dockyard'],       # wharf
 }
 
 # search for items in bounding box that have an English Wikipedia article
