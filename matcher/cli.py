@@ -2,7 +2,7 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract,
-                    ChangesetEdit, EditMatchReject)
+                    ChangesetEdit, EditMatchReject, BadMatchFilter)
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
@@ -1082,6 +1082,24 @@ def get_changeset_edits(filename):
         print(changeset_id)
         osm_api.get_changeset(changeset_id)
         sleep(1)
+
+@app.cli.command()
+def dump_bad_match_filters():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    for item in BadMatchFilter.query:
+        print(json.dumps({'wikidata': item.wikidata,
+                          'osm': item.osm}))
+
+@app.cli.command()
+@click.argument('filename')
+def load_bad_match_filters(filename):
+    app.config.from_object('config.default')
+    database.init_app(app)
+    for line in open(filename):
+        i = BadMatchFilter(**json.load(line))
+        database.session.add(i)
+    database.session.commit()
 
 @app.cli.command()
 @click.argument('changeset_dir')
