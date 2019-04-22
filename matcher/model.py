@@ -875,6 +875,38 @@ class Category(Base):
     name = Column(String, primary_key=True)
     page_count = Column(Integer)
 
+class BadMatchFilter(Base):
+    __tablename__ = 'bad_match_filter'
+
+    id = Column(Integer, primary_key=True)
+    wikidata = Column(String)
+    osm = Column(String)
+
+    @property
+    def description(self):
+        def from_tag(t):
+            value = t[t.find('=') + 1:] if '=' in t else t
+            return value.replace('_', ' ')
+        return f"{from_tag(self.wikidata)} shouldn't match {from_tag(self.osm)}"
+
+    def check(self, wikidata_tags, osm_tags):
+        def check_osm(tag_or_key):
+            if '=' not in tag_or_key:
+                return tag_or_key in osm_tags
+            k, _, v = tag_or_key.partition('=')
+            return k in osm_tags and v in osm_tags[k].split(';')
+
+        def check_wikidata(tag_or_key):
+            if tag_or_key in wikidata_tags:
+                return True
+            if '=' in tag_or_key:
+                return False
+            if any(t[:t.find('=')] == tag_or_key for t in wikidata_tags if '=' in t):
+                return True
+
+        return (check_wikidata(self.wikidata) and not check_wikidata(self.osm) and
+                check_osm(self.osm) and not check_osm(self.wikidata))
+
 class Changeset(Base):
     __tablename__ = 'changeset'
     id = Column(BigInteger, primary_key=True)
