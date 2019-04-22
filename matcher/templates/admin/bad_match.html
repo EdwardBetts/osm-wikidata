@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Bad matches{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+    {% include "flash_msg.html" %}
+    <h1>{{ self.title() }}</h1>
+
+    {% set count = q.count() %}
+
+    {% if count %}
+      <p>{{ count }} filters</p>
+    {% else %}
+      <p>no filters yet</p>
+    {% endif %}
+
+    <form method="POST">
+
+    <table class="table">
+      <thead>
+        <tr><th>wikidata</th><th>OSM</th><th>description</th></tr>
+      </thead>
+      <tbody>
+        {% for i in q %}
+          <tr>
+            <td>{{ i.wikidata }}</td>
+            <td>{{ i.osm }}</td>
+            <td>{{ i.description }}</td>
+          </tr>
+        {% endfor %}
+        <tr>
+          <td><input name="wikidata"></td>
+          <td><input name="osm"></td>
+          <td>
+            <input type="submit" value="add">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </form>
+
+</div>
+{% endblock %}

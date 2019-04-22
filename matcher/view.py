@@ -1,7 +1,8 @@
 from . import (database, nominatim, wikidata, matcher, user_agent_headers,
                overpass, mail, browse, edit, utils)
 from .utils import cache_filename, get_int_arg
-from .model import Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch, Timing, get_bad, Language, IsA, EditMatchReject
+from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
+                    Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter)
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -1490,3 +1491,14 @@ def single_item_match(osm_type, osm_id, item_id):
                            place=place,
                            dict=dict,
                            candidates=candidates)
+
+@app.route('/admin/bad_match', methods=['GET', 'POST'])
+def admin_bad_match():
+    if request.method == 'POST':
+        item = BadMatchFilter(wikidata=request.form['wikidata'],
+                              osm=request.form['osm'])
+        database.session.add(item)
+        database.session.commit()
+        return redirect(url_for('admin_bad_match'))
+    q = BadMatchFilter.query.order_by(BadMatchFilter.osm, BadMatchFilter.wikidata)
+    return render_template('admin/bad_match.html', q=q)
