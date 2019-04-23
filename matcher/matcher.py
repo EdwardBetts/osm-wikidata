@@ -583,7 +583,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         }
         candidates.append(candidate)
     candidates = filter_distant(candidates)
-    candidates = prefer_name_over_housename(candidates)
+    candidates = prefer_proper_name_match(candidates)
     candidates = prefer_tag_match_over_building_only_match(candidates)
     candidates = prefer_railway_station(candidates)
     if candidates and item.is_farmhouse():
@@ -1023,7 +1023,7 @@ def filter_candidates_more(items, bad=None):
 
         yield (item, {'candidate': candidate})
 
-def prefer_name_over_housename(candidates):
+def prefer_proper_name_match(candidates):
     if len(candidates) == 1:
         return candidates
 
@@ -1043,7 +1043,8 @@ def prefer_name_over_housename(candidates):
                 return candidates
             best_match = c
             continue
-        if 'addr:housename' not in c['name_match']:
+        if ('addr:housename' not in c['name_match'] and
+                  'operator' not in c['name_match']):
             return candidates
 
     return [best_match] if best_match else candidates
