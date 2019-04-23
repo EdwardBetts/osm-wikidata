@@ -671,11 +671,11 @@
     "dist": 10
 },
 {
-    "cats": ["Schools by country"],
-    "tags": ["amenity=school", "building=school", "type=site", "site=school"],
+    "cats": ["Schools by country", "Secondary schools in", "University Technical Colleges"],
+    "tags": ["amenity=school", "building=school", "type=site", "site=school", "amenity=college"],
     "trim": ["school", "house", "preparatory school", "catholic school"],
     "check_housename": true,
-    "dist": 1.5
+    "dist": 1
 },
 {
     "cats": ["Universities by country", "University"],

@@ -38,6 +38,9 @@ edu = ['Tag:amenity=college', 'Tag:amenity=university', 'Tag:amenity=school',
 tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
+    'Q3914': ['Tag:building=school',
+              'Tag:amenity=college',
+              'Tag:office=educational_institution'],  # school
     'Q322563': edu,                             # vocational school
     'Q383092': edu,                             # film school
     'Q1021290': edu,                            # music school
