@@ -10,7 +10,6 @@ from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
-from sqlalchemy.orm.collections import attribute_mapped_collection
 from .database import session, now_utc
 from flask_login import UserMixin
 from . import wikidata, matcher, match, wikipedia, country_units, utils, mail
