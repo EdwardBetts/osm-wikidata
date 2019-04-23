@@ -555,6 +555,10 @@ def find_item_matches(cur, item, prefix, debug=False):
                 osm_tags.get('artwork_type') != 'statue'):
             continue  # statue shouldn't match museum
 
+        if ('historic=memorial' not in item.tags and
+                osm_tags.get('historic') == 'memorial'):
+            continue  # only memorial should match memorial
+
         sql = (f'select ST_AsText(ST_Transform(way, 4326)) '
                f'from {prefix}_{src_type} '
                f'where osm_id={src_id}')
