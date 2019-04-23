@@ -583,6 +583,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         }
         candidates.append(candidate)
     candidates = filter_distant(candidates)
+    candidates = prefer_name_over_housename(candidates)
     candidates = prefer_tag_match_over_building_only_match(candidates)
     candidates = prefer_railway_station(candidates)
     if candidates and item.is_farmhouse():
@@ -1021,6 +1022,31 @@ def filter_candidates_more(items, bad=None):
             continue
 
         yield (item, {'candidate': candidate})
+
+def prefer_name_over_housename(candidates):
+    if len(candidates) == 1:
+        return candidates
+
+    def candidate_name_match(c):
+        '''
+        does this candidate match contain a name match, as opposed to matching on
+        operator or addr:housename.
+        '''
+        return (c.get('name_match') and
+                ('name' in c['name_match'] or
+                 any(k.startswith('name:') for k in c['name_match'].keys())))
+
+    best_match = None
+    for c in candidates:
+        if candidate_name_match(c):
+            if best_match:
+                return candidates
+            best_match = c
+            continue
+        if 'addr:housename' not in c['name_match']:
+            return candidates
+
+    return [best_match]
 
 def prefer_railway_station(candidates):
     if len(candidates) == 1:
