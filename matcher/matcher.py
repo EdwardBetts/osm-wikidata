@@ -1046,7 +1046,7 @@ def prefer_name_over_housename(candidates):
         if 'addr:housename' not in c['name_match']:
             return candidates
 
-    return [best_match]
+    return [best_match] if best_match else candidates
 
 def prefer_railway_station(candidates):
     if len(candidates) == 1:
