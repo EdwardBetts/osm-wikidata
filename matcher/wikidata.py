@@ -39,6 +39,7 @@ tall = ['Key:height', 'Key:building:levels']
 
 extra_keys = {
     'Q3914': ['Tag:building=school',
+              'Tag:building=college',
               'Tag:amenity=college',
               'Tag:office=educational_institution'],  # school
     'Q322563': edu,                             # vocational school

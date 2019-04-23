@@ -672,7 +672,7 @@
 },
 {
     "cats": ["Schools by country", "Secondary schools in", "University Technical Colleges"],
-    "tags": ["amenity=school", "building=school", "type=site", "site=school", "amenity=college"],
+    "tags": ["amenity=school", "building=school", "type=site", "site=school", "amenity=college", "building=college"],
     "trim": ["school", "house", "preparatory school", "catholic school"],
     "check_housename": true,
     "dist": 1
@@ -1210,7 +1210,7 @@
 },
 {
     "cats": ["Business schools by country"],
-    "tags": ["amenity=college", "amenity=university"],
+    "tags": ["amenity=college", "amenity=university", "building=college"],
     "trim": ["school", "business school"],
     "check_housename": true,
     "dist": 2
