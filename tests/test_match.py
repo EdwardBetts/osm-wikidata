@@ -609,6 +609,17 @@ def test_check_for_address_in_extract():
     }
     assert match.check_for_address_in_extract(osm_tags, extract)
 
+def test_check_for_address_range_in_extract():
+    osm_tags = {
+        'addr:street': 'Queen Square',
+        'addr:housenumber': '29',
+    }
+
+    extract = ('The Sailors Refuge is an historic house situated ' +
+               'at 27–29 Queen Square, Bristol, England.')
+
+    assert not match.check_for_address_in_extract(osm_tags, extract)
+
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
 

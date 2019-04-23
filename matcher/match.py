@@ -556,6 +556,9 @@ def check_identifier(osm_tags, item_identifiers):
                 return True
     return False
 
+
+re_range_start = re.compile(r'\d+ ?[-–] ?$')
+
 def check_for_address_in_extract(osm_tags, extract):
     if not extract or not has_address(osm_tags):
         return
@@ -564,7 +567,8 @@ def check_for_address_in_extract(osm_tags, extract):
         address = re_abbr.sub(lambda m: '(' + m.group(1) + '|' + abbr[m.group(1).lower()] + r'\.?)', re.escape(address))
         # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
 
-        return bool(re.search(r'\b' + address, extract, re.I))
+        m = re.search(r'\b' + address, extract, re.I)
+        return bool(m) and not re_range_start.search(extract[:m.start()])
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:
         address = osm_tags['addr:housenumber'] + ' ' + osm_tags['addr:street']
