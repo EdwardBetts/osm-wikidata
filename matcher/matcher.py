@@ -584,6 +584,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         candidates.append(candidate)
     candidates = filter_distant(candidates)
     candidates = prefer_proper_name_match(candidates)
+    candidates = prefer_key_over_building(candidates, 'amenity')
     candidates = prefer_tag_match_over_building_only_match(candidates)
     candidates = prefer_railway_station(candidates)
     if candidates and item.is_farmhouse():
@@ -1023,6 +1024,27 @@ def filter_candidates_more(items, bad=None):
 
         yield (item, {'candidate': candidate})
 
+def prefer_key_over_building(candidates, key):
+    if len(candidates) == 1:
+        return candidates
+
+    prime = None
+    for c in candidates:
+        mt = c['matching_tags']
+        if any(tag.startswith(key + '=') for tag in mt):
+            if prime:
+                return candidates
+            prime = c
+            continue
+
+        if len(mt) != 1 or not mt[0].startswith('building'):
+            return candidates
+
+    return [prime]
+
+def image_only_match(m):
+    return len(m) == 1 and len(m[0][2]) == 1 and m[0][2][0][0] == 'image'
+
 def prefer_proper_name_match(candidates):
     if len(candidates) == 1:
         return candidates
@@ -1032,9 +1054,11 @@ def prefer_proper_name_match(candidates):
         does this candidate match contain a name match, as opposed to matching on
         operator or addr:housename.
         '''
-        return (c.get('name_match') and
-                ('name' in c['name_match'] or
-                 any(k.startswith('name:') for k in c['name_match'].keys())))
+        nm = c.get('name_match')
+        return (nm and
+                (('name' in nm and not image_only_match(nm['name'])) or
+                 any(k.startswith('name:') and not image_only_match(v)
+                     for k, v in nm.items())))
 
     best_match = None
     for c in candidates:
