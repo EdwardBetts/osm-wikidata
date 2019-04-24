@@ -1028,19 +1028,19 @@ def prefer_key_over_building(candidates, key):
     if len(candidates) == 1:
         return candidates
 
-    prime = None
+    best_match = None
     for c in candidates:
         mt = c['matching_tags']
         if any(tag.startswith(key + '=') for tag in mt):
-            if prime:
+            if best_match:
                 return candidates
-            prime = c
+            best_match = c
             continue
 
         if len(mt) != 1 or not mt[0].startswith('building'):
             return candidates
 
-    return [prime]
+    return [best_match] if best_match else candidates
 
 def image_only_match(m):
     return len(m) == 1 and len(m[0][2]) == 1 and m[0][2][0][0] == 'image'
