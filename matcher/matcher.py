@@ -1037,7 +1037,7 @@ def prefer_key_over_building(candidates, key):
             best_match = c
             continue
 
-        if len(mt) != 1 or not mt[0].startswith('building'):
+        if len(mt) != 1 or not list(mt)[0].startswith('building'):
             return candidates
 
     return [best_match] if best_match else candidates
