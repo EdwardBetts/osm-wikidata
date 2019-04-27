@@ -54,7 +54,8 @@ re_address_common_end = re.compile('^(.+)(' + '|'.join(abbr.keys()) + '|plaza)$'
 re_road_end = re.compile('^(.+)(' + '|'.join(list(road_abbr.keys()) + list(road_abbr.values())) + ') *$', re.I)
 
 bad_name_fields = {'tiger:name_base', 'name:right',
-                   'name:left', 'gnis:county_name', 'openGeoDB:name'}
+                   'name:left', 'gnis:county_name',
+                   'openGeoDB:name', 'addr:street:name'}
 
 def no_alpha(s):
     return all(not c.isalpha() for c in s)
