@@ -762,7 +762,7 @@
     "cats": ["Apartment buildings"],
     "tags": ["building=apartments", "building=mixed_use", "building=house", "building=residential",
              "landuse=residential"],
-    "trim": ["house", "apartments", "estate", "tower"],
+    "trim": ["house", "apartments", "estate", "tower", "condominiums"],
     "skip_cats": ["Christian communities"],
     "check_housename": true,
     "dist": 0.5
