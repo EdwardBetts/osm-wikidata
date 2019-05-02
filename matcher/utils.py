@@ -1,11 +1,9 @@
-from flask import current_app, request, has_app_context, g
+from flask import current_app, request
 from itertools import islice
-from . import mail
 import os.path
 import json
 import math
 import user_agents
-import humanize
 import re
 
 metres_per_mile = 1609.344
@@ -82,37 +80,6 @@ def find_log_file(place):
 def get_free_space(config):
     s = os.statvfs(config['FREE_SPACE_PATH'])
     return s.f_bsize * s.f_bavail
-
-def check_free_space(config=None):
-    ''' Check how much disk space is free.
-        E-mail admin if free space is low. '''
-
-    if config is None:
-        if not has_app_context():
-            return
-        config = current_app.config
-
-    min_free_space = config.get('MIN_FREE_SPACE')
-
-    if not min_free_space:  # not configured
-        return
-
-    free_space = get_free_space(config)
-
-    if free_space > min_free_space:
-        return
-    readable = humanize.naturalsize(free_space)
-    subject = 'Low disk space: {} OSM/Wikidata matcher'.format(readable)
-
-    body = '''
-Warning
-
-The OSM/Wikidata matcher server is low on space.
-
-There is currently {} available.
-'''.format(readable)
-
-    mail.send_mail(subject, body, config=config)
 
 def display_distance(units, dist):
     if units in ('miles_and_feet', 'miles_and_yards'):

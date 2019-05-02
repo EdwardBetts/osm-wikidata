@@ -1066,3 +1066,12 @@ class LanguageLabel(Base):
     label = Column(String, nullable=False)
 
     language = relationship('Language', foreign_keys=[wikimedia_language_code])
+
+class SpaceWarning(Base):
+    __tablename__ = 'space_warning'
+    timestamp = Column(DateTime, primary_key=True, default=now_utc())
+    free_space = Column(Integer)
+
+    @classmethod
+    def most_recent(cls):
+        return cls.query.order_by(cls.timestamp.desc()).first()

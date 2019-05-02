@@ -4,7 +4,7 @@ from gevent.queue import PriorityQueue, Queue
 from gevent import monkey, spawn, sleep
 monkey.patch_all()
 
-from matcher import overpass, netstring, utils, mail
+from matcher import overpass, netstring, mail, space_alert, database
 from matcher.view import app
 import requests.exceptions
 import json
@@ -22,6 +22,7 @@ import os.path
 # We can tell the page was closed by checking a websocket heartbeat.
 
 app.config.from_object('config.default')
+database.init_app(app)
 
 task_queue = PriorityQueue()
 
@@ -83,7 +84,7 @@ def process_queue():
             'place': place,
         }
         if not os.path.exists(filename):
-            utils.check_free_space(app.config)
+            space_alert.check_free_space(app.config)
             if not wait_for_slot(send_queue):
                 return
             to_client(send_queue, 'run_query', msg)
@@ -92,7 +93,7 @@ def process_queue():
             print('query complete')
             with open(filename, 'wb') as out:
                 out.write(r.content)
-            utils.check_free_space(app.config)
+            space_alert.check_free_space(app.config)
         print(msg)
         to_client(send_queue, 'chunk', msg)
     print('item complete')
@@ -159,7 +160,7 @@ def handle_request(sock, address):
     return r.handle()
 
 def main():
-    utils.check_free_space(app.config)
+    space_alert.check_free_space(app.config)
     spawn(process_queue_loop)
     print('listening on port {}'.format(port))
     server = StreamServer((listen_host, port), handle_request)

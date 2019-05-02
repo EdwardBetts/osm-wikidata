@@ -2,7 +2,7 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract,
-                    ChangesetEdit, EditMatchReject, BadMatchFilter)
+                    ChangesetEdit, EditMatchReject, BadMatchFilter, SpaceWarning)
 from .place import Place
 from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
