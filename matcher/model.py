@@ -1070,7 +1070,7 @@ class LanguageLabel(Base):
 class SpaceWarning(Base):
     __tablename__ = 'space_warning'
     timestamp = Column(DateTime, primary_key=True, default=now_utc())
-    free_space = Column(Integer)
+    free_space = Column(BigInteger)
 
     @classmethod
     def most_recent(cls):
