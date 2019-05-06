@@ -293,7 +293,7 @@ WHERE {
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -311,7 +311,7 @@ WHERE {
   VALUES ?start { wd:QID } .
   VALUES (?item) { PLACES }
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -396,7 +396,7 @@ WHERE {
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -420,7 +420,7 @@ WHERE {
   ?item wdt:P31/wdt:P279* wd:Q205895 .  # landform
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -452,7 +452,7 @@ WHERE {
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -507,7 +507,7 @@ WHERE {
   FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
   FILTER NOT EXISTS { ?item wdt:P576 ?end } .
   OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item wdt:P2046 ?area } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
 }
@@ -987,7 +987,7 @@ def next_level_places(qid, entity, query=None, name=None):
                 isa_list.append(isa_qid)
         i = {
             'population': (int(row['pop']['value']) if row.get('pop') else None),
-            'area': (int(float(row['area']['value'])) if row.get('area') else None),
+            'area': (int(float(row['area']['value']) / 1e6) if row.get('area') else None),
             'label': row['itemLabel']['value'],
             'start': row['startLabel']['value'],
             'item_id': item_id,
