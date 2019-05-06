@@ -14,7 +14,13 @@
 {{ place_box(place) }}
 
 <div>Area: {{ '{:,.0f}'.format( place.area_in_sq_km) }} km&sup2;</div>
-<div>This place is too big, try searching for a smaller place.</div>
+<div class="mt-2">
+  {% if place.too_big or not place.too_complex %}
+    This place is too big, try searching for a smaller place.
+  {% else %}
+    The geometry of this place is too complex, try searching for a smaller place.
+  {% endif %}
+</div>
 
 </div>
 </div>

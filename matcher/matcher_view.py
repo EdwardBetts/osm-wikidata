@@ -44,7 +44,7 @@ def matcher_progress(osm_type, osm_id):
     if place.state == 'ready':
         return redirect(place.candidates_url())
 
-    if place.too_big:
+    if place.too_big or place.too_complex:
         return render_template('too_big.html', place=place)
 
     is_refresh = place.state == 'refresh'
