@@ -42,7 +42,7 @@ import random
 
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
-re_qid = re.compile('^(Q\d+)$')
+re_qid = re.compile(r'^(Q\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
