@@ -963,6 +963,18 @@ def next_level_places(qid, entity, query=None, name=None):
         mail.error_mail('wikidata browse query error', query, r)
         raise QueryError(query, r)
 
+    if not query_rows:
+        claims = entity.get('claims', {})
+        located_in = {i['mainsnak']['datavalue']['value']['id']
+                      for i in claims.get('P131', [])}
+
+        for located_in_qid in located_in:
+            located_in_entity = get_entity(located_in_qid)
+            query = get_next_level_query(located_in_qid, located_in_entity)
+            r = run_query(query, return_json=False, send_error_mail=True)
+            located_in_rows = r.json()['results']['bindings']
+            query_rows += located_in_rows
+
     for row in query_rows:
         item_id = wd_uri_to_id(row['item']['value'])
         qid = 'Q{:d}'.format(item_id)
