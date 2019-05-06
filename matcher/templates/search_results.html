@@ -14,7 +14,7 @@
       {% endif %}
       <br>
     {% else %}
-       {% if wikidata and hit.area and hit.area >= config.PLACE_MAX_AREA %}
+       {% if wikidata and ((hit.area and hit.area >= config.PLACE_MAX_AREA) or (place and place.too_complex)) %}
          <b><a href="{{ place.browse_url() }}">{{ hit.display_name }}</a></b>
          (browse next level administrative subdivisions)
        {% else %}
@@ -34,6 +34,9 @@
               [area too large for matcher]<br>
             {% elif hit.area < config.PLACE_MIN_AREA %}
               [area too small for matcher]<br>
+            {% endif %}
+            {% if place and place.too_complex %}
+              [place boundary is too complex for matcher]<br>
             {% endif %}
         {% endif %}
     {% endif %}

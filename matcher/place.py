@@ -109,6 +109,7 @@ class Place(Base):
     geometry_type = column_property(func.GeometryType(geom))
     geojson = column_property(func.ST_AsGeoJSON(geom, 4), deferred=True)
     srid = column_property(func.ST_SRID(geom))
+    npoints = column_property(func.ST_NPoints(cast(geom, Geometry)), deferred=True)
     # match_ratio = column_property(candidate_count / item_count)
     num_geom = column_property(func.ST_NumGeometries(cast(geom, Geometry)),
                                deferred=True)
@@ -199,6 +200,10 @@ class Place(Base):
         return self.area_in_sq_km > max_area
 
     @property
+    def too_complex(self):
+        return self.npoints > current_app.config['PLACE_MAX_NPOINTS']
+
+    @property
     def bad_geom_type(self):
         return self.geometry_type in {'LINESTRING', 'MULTILINESTRING'}
 
@@ -221,7 +226,10 @@ class Place(Base):
         allow_node = bool(current_app.config.get('ALLOW_NODE_MATCH'))
         if self.osm_type == 'node':
             return allow_node
-        return (not self.bad_geom_type and self.allowed_cat and self.area_in_range)
+        return (not self.bad_geom_type and
+                self.allowed_cat and
+                self.area_in_range and
+                not self.too_complex)
 
     def update_from_nominatim(self, hit):
         if self.place_id != int(hit['place_id']):
