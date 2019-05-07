@@ -14,7 +14,7 @@ function send(payload) {
 }
 
 function start_upload() {
-    comment = $('#comment').val();
+    var comment = $('#comment').val();
     if (!comment) {
         $('#status').text('a comment is required');
         return;
