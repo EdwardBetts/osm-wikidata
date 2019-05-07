@@ -32,8 +32,8 @@
       {{ isa_map[isa_qid].label_and_qid() }}{% if not loop.last %}<br/>{% endif %}
     {% endfor %}
   </td>
-  <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'n/a' }}</td>
-  <td class="text-right">{{ '{:,d}'.format(row.population) if row.population else 'n/a' }}</td>
+  <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'missing' }}</td>
+  <td class="text-right">{{ '{:,d}'.format(row.population) if row.population else 'missing' }}</td>
 </tr>
 {% endfor %}
 </tbody>
@@ -51,6 +51,16 @@
 {% endif %}
 
 {% if current_places %}
+
+  <p class="mt-3">Sort by:
+  <a href="{{ url_for(request.endpoint,
+                      item_id=request.view_args.item_id,
+                      sort='area') }}">area</a> or
+  <a href="{{ url_for(request.endpoint,
+                      item_id=request.view_args.item_id,
+                      sort='population') }}">population</a>
+  </p>
+
   {{ place_table(current_places) }}
 {% else %}
   <p>No subregions were found.</p>
