@@ -22,7 +22,6 @@ from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
 from dogpile.cache import make_region
-from dukpy.webassets import BabelJS
 from werkzeug.debug.tbtools import get_current_traceback
 
 from .matcher_view import matcher_blueprint
@@ -31,8 +30,6 @@ from .websocket import ws
 from flask_sockets import Sockets
 
 import json
-import flask_assets
-import webassets.filter
 import operator
 import sys
 import requests
@@ -49,7 +46,6 @@ app.register_blueprint(matcher_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
-env = flask_assets.Environment(app)
 app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login_route'
@@ -83,25 +79,6 @@ tab_pages = [
 disabled_tab_pages = [
     {'route': 'overpass_query', 'label': 'Overpass query'}
 ]
-
-webassets.filter.register_filter(BabelJS)
-js_lib = webassets.Bundle('jquery/jquery.js',
-                          'bootstrap4/js/bootstrap.js',
-                          filters='jsmin')
-js_app = webassets.Bundle('js/app.js',
-                          filters='babeljs')
-
-env.register('js', js_lib, js_app, output='gen/pack.js')
-
-env.register('style', 'css/style.css', 'bootstrap4/css/bootstrap.css',
-             filters='cssmin', output='gen/pack.css')
-
-env.register('add_tags', 'js/add_tags.js',
-             filters='babeljs', output='gen/add_tags.js')
-env.register('matcher', 'js/matcher.js',
-             filters='babeljs', output='gen/matcher.js')
-env.register('node_is_in', 'js/node_is_in.js',
-             filters='babeljs', output='gen/node_is_in.js')
 
 @app.template_filter()
 @evalcontextfilter

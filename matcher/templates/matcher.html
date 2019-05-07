@@ -7,9 +7,8 @@
   </title>
   <link rel="shortcut icon" href="{{url_for('static', filename='img/favicon.png')}}" />
 
-  {% assets "style" %}
-  <link rel="stylesheet" href="{{ ASSET_URL }}">
-  {% endassets %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css')}}">
 
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.css') }}">
@@ -99,9 +98,10 @@ var empty_layers = [];
 <script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ws.js') }}"></script>
 
-  {% assets "js" %}
-  <script src="{{ ASSET_URL }}"></script>
-  {% endassets %}
+<script src="{{ url_for('static', filename='jquery/jquery.js')}}"></script>
+<script src="{{ url_for('static', filename='bootstrap4/js/bootstrap.js')}}"></script>
+<script src="{{ url_for('static', filename='js/app.js')}}"></script>
+
   {% block script %}{% endblock %}
 </body>
 </html>
