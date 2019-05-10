@@ -304,7 +304,7 @@ class Place(Base):
             name_parts = [n]
             prev_part = n
             for part in parts:
-                if part['type'] != 'city' and (part['name'] in prev_part or prev_part in part['name']):
+                if part['name'] == prev_part or (part['type'] != 'city' and (part['name'] in prev_part or prev_part in part['name'])):
                     continue
                 name_parts.append(part['name'])
                 prev_part = part['name']
