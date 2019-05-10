@@ -13,6 +13,13 @@
     "dist": 2
 },
 {
+    "cats": ["Hill forts"],
+    "tags": ["fortification_type=hill_fort", "historic=fort", "castle_type=fortress", "historic=archaeological_site", "site_type=fortification", "embankment=yes"],
+    "trim": ["fort"],
+    "wikidata": "Q744099",
+    "dist": 2
+},
+{
     "cats": ["Libraries by country"],
     "tags": ["amenity=library"],
     "trim": ["library"],
