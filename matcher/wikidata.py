@@ -1252,7 +1252,8 @@ class WikidataItem:
 
         location_names = set()
         located_in = [i['mainsnak']['datavalue']['value']['id']
-                      for i in self.entity['claims']['P131']]
+                      for i in self.entity['claims']['P131']
+                      if 'datavalue' in i['mainsnak']]
 
         # Parc naturel régional des marais du Cotentin et du Bessin (Q2138341)
         # is in more than 50 locations. The maximum entities in one request is 50.
