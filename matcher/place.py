@@ -286,10 +286,31 @@ class Place(Base):
             elif isinstance(self.address, dict):
                 address = self.address
 
-            if address.get('country_code') == 'us':
-                state = address.get('state')
-                if state and n != state:
-                    return n + ', ' + state
+            parts = []
+            country_code = address.get('country_code')
+            skip = {'country_code', 'postcode'}
+            if country_code in {'gb', 'us'} and 'state' in address:
+                skip.add('country')
+            if self.type in {'university', 'hospital', 'administrative'}:
+                skip |= {'path', 'footway', 'road', 'neighbourhood'}
+            if (country_code == 'gb' and
+                    self.category == 'boundary' and
+                    self.type in {'traditional', 'ceremonial'}):
+                parts = [a for a in self.address
+                         if a['type'] in {'state_district', 'state'}]
+            else:
+                parts = [a for a in self.address if a['type'] not in skip]
+
+            name_parts = [n]
+            prev_part = n
+            for part in parts:
+                if part['type'] != 'city' and (part['name'] in prev_part or prev_part in part['name']):
+                    continue
+                name_parts.append(part['name'])
+                prev_part = part['name']
+
+            n = ', '.join(name_parts)
+
         return 'the ' + n if (' of ' in n or 'national park' in n.lower()) else n
 
     @classmethod
