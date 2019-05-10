@@ -295,7 +295,7 @@ class Place(Base):
                 skip |= {'path', 'footway', 'road', 'neighbourhood'}
             if (country_code == 'gb' and
                     self.category == 'boundary' and
-                    self.type in {'traditional', 'ceremonial'}):
+                    self.type in {'traditional', 'ceremonial', 'historic'}):
                 parts = [a for a in self.address
                          if a['type'] in {'state_district', 'state'}]
             else:
