@@ -289,6 +289,8 @@ class Place(Base):
             parts = []
             country_code = address.get('country_code')
             skip = {'country_code', 'postcode'}
+            if country_code in {'us'}:
+                skip.add('county')
             if country_code in {'gb', 'us'} and 'state' in address:
                 skip.add('country')
             if self.type in {'university', 'hospital', 'administrative'}:
