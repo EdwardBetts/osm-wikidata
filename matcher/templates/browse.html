@@ -29,7 +29,11 @@
   </td>
   <td>
     {% for isa_qid in row.isa %}
-      {{ isa_map[isa_qid].label_and_qid() }}{% if not loop.last %}<br/>{% endif %}
+      {% set isa = isa_map[isa_qid] %}
+      <a href="https://wikidata.org/wiki/{{ isa_qid }}">
+        {{ isa.entity_label() }}
+      </a> ({{ isa_qid }})
+      {% if not loop.last %}<br/>{% endif %}
     {% endfor %}
   </td>
   <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'missing' }}</td>
