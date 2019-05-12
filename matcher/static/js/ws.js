@@ -6,6 +6,10 @@ var connection = new WebSocket(url);
 var messages = document.getElementById('messages');
 var current = document.getElementById('current');
 
+connection.onopen = function () {
+    console.log('websocket connected');
+};
+
 // Log errors
 connection.onerror = function (error) {
     console.log('WebSocket Error ' + error);
@@ -70,6 +74,9 @@ connection.onmessage = function (e) {
   }
 
   switch(data['type']) {
+    case 'ping':
+      console.log('ping');
+      break;
     case 'msg':
       post_message(data['msg']);
       break;
