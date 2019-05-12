@@ -6,10 +6,6 @@ var connection = new WebSocket(url);
 var messages = document.getElementById('messages');
 var current = document.getElementById('current');
 
-connection.onopen = function () {
-    connection.send('start');
-};
-
 // Log errors
 connection.onerror = function (error) {
     console.log('WebSocket Error ' + error);
@@ -55,6 +51,8 @@ function empty(data) {
 connection.onmessage = function (e) {
   var data = JSON.parse(e.data);
   var msg_type = data['type'];
+
+  connection.send('ack');
 
   var standard = {
     'already_done': 'error: place already ready',

@@ -7,6 +7,8 @@ from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
+from gevent.queue import JoinableQueue, Empty
+from gevent import spawn
 import requests
 import re
 import json
@@ -18,6 +20,8 @@ import shutil
 ws = Blueprint('ws', __name__)
 re_point = re.compile(r'^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
 
+PING_SECONDS = 10
+
 # TODO: different coloured icons
 # - has enwiki article
 # - match found
@@ -27,10 +31,10 @@ class VersionMismatch(Exception):
     pass
 
 class MatcherSocket(object):
-    def __init__(self, socket, place):
-        self.socket = socket
+    def __init__(self, send_queue, place):
         self.place = place
         self.t0 = time()
+        self.send_queue = send_queue
 
         start = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
         self.log_filename = '{}_{}.log'.format(place.place_id, start)
@@ -50,7 +54,7 @@ class MatcherSocket(object):
         json_msg = json.dumps(data)
         self.log.write(json_msg + "\n")
         self.log.flush()
-        return self.socket.send(json_msg)
+        self.send_queue.put(json_msg)
 
     def status(self, msg):
         if msg:
@@ -298,6 +302,7 @@ def get_pins(place):
         pins.append(pin)
     return pins
 
+# not used
 def replay_log(ws_sock, log_filename):
     prev_time = 0
     include_delay = True
@@ -350,7 +355,7 @@ def run_matcher(place, m):
         m.item_line('finished')
         place.state = 'ready'
         database.session.commit()
-        print('done')
+        print('no items found')
         m.send('done')
         m.mark_log_good()
 
@@ -425,7 +430,7 @@ def run_matcher(place, m):
     m.item_line('finished')
     place.state = 'ready'
     database.session.commit()
-    print('done')
+    print('matcher finished')
     m.send('done')
     m.mark_log_good()
 
@@ -441,6 +446,23 @@ def add_wikipedia_tag(root, m):
     tag = etree.Element('tag', k=key, v=value)
     root[0].append(tag)
 
+def send_loop(send_queue, sock):
+    while not sock.closed:
+        try:
+            item = send_queue.get(timeout=PING_SECONDS)
+        except Empty:
+            item = json.dumps({'type': 'ping'})
+
+        sock.send(item)
+        if sock.closed:
+            break
+        reply = sock.receive()
+        if reply is None:
+            break
+        if reply != 'ack':
+            print('reply: ', repr(reply))
+        assert reply == 'ack', 'No ack.'
+
 @ws.route('/websocket/matcher/<osm_type>/<int:osm_id>')
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
@@ -451,15 +473,15 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
     try:
         place = Place.get_by_osm(osm_type, osm_id)
-        if place.state == 'ready':
-            log_filename = utils.find_log_file(place)
-            if log_filename:
-                print('replaying log:', log_filename)
-                replay_log(ws_sock, log_filename)
-                return
 
-        m = MatcherSocket(ws_sock, place)
-        return run_matcher(place, m)
+        send_queue = JoinableQueue()
+        m = MatcherSocket(send_queue, place)
+        spawn(send_loop, send_queue, ws_sock)
+
+        run_matcher(place, m)
+
+        send_queue.join()
+
     except Exception as e:
         msg = type(e).__name__ + ': ' + str(e)
         print(msg)
@@ -467,10 +489,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
         g.user = current_user
 
-        if place:
-            name = place.display_name
-        else:
-            name = 'unknown place'
+        name = place.display_name if place else 'unknown place'
         info = f'''
 place: {name}
 https://openstreetmap.org/{osm_type}/{osm_id}
