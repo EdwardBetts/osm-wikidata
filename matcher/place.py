@@ -1212,14 +1212,14 @@ class Place(Base):
             chunks.append(geojson)
         return chunks
 
-    def wikidata_chunk_size(self):
+    def wikidata_chunk_size(self, size=22):
         if self.osm_type == 'node':
             return 1
 
         area = self.area_in_sq_km
-        if area < 5000 and not self.wikidata_query_timeout:
+        if area < 3000 and not self.wikidata_query_timeout:
             return 1
-        return utils.calc_chunk_size(area, size=32)
+        return utils.calc_chunk_size(area, size=size)
 
     def polygon_chunk(self, size=64):
         stmt = (session.query(func.ST_Dump(Place.geom.cast(Geometry())).label('x'))

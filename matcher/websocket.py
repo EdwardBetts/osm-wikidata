@@ -101,7 +101,8 @@ class MatcherSocket(object):
 
     def get_items_bbox(self):
         place = self.place
-        chunk_size = place.wikidata_chunk_size()
+        size = 22
+        chunk_size = place.wikidata_chunk_size(size=size)
         if chunk_size == 1:
             print('wikidata unchunked')
             try:
@@ -114,7 +115,7 @@ class MatcherSocket(object):
                 self.status(msg)
 
         if chunk_size != 1:
-            chunks = list(place.polygon_chunk(size=32))
+            chunks = list(place.polygon_chunk(size=size))
 
             msg = f'downloading wikidata in {len(chunks)} chunks'
             self.status(msg)
