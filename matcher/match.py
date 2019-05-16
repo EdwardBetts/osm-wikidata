@@ -559,7 +559,7 @@ def check_identifier(osm_tags, item_identifiers):
     return False
 
 
-re_range_start = re.compile(r'\d+ ?[-–] ?$')
+re_range_start = re.compile(r'\d+ ?([-–+&]|and) ?$')
 
 def check_for_address_in_extract(osm_tags, extract):
     if not extract or not has_address(osm_tags):

@@ -625,6 +625,29 @@ def test_check_for_address_in_extract():
                'Northwest in the Georgetown neighborhood.')
     assert match.check_for_address_in_extract(osm_tags, extract)
 
+    osm_tags = {
+        'addr:housenumber': '1264',
+        'addr:street': 'Wisconsin Avenue Northwest',
+        'amenity': 'pub',
+        'name': "Billy Martin's Tavern",
+    }
+
+    extract = ("Martin's is located at 1264 Wisconsin Avenue, NW in the " +
+               'Georgetown neighborhood of Washington D.C.')
+    assert match.check_for_address_in_extract(osm_tags, extract)
+
+    osm_tags = {
+        'height': '15.3',
+        'building': 'yes',
+        'addr:street': '2nd Avenue',
+        'addr:postcode': '10003',
+        'addr:housenumber': '137',
+    }
+
+    extract = ("two adjoining historic buildings located at 135 and 137 2nd " +
+               "Avenue in the East Village neighborhood of Manhattan")
+    assert not match.check_for_address_in_extract(osm_tags, extract)
+
 def test_check_for_address_range_in_extract():
     osm_tags = {
         'addr:street': 'Queen Square',
