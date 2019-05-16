@@ -570,6 +570,8 @@ def check_for_address_in_extract(osm_tags, extract):
         # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
 
         m = re.search(r'\b' + address, extract, re.I)
+        if not m:
+            m = re.search(r'\b' + address, extract.replace(',', ''), re.I)
         return bool(m) and not re_range_start.search(extract[:m.start()])
 
     if 'addr:housenumber' in osm_tags and 'addr:street' in osm_tags:

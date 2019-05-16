@@ -609,6 +609,22 @@ def test_check_for_address_in_extract():
     }
     assert match.check_for_address_in_extract(osm_tags, extract)
 
+    osm_tags = {
+        'name': 'Old Stone House',
+        'tourism': 'attraction',
+        'building': 'yes',
+        'historic': 'house',
+        'addr:city': 'Washington',
+        'addr:state': 'DC',
+        'addr:street': 'M Street Northwest',
+        'addr:country': 'US',
+        'addr:housenumber': '3051',
+    }
+
+    extract = ('Built in 1765, Old Stone House is located at 3051 M Street, ' +
+               'Northwest in the Georgetown neighborhood.')
+    assert match.check_for_address_in_extract(osm_tags, extract)
+
 def test_check_for_address_range_in_extract():
     osm_tags = {
         'addr:street': 'Queen Square',
