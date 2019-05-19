@@ -164,6 +164,7 @@ extra_keys = {
     'Q10283556': ['Tag:landuse=railway'],       # motive power depot
     'Q18674739': ['Tag:leisure=stadium'],       # event venue
     'Q20672229': ['Tag:historic=archaeological_site'],  # friary
+    'Q207694': ['Tag:museum=art'],              # art museum
 }
 
 # search for items in bounding box that have an English Wikipedia article
