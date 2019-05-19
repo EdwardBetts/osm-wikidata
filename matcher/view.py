@@ -80,6 +80,14 @@ disabled_tab_pages = [
     {'route': 'overpass_query', 'label': 'Overpass query'}
 ]
 
+@app.template_global()
+def set_url_args(**new_args):
+    args = request.view_args.copy()
+    args.update(request.args)
+    args.update(new_args)
+    args = {k: v for k, v in args.items() if v is not None}
+    return url_for(request.endpoint, **args)
+
 @app.template_filter()
 @evalcontextfilter
 def newline_br(eval_ctx, value):
@@ -1047,6 +1055,14 @@ def browse_page(item_id):
 
     place = Place.get_by_wikidata(qid)
     entity = wikidata.get_entity(qid)
+    lang = request.args.get('lang')
+    languages = wikidata.languages_from_entity(entity)
+
+    if languages and not any(l['code'] == 'en' for l in languages):
+        languages.append({'code': 'en', 'local': 'English', 'en': 'English'})
+
+    if not lang:
+        lang = languages[0]['code'] if languages else 'en'
 
     if not place:
         place = browse.place_from_qid(qid, entity=entity)
@@ -1055,7 +1071,7 @@ def browse_page(item_id):
     if place:
         name = place.name
 
-    rows = wikidata.next_level_places(qid, entity)
+    rows = wikidata.next_level_places(qid, entity, language=lang)
 
     if qid == 'Q21':
         types = wikidata.next_level_types(['Q48091'])
@@ -1101,29 +1117,25 @@ def browse_page(item_id):
     banner = wikidata.page_banner_from_entity(entity, thumbwidth=2048)
 
     if qid == 'Q21':
-        extra_type_label = 'Regions of England'
-
-        return render_template('browse.html',
-                               qid=qid,
-                               place=place,
-                               name=name,
-                               entity=entity,
-                               banner=banner,
-                               current_places=current_places,
-                               former_places=former_places,
-                               isa_map=isa_map,
-                               extra_type_label=extra_type_label,
-                               extra_type_places=extra_rows)
+        kwargs = {
+            'extra_type_label': 'Regions of England',
+            'extra_type_places': extra_rows,
+        }
+    else:
+        kwargs = {}
 
     return render_template('browse.html',
                            qid=qid,
                            place=place,
                            name=name,
                            entity=entity,
+                           uselang=lang,
                            banner=banner,
+                           languages=languages,
                            current_places=current_places,
                            former_places=former_places,
-                           isa_map=isa_map)
+                           isa_map=isa_map,
+                           **kwargs)
 
 @app.route('/matcher/Q<int:item_id>')
 def matcher_wikidata(item_id):

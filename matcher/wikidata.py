@@ -299,7 +299,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -317,7 +317,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -402,7 +402,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -426,7 +426,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -458,7 +458,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -513,7 +513,7 @@ WHERE {
   OPTIONAL { ?item wdt:P1082 ?pop } .
   OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
   OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
 GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
@@ -930,7 +930,7 @@ def isa_list(types):
         return '?item wdt:P31 wd:{} .'.format(types[0])
     return ' union '.join('{ ?item wdt:P31 wd:' + t + ' }' for t in types)
 
-def get_next_level_query(qid, entity, name=None):
+def get_next_level_query(qid, entity, language='en', name=None):
     claims = entity.get('claims', {})
 
     isa = {i['mainsnak']['datavalue']['value']['id']
@@ -963,11 +963,11 @@ def get_next_level_query(qid, entity, name=None):
     else:
         query = next_level_query
 
-    return query.replace('QID', qid)
+    return query.replace('QID', qid).replace('LANGUAGE', language)
 
-def next_level_places(qid, entity, query=None, name=None):
+def next_level_places(qid, entity, language=None, query=None, name=None):
     if not query:
-        query = get_next_level_query(qid, entity)
+        query = get_next_level_query(qid, entity, language=language)
 
     rows = []
     r = run_query(query, name=name, return_json=False, send_error_mail=True)
@@ -1140,6 +1140,42 @@ def country_iso_codes_from_qid(qid):
     if qid in extra:
         codes.append(extra[qid])
     return [i for i in codes if i is not None]
+
+def languages_from_entity(entity):
+    languages = languages_from_country_entity(entity)
+    if languages or 'P17' not in entity['claims']:
+        return languages
+
+    for c in entity['claims']['P17']:
+        country_qid = c['mainsnak']['datavalue']['value']['id']
+        country_entity = get_entity(country_qid)
+        languages = languages_from_country_entity(country_entity)
+        if languages:
+            return languages
+
+def languages_from_country_entity(entity):
+    if 'P37' not in entity['claims']:
+        return []
+
+    lang_qids = [lang['mainsnak']['datavalue']['value']['id']
+                 for lang in entity['claims']['P37']
+                 if 'datavalue' in lang['mainsnak']]
+
+    languages = []
+    for lang in get_entities(lang_qids):
+        claims = lang['claims']
+        l = {
+            'en': lang['labels']['en']['value'],
+        }
+        if 'P424' in claims:
+            p424 = claims['P424'][0]['mainsnak']['datavalue']['value']
+            l['code'] = p424
+            if p424 not in lang['labels']:
+                continue
+            l['local'] = lang['labels'][p424]['value']
+        languages.append(l)
+
+    return languages
 
 class WikidataItem:
     def __init__(self, qid, entity):
