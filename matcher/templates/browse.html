@@ -17,8 +17,8 @@
 <tbody>
 {% for row in rows %}
 <tr>
-  <td><a href="{{url_for(request.endpoint, item_id=row.item_id)}}">{{ row.label }}</a>
-    ({{ row.qid }})
+  <td><a href="{{set_url_args(item_id=row.item_id, lang=request.args.get('lang'))}}">
+      {{ row.label }}</a> ({{ row.qid }})
   </td>
   <td>
     {% if not row.area or row.area < config.PLACE_MAX_AREA %}
