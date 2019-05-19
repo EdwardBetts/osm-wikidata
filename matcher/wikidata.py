@@ -736,11 +736,14 @@ def page_banner_from_entity(entity, thumbwidth=None):
 
     return commons.image_detail(filename, thumbwidth=thumbwidth)
 
-def entity_label(entity):
-    if 'en' in entity['labels']:
+def entity_label(entity, language=None):
+    if language and language in entity['labels']:
+        return entity['labels'][language]['value']
+    if language != 'en' and 'en' in entity['labels']:
         return entity['labels']['en']['value']
-    else:  # pick a label at random
-        return list(entity['labels'].values())[0]['value']
+
+    # pick a label at random
+    return list(entity['labels'].values())[0]['value']
 
 def get_entities(ids):
     if not ids:
@@ -1157,9 +1160,15 @@ def languages_from_country_entity(entity):
     if 'P37' not in entity['claims']:
         return []
 
-    lang_qids = [lang['mainsnak']['datavalue']['value']['id']
-                 for lang in entity['claims']['P37']
-                 if 'datavalue' in lang['mainsnak']]
+    lang_qids = []
+    for lang in entity['claims']['P37']:
+        if 'datavalue' not in lang['mainsnak']:
+            continue
+        lang_qid = lang['mainsnak']['datavalue']['value']['id']
+        if lang_qid == 'Q727694':  # Standard Chinese
+            lang_qids += ['Q13414913', 'Q18130932']
+            continue
+        lang_qids.append(lang_qid)
 
     languages = []
     for lang in get_entities(lang_qids):
@@ -1167,12 +1176,14 @@ def languages_from_country_entity(entity):
         l = {
             'en': lang['labels']['en']['value'],
         }
-        if 'P424' in claims:
-            p424 = claims['P424'][0]['mainsnak']['datavalue']['value']
-            l['code'] = p424
-            if p424 not in lang['labels']:
-                continue
-            l['local'] = lang['labels'][p424]['value']
+        if 'P424' not in claims:
+            continue
+        p424 = claims['P424'][0]['mainsnak']['datavalue']['value']
+        l['code'] = p424
+        if p424 not in lang['labels']:
+            continue
+        l['local'] = lang['labels'][p424]['value']
+
         languages.append(l)
 
     return languages

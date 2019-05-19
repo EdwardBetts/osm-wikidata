@@ -1058,19 +1058,23 @@ def browse_page(item_id):
     lang = request.args.get('lang')
     languages = wikidata.languages_from_entity(entity)
 
-    if languages and not any(l['code'] == 'en' for l in languages):
+    if languages and not any(l.get('code') == 'en' for l in languages):
         languages.append({'code': 'en', 'local': 'English', 'en': 'English'})
 
+    if not lang and languages:
+        for l in languages:
+            if 'code' not in l:
+                continue
+            lang = l['code']
+            break
+
     if not lang:
-        lang = languages[0]['code'] if languages else 'en'
+        lang = 'en'
 
     if not place:
         place = browse.place_from_qid(qid, entity=entity)
-        if not place:
-            name = wikidata.entity_label(entity)
-    if place:
-        name = place.name
 
+    name = wikidata.entity_label(entity, language=lang)
     rows = wikidata.next_level_places(qid, entity, language=lang)
 
     if qid == 'Q21':

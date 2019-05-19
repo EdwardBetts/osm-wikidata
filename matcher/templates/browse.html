@@ -68,10 +68,10 @@
 {% if languages %}
   <li>Language:
   {% for lang in languages %}
-    <a href="{{ set_url_args(lang=lang.code) }}">
+    {% if lang.code %}<a href="{{ set_url_args(lang=lang.code) }}">{% endif %}
       {{- lang.local -}}
       {%- if lang.local != lang.en %} ({{ lang.en }}){%- endif -%}
-      </a>
+    {% if lang.code %}</a>{% endif %}
       {%- if lang.code == uselang %} [current]{% endif -%}
       {%- if loop.revindex == 2 %} or {% elif not loop.last %}, {% endif %}
   {%- endfor -%}
