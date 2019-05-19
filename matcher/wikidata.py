@@ -3,7 +3,7 @@ from urllib.parse import unquote
 from collections import defaultdict
 from .utils import chunk, drop_start, cache_filename
 from .language import get_language_label
-from . import user_agent_headers, overpass, mail, language, match, matcher
+from . import user_agent_headers, overpass, mail, language, match, matcher, commons
 import requests
 import requests.exceptions
 import os
@@ -725,6 +725,15 @@ def get_entity(qid):
         return None
     if 'missing' not in entity:
         return entity
+
+def page_banner_from_entity(entity, thumbwidth=None):
+    property_key = 'P948'
+    if property_key not in entity['claims']:
+        return
+
+    filename = entity['claims'][property_key][0]['mainsnak']['datavalue']['value']
+
+    return commons.image_detail(filename, thumbwidth=thumbwidth)
 
 def entity_label(entity):
     if 'en' in entity['labels']:

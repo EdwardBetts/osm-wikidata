@@ -1098,6 +1098,8 @@ def browse_page(item_id):
     current_places = [row for row in rows if not (set(row['isa']) & former_type)]
     former_places = [row for row in rows if set(row['isa']) & former_type]
 
+    banner = wikidata.page_banner_from_entity(entity, thumbwidth=2048)
+
     if qid == 'Q21':
         extra_type_label = 'Regions of England'
 
@@ -1105,6 +1107,8 @@ def browse_page(item_id):
                                qid=qid,
                                place=place,
                                name=name,
+                               entity=entity,
+                               banner=banner,
                                current_places=current_places,
                                former_places=former_places,
                                isa_map=isa_map,
@@ -1115,6 +1119,8 @@ def browse_page(item_id):
                            qid=qid,
                            place=place,
                            name=name,
+                           entity=entity,
+                           banner=banner,
                            current_places=current_places,
                            former_places=former_places,
                            isa_map=isa_map)
