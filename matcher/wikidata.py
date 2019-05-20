@@ -986,7 +986,9 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
 
         for located_in_qid in located_in:
             located_in_entity = get_entity(located_in_qid)
-            query = get_next_level_query(located_in_qid, located_in_entity)
+            query = get_next_level_query(located_in_qid,
+                                         located_in_entity,
+                                         language=language)
             r = run_query(query, return_json=False, send_error_mail=True)
             located_in_rows = r.json()['results']['bindings']
             query_rows += located_in_rows
@@ -1165,7 +1167,7 @@ def languages_from_country_entity(entity):
         if 'datavalue' not in lang['mainsnak']:
             continue
         lang_qid = lang['mainsnak']['datavalue']['value']['id']
-        if lang_qid == 'Q727694':  # Standard Chinese
+        if lang_qid in ('Q727694', 'Q3110592'):  # Chinese
             lang_qids += ['Q13414913', 'Q18130932']
             continue
         lang_qids.append(lang_qid)
