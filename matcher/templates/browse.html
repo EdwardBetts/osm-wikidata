@@ -68,7 +68,7 @@
 {% if languages %}
   <li>Language:
   {% for lang in languages %}
-    {% if lang.code %}<a href="{{ set_url_args(lang=lang.code) }}">{% endif %}
+    {% if lang.code %}<a href="{{ set_url_args(lang=lang.code) }} class="text-nowrap">{% endif %}
       {{- lang.local -}}
       {%- if lang.local != lang.en %} ({{ lang.en }}){%- endif -%}
     {% if lang.code %}</a>{% endif %}
