@@ -1081,8 +1081,9 @@ def browse_page(item_id):
         types = wikidata.next_level_types(['Q48091'])
         query = (wikidata.next_level_query2
                     .replace('TYPES', types)
-                    .replace('QID', qid))
-        extra_rows = wikidata.next_level_places(qid, entity, query=query)
+                    .replace('QID', qid)
+                    .replace('LANGUAGE', lang))
+        extra_rows = wikidata.next_level_places(qid, entity, language=lang, query=query)
     else:
         extra_rows = []
 
