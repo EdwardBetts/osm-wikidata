@@ -1007,8 +1007,17 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
             isa_qid = wd_uri_to_qid(url)
             if isa_qid not in isa_list:
                 isa_list.append(isa_qid)
+        pop = row.get('pop')
+        # https://www.wikidata.org/wiki/Q896427 has 'unknown value' for population
+        if pop:
+            try:
+                pop_value = int(pop['value'])
+            except ValueError:
+                pop_value = None
+        else:
+            pop_value = None
         i = {
-            'population': (int(row['pop']['value']) if row.get('pop') else None),
+            'population': pop_value,
             'area': (int(float(row['area']['value']) / 1e6) if row.get('area') else None),
             'label': row['itemLabel']['value'],
             'start': row['startLabel']['value'],
