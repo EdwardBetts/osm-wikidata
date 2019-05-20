@@ -1167,8 +1167,8 @@ def languages_from_country_entity(entity):
         if 'datavalue' not in lang['mainsnak']:
             continue
         lang_qid = lang['mainsnak']['datavalue']['value']['id']
-        if lang_qid in ('Q727694', 'Q3110592'):  # Chinese
-            lang_qids += ['Q13414913', 'Q18130932']
+        if lang_qid in ('Q7850', 'Q727694', 'Q3110592'):  # Chinese
+            lang_qids += ['Q7850', 'Q13414913', 'Q18130932']
             continue
         lang_qids.append(lang_qid)
 
