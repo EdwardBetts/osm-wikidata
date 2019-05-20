@@ -959,8 +959,12 @@ def get_next_level_query(qid, entity, language='en', name=None):
     elif qid in admin_area_map:
         types = next_level_types(admin_area_map[qid])
         query = next_level_query2.replace('TYPES', types)
-    elif 'P150' in claims:
+    elif 'P150' in claims:  # P150 = contains administrative territorial entity
         places = [i['mainsnak']['datavalue']['value']['id'] for i in claims['P150']]
+        query_places = ' '.join(f'(wd:{qid})' for qid in places)
+        query = next_level_query3.replace('PLACES', query_places)
+    elif 'Q82794' in isa and 'P527' in claims:
+        places = [i['mainsnak']['datavalue']['value']['id'] for i in claims['P527']]
         query_places = ' '.join(f'(wd:{qid})' for qid in places)
         query = next_level_query3.replace('PLACES', query_places)
     else:
