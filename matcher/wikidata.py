@@ -1174,6 +1174,8 @@ def languages_from_country_entity(entity):
         if lang_qid in ('Q7850', 'Q727694', 'Q3110592'):  # Chinese
             lang_qids += ['Q7850', 'Q13414913', 'Q18130932']
             continue
+        if lang_qid == 'Q18784':  # North Korean standard language
+            lang_qids += ['Q9176']
         lang_qids.append(lang_qid)
 
     languages = []
