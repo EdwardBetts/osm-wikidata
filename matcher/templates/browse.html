@@ -108,6 +108,38 @@
 {{ place_table(former_places) }}
 {% endif %}
 
+
+{% if timing %}
+<hr/>
+<p>
+Page took {{ '%.2f' | format(timing[-1][1]) }} seconds to render.
+<a data-toggle="collapse" href="#collapseTiming">[toggle details]</a>
+</p>
+
+<div class="collapse" id="collapseTiming">
+  <table class="table w-auto">
+    <thead>
+      <tr>
+        <th class="text-right">name</th>
+        <th class="text-right">since start</th>
+        <th class="text-right">delta</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for name, seconds in timing %}
+        <tr>
+          <td class="text-right">{{ name }}</td>
+          <td class="text-right">{{ '%.2f' | format(seconds) }}</td>
+          {% if not loop.first %}
+          <td class="text-right">{{ '%.2f' | format(seconds - loop.previtem[1]) }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 </div>
 </div>
 </div>
