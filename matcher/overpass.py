@@ -79,6 +79,8 @@ nwr(around:{radius},{lat},{lon})->.a;
 {tags}
 ) -> .b;
 (
+    nwr(area.a)["wikidata"];
+    nwr(area.a)["addr:housenumber"];
     nwr.b{name_filter};
     {oql_building}
 );
@@ -120,9 +122,11 @@ area({area_id}) -> .a;
 {tags}
 ) -> .b;
 (
-{self}
+    {self}
+    nwr(area.a)["wikidata"];
+    nwr(area.a)["addr:housenumber"];
     nwr.b{name_filter};
-{oql_building}
+    {oql_building}
 );
 (._;>;);
 out;'''
