@@ -1077,6 +1077,7 @@ def browse_page(item_id):
                 check_lastrevid.append((country_qid, country.rev_id))
             else:
                 country = WikidataItem.download(country_item_id)
+            items[country_qid] = country
 
             for lang_qid in wikidata_language.get_lang_qids(country.entity):
                 if lang_qid not in lang_qids:
