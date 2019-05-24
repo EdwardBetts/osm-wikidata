@@ -64,33 +64,23 @@ def oql_for_point(lat, lon, radius, tags, buildings):
     for key, values in sorted(group_tags(tags).items()):
         u = oql_point_element_filter(key, values, filters='.a')
         if u:
-            union += u
+            union.append(u)
     name_filter = get_name_filter(tags)
 
     if buildings:
-        oql_building = '''
-    node["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-    way["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-    rel["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-'''.strip().format(buildings, buildings, buildings)
+        oql_building = f'nwr(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
     else:
         oql_building = ''
 
     oql_template = '''
 [timeout:600][out:xml];
-(
-node(around:{radius},{lat},{lon});
-way(around:{radius},{lat},{lon});
-rel(around:{radius},{lat},{lon});
-) -> .a;
+nwr(around:{radius},{lat},{lon})->.a;
 (
 {tags}
 ) -> .b;
 (
-    node.b{name_filter};
-    way.b{name_filter};
-    rel.b{name_filter};
-{oql_building}
+    nwr.b{name_filter};
+    {oql_building}
 );
 (._;>;);
 out;'''
@@ -107,7 +97,7 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
     for key, values in sorted(group_tags(tags).items()):
         u = oql_element_filter(key, values)
         if u:
-            union += u
+            union.append(u)
 
     if overpass_type == 'node':
         area_id = None
@@ -117,11 +107,7 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
     name_filter = get_name_filter(tags)
 
     if buildings:
-        oql_building = '''
-    node(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-    way(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-    rel(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{}",i];
-'''.strip().format(buildings, buildings, buildings)
+        oql_building = f'nwr(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
     else:
         oql_building = ''
 
@@ -135,9 +121,7 @@ area({area_id}) -> .a;
 ) -> .b;
 (
 {self}
-    node.b{name_filter};
-    way.b{name_filter};
-    rel.b{name_filter};
+    nwr.b{name_filter};
 {oql_building}
 );
 (._;>;);
@@ -172,8 +156,8 @@ def oql_element_filter(key, values, filters='area.a'):
     else:
         tag = '"{}"'.format(key)
 
-    return ['{}({})[{}];'.format(t, filters, tag.replace('␣', ' '))
-            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
+    t = 'rel' if relation_only else 'nwr'
+    return '{}({})[{}];'.format(t, filters, tag.replace('␣', ' '))
 
 def oql_point_element_filter(key, values, filters=''):
     # optimisation: we only expect route, type or site on relations
