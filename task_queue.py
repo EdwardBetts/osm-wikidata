@@ -117,7 +117,11 @@ class Request:
 
     def new_place_request(self, msg):
         self.send_queue = Queue()
-        task_queue.put((msg['place']['area'], {
+        try:
+            area = float(msg['place']['area'])
+        except ValueError:
+            area = 0
+        task_queue.put((area, {
             'place': msg['place'],
             'address': self.address,
             'chunks': msg['chunks'],
