@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import true, false, or_
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy.ext.hybrid import hybrid_property
 from .database import session, get_tables, now_utc
-from . import wikidata, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
+from . import wikidata, wikidata_api, matcher, wikipedia, overpass, utils, nominatim, default_change_comments
 from collections import Counter
 from .overpass import oql_from_tag
 from time import time
@@ -396,7 +396,7 @@ class Place(Base):
         try:  # add items with the coordinates in the HQ field
             rows = wikidata.run_query(query_map['hq_enwiki'])
             items.update(wikidata.parse_enwiki_query(rows))
-        except wikidata.QueryError:
+        except wikidata_api.QueryError:
             pass  # HQ query timeout isn't fatal
 
         rows = wikidata.run_query(query_map['item_tag'])
@@ -405,7 +405,7 @@ class Place(Base):
         try:  # add items with the coordinates in the HQ field
             rows = wikidata.run_query(query_map['hq_item_tag'])
             wikidata.parse_item_tag_query(rows, items)
-        except wikidata.QueryError:
+        except wikidata_api.QueryError:
             pass  # HQ query timeout isn't fatal
 
         return items
@@ -823,7 +823,7 @@ class Place(Base):
         if debug:
             print('{} items'.format(len(items)))
 
-        for qid, entity in wikidata.entity_iter(items.keys(), debug=debug):
+        for qid, entity in wikidata_api.entity_iter(items.keys(), debug=debug):
             if debug:
                 print(qid)
             items[qid].entity = entity
@@ -1002,7 +1002,7 @@ class Place(Base):
             item = Item.query.get(qid[1:])
             item.isa = isa_objects
 
-        for qid, entity in wikidata.entity_iter(download_isa):
+        for qid, entity in wikidata_api.entity_iter(download_isa):
             isa_obj_map[qid].entity = entity
 
         session.commit()

@@ -1,18 +1,16 @@
 from flask import render_template_string, render_template
 from urllib.parse import unquote
 from collections import defaultdict
-from .utils import chunk, drop_start, cache_filename
+from .utils import drop_start, cache_filename
 from .language import get_language_label
+from .wikidata_api import QueryError, QueryTimeout, get_entity, get_entities
 from . import user_agent_headers, overpass, mail, language, match, matcher, commons
 import requests
 import requests.exceptions
 import os
 import json
-import simplejson.errors
-import time
 import re
 
-page_size = 50
 report_missing_values = False
 wd_entity = 'http://www.wikidata.org/entity/Q'
 enwiki = 'https://en.wikipedia.org/wiki/'
@@ -531,19 +529,6 @@ GROUP BY ?item ?itemLabel ?countryLabel
 
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
 
-class QueryError(Exception):
-    def __init__(self, query, r):
-        self.query = query
-        self.r = r
-
-class TooManyEntities(Exception):
-    pass
-
-class QueryTimeout(QueryError):
-    def __init__(self, query, r):
-        self.query = query
-        self.r = r
-
 def get_query(q, south, north, west, east):
     return render_template_string(q,
                                   south=south,
@@ -681,52 +666,6 @@ def parse_item_tag_query(rows, items):
                     items[qid][k] = row[k]['value']
         items[qid]['tags'].add(tag_or_key)
 
-def entity_iter(ids, debug=False):
-    attempts = 5
-
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-    params = {
-        'format': 'json',
-        'formatversion': 2,
-        'action': 'wbgetentities',
-    }
-    for num, cur in enumerate(chunk(ids, page_size)):
-        if debug:
-            print('entity_iter: {}/{}'.format(num * page_size, len(ids)))
-        params['ids'] = '|'.join(cur)
-        for attempt in range(attempts):
-            try:
-                r = requests.get(wikidata_url,
-                                 params=params,
-                                 headers=user_agent_headers())
-                break
-            except requests.exceptions.ChunkedEncodingError:
-                if attempt == attempts - 1:
-                    raise
-                time.sleep(1)
-        r.raise_for_status()
-        json_data = r.json()
-        for qid, entity in json_data['entities'].items():
-            yield qid, entity
-
-def get_entity(qid):
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-    params = {
-        'format': 'json',
-        'formatversion': 2,
-        'action': 'wbgetentities',
-        'ids': qid,
-    }
-    json_data = requests.get(wikidata_url,
-                             params=params,
-                             headers=user_agent_headers()).json()
-    try:
-        entity = list(json_data['entities'].values())[0]
-    except KeyError:
-        return None
-    if 'missing' not in entity:
-        return entity
-
 def page_banner_from_entity(entity, thumbwidth=None):
     property_key = 'P948'
     if property_key not in entity['claims']:
@@ -744,32 +683,6 @@ def entity_label(entity, language=None):
 
     # pick a label at random
     return list(entity['labels'].values())[0]['value']
-
-def get_entities(ids):
-    if not ids:
-        return []
-    if len(ids) > 50:
-        raise TooManyEntities
-    wikidata_url = 'https://www.wikidata.org/w/api.php'
-    params = {
-        'format': 'json',
-        'formatversion': 2,
-        'action': 'wbgetentities',
-        'ids': '|'.join(ids),
-    }
-    attempts = 5
-    for attempt in range(attempts):
-        try:  # retry if we get a ChunkedEncodingError
-            r = requests.get(wikidata_url, params=params,
-                                           headers=user_agent_headers())
-            try:
-                json_data = r.json()
-            except simplejson.errors.JSONDecodeError:
-                raise QueryError(params, r)
-            return list(json_data['entities'].values())
-        except requests.exceptions.ChunkedEncodingError:
-            if attempt == attempts - 1:
-                raise QueryError(params, r)
 
 def names_from_entity(entity, skip_lang=None):
     if not entity or 'labels' not in entity:
@@ -1158,54 +1071,6 @@ def country_iso_codes_from_qid(qid):
     if qid in extra:
         codes.append(extra[qid])
     return [i for i in codes if i is not None]
-
-def languages_from_entity(entity):
-    languages = languages_from_country_entity(entity)
-    if languages or 'P17' not in entity['claims']:
-        return languages
-
-    for c in entity['claims']['P17']:
-        country_qid = c['mainsnak']['datavalue']['value']['id']
-        country_entity = get_entity(country_qid)
-        languages = languages_from_country_entity(country_entity)
-        if languages:
-            return languages
-
-def languages_from_country_entity(entity):
-    if 'P37' not in entity['claims']:
-        return []
-
-    lang_qids = []
-    for lang in entity['claims']['P37']:
-        if 'datavalue' not in lang['mainsnak']:
-            continue
-        lang_qid = lang['mainsnak']['datavalue']['value']['id']
-        if lang_qid in ('Q7850', 'Q727694', 'Q3110592'):  # Chinese
-            lang_qids += ['Q7850', 'Q13414913', 'Q18130932']
-            continue
-        if lang_qid == 'Q18784':  # North Korean standard language
-            lang_qids += ['Q9176']
-        if lang_qid == 'Q33298':  # Filipino -> Tagalog
-            lang_qids += ['Q34057']
-        lang_qids.append(lang_qid)
-
-    languages = []
-    for lang in get_entities(lang_qids):
-        claims = lang['claims']
-        l = {
-            'en': lang['labels']['en']['value'],
-        }
-        if 'P424' not in claims:
-            continue
-        p424 = claims['P424'][0]['mainsnak']['datavalue']['value']
-        l['code'] = p424
-        if p424 not in lang['labels']:
-            continue
-        l['local'] = lang['labels'][p424]['value']
-
-        languages.append(l)
-
-    return languages
 
 class WikidataItem:
     def __init__(self, qid, entity):

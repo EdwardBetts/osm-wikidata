@@ -1,8 +1,9 @@
-from . import (database, nominatim, wikidata, matcher, user_agent_headers,
-               overpass, mail, browse, edit, utils)
+from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
+               user_agent_headers, overpass, mail, browse, edit, utils)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter)
+                    Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
+                    WikidataItem)
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -160,7 +161,7 @@ def requests_exception(e):
         raise e
     return 'OSM token request failed.'
 
-@app.errorhandler(wikidata.QueryError)
+@app.errorhandler(wikidata_api.QueryError)
 def query_error(e):
     tb = get_current_traceback()
     return render_template('show_query_error.html', e=e, tb=tb), 500
@@ -764,7 +765,7 @@ def refresh_index():
 @app.route('/instance_of/Q<item_id>')
 def instance_of_page(item_id):
     qid = f'Q{item_id}'
-    entity = wikidata.get_entity(qid)
+    entity = wikidata_api.get_entity(qid)
 
     en_label = entity['labels']['en']['value']
 
@@ -1050,13 +1051,59 @@ def api_item_names(wikidata_id):
 
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
+    timing = [('start', time())]
     qid = 'Q{}'.format(item_id)
     sort = request.args.get('sort')
-
     place = Place.get_by_wikidata(qid)
-    entity = wikidata.get_entity(qid)
+    timing.append(('get place done', time()))
+
+    check_lastrevid = []
+    item = WikidataItem.query.get(item_id)
+    items = {}
+    if item:
+        check_lastrevid.append((qid, item.rev_id))
+    else:
+        item = WikidataItem.download(item_id)
+    items[qid] = item
+
+    lang_qids = wikidata_language.get_lang_qids(item.entity)
+
+    if not lang_qids and 'P17' in item.entity['claims']:
+        for c in item.entity['claims']['P17']:
+            country_qid = c['mainsnak']['datavalue']['value']['id']
+            country_item_id = c['mainsnak']['datavalue']['value']['numeric-id']
+            country = WikidataItem.query.get(country_item_id)
+            if country:
+                check_lastrevid.append((country_qid, country.rev_id))
+            else:
+                country = WikidataItem.download(country_item_id)
+
+            for lang_qid in wikidata_language.get_lang_qids(country.entity):
+                if lang_qid not in lang_qids:
+                    lang_qids.append(lang_qid)
+
+    for lang_qid in lang_qids:
+        lang_item_id = int(lang_qid[1:])
+        lang_item = WikidataItem.query.get(lang_item_id)
+        if lang_item:
+            check_lastrevid.append((lang_qid, lang_item.rev_id))
+        else:
+            lang_item = WikidataItem.download(lang_item_id)
+        items[lang_qid] = lang_item
+
+    if check_lastrevid:
+        check_qids = [check_qid for check_qid, rev_id in check_lastrevid]
+        cur_rev_ids = wikidata_api.get_lastrevids(check_qids)
+        for check_qid, rev_id in check_lastrevid:
+            if cur_rev_ids[check_qid] > rev_id:
+                items[check_qid].update()
+
+    lang_items = (items[lang_qid].entity for lang_qid in lang_qids)
+    languages = wikidata_language.process_language_entities(lang_items)
+
+    entity = item.entity
+    timing.append(('get entity done', time()))
     lang = request.args.get('lang')
-    languages = wikidata.languages_from_entity(entity)
 
     if languages and not any(l.get('code') == 'en' for l in languages):
         languages.append({'code': 'en', 'local': 'English', 'en': 'English'})
@@ -1076,6 +1123,7 @@ def browse_page(item_id):
 
     name = wikidata.entity_label(entity, language=lang)
     rows = wikidata.next_level_places(qid, entity, language=lang)
+    timing.append(('next level places done', time()))
 
     if qid == 'Q21':
         types = wikidata.next_level_types(['Q48091'])
@@ -1084,9 +1132,15 @@ def browse_page(item_id):
                     .replace('QID', qid)
                     .replace('LANGUAGE', lang))
         extra_rows = wikidata.next_level_places(qid, entity, language=lang, query=query)
+        kwargs = {
+            'extra_type_label': 'Regions of England',
+            'extra_type_places': extra_rows,
+        }
     else:
         extra_rows = []
+        kwargs = {}
 
+    timing.append(('start isa map', time()))
     isa_map = {}
     download_isa = set()
     for row in rows + extra_rows:
@@ -1099,7 +1153,7 @@ def browse_page(item_id):
                 continue
             download_isa.add(isa_qid)
 
-    for isa_qid, entity in wikidata.entity_iter(download_isa):
+    for isa_qid, entity in wikidata_api.entity_iter(download_isa):
         if isa_map[isa_qid]:
             isa_map[isa_qid].entity = entity
             continue
@@ -1108,6 +1162,7 @@ def browse_page(item_id):
         database.session.add(isa_obj)
     if download_isa:
         database.session.commit()
+    timing.append(('isa map done', time()))
 
     if sort and sort in {'area', 'population'}:
         rows.sort(key=lambda i: i[sort] if i[sort] else 0)
@@ -1119,16 +1174,14 @@ def browse_page(item_id):
     current_places = [row for row in rows if not (set(row['isa']) & former_type)]
     former_places = [row for row in rows if set(row['isa']) & former_type]
 
-    banner = wikidata.page_banner_from_entity(entity, thumbwidth=2048)
+    timing.append(('start get banner', time()))
+    banner = wikidata.page_banner_from_entity(entity)
+    timing.append(('get banner done', time()))
 
-    if qid == 'Q21':
-        kwargs = {
-            'extra_type_label': 'Regions of England',
-            'extra_type_places': extra_rows,
-        }
-    else:
-        kwargs = {}
+    start = timing[0][1]
+    timing = [(name, t - start) for name, t in timing]
 
+    database.session.commit()
     return render_template('browse.html',
                            qid=qid,
                            place=place,
@@ -1140,6 +1193,7 @@ def browse_page(item_id):
                            current_places=current_places,
                            former_places=former_places,
                            isa_map=isa_map,
+                           timing=timing,
                            **kwargs)
 
 @app.route('/matcher/Q<int:item_id>')
@@ -1149,7 +1203,7 @@ def matcher_wikidata(item_id):
     if place:  # already in the database
         return redirect(place.matcher_progress_url())
 
-    entity = wikidata.get_entity(qid)
+    entity = wikidata_api.get_entity(qid)
     q = browse.qid_to_search_string(qid, entity)
     place = browse.place_from_qid(qid, q=q)
     # search using wikidata query and nominatim
@@ -1321,7 +1375,7 @@ def item_page(wikidata_id):
         item.set_country_code()
     try:
         return build_item_page(wikidata_id, item)
-    except wikidata.QueryError:
+    except wikidata_api.QueryError:
         return render_template('error_page.html',
                                message="query.wikidata.org isn't working")
 

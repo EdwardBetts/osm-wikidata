@@ -12,10 +12,11 @@ from sqlalchemy.orm import relationship, backref, column_property
 from sqlalchemy.sql.expression import cast
 from .database import session, now_utc
 from flask_login import UserMixin
-from . import wikidata, matcher, match, wikipedia, country_units, utils, mail
+from . import wikidata, wikidata_api, matcher, match, wikipedia, country_units, utils, mail
 from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
+from time import time
 
 import re
 
@@ -1075,3 +1076,64 @@ class SpaceWarning(Base):
     @classmethod
     def most_recent(cls):
         return cls.query.order_by(cls.timestamp.desc()).first()
+
+class WikidataItem(Base):
+    __tablename__ = 'wikidata_item'
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
+    qid = column_property('Q' + cast(item_id, String))
+    rev_id = Column(Integer, nullable=False)
+    entity = Column(postgresql.JSON)
+
+    @classmethod
+    def get_and_update(cls, item_id):
+        qid = 'Q{}'.format(item_id)
+
+        existing = cls.query.get(item_id)
+        if existing:
+            print('found existing')
+            t0 = time()
+            lastrevid = wikidata_api.get_lastrevid(qid)
+            print(f'get_lastrevid took: {time()-t0:.2f} seconds')
+            print((lastrevid, existing.rev_id, lastrevid == existing.rev_id))
+            if lastrevid != existing.rev_id:
+                entity = wikidata_api.get_entity(qid)
+                existing.entity = entity
+                existing.rev_id = entity['lastrevid']
+            return existing
+
+        entity = wikidata_api.get_entity(qid)
+        item = cls(item_id=item_id,
+                   rev_id=entity['lastrevid'],
+                   entity=entity)
+        session.add(item)
+        return item
+
+    def update(self):
+        entity = wikidata_api.get_entity(self.qid)
+        self.entity = entity
+        self.rev_id = entity['lastrevid']
+
+    @classmethod
+    def download(cls, item_id):
+        qid = f'Q{item_id}'
+        entity = wikidata_api.get_entity(qid)
+        item = cls(item_id=item_id,
+                   rev_id=entity['lastrevid'],
+                   entity=entity)
+        session.add(item)
+        return item
+
+    @classmethod
+    def get(cls, item_id):
+        qid = 'Q{}'.format(item_id)
+
+        existing = cls.query.get(item_id)
+        if existing:
+            return existing
+
+        entity = wikidata_api.get_entity(qid)
+        item = cls(item_id=item_id,
+                   rev_id=entity['lastrevid'],
+                   entity=entity)
+        session.add(item)
+        return item

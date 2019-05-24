@@ -1,4 +1,4 @@
-from . import database, nominatim, wikidata
+from . import database, nominatim, wikidata, wikidata_api
 from .place import Place
 
 def place_from_qid(qid, q=None, entity=None):
@@ -9,7 +9,7 @@ def place_from_qid(qid, q=None, entity=None):
 def hit_from_qid(qid, q=None, entity=None):
     if q is None:
         if entity is None:
-            entity = wikidata.get_entity(qid)
+            entity = wikidata_api.get_entity(qid)
         q = qid_to_search_string(qid, entity)
 
     hits = nominatim.lookup(q=q)

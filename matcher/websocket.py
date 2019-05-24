@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, g
 from time import time, sleep
 from .place import Place, bbox_chunk
-from . import wikipedia, database, wikidata, netstring, utils, edit, mail
+from . import wikipedia, database, wikidata, wikidata_api, netstring, utils, edit, mail
 from flask_login import current_user
 from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
@@ -91,7 +91,7 @@ class MatcherSocket(object):
             self.status(msg)
             try:
                 items.update(self.place.bbox_wikidata_items(bbox))
-            except wikidata.QueryTimeout:
+            except wikidata_api.QueryTimeout:
                 msg = f'wikidata timeout, splitting chunk {num} info four'
                 print(msg)
                 self.status(msg)
@@ -107,7 +107,7 @@ class MatcherSocket(object):
             print('wikidata unchunked')
             try:
                 wikidata_items = place.bbox_wikidata_items()
-            except wikidata.QueryTimeout:
+            except wikidata_api.QueryTimeout:
                 place.wikidata_query_timeout = True
                 database.session.commit()
                 chunk_size = 2
@@ -238,7 +238,7 @@ class MatcherSocket(object):
 
         print('getting wikidata item details')
         self.status('getting wikidata item details')
-        for qid, entity in wikidata.entity_iter(db_items.keys()):
+        for qid, entity in wikidata_api.entity_iter(db_items.keys()):
             item = db_items[qid]
             item.entity = entity
             msg = 'load entity: ' + item.label_and_qid()
@@ -337,7 +337,7 @@ def run_matcher(place, m):
         print('get items')
         try:
             m.get_items()
-        except wikidata.QueryError:
+        except wikidata_api.QueryError:
             print('wikidata query error')
             m.error('wikidata query error')
             return
