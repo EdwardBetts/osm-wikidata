@@ -490,8 +490,14 @@ def candidates(osm_type, osm_id):
     else:
         items = place.items_with_candidates()
 
+    if place.existing_wikidata:
+        existing = {qid: set(tuple(i) for i in osm_list)
+                    for qid, osm_list in place.existing_wikidata.items()}
+    else:
+        existing = {}
+
     items = [item for item in items
-             if all('wikidata' not in c.tags for c in item.candidates)]
+             if item.qid not in existing and all('wikidata' not in c.tags for c in item.candidates)]
 
     need_commit = False
     for item in items:

@@ -104,6 +104,7 @@ class Place(Base):
     item_types_retrieved = Column(Boolean, default=False)
     index_hide = Column(Boolean, default=False)
     overpass_is_in = deferred(Column(JSON))
+    existing_wikidata = deferred(Column(JSON))
 
     area = column_property(func.ST_Area(geom))
     geometry_type = column_property(func.GeometryType(geom))
@@ -916,6 +917,8 @@ class Place(Base):
                 pass
         conn = session.bind.raw_connection()
         cur = conn.cursor()
+
+        self.existing_wikidata = matcher.get_existing(cur, self.prefix)
 
         place_items = self.matcher_query()
         total = place_items.count()
