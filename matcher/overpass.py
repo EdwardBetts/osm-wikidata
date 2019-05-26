@@ -68,7 +68,7 @@ def oql_for_point(lat, lon, radius, tags, buildings):
     name_filter = get_name_filter(tags)
 
     if buildings:
-        oql_building = f'nwr(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
+        oql_building = f'nwr.a["building"][~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
     else:
         oql_building = ''
 
@@ -79,8 +79,8 @@ nwr(around:{radius},{lat},{lon})->.a;
 {tags}
 ) -> .b;
 (
-    nwr(area.a)["wikidata"];
-    nwr(area.a)["addr:housenumber"];
+    nwr.a["wikidata"];
+    nwr.a["addr:housenumber"];
     nwr.b{name_filter};
     {oql_building}
 );
@@ -175,8 +175,8 @@ def oql_point_element_filter(key, values, filters=''):
     else:
         tag = '"{}"'.format(key)
 
-    return ['{}{}[{}];'.format(t, filters, tag.replace('␣', ' '))
-            for t in (('rel',) if relation_only else ('node', 'way', 'rel'))]
+    t = 'rel' if relation_only else 'nwr'
+    return '{}{}[{}];'.format(t, filters, tag.replace('␣', ' '))
 
 def oql_from_tag(tag, filters='area.a'):
     if tag == 'highway':
