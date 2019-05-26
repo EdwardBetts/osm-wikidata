@@ -163,6 +163,8 @@ extra_keys = {
     'Q18674739': ['Tag:leisure=stadium'],       # event venue
     'Q20672229': ['Tag:historic=archaeological_site'],  # friary
     'Q207694': ['Tag:museum=art'],              # art museum
+    'Q738570': ['Tag:place=suburb'],            # central business district
+    'Q1133961': ['Tag:place=suburb'],           # commercial district
 }
 
 # search for items in bounding box that have an English Wikipedia article
