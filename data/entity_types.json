@@ -126,6 +126,15 @@
     "dist": 5
 },
 {
+    "cats": ["Central business districts"],
+    "tags": ["shop=mall", "site=mall", "type=site", "building=mall", "landuse=commercial",
+             "landuse=retail", "admin_level", "boundary=administrative", "place=neighbourhood", "place=suburb"],
+    "trim": ["mall", "shopping mall", "shopping centre", "shopping center", "center", "centre", "outlet shopping", "outlet centre"],
+    "check_housename": false,
+    "wikidata": "Q6619632",
+    "dist": 2
+},
+{
     "cats": ["Castles by country"],
     "tags": ["historic=castle", "building=castle", "tourism=attraction",
              "historic=ruins", "historic=tower_house", "building=ruins",
