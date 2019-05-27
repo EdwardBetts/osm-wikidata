@@ -1468,6 +1468,18 @@ def delete_place(place_id):
     to_next = request.args.get('next', 'space')
     return redirect(url_for(to_next))
 
+@app.route('/delete', methods=['POST', 'DELETE'])
+@login_required
+def delete_places():
+    place_list = request.form.getlist('place')
+    for place_id in place_list:
+        place = Place.query.get(place_id)
+        place.clean_up()
+
+    flash(f'{len(place_list)} places deleted')
+    to_next = request.form.get('next', 'db_space')
+    return redirect(url_for(to_next))
+
 @app.route('/user/<path:username>')
 def user_page(username):
     user = User.query.filter(User.username.ilike(username)).one_or_none()

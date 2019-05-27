@@ -16,30 +16,39 @@
 
     </p>
 
+    <form method="POST" action="{{ url_for('delete_places', next=request.endpoint) }}">
+    <input type="submit" class="btn btn-danger btn-sm" value="delete selected">
     <table class="table">
     {% for place in items %}
-    <tr>
-        <td class="text-nowrap text-right">
-        {% if place.size %}
-            {{ place.size | filesizeformat }}
+      {% set place_id = place.place_id %}
+      <tr onclick="toggle_checkbox({{place_id}})">
+      <td><input id="delete_{{ place_id }}" name="place" type="checkbox" value="{{ place_id }}"></td>
+      <td class="text-nowrap text-right">
+      {% if place.size %}
+          {{ place.size | filesizeformat }}
+      {% endif %}
+      </td>
+      <td>
+        <a href="{{ place.candidates_url }}">{{ place.display_name.replace(';', '; ') }}</a>
+        {% if place.recent %}
+          ({{ place.recent.date() }})
         {% endif %}
-        </td>
-        <td>
-          <a href="{{ place.candidates_url }}">{{ place.display_name.replace(';', '; ') }}</a>
-          {% if place.recent %}
-            ({{ place.recent.date() }})
-          {% endif %}
-        </td>
-        <td>{{ place.state }}</td>
-        <td>{{ place.changesets }}</td>
-        <td>
-        <form method="POST" action="{{ url_for('delete_place', place_id=place.place_id, next=request.endpoint) }}">
-            <input type="submit" class="btn btn-danger btn-sm" value="delete">
-        </form>
-        </td>
+      </td>
+      <td>{{ place.state }}</td>
+      <td>{{ place.changesets }}</td>
     </tr>
     {% endfor %}
     </table>
+    <input type="submit" class="btn btn-danger btn-sm" value="delete selected">
+    </form>
 
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+function toggle_checkbox(place_id) {
+  document.getElementById('delete_' + place_id).checked ^= 1;
+}
+</script>
 {% endblock %}
