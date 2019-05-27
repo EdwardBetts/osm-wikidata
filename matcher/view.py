@@ -10,7 +10,7 @@ from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response
+from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response, session
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
@@ -745,6 +745,8 @@ def search_results():
     if m:
         return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
 
+    redirect_on_single = session.get('redirect_on_single', False)
+
     try:
         results = nominatim.lookup(q)
     except nominatim.SearchError:
@@ -752,6 +754,15 @@ def search_results():
         return render_template('error_page.html', message=message)
 
     update_search_results(results)
+
+    if redirect_on_single:
+        session['redirect_on_single'] = False
+        hits = [hit for hit in results if hit['osm_type'] != 'node']
+        if len(hits) == 1:
+            hit = hits[0]
+            place = Place.get_or_abort(hit['osm_type'], hit['osm_id'])
+            if place:
+                return redirect_to_matcher(place)
 
     for hit in results:
         add_hit_place_detail(hit)
@@ -1214,16 +1225,18 @@ def matcher_wikidata(item_id):
     if place:  # already in the database
         if place.osm_type == 'node':
             q = get_search_string(qid)
+            session['redirect_on_single'] = True
             return redirect(url_for('search_results', q=q))
-        return redirect(place.matcher_progress_url())
+        return redirect_to_matcher(place)
 
     q = get_search_string(qid)
     place = browse.place_from_qid(qid, q=q)
     # search using wikidata query and nominatim
     if place and place.osm_type != 'node':
-        return redirect(place.matcher_progress_url())
+        return redirect_to_matcher(place)
 
     # give up and redirect to search page
+    session['redirect_on_single'] = True
     return redirect(url_for('search_results', q=q))
 
 @region.cache_on_arguments()
