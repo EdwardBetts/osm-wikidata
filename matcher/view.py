@@ -1205,13 +1205,19 @@ def browse_page(item_id):
 
 @app.route('/matcher/Q<int:item_id>')
 def matcher_wikidata(item_id):
+    def get_search_string(qid):
+        entity = wikidata_api.get_entity(qid)
+        return browse.qid_to_search_string(qid, entity)
+
     qid = 'Q{}'.format(item_id)
     place = Place.get_by_wikidata(qid)
     if place:  # already in the database
+        if place.osm_type == 'node':
+            q = get_search_string(qid)
+            return redirect(url_for('search_results', q=q))
         return redirect(place.matcher_progress_url())
 
-    entity = wikidata_api.get_entity(qid)
-    q = browse.qid_to_search_string(qid, entity)
+    q = get_search_string(qid)
     place = browse.place_from_qid(qid, q=q)
     # search using wikidata query and nominatim
     if place and place.osm_type != 'node':
