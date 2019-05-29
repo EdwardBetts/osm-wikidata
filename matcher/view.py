@@ -1065,6 +1065,10 @@ def api_item_names(wikidata_id):
                      osm_url=url,
                      **data)
 
+@app.route('/browse/')
+def browse_index_slash():
+    return redirect(url_for('browse_index'))
+
 @app.route('/browse')
 def browse_index():
     query = wikidata.continents_with_country_count_query
