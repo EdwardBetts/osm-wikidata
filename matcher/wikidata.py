@@ -529,6 +529,17 @@ SELECT DISTINCT ?item ?itemLabel ?countryLabel (SAMPLE(?location) AS ?location) 
 GROUP BY ?item ?itemLabel ?countryLabel
 '''
 
+continents_with_country_count_query = '''
+SELECT ?continent ?continentLabel ?banner (COUNT(?country) AS ?count) WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  ?country wdt:P30 ?continent .
+  ?country wdt:P31 wd:Q6256 .
+  ?continent wdt:P948 ?banner
+}
+GROUP BY ?continent ?continentLabel ?banner
+ORDER BY ?continentLabel
+'''
+
 wikidata_query_api_url = 'https://query.wikidata.org/bigdata/namespace/wdq/sparql'
 
 def get_query(q, south, north, west, east):
