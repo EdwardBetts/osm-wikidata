@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Browse{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+  <h1>Continents</h1>
+
+  {% for item in items %}
+    {% set browse_url = url_for('browse_page', item_id=item.qid[1:]) %}
+    <div>
+      <h4>
+        <a href="{{ browse_url }}">{{ item.label }}</a> <small>({{ item.qid }})</small></h4>
+      <a href="{{ browse_url }}"><img src="{{ item.banner_url }}" class="img-fluid w-100" /></a>
+      <p>{{ item.country_count }} countries -
+      <a href="https://wikidata.org/wiki/{{ item.qid }}">view on Wikidata</a>
+    </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
-               user_agent_headers, overpass, mail, browse, edit, utils)
+               user_agent_headers, overpass, mail, browse, edit, utils, commons)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
@@ -1064,6 +1064,36 @@ def api_item_names(wikidata_id):
                      osm_id=osm_id,
                      osm_url=url,
                      **data)
+
+@app.route('/browse')
+def browse_index():
+    query = wikidata.continents_with_country_count_query
+    rows = wikidata.run_query(query)
+    items = []
+    banner_filenames = []
+    for row in rows:
+        item = {
+            'label': row['continentLabel']['value'],
+            'country_count': row['count']['value'],
+            'qid': wikidata.wd_to_qid(row['continent']),
+        }
+        try:
+            filename = commons.commons_uri_to_filename(row['banner']['value'])
+            item['banner'] = filename
+            banner_filenames.append(filename)
+        except KeyError:
+            pass
+        items.append(item)
+        row['item'] = item
+    images = {image['name']: image
+              for image in commons.image_detail(banner_filenames)}
+    for item in items:
+        banner = item.get('banner')
+        if not banner:
+            continue
+        item['banner_url'] = images[banner]['image']
+    return render_template('browse_index.html',
+                           items=items)
 
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
