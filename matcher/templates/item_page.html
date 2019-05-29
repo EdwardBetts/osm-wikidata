@@ -43,7 +43,7 @@
 <div class="m-3">
   <div class="container">
     {% include "flash_msg.html" %}
-    {% set debug = current_user.is_authenticated and current_user.is_admin %}
+    {% set debug = config.SHOW_MATCH_DEBUG or (not config.DISABLE_SOCIAL and current_user.is_authenticated and current_user.is_admin) %}
 
     <h1>{{ label }} ({{ qid }})</h1>
     <ul>
@@ -131,7 +131,11 @@
     {% if item %}
 
       {% if not g.user.is_authenticated %}
-        <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+        {% if config.DISABLE_SOCIAL %}
+          <p>login to upload wikidata tags</p>
+        {% else %}
+          <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+        {% endif %}
       {% endif %}
 
       {% set candidate_count = item.candidates.count() %}

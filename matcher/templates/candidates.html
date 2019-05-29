@@ -392,7 +392,11 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <p>{{ refresh_button(place) }}</p>
 
     {% if filter_okay and not upload_okay %}
-      <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+      {% if config.DISABLE_SOCIAL %}
+        <p>login to upload wikidata tags</p>
+      {% else %}
+        <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+      {% endif %}
     {% endif %}
 
     {% if upload_okay %}
