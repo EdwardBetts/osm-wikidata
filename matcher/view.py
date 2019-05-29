@@ -15,7 +15,6 @@ from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
