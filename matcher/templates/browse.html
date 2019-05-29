@@ -3,6 +3,19 @@
 
 {% block title %}Browse {{ name }} ({{ qid }}){% endblock %}
 
+{%- macro sort_link(key, label) -%}
+{%- if request.args.sort == key -%}
+  <b>{{ label }}</b>
+{%- else -%}
+  <a href="{{ set_url_args(sort=key) }}">{{ label }}</a>
+{%- endif -%}
+{%- endmacro -%}
+
+{% macro lang_label(lang) %}
+{{- lang.local -}}
+{%- if lang.local != lang.en %} ({{ lang.en }}){%- endif -%}
+{% endmacro %}
+
 {% macro place_table(rows) %}
 <table class="table">
 <thead>
@@ -68,12 +81,14 @@
 {% if languages %}
   <li>Language:
   {% for lang in languages %}
-    {% if lang.code %}<a href="{{ set_url_args(lang=lang.code) }}" class="text-nowrap">{% endif %}
-      {{- lang.local -}}
-      {%- if lang.local != lang.en %} ({{ lang.en }}){%- endif -%}
-    {% if lang.code %}</a>{% endif %}
-      {%- if lang.code == uselang %} [current]{% endif -%}
-      {%- if loop.revindex == 2 %} or {% elif not loop.last %}, {% endif %}
+    {%- if lang.code == uselang -%}
+      <b>{{ lang_label(lang) }}</b>
+    {%- elif lang.code -%}
+      <a href="{{ set_url_args(lang=lang.code) }}" class="text-nowrap">{{ lang_label(lang) }}</a>
+    {%- else -%}
+      {{- lang_label(lang) -}}
+    {%- endif -%}
+    {%- if loop.revindex == 2 %} or {% elif not loop.last %}, {% endif %}
   {%- endfor -%}
   </li>
 {% endif %}
@@ -81,11 +96,10 @@
 {% if current_places %}
 
   <li>Sort by:
-    <a href="{{ set_url_args(sort='area') }}">area</a>
-    {% if request.args.sort == 'area' %}[current]{% endif %}
-    or
-    <a href="{{ set_url_args(sort='population') }}">population</a>
-    {% if request.args.sort == 'population' %}[current]{% endif %}
+    {{ sort_link('label', 'name') -}},
+    {{ sort_link('area', 'area') -}},
+    {{ sort_link('population', 'population') }} or
+    {{ sort_link('qid', 'Wikidata ID') }}
   </li>
 {% endif %}
 
