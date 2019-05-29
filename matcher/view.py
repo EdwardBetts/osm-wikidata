@@ -1182,7 +1182,7 @@ def browse_page(item_id):
         database.session.commit()
     timing.append(('isa map done', time()))
 
-    if sort and sort in {'area', 'population'}:
+    if sort and sort in {'area', 'population', 'qid', 'label'}:
         rows.sort(key=lambda i: i[sort] if i[sort] else 0)
 
     former_type = {isa_qid for isa_qid, isa in isa_map.items()
