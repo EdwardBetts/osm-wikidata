@@ -1066,10 +1066,6 @@ def api_item_names(wikidata_id):
                      **data)
 
 @app.route('/browse/')
-def browse_index_slash():
-    return redirect(url_for('browse_index'))
-
-@app.route('/browse')
 def browse_index():
     query = wikidata.continents_with_country_count_query
     rows = wikidata.run_query(query)
