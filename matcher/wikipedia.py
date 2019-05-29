@@ -76,7 +76,7 @@ def html_names(article):
     # <small title="English pronunciation respelling"><i><b>MAWD</b>-lin</i></small>
     names = [b.text_content()
              for b in root.xpath('.//b[not(ancestor::small)][not(ancestor::ul)]')]
-    return [n for n in names if len(n) > 1]
+    return [n.strip() for n in names if len(n) > 1]
 
 def extracts_query(titles, language_code='en'):
     params = {
