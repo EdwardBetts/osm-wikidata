@@ -1086,6 +1086,8 @@ def browse_page(item_id):
 
     if not lang_qids and 'P17' in item.entity['claims']:
         for c in item.entity['claims']['P17']:
+            if 'datavalue' not in c['mainsnak']:
+                continue
             country_qid = c['mainsnak']['datavalue']['value']['id']
             country_item_id = c['mainsnak']['datavalue']['value']['numeric-id']
             country = WikidataItem.query.get(country_item_id)
