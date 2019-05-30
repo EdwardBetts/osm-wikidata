@@ -362,15 +362,6 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     #}
   {% endif %}
 
-
-  {% if not overpass_error and candidates %}
-    {% if multiple_only %}
-      <p>[Filter: <b>only multiple</b> <a href="{{ place.candidates_url() }}">(remove)</a>]
-    {% else %}
-      <p>[Filter: <a href="{{ place.candidates_url(multiple=1) }}">only multiple matches</a>]
-    {% endif %}
-  {% endif %}
-
   {% if not candidates %}
   <p>{{ refresh_button(place) }}</p>
   {% endif %}

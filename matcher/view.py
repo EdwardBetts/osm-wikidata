@@ -473,21 +473,13 @@ def save_language_order(osm_type, osm_id):
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
-    multiple_only = bool(request.args.get('multiple'))
 
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
     multiple_match_count = place.items_with_multiple_candidates().count()
 
-    if multiple_only:
-        item_ids = [i[0] for i in place.items_with_multiple_candidates()]
-        if not item_ids:
-            items = Item.query.filter(0 == 1)
-        else:
-            items = Item.query.filter(Item.item_id.in_(item_ids))
-    else:
-        items = place.items_with_candidates()
+    items = place.items_with_candidates()
 
     if place.existing_wikidata:
         existing = {qid: set(tuple(i) for i in osm_list)
@@ -526,7 +518,6 @@ def candidates(osm_type, osm_id):
                            filter_okay=filter_okay,
                            upload_okay=upload_okay,
                            tab_pages=tab_pages,
-                           multiple_only=multiple_only,
                            filtered=filtered,
                            bad_matches=bad_matches,
                            full_count=full_count,
