@@ -479,24 +479,7 @@ def candidates(osm_type, osm_id):
 
     multiple_match_count = place.items_with_multiple_candidates().count()
 
-    items = place.items_with_candidates()
-
-    if place.existing_wikidata:
-        existing = {qid: set(tuple(i) for i in osm_list)
-                    for qid, osm_list in place.existing_wikidata.items()}
-    else:
-        existing = {}
-
-    items = [item for item in items
-             if item.qid not in existing and all('wikidata' not in c.tags for c in item.candidates)]
-
-    need_commit = False
-    for item in items:
-        for c in item.candidates:
-            if c.set_match_detail():
-                need_commit = True
-    if need_commit:
-        database.session.commit()
+    items = place.get_candidate_items()
 
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
@@ -505,7 +488,6 @@ def candidates(osm_type, osm_id):
                 for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))}
 
     filter_okay = any('candidate' in m for m in filtered.values())
-
     upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
     bad_matches = get_bad_matches(place)
 

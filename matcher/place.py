@@ -1335,6 +1335,27 @@ class Place(Base):
         ret.sort(key=lambda place: place.area_in_sq_km)
         return ret
 
+    def get_candidate_items(self):
+        items = self.items_with_candidates()
+
+        if self.existing_wikidata:
+            existing = {qid: set(tuple(i) for i in osm_list)
+                        for qid, osm_list in self.existing_wikidata.items()}
+        else:
+            existing = {}
+
+        items = [item for item in items
+                 if item.qid not in existing and all('wikidata' not in c.tags for c in item.candidates)]
+
+        need_commit = False
+        for item in items:
+            for c in item.candidates:
+                if c.set_match_detail():
+                    need_commit = True
+        if need_commit:
+            session.commit()
+
+        return items
 
 class PlaceMatcher(Base):
     __tablename__ = 'place_matcher'
