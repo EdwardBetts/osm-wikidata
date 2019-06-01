@@ -57,7 +57,7 @@ def test_calculate_tags(monkeypatch):
         'sitelinks': {},
     }
     tags = {'historic', 'boundary=protected_area', 'landuse=residential',
-            'boundary=administrative', 'place', 'protect_class=22',
+            'boundary=administrative', 'boundary=national_park', 'place', 'protect_class=22',
             'admin_level'}
     item = Item(entity=test_entity, tags=tags)
     result = item.calculate_tags()
