@@ -578,10 +578,12 @@ https://www.wikidata.org/wiki/{self.qid}
         if not extract:
             return
 
-        empty_p_span = '<p><span></span></p>'
+        empty_list = ['<p><span></span></p>', '<p class="mw-empty-elt">\n</p>']
+
         text = extract.strip()
-        if text.startswith(empty_p_span):
-            text = text[len(empty_p_span):].strip()
+        for empty in empty_list:
+            if text.startswith(empty):
+                text = text[len(empty):].strip()
 
         close_tag = '</p>'
         first_end_p_tag = text.find(close_tag)
