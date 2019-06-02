@@ -508,6 +508,16 @@ def candidates(osm_type, osm_id):
                            languages_with_counts=languages_with_counts,
                            languages=languages)
 
+@app.route('/one_by_one/<osm_type>/<int:osm_id>')
+def one_by_one(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+    g.country_code = place.country_code
+
+    if place.state not in ('ready', 'complete'):
+        return redirect_to_matcher(place)
+
+    return render_template('one_by_one.html')
+
 @app.route('/test_candidates/<osm_type>/<int:osm_id>')
 def test_candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
