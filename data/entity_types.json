@@ -660,8 +660,8 @@
     "dist": 5
 },
 {
-    "cats": ["National parks by country"],
-    "tags": ["leisure=nature_reserve", "boundary=national_park"],
+    "cats": ["National parks by country", "State parks"],
+    "tags": ["leisure=nature_reserve", "boundary=national_park", "park:type=state_park"],
     "trim": ["state park", "national park", "park"],
     "area": true,
     "dist": 20

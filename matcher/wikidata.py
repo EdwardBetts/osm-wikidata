@@ -165,6 +165,8 @@ extra_keys = {
     'Q207694': ['Tag:museum=art'],              # art museum
     'Q738570': ['Tag:place=suburb'],            # central business district
     'Q1133961': ['Tag:place=suburb'],           # commercial district
+    'Q16023747': ['Tag:park:type=state_park',
+                  'Tag:leisure=nature_reserve'],  # state park of the United States
 }
 
 # search for items in bounding box that have an English Wikipedia article
