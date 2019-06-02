@@ -2,9 +2,10 @@ from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract,
-                    ChangesetEdit, EditMatchReject, BadMatchFilter, SpaceWarning)
+                    ChangesetEdit, EditMatchReject, BadMatchFilter, SpaceWarning,
+                    WikidataItem)
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api
+from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api, wikidata_api
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
 from datetime import datetime, timedelta
 from tabulate import tabulate
@@ -720,8 +721,8 @@ def load_languages():
 
         print(len(ids), 'languages')
 
-        out = open('languages', 'w')
-        for qid, entity in wikidata.entity_iter(ids):
+        out = open(filename, 'w')
+        for qid, entity in wikidata_api.entity_iter(ids):
             # item_id = int(qid[1:])
             print((qid, entity['labels'].get('en')))
             print((qid, entity), file=out)
@@ -753,11 +754,12 @@ def load_languages():
             # French ISO 639-2 codes: fre and fra
             if len(values) != 1:
                 continue
-            v = values[0]['mainsnak']['datavalue']['value']
+            mainsnak = values[0]['mainsnak']
+            v = mainsnak['datavalue']['value'] if 'datavalue' in mainsnak else None
             setattr(item, field, v)
         known_lang.add(item.wikimedia_language_code)
-        # database.session.add(item)
-    # database.session.commit()
+        database.session.add(item)
+    database.session.commit()
 
     print()
     for line in open(filename):
