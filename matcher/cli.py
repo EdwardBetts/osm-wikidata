@@ -1126,3 +1126,24 @@ def larger_areas():
         for a in p.is_in():
             print(a['tags'].get('name:en', a['tags']['name']))
         print()
+
+@app.cli.command()
+def place_names():
+    app.config.from_object('config.default')
+    database.init_app(app)
+    for place in Place.query:
+        print((place.category, place.type))
+        print(place.address)
+        print(place.name_for_change_comment)
+        print()
+
+
+@app.cli.command()
+def first_paragraph():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    for i in Extract.query:
+        html = i.extract
+        print(repr(html))
+        print()
