@@ -277,15 +277,20 @@ class Place(Base):
 
         return self.name
 
+    def update_address(self):
+        hit = nominatim.reverse(self.osm_type, self.osm_id, polygon_text=0)
+        self.address = [dict(name=n, type=t) for t, n in hit['address'].items()]
+        session.commit()
+
     @property
     def name_for_change_comment(self):
         n = self.name
 
         if self.address:
-            if isinstance(self.address, list):
-                address = {a['type']: a['name'] for a in self.address}
-            elif isinstance(self.address, dict):
-                address = self.address
+            if isinstance(self.address, dict):
+                self.update_address()
+
+            address = {a['type']: a['name'] for a in self.address}
 
             parts = []
             country_code = address.get('country_code')
