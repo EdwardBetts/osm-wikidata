@@ -431,7 +431,8 @@ def run_matcher(place, m):
     m.item_line('finished')
     place.state = 'ready'
     database.session.commit()
-    place.clean_up()
+    if not current_app.config['DEBUG']:
+        place.clean_up()
     print('matcher finished')
     m.send('done')
     m.mark_log_good()
