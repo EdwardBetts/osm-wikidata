@@ -163,17 +163,29 @@ class Item(Base):
         return {l['language']: l['value']
                 for l in self.entity['labels'].values()}
 
+    def lang_text(self, field_name, lang='en'):
+        field_values = self.entity[field_name]
+        if not field_values:
+            return
+        if lang not in field_name:
+            lang = 'en' if 'en' in field_values else list(field_values.keys())[0]
+        return field_values[lang]
+
     def label(self, lang='en'):
         if not self.entity:
             return self.enwiki or self.query_label or None
 
-        labels = self.entity['labels']
-        if lang in labels:
-            return labels[lang]['value']
-        elif lang != 'en' and 'en' in labels:
-            return labels['en']['value']
-        elif labels:
-            return list(labels.values())[0]['value']
+        l = self.lang_text('labels', lang=lang)
+        if l:
+            return l['value']
+
+    def label_detail(self, lang='en'):
+        return self.lang_text('labels', lang=lang)
+
+    def description(self, lang='en'):
+        if not self.entity:
+            return
+        return self.lang_text('descriptions', lang=lang)
 
     def label_best_language(self, languages):
         if not languages:
