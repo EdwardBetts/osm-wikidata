@@ -42,6 +42,12 @@
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map" id="map_{{ item.qid }}">[show on map]</a>
 
+  {% if config.SHOW_WIKIDATA_DESCRIPTIONS and item.entity.descriptions %}
+    {% for description in item.entity.descriptions.values() %}
+      <div><strong>{{ description.language }}</strong>: {{ description.value }}</div>
+    {% endfor %}
+  {% endif %}
+
   {{ (item.first_paragraph(languages) or '') | safe }}
 
   {% set identifiers = item.identifier_values() %}
