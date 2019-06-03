@@ -386,7 +386,7 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if plural_in_other_name:
         return
 
-    generic = ['companybuilding', 'building', 'complex', 'office']
+    generic = ['companybuilding', 'building', 'complex', 'office', 'headquarters']
 
     for end in generic + list(endings or []):
         if wd_tidy.endswith(end) and wd_tidy[:-len(end)] == osm_tidy:
