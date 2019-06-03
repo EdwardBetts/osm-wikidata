@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, g
 from time import time, sleep
 from .place import Place, bbox_chunk
-from . import wikipedia, database, wikidata, wikidata_api, netstring, utils, edit, mail
+from . import wikipedia, database, wikidata_api, netstring, utils, edit, mail
 from flask_login import current_user
 from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
@@ -15,6 +15,7 @@ import json
 import socket
 import subprocess
 import os.path
+import os
 import shutil
 
 ws = Blueprint('ws', __name__)
@@ -216,8 +217,10 @@ class MatcherSocket(object):
                  for chunk in chunks
                  if chunk.get('oql')]
 
-        cmd = ['osmium', 'merge'] + files + ['-o', self.place.overpass_filename]
-        # status(' '.join(cmd))
+        filename = self.place.overpass_filename
+        if os.path.exists(filename):
+            os.remove(filename)
+        cmd = ['osmium', 'merge'] + files + ['-o', filename, '--overwrite']
         p = subprocess.run(cmd,
                            encoding='utf-8',
                            universal_newlines=True,
