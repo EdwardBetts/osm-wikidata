@@ -164,7 +164,7 @@ class Item(Base):
                 for l in self.entity['labels'].values()}
 
     def lang_text(self, field_name, lang='en'):
-        field_values = self.entity[field_name]
+        field_values = self.entity.get(field_name)
         if not field_values:
             return
         if lang not in field_name:
