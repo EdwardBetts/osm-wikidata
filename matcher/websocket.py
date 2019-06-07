@@ -438,15 +438,15 @@ def run_matcher(place, m):
     m.mark_log_good()
 
 def add_wikipedia_tag(root, m):
-    if 'wiki_lang' not in m or root.find('.//tag[@k="wikipedia"]') is not None:
+    lang = m.get('wiki_lang')
+    if not lang or root.find(f'.//tag[@k="wikipedia:{lang}"]') is not None:
         return
-    key = 'wikipedia:' + m['wiki_lang']
-    value = m['wiki_title']
-    existing = root.find(f'.//tag[@k="{key}"]')
+    value = lang + ':' + m['wiki_title']
+    existing = root.find(f'.//tag[@k="wikipedia"]')
     if existing is not None:
         existing.set('v', value)
         return
-    tag = etree.Element('tag', k=key, v=value)
+    tag = etree.Element('tag', k='wikipedia', v=value)
     root[0].append(tag)
 
 def send_loop(send_queue, sock):
