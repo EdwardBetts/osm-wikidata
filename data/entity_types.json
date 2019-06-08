@@ -200,7 +200,7 @@
     "dist": 1
 },
 {
-    "cats": ["Hotels by country"],
+    "cats": ["Hotels by country", "Hotel buildings"],
     "tags": ["tourism=hotel", "building=hotel", "tourism=hostel", "tourism=guest_house"],
     "trim": ["hotel", "resort", "motel", "house hotel"],
     "check_housename": true,
