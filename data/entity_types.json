@@ -512,6 +512,12 @@
     "dist": 10
 },
 {
+    "cats": ["Salt flats"],
+    "tags": ["natural=sand", "gnis:ftype=Playa"],
+    "trim": [],
+    "dist": 10
+}
+{
     "cats": ["Caves by country"],
     "tags": ["natural=cave_entrance"],
     "trim": ["cave"],
