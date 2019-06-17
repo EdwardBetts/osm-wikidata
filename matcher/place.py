@@ -536,10 +536,13 @@ class Place(Base):
     def osm2pgsql_cmd(self, filename=None):
         if filename is None:
             filename = self.overpass_filename
+        style = os.path.join(current_app.config['DATA_DIR'],
+                             'matcher.style')
         return ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
                 '--cache', '1000',
+                '--style', style,
                 '--multi-geometry',
                 '--host', current_app.config['DB_HOST'],
                 '--username', current_app.config['DB_USER'],
