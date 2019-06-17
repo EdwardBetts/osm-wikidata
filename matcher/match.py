@@ -556,6 +556,9 @@ def check_identifier(osm_tags, item_identifiers):
                 return True
             if label == 'website' and any_url_match(osm_value, values):
                 return True
+            if (osm_value.isdigit() and
+                    any(v.isdigit() and int(osm_value) == int(v) for v in values)):
+                return True
     return False
 
 
