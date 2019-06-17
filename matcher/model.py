@@ -336,7 +336,7 @@ https://www.wikidata.org/wiki/{self.qid}
             # ('P281', ['addr:postcode', 'postal_code'], 'postal code'),
             ('P296', ['ref', 'ref:train', 'railway:ref'], 'station code'),
             ('P300', ['ISO3166-2'], 'ISO 3166-2 code'),
-            ('P590', ['ref:gnis', 'GNISID', 'gnis:id'], 'USGS GNIS ID'),
+            ('P590', ['ref:gnis', 'GNISID', 'gnis:id', 'gnis:feature_id'], 'USGS GNIS ID'),
             ('P649', ['ref:nrhp'], 'NRHP reference number'),
             ('P722', ['uic_ref'], 'UIC station code'),
             ('P782', ['ref'], 'LAU (local administrative unit)'),
