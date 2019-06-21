@@ -695,7 +695,7 @@
 {
     "cats": ["Schools by country", "Secondary schools in", "University Technical Colleges"],
     "tags": ["amenity=school", "building=school", "type=site", "site=school", "amenity=college", "building=college"],
-    "trim": ["school", "house", "preparatory school", "catholic school"],
+    "trim": ["school", "house", "preparatory school", "catholic school", "high school"],
     "check_housename": true,
     "dist": 1
 },
