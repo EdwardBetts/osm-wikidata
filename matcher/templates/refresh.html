@@ -16,12 +16,9 @@
   <form method="POST">
   <input type="hidden" name="type" value="full">
   <button class="btn btn-primary">Yes, refresh place</button>
+  <a href="{{ place.candidates_url() }}" class="btn btn-secondary">Cancel and return to candidate list</a>
   </form>
 
-  <form method="POST">
-  <input type="hidden" name="type" value="matcher">
-  <button class="btn btn-secondary">Just rerun matcher</button>
-  </form>
 
 </div>
 </div>
