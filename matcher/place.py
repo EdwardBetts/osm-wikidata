@@ -796,7 +796,7 @@ class Place(Base):
         session.commit()
 
     def load_extracts(self, debug=False, progress=None):
-        for code, count in self.languages_wikidata():
+        for code, _ in self.languages_wikidata():
             self.load_extracts_wiki(debug=debug, progress=progress, code=code)
 
     def load_extracts_wiki(self, debug=False, progress=None, code='en'):
