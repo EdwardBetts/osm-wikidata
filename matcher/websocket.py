@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, g
 from time import time, sleep
 from .place import Place, bbox_chunk
-from . import wikipedia, database, wikidata, wikidata_api, netstring, utils, edit, mail
+from . import wikipedia, database, wikidata_api, netstring, utils, edit, mail
 from flask_login import current_user
 from .model import ItemCandidate, ChangesetEdit
 from datetime import datetime
