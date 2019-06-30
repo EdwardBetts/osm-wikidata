@@ -193,7 +193,7 @@ class MatcherJob(threading.Thread):
 
         is_refresh = self.place.state == 'refresh'
 
-        user = model.User.query.get(self.user_id) if self.user else None
+        user = model.User.query.get(self.user_id) if self.user_id else None
 
         run_obj = PlaceMatcher(place=self.place,
                                user=user,
