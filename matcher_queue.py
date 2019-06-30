@@ -14,7 +14,7 @@ from matcher import (wikipedia, database, wikidata_api, netstring,
                      mail, overpass, space_alert, model)
 from time import time, sleep
 from datetime import datetime
-from matcher.place import Place, PlaceMatcher
+from matcher.place import Place, PlaceMatcher, bbox_chunk
 from matcher.view import app
 
 app.config.from_object('config.default')
@@ -245,6 +245,25 @@ class MatcherJob(threading.Thread):
         print('subscribe', self.name)
         self.subscribers[thread_name] = status_queue
         return status_queue
+
+    def wikidata_chunked(self, chunks):
+        items = {}
+        num = 0
+        while chunks:
+            bbox = chunks.pop()
+            num += 1
+            msg = f'requesting wikidata chunk {num}'
+            print(msg)
+            self.status(msg)
+            try:
+                items.update(self.place.bbox_wikidata_items(bbox))
+            except wikidata_api.QueryTimeout:
+                msg = f'wikidata timeout, splitting chunk {num} info four'
+                print(msg)
+                self.status(msg)
+                chunks += bbox_chunk(bbox, 2)
+
+        return items
 
     def get_items(self):
         self.send('get_wikidata_items')
