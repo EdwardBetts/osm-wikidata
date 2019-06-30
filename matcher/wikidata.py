@@ -172,6 +172,10 @@ extra_keys = {
     'Q63099748': ['Tag:tourism=hotel',          # hotel building
                   'Tag:building=hotel',
                   'Tag:tourism=guest_house'],
+    'Q130003': ['Tag:landuse=winter_sports',    # ski resort
+                'Tag:site=piste',
+                'Tag:leisure=resort',
+                'landuse=recreation_ground'],
 }
 
 # search for items in bounding box that have an English Wikipedia article
