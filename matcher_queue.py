@@ -118,7 +118,7 @@ class MatcherJob(threading.Thread):
         self.t0 = time()
         self.name = f'{osm_type}/{osm_id}  {self.t0}'
         self.active = True
-        self.user = model.User.query.get(user) if user else None
+        self.user_id = user
         self.remote_addr = remote_addr
         self.user_agent = user_agent
 
@@ -193,8 +193,10 @@ class MatcherJob(threading.Thread):
 
         is_refresh = self.place.state == 'refresh'
 
+        user = model.User.query.get(self.user_id) if self.user else None
+
         run_obj = PlaceMatcher(place=self.place,
-                               user=self.user,
+                               user=user,
                                remote_addr=self.remote_addr,
                                user_agent=self.user_agent,
                                is_refresh=is_refresh)
