@@ -167,7 +167,7 @@ class Item(Base):
         field_values = self.entity.get(field_name)
         if not field_values:
             return
-        if lang not in field_name:
+        if lang not in field_values:
             lang = 'en' if 'en' in field_values else list(field_values.keys())[0]
         return field_values[lang]
 
