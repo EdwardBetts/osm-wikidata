@@ -711,10 +711,8 @@ class Place(Base):
     def matcher_progress_url(self):
         return self.place_url('matcher.matcher_progress')
 
-    def matcher_done_url(self, start, refresh):
-        kwargs = {'refresh': 1} if refresh else {}
-        return self.place_url('matcher.matcher_done',
-                              start=start, **kwargs)
+    def matcher_done_url(self, start):
+        return self.place_url('matcher.matcher_done', start=start)
 
     def item_list(self):
         lang = self.most_common_language() or 'en'
@@ -976,7 +974,6 @@ class Place(Base):
             if num % 100 == 0:
                 session.commit()
 
-        self.state = 'ready'
         self.item_count = self.items.count()
         self.candidate_count = self.items_with_candidates_count()
         session.commit()
@@ -1399,7 +1396,6 @@ class PlaceMatcher(Base):
 
     def complete(self):
         self.end = now_utc()
-        session.commit()
 
 def get_top_existing(limit=39):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,

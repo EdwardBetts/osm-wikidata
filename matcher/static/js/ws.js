@@ -87,11 +87,10 @@ connection.onmessage = function (e) {
       current.textContent = data['msg'];
       break;
     case 'done':
-      if (replay_log) {
-          post_message('replay complete');
-      } else {
-          window.location = matcher_done_url;
+      if (connection.readyState === WebSocket.OPEN) {
+          connection.close();
       }
+      window.location = matcher_done_url;
       break;
     case 'get_chunk':
       post_message('requesting chunk ' + (data['chunk_num'] + 1))

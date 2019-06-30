@@ -52,19 +52,6 @@ def matcher_progress(osm_type, osm_id):
     announce_matcher_progress(place)
     replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
-    start = None
-    if not replay_log:
-        user_agent = request.headers.get('User-Agent')
-        user = g.user if g.user.is_authenticated else None
-        run = PlaceMatcher(place=place,
-                           user=user,
-                           remote_addr=request.remote_addr,
-                           user_agent=user_agent,
-                           is_refresh=is_refresh)
-        database.session.add(run)
-        database.session.commit()
-        start = run.start
-
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
 
@@ -72,37 +59,19 @@ def matcher_progress(osm_type, osm_id):
                            place=place,
                            is_refresh=is_refresh,
                            ws_scheme=ws_scheme,
-                           replay_log=replay_log,
-                           start=start)
+                           replay_log=replay_log)
 
 @matcher_blueprint.route('/matcher/<osm_type>/<int:osm_id>/done')
 def matcher_done(osm_type, osm_id):
-    refresh = request.args.get('refresh') == '1'
     place = Place.get_or_abort(osm_type, osm_id)
+    if place.too_big:
+        return render_template('too_big.html', place=place)
+
     if place.state != 'ready':
-        if place.too_big:
-            return render_template('too_big.html', place=place)
+        place.state = 'ready'
+        database.session.commit()
 
-        # place isn't ready so redirect to matcher progress
-        return redirect(place.matcher_progress_url())
-
-    start_arg = request.args.get('start')
-    if start_arg:
-        try:
-            start = dateutil.parser.parse(start_arg)
-        except ValueError:
-            start = None
-    else:
-        start = None
-
-    if start:
-        q = place.matcher_runs.filter(PlaceMatcher.start == start)
-        run = q.one_or_none()
-        if run:
-            run.complete()
-
-    msg = 'Matcher refresh complete.' if refresh else 'The matcher has finished.'
-    flash(msg)
+    flash('The matcher has finished.')
     return redirect(place.candidates_url())
 
 @matcher_blueprint.route('/replay/<osm_type>/<int:osm_id>')

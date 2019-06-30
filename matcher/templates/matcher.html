@@ -83,7 +83,7 @@ body, html {
 <script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
 <script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
 
-{% set matcher_done_url = place.matcher_done_url(start, is_refresh) %}
+{% set matcher_done_url = place.matcher_done_url(start) %}
 
 <script>
 var ws_scheme = {{ ws_scheme | tojson }};

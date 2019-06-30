@@ -616,33 +616,9 @@ def refresh_place(osm_type, osm_id):
     if request.method != 'POST':  # confirm
         return render_template('refresh.html', place=place)
 
-    refresh_type = request.form['type']
-
-    place.reset_all_items_to_not_done()
-
-    if refresh_type == 'matcher':
-        place.state = 'osm2pgsql'
-        database.session.commit()
-        return redirect_to_matcher(place)
-
-    assert refresh_type == 'full'
-    place.delete_overpass()
     place.state = 'refresh'
-
-    engine = database.session.bind
-    for t in database.get_tables():
-        if not t.startswith(place.prefix):
-            continue
-        engine.execute('drop table if exists {}'.format(t))
-    engine.execute('commit')
     database.session.commit()
 
-    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
-    tables = database.get_tables()
-    assert not any(t in tables for t in expect)
-
-    place.refresh_nominatim()
-    database.session.commit()
     return redirect_to_matcher(place)
 
 def get_existing(sort, name_filter):
