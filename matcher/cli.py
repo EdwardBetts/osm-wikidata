@@ -1201,7 +1201,7 @@ def match_subregions(qid):
         if place:
             run = place.latest_matcher_run()
             delta = datetime.utcnow() - run.start if run else None
-            if run and delta < timedelta(hours=1):
+            if run and run.end and delta < timedelta(hours=1):
                 print('fresh', p['qid'], p['label'])
             else:
                 print('updating:', p['qid'], p['label'])
