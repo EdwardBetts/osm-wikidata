@@ -5,7 +5,7 @@ from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     ChangesetEdit, EditMatchReject, BadMatchFilter, SpaceWarning,
                     WikidataItem)
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api, wikidata_api
+from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api, wikidata_api, browse
 from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
 from datetime import datetime, timedelta
 from tabulate import tabulate
@@ -1147,3 +1147,69 @@ def first_paragraph():
         html = i.extract
         print(repr(html))
         print()
+
+def connect_to_queue():
+    address = ('localhost', 6030)
+    sock = socket.create_connection(address)
+    sock.setblocking(True)
+    return sock
+
+def update_place(place):
+
+    sock = connect_to_queue()
+    msg = {
+        'type': 'match',
+        'osm_type': place.osm_type,
+        'osm_id': place.osm_id,
+    }
+    netstring.write(sock, json.dumps(msg))
+
+    while True:
+        network_msg = netstring.read(sock)
+        if network_msg is None:
+            break
+        yield(json.loads(network_msg))
+
+    sock.close()
+
+def place_from_qid(qid):
+    def get_search_string(qid):
+        entity = wikidata_api.get_entity(qid)
+        return browse.qid_to_search_string(qid, entity)
+
+    place = Place.get_by_wikidata(qid)
+    if place:  # already in the database
+        return place if place.osm_type != 'node' else None
+
+    return browse.place_from_qid(qid, q=get_search_string(qid))
+
+@app.cli.command()
+@click.argument('qid')
+def match_subregions(qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    item_id = int(qid[1:])
+
+    details = browse.get_details(item_id)
+    print(qid, details['name'])
+    del details['entity']
+
+    place_count = len(details['current_places'])
+    for num, p in enumerate(details['current_places']):
+        place = place_from_qid(p['qid'])
+        if place:
+            run = place.latest_matcher_run()
+            delta = datetime.utcnow() - run.start if run else None
+            if run and delta < timedelta(hours=1):
+                print('fresh', p['qid'], p['label'])
+            else:
+                print('updating:', p['qid'], p['label'])
+                if place.state == 'ready':
+                    place.state = 'refresh'
+                    database.session.commit()
+                for msg in update_place(place):
+                    print(f"{num + 1}/{place_count}  {p['qid']} {p['label']}", msg)
+
+        else:
+            print('not found:', p['qid'], p['label'])
