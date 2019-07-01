@@ -181,14 +181,20 @@ class MatcherJob(threading.Thread):
         self.place.load_isa()
 
         self.run_matcher()
-        # self.place.clean_up()
+        self.place.clean_up()
 
     def run_in_app_context(self):
         self.place = Place.get_by_osm(self.osm_type, self.osm_id)
-        assert self.place
+        if not self.place:
+            self.send('not_found')
+            self.send('done')
+            del active_jobs[(self.osm_type, self.osm_id)]
+            return
 
         if self.place.state == 'ready':
             self.send('already_done')
+            self.send('done')
+            del active_jobs[(self.osm_type, self.osm_id)]
             return
 
         is_refresh = self.place.state == 'refresh'
@@ -241,10 +247,17 @@ class MatcherJob(threading.Thread):
         return len(self.subscribers)
 
     def subscribe(self, thread_name, status_queue):
-        status_queue.put({'type': 'connected'})
+        msg = {
+            'time': time() - self.t0,
+            'type': 'connected',
+        }
+        status_queue.put(msg)
         print('subscribe', self.name)
         self.subscribers[thread_name] = status_queue
         return status_queue
+
+    def unsubscribe(self, thread_name):
+        del self.subscribers[thread_name]
 
     def wikidata_chunked(self, chunks):
         items = {}
