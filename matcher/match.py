@@ -13,7 +13,7 @@ re_strip_non_chars_and_dash = re.compile(r'[^@\w]', re.U)
 re_non_char_start = re.compile(r'^[^@\w]*', re.U)
 re_non_letter_start = re.compile(r'^[^A-Z]+', re.I | re.U)
 re_keep_commas = re.compile(r'[^@\w, ]', re.U)
-re_number_start = re.compile(r'^(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
+re_number_start = re.compile(r'^(?:House at )?(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_article = re.compile(r'^(\W*)(the|le|la|les)[- ]')
 re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
 
