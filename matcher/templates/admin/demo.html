@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Demo mode{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+    {% include "flash_msg.html" %}
+    <h1>Demo mode</h1>
+
+    {% set label = 'deactivate' if demo_mode else 'activate' %} 
+    <p>Demo mode is {% if not demo_mode %}not {% endif %}active.</p>
+    <form method="POST">
+      <input class="btn btn-primary" type="submit" value="{{ label }}">
+    </form>
+</div>
+{% endblock %}

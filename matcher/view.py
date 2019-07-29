@@ -479,7 +479,12 @@ def candidates(osm_type, osm_id):
 
     multiple_match_count = place.items_with_multiple_candidates().count()
 
-    items = place.get_candidate_items()
+    demo_mode = session.get('demo_mode', False)
+
+    if demo_mode:
+        items = place.items_with_candidates().all()
+    else:
+        items = place.get_candidate_items()
 
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
@@ -1443,3 +1448,13 @@ def admin_bad_match():
         return redirect(url_for('admin_bad_match'))
     q = BadMatchFilter.query.order_by(BadMatchFilter.osm, BadMatchFilter.wikidata)
     return render_template('admin/bad_match.html', q=q)
+
+@app.route('/admin/demo', methods=['GET', 'POST'])
+def admin_demo_mode():
+    demo_mode = session.get('demo_mode', False)
+    if request.method != 'POST':
+        return render_template('admin/demo.html', demo_mode=demo_mode)
+
+    session['demo_mode'] = not demo_mode
+    flash('demo mode ' + ('activated' if demo_mode else 'deactivated'))
+    return redirect(url_for(request.endpoint))
