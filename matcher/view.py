@@ -1255,7 +1255,9 @@ def item_page(wikidata_id):
         item.set_country_code()
     try:
         return build_item_page(wikidata_id, item)
-    except wikidata_api.QueryError:
+    except (requests.exceptions.SSLError,
+            requests.exceptions.ConnectionError,
+            wikidata_api.QueryError):
         return render_template('error_page.html',
                                message="query.wikidata.org isn't working")
 
