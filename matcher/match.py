@@ -2,7 +2,7 @@
 from collections import defaultdict
 from unidecode import unidecode
 from num2words import num2words
-from .utils import remove_start, normalize_url, any_upper
+from .utils import normalize_url, any_upper
 
 import re
 
@@ -74,6 +74,7 @@ def tidy_name(n):
     n = unidecode(n).strip().rstrip("'")
     n = n.replace('saint ', 'st ')
     n = n.replace('mount ', 'mt ')
+    n = n.replace(' mountain', ' mtn')
     n = n.replace(' church of england ', ' ce ')
     n = n.replace(' cofe ', ' ce ')
     n = n.replace(' c of e ', ' ce ')
@@ -90,6 +91,11 @@ def tidy_name(n):
         n = n[:-2]
     if len(n) > 1 and n[-1] == 's':
         n = n[:-1]
+    if not n.lstrip().startswith('es '):
+        n = (n.replace('es ', ' ')
+              .replace("es' ", '')
+              .replace('es-', '-')
+              .replace('es,', ','))
     if not n.lstrip().startswith('s '):
         n = (n.replace('s ', ' ')
               .replace("s' ", '')
@@ -466,7 +472,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
     if match:
         return match
 
-    for osm_prefix in 'old ', 'the old ', 'former ', 'disused ':
+    for osm_prefix in 'old ', 'the old ', 'former ', 'disused ', 'alte ':
         if osm.lower().startswith(osm_prefix):
             match = name_match_main(osm[len(osm_prefix):], wd, endings, debug)
             if match:
