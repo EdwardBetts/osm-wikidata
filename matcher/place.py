@@ -541,7 +541,7 @@ class Place(Base):
         return ['osm2pgsql', '--create', '--drop', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
-                '--cache', '1000',
+                '--cache', '500',
                 '--style', style,
                 '--multi-geometry',
                 '--host', current_app.config['DB_HOST'],
