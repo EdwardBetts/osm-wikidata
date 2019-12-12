@@ -696,7 +696,10 @@ def page_banner_from_entity(entity, thumbwidth=None):
 
     filename = entity['claims'][property_key][0]['mainsnak']['datavalue']['value']
 
-    return commons.image_detail([filename], thumbwidth=thumbwidth)[0]
+    try:
+        return commons.image_detail([filename], thumbwidth=thumbwidth)[0]
+    except IndexError:
+        return
 
 def entity_label(entity, language=None):
     if language and language in entity['labels']:
