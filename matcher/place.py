@@ -694,7 +694,8 @@ class Place(Base):
         else:
             endpoint = 'candidates'
 
-        return self.place_url(endpoint, **kwargs)
+        return self.place_url(endpoint,
+                              **kwargs)
 
     def place_url(self, endpoint, **kwargs):
         return url_for(endpoint,
@@ -878,6 +879,16 @@ class Place(Base):
                           for key, count in lang_count.items()
                           if key == 'en' or count / item_count > 0.1}
 
+        if self.country_code == 'us':
+            lang_count = {key: count
+                          for key, count in lang_count.items()
+                          if key in {'en', 'es'}}
+
+        if self.country_code == 'gb':
+            lang_count = {key: count
+                          for key, count in lang_count.items()
+                          if key in {'en', 'fr', 'de', 'cy'}}
+
         return sorted(lang_count.items(),
                       key=lambda i: i[1],
                       reverse=True)[:10]
@@ -886,8 +897,12 @@ class Place(Base):
         wikidata = self.languages_wikidata()
         osm = dict(self.languages_osm())
 
-        return [{'code': code, 'wikidata': count, 'osm': osm.get(code)}
-                for code, count in wikidata]
+        return [
+            {
+                'code': code,
+                'wikidata': count,
+                'osm': osm.get(code)
+            } for code, count in wikidata]
 
     def most_common_language(self):
         lang_count = Counter()

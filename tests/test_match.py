@@ -315,6 +315,14 @@ def test_name_match():
     n2 = 'CBSO Centre'
     assert match.name_match(n1, n2)
 
+def test_match_german_church():
+    # n1 = 'Alte Johanneskirche'
+    # n2 = 'Johann'
+
+    n1 = 'Johannes der Täufer'
+    n2 = 'St. Johann der Täufer'
+    assert match.name_match_main(n1, n2, endings=['st', 'kirche'], debug=True) is not None
+
 def test_ignore_apostrophe_s_in_match():
     osm = 'Augustine Steward House'
     wikidata = "Augustine Steward's House"
