@@ -207,8 +207,6 @@ def new_oauth_callback():
     session['owner_secret'] = oauth_tokens.get('oauth_token_secret')
 
     r = oauth.get(osm_api_base + '/user/details')
-    print(r.url)
-    print(r.text)
     info = osm_oauth.parse_userinfo_call(r.content)
 
     user = User.query.filter_by(osm_id=info['id']).one_or_none()

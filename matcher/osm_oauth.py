@@ -56,7 +56,7 @@ def parse_userinfo_call(xml):
         'id': int(user.get('id')),
         'username': user.get('display_name'),
         'description': user.findtext('.//description'),
-        'img': (img.get('href') if img else None),
+        'img': (img.get('href') if img is not None else None),
     }
 
 def get_username():
