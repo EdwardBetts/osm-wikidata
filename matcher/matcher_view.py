@@ -1,5 +1,5 @@
 from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request, flash
-from . import database, matcher, mail, utils
+from . import database, matcher, mail, utils, place_filter
 from .model import Item
 from .place import Place, PlaceMatcher
 import dateutil.parser
@@ -49,6 +49,8 @@ def matcher_progress(osm_type, osm_id):
 
     is_refresh = place.state == 'refresh'
 
+    filter_items = place_filter.get_filter_items()
+
     announce_matcher_progress(place)
     replay_log = place.state == 'ready' and bool(utils.find_log_file(place))
 
@@ -57,6 +59,7 @@ def matcher_progress(osm_type, osm_id):
 
     return render_template('matcher.html',
                            place=place,
+                           filter_items=filter_items,
                            is_refresh=is_refresh,
                            ws_scheme=ws_scheme,
                            replay_log=replay_log)

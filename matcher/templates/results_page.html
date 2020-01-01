@@ -9,6 +9,17 @@
     <input type="submit" class="btn btn-success" value="search">
   </form>
 
+  <p><a href="{{ url_for('type_filter') }}">type filter</a></p>
+
+  <p>filter: {{ filter_qids }}</p>
+
+  <p>
+  {% for isa in filter_items %}
+    {{ isa.entity_label() -}}
+    {%- if not loop.last -%}, {% endif %}
+  {% endfor %}
+  </p>
+
   {% if q %}
       {% if results | count == 0 %}
         <p>no matches found</p>

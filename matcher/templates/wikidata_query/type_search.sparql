@@ -1,0 +1,22 @@
+SELECT ?item
+       ?itemLabel
+       ?itemDescription
+       (GROUP_CONCAT(DISTINCT ?osmX; SEPARATOR="; ") AS ?osm)
+WHERE {
+  SERVICE wikibase:mwapi {
+      bd:serviceParam wikibase:api "EntitySearch" .
+      bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+      bd:serviceParam mwapi:search "{{ q }}" .
+      bd:serviceParam mwapi:language "{{ lang }}" .
+      bd:serviceParam mwapi:srqiprofile "wikibase" .
+      ?item wikibase:apiOutputItem mwapi:item .
+      ?num wikibase:apiOrdinal true .
+  }
+  ?item p:P1282 ?osmStatement .
+  ?osmStatement ps:P1282 ?osmX .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "{{ lang }},en". }
+}
+GROUP BY ?item ?itemLabel ?itemDescription
+ORDER BY ASC(?num)
+LIMIT {{ limit |default(50) }}
+

@@ -73,6 +73,9 @@ def envelope(bbox):
     ymin, ymax, xmin, xmax = bbox
     return func.ST_MakeEnvelope(xmin, ymin, xmax, ymax, 4326)
 
+# class PlaceFilterItem(Base):
+#     __tablename__ = 'place_filter'
+
 class Place(Base):
     __tablename__ = 'place'
     place_id = Column(BigInteger, primary_key=True, autoincrement=False)

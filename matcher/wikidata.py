@@ -591,6 +591,9 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
+def type_query(q, lang):
+    return render_template('wikidata_query/type_search.sparql', q=q, lang=lang)
+
 def run_query(query, name=None, return_json=True, timeout=None, send_error_mail=True):
     attempts = 5
 
@@ -828,6 +831,15 @@ def get_location_hierarchy(qid, name=None):
         'label': row['itemLabel']['value'],
         'country': row['countryLabel']['value'],
     } for row in run_query(query, name=name)]
+
+def run_type_search(q, lang):
+    query = type_query(q, lang)
+    return [{
+        'qid': wd_to_qid(row['item']),
+        'label': row['itemLabel']['value'],
+        'description': row['itemDescription']['value'],
+        'osm': (row['osm']['value'] if 'osm' in row else None),
+    } for row in run_query(query)]
 
 def up_one_level(qid, name=None):
     query = up_one_level_query.replace('QID', qid)

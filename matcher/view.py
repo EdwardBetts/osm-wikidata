@@ -1,5 +1,6 @@
 from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
-               user_agent_headers, overpass, mail, browse, edit, utils, commons)
+               user_agent_headers, overpass, mail, browse, edit, utils, commons,
+               place_filter)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
@@ -698,6 +699,8 @@ def search_results():
     if m:
         return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
 
+    filter_items = place_filter.get_filter_items()
+
     redirect_on_single = session.get('redirect_on_single', False)
 
     try:
@@ -720,7 +723,21 @@ def search_results():
     for hit in results:
         add_hit_place_detail(hit)
 
-    return render_template('results_page.html', results=results, q=q)
+    return render_template('results_page.html',
+                           results=results,
+                           q=q,
+                           filter_items=filter_items)
+
+@app.route('/type', methods=['GET', 'POST'])
+def type_filter():
+    q = request.args.get('q')
+    lang = request.args.get('lang')
+
+    if q and lang:
+        hits = wikidata.run_type_search(q, lang)
+    else:
+        hits = []
+    return render_template('type_filter.html', q=q, lang=lang, hits=hits)
 
 @region.cache_on_arguments()
 def get_place_cards():

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+
+  <h2>Search for item type</h2>
+
+  <form>
+    <p>
+      <input name="q" value="{{ q or '' }}">
+      language: <input name="lang" value="{{ lang or 'en' }}" size="3">
+    </p>
+    <input type="submit" value="search">
+  </form>
+
+  {% if hits %}
+  <p>type results for '{{ q }}'</p>
+
+  <form action="/search">
+  <ul>
+  {% for hit in hits %}
+    <li>
+      <input type="checkbox" name="filter" checked="checked" value="{{ hit.qid }}">
+      <a href="https://www.wikidata.org/wiki/{{ hit.qid }}">{{ hit.label }}</a>
+      ({{ hit.qid }})
+      &ndash; {{ hit.description }}<br>
+      OSM &ndash; {{ hit.osm }}
+    </li>
+  {% endfor %}
+  </ul>
+    <input type="submit" value="apply">
+  </form>
+  {% endif %}
+
+</div>
+{% endblock %}

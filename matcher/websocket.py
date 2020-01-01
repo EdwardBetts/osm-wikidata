@@ -1,7 +1,7 @@
 from flask import Blueprint, g, request
 from flask_login import current_user
 from .place import Place
-from . import database, netstring, edit, mail
+from . import database, netstring, edit, mail, place_filter
 from .model import ItemCandidate, ChangesetEdit
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
@@ -164,6 +164,8 @@ def process_match(ws_sock, changeset_id, m):
 @ws.route('/websocket/add_tags/<osm_type>/<int:osm_id>')
 def ws_add_tags(ws_sock, osm_type, osm_id):
     g.user = current_user
+
+    filter_items = place_filter.get_filter_items()
 
     def send(msg_type, **kwars):
         ws_sock.send(json.dumps({'type': msg_type, **kwars}))
