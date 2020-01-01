@@ -2,10 +2,9 @@ from flask import Blueprint, abort, redirect, render_template, g, Response, json
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place, PlaceMatcher
-import dateutil.parser
 import re
 
-re_point = re.compile('^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
+re_point = re.compile(r'^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
 
 matcher_blueprint = Blueprint('matcher', __name__)
 
