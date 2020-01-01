@@ -370,7 +370,7 @@ def add_tags(osm_type, osm_id):
              for item, match in hits if 'candidate' in match]
 
     items = []
-    add_wikipedia_tags = g.user.wikipedia_tag
+    add_wikipedia_tags = getattr(g.user, 'wikipedia_tag', False)
     for i, c in table:
         description = '{} {}: adding wikidata={}'.format(c.osm_type, c.osm_id, i.qid)
         item = {
