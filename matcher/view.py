@@ -142,6 +142,11 @@ def login_route():
     return redirect(url_for('start_oauth',
                             next=request.args.get('next')))
 
+@app.route('/login/openstreetmap/')
+def login_openstreetmap():
+    return redirect(url_for('start_oauth',
+                            next=request.args.get('next')))
+
 @app.route('/logout')
 def logout():
     next_url = request.args.get('next') or url_for('index')
