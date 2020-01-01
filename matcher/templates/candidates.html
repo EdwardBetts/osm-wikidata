@@ -84,7 +84,8 @@
                       is_picked=(item.candidates.count() > 1 and c == picked),
                       is_bad=is_bad,
                       show_tags=show_tags,
-                      identifiers=identifiers) }}
+                      identifiers=identifiers,
+                      show_existing=not session.demo_mode) }}
   {% endfor %}
   </ul>
 
