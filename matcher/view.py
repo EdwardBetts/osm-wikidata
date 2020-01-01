@@ -110,9 +110,15 @@ def filter_urls():
         return {}  # maybe we don't care
     return dict(url_for_saved=url)
 
+def demo_mode():
+    return session.get('demo_mode', False) or request.args.get('demo')
+
 @app.before_request
 def global_user():
-    g.user = current_user._get_current_object()
+    if demo_mode():
+        g.user = User.query.get(1)
+    else:
+        g.user = current_user._get_current_object()
 
 @app.before_request
 def slow_crawl():
@@ -357,7 +363,9 @@ def add_tags(osm_type, osm_id):
     languages_with_counts = get_place_language_with_counts(place)
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
-    hits = matcher.filter_candidates_more(items, bad=get_bad(items))
+    hits = matcher.filter_candidates_more(items,
+                                          bad=get_bad(items),
+                                          ignore_existing=demo_mode())
     table = [(item, match['candidate'])
              for item, match in hits if 'candidate' in match]
 
@@ -479,9 +487,9 @@ def candidates(osm_type, osm_id):
 
     multiple_match_count = place.items_with_multiple_candidates().count()
 
-    demo_mode = session.get('demo_mode', False)
+    demo_mode_active = demo_mode()
 
-    if demo_mode:
+    if demo_mode_active:
         items = place.items_with_candidates().all()
     else:
         items = place.get_candidate_items()
@@ -489,8 +497,10 @@ def candidates(osm_type, osm_id):
     full_count = len(items)
     multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
-    filtered = {item.item_id: match
-                for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))}
+    filter_iter = matcher.filter_candidates_more(items,
+                                                 bad=get_bad(items),
+                                                 ignore_existing=demo_mode_active)
+    filtered = {item.item_id: match for item, match in filter_iter}
 
     filter_okay = any('candidate' in m for m in filtered.values())
     upload_okay = any('candidate' in m for m in filtered.values()) and g.user.is_authenticated
