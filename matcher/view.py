@@ -1,5 +1,6 @@
 from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
-               user_agent_headers, overpass, mail, browse, edit, utils, commons)
+               user_agent_headers, overpass, mail, browse, edit, utils, commons,
+               osm_oauth)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
@@ -23,6 +24,7 @@ from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
 from dogpile.cache import make_region
 from werkzeug.debug.tbtools import get_current_traceback
+from requests_oauthlib import OAuth1Session
 
 from .matcher_view import matcher_blueprint
 from .websocket import ws
@@ -154,6 +156,80 @@ def logout():
 def done():
     flash('login successful')
     return redirect(url_for('index'))
+
+@app.route('/oauth/start')
+def new_start_oauth():
+    next_page = request.args.get('next')
+    if next_page:
+        session['next'] = next_page
+
+    client_key = app.config['CLIENT_KEY']
+    client_secret = app.config['CLIENT_SECRET']
+
+    request_token_url = 'https://www.openstreetmap.org/oauth/request_token'
+
+    callback = url_for('new_oauth_callback', _external=True)
+
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          callback_uri=callback)
+    fetch_response = oauth.fetch_request_token(request_token_url)
+
+    session['owner_key'] = fetch_response.get('oauth_token')
+    session['owner_secret'] = fetch_response.get('oauth_token_secret')
+
+    base_authorization_url = 'https://www.openstreetmap.org/oauth/authorize'
+    authorization_url = oauth.authorization_url(base_authorization_url,
+                                                oauth_consumer_key=client_key)
+    return redirect(authorization_url)
+
+@app.route("/oauth/callback", methods=["GET"])
+def new_oauth_callback():
+    client_key = app.config['CLIENT_KEY']
+    client_secret = app.config['CLIENT_SECRET']
+
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          resource_owner_key=session['owner_key'],
+                          resource_owner_secret=session['owner_secret'])
+
+    oauth_response = oauth.parse_authorization_response(request.url)
+    verifier = oauth_response.get('oauth_verifier')
+    access_token_url = 'https://www.openstreetmap.org/oauth/access_token'
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          resource_owner_key=session['owner_key'],
+                          resource_owner_secret=session['owner_secret'],
+                          verifier=verifier)
+
+    oauth_tokens = oauth.fetch_access_token(access_token_url)
+    session['owner_key'] = oauth_tokens.get('oauth_token')
+    session['owner_secret'] = oauth_tokens.get('oauth_token_secret')
+
+    r = oauth.get(osm_api_base + '/user/details')
+    print(r.url)
+    print(r.text)
+    info = osm_oauth.parse_userinfo_call(r.content)
+
+    user = User.query.filter_by(osm_id=info['id']).one_or_none()
+
+    if user:
+        user.osm_oauth_token = oauth_tokens.get('oauth_token')
+        user.osm_oauth_token_secret = oauth_tokens.get('oauth_token_secret')
+    else:
+        user = User(
+            username=info['username'],
+            description=info['description'],
+            img=info['img'],
+            osm_id=info['id'],
+            osm_account_created=info['account_created'],
+        )
+        database.session.add(user)
+    database.session.commit()
+    session['user_id'] = user.id
+
+    next_page = session.get('next') or url_for('index')
+    return redirect(next_page)
 
 def reraise(tp, value, tb=None):
     if value.__traceback__ is not tb:
