@@ -35,6 +35,17 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
 disused_prefix_key = {'amenity', 'railway', 'leisure', 'tourism',
                       'man_made', 'shop', 'building'}
 
+# example OSM extra_data:
+# {
+#   "id": "123456789",
+#   "access_token": {
+#       "oauth_token": "OAUTH TOKEN",
+#       "oauth_token_secret": "OAUTH TOKEN SECRET"
+#   },
+#   "account_created": "2005-07-15T15:45:44Z",
+#   "avatar": "AVATAR URL"
+# }
+
 class User(Base, UserMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
@@ -52,6 +63,12 @@ class User(Base, UserMixin):
     multi = Column(String)
     units = Column(String)
     wikipedia_tag = Column(Boolean, default=False)
+
+    osm_id = Column(String)
+    osm_account_created = Column(DateTime)
+    osm_avatar = Column(String)
+    osm_oauth_token = Column(String)
+    osm_auth_token_secret = Column(String)
 
     def is_active(self):
         return self.active
