@@ -875,6 +875,16 @@ class Place(Base):
                           for key, count in lang_count.items()
                           if key == 'en' or count / item_count > 0.1}
 
+        if self.country_code == 'us':
+            lang_count = {key: count
+                          for key, count in lang_count.items()
+                          if key in {'en', 'es'}}
+
+        if self.country_code == 'gb':
+            lang_count = {key: count
+                          for key, count in lang_count.items()
+                          if key in {'en', 'fr', 'de', 'cy'}}
+
         return sorted(lang_count.items(),
                       key=lambda i: i[1],
                       reverse=True)[:10]
