@@ -477,6 +477,22 @@ def save_language_order(osm_type, osm_id):
     response.set_cookie(cookie_name, json.dumps(cookie))
     return response
 
+@app.route('/mobile/<osm_type>/<int:osm_id>')
+def mobile(osm_type, osm_id):
+    # FIXME: this is unfinished work
+    place = Place.get_or_abort(osm_type, osm_id)
+    items = place.get_candidate_items()
+
+    filtered = {item.item_id: match
+                for item, match in matcher.filter_candidates_more(items, bad=get_bad(items))}
+
+    return render_template('mobile.html',
+                           place=place,
+                           osm_id=osm_id,
+                           osm_type=osm_type,
+                           filtered=filtered,
+                           candidates=items)
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
