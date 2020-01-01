@@ -14,7 +14,7 @@ from .forms import AccountSettingsForm
 from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response, session
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
-from social.apps.flask_app.routes import social_auth
+# from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
@@ -48,7 +48,7 @@ app.register_blueprint(matcher_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
-app.register_blueprint(social_auth)
+# app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login_route'
 
@@ -141,8 +141,7 @@ def navbar():
 
 @app.route('/login')
 def login_route():
-    return redirect(url_for('social.auth',
-                            backend='openstreetmap',
+    return redirect(url_for('start_oauth',
                             next=request.args.get('next')))
 
 @app.route('/logout')
@@ -158,7 +157,7 @@ def done():
     return redirect(url_for('index'))
 
 @app.route('/oauth/start')
-def new_start_oauth():
+def start_oauth():
     next_page = request.args.get('next')
     if next_page:
         session['next'] = next_page
@@ -168,7 +167,7 @@ def new_start_oauth():
 
     request_token_url = 'https://www.openstreetmap.org/oauth/request_token'
 
-    callback = url_for('new_oauth_callback', _external=True)
+    callback = url_for('oauth_callback', _external=True)
 
     oauth = OAuth1Session(client_key,
                           client_secret=client_secret,
@@ -184,7 +183,7 @@ def new_start_oauth():
     return redirect(authorization_url)
 
 @app.route("/oauth/callback", methods=["GET"])
-def new_oauth_callback():
+def oauth_callback():
     client_key = app.config['CLIENT_KEY']
     client_secret = app.config['CLIENT_SECRET']
 
