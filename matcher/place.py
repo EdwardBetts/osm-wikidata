@@ -712,7 +712,8 @@ class Place(Base):
                 else self.matcher_progress_url())
 
     def matcher_progress_url(self):
-        return self.place_url('matcher.matcher_progress')
+        return self.place_url('matcher.matcher_progress',
+                              filter=g.get('filter_qids'))
 
     def matcher_done_url(self, start):
         return self.place_url('matcher.matcher_done', start=start)
