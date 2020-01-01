@@ -75,6 +75,7 @@ def tidy_name(n):
     n = n.replace('saint ', 'st ')
     n = n.replace('mount ', 'mt ')
     n = n.replace(' mountain', ' mtn')
+    n = n.replace(' county', ' co')
     n = n.replace(' church of england ', ' ce ')
     n = n.replace(' cofe ', ' ce ')
     n = n.replace(' c of e ', ' ce ')
