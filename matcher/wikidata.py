@@ -333,6 +333,27 @@ GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 '''
 
+next_level_has_part_query = '''
+SELECT DISTINCT ?item ?itemLabel
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(DISTINCT ?isa) as ?isa_list)
+WHERE {
+  VALUES ?start { wd:QID } .
+  ?start wdt:P527 ?item .
+  ?item wdt:P31/wdt:P279* wd:Q56061 .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
+}
+GROUP BY ?item ?itemLabel ?startLabel
+ORDER BY ?itemLabel
+'''
+
 item_labels_query = '''
 SELECT ?item ?itemLabel
 WHERE {
@@ -921,6 +942,12 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
     if any('isa_list' not in row for row in query_rows):
         mail.error_mail('wikidata browse query error', query, r)
         raise QueryError(query, r)
+
+    if not query_rows and 'P527' in entity['claims']:
+        query = (next_level_has_part_query.replace('QID', qid)
+                                          .replace('LANGUAGE', language))
+        r = run_query(query, name=name, return_json=False, send_error_mail=True)
+        query_rows = r.json()['results']['bindings']
 
     if not query_rows:
         claims = entity.get('claims', {})
