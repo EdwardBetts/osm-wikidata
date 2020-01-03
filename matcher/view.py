@@ -1374,27 +1374,6 @@ def item_page(wikidata_id):
         return render_template('error_page.html',
                                message="query.wikidata.org isn't working")
 
-@app.route('/space')
-def space():
-    overpass_dir = app.config['OVERPASS_DIR']
-    files = [{'file': f, 'size': f.stat().st_size} for f in os.scandir(overpass_dir) if '_' not in f.name and f.name.endswith('.xml')]
-    files.sort(key=lambda f: f['size'], reverse=True)
-    files = files[:200]
-
-    place_lookup = {int(f['file'].name[:-4]): f for f in files}
-    # q = Place.query.outerjoin(Changeset).filter(Place.place_id.in_(place_lookup.keys())).add_columns(func.count(Changeset.id))
-    q = (database.session.query(Place, func.count(Changeset.id))
-                         .outerjoin(Changeset)
-                         .filter(Place.place_id.in_(place_lookup.keys()))
-                         .options(load_only(Place.place_id, Place.display_name, Place.state))
-                         .group_by(Place.place_id, Place.display_name, Place.state))
-    for place, num in q:
-        place_id = place.place_id
-        place_lookup[place_id]['place'] = place
-        place_lookup[place_id]['changesets'] = num
-
-    return render_template('space.html', files=files)
-
 @app.route('/reports/edit_match')
 def reports_view():
     timestamp = request.args.get('timestamp')
@@ -1408,9 +1387,9 @@ def reports_view():
         q = q.filter(~EditMatchReject.edit.candidate.item.query_label.like('%farm%house%'))
     return render_template('reports/list.html', q=q)
 
-@app.route('/db_space')
+@app.route('/admin/space')
 @login_required
-def db_space():
+def space_report():
     rows = database.get_big_table_list()
     items = [{
         'place_id': place_id,
@@ -1425,9 +1404,9 @@ def db_space():
 
     free_space = utils.get_free_space(app.config)
 
-    return render_template('db_space.html', items=items, free_space=free_space)
+    return render_template('space.html', items=items, free_space=free_space)
 
-@app.route('/old_places')
+@app.route('/report/old_places')
 @login_required
 def old_places():
     rows = database.get_old_place_list()
@@ -1444,7 +1423,7 @@ def old_places():
 
     free_space = utils.get_free_space(app.config)
 
-    return render_template('db_space.html', items=items, free_space=free_space)
+    return render_template('space.html', items=items, free_space=free_space)
 
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
 @login_required

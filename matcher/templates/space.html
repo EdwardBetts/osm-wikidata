@@ -7,24 +7,48 @@
     {% include "flash_msg.html" %}
     <h1>{{ self.title() }}</h1>
 
+    <p>free space: {{ free_space | filesizeformat }}
+
+    {% if 'MIN_FREE_SPACE' in config %}
+      {% set min_free_space = config['MIN_FREE_SPACE'] %}
+      (admin alert when less than {{ min_free_space | filesizeformat }})
+    {% endif %}
+
+    </p>
+
+    <form method="POST" action="{{ url_for('delete_places', next=request.endpoint) }}">
+    <input type="submit" class="btn btn-danger btn-sm" value="delete selected">
     <table class="table">
-    {% for f in files %}
-    {% set place = f.place %}
-    <tr>
-        <td class="text-nowrap text-right">{{ f.size | filesizeformat }}</td>
-        <td>
-            <a href="{{ f.place.candidates_url() }}">{{ place.display_name }}</a>
-        </td>
-        <td>{{ place.state }}</td>
-        <td>{{ f.changesets }}</td>
-        <td>
-        <form method="POST" action="{{ url_for('delete_place', place_id=place.place_id) }}">
-            <input type="submit" class="btn btn-danger btn-sm" value="delete">
-        </form>
-        </td>
+    {% for place in items %}
+      {% set place_id = place.place_id %}
+      <tr>
+      <td><input id="delete_{{ place_id }}" name="place" type="checkbox" value="{{ place_id }}"></td>
+      <td class="text-nowrap text-right" onclick="toggle_checkbox({{place_id}})">
+      {% if place.size %}
+          {{ place.size | filesizeformat }}
+      {% endif %}
+      </td>
+      <td onclick="toggle_checkbox({{place_id}})">
+        <a href="{{ place.candidates_url }}">{{ place.display_name.replace(';', '; ') }}</a>
+        {% if place.recent %}
+          ({{ place.recent.date() }})
+        {% endif %}
+      </td>
+      <td onclick="toggle_checkbox({{place_id}})">{{ place.state }}</td>
+      <td onclick="toggle_checkbox({{place_id}})">{{ place.changesets }}</td>
     </tr>
     {% endfor %}
     </table>
+    <input type="submit" class="btn btn-danger btn-sm" value="delete selected">
+    </form>
 
 </div>
+{% endblock %}
+
+{% block script %}
+<script>
+function toggle_checkbox(place_id) {
+  document.getElementById('delete_' + place_id).checked ^= 1;
+}
+</script>
 {% endblock %}
