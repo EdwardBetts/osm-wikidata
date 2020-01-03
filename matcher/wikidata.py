@@ -561,13 +561,13 @@ GROUP BY ?item ?itemLabel ?countryLabel
 '''
 
 continents_with_country_count_query = '''
-SELECT ?continent ?continentLabel ?banner (COUNT(?country) AS ?count) WHERE {
+SELECT ?continent ?continentLabel ?continentDescription ?banner (COUNT(?country) AS ?count) WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
   ?country wdt:P30 ?continent .
   ?country wdt:P31 wd:Q6256 .
   ?continent wdt:P948 ?banner
 }
-GROUP BY ?continent ?continentLabel ?banner
+GROUP BY ?continent ?continentLabel ?continentDescription ?banner
 ORDER BY ?continentLabel
 '''
 
@@ -731,6 +731,12 @@ def entity_label(entity, language=None):
 
     # pick a label at random
     return list(entity['labels'].values())[0]['value']
+
+def entity_description(entity, language=None):
+    if language and language in entity['descriptions']:
+        return entity['descriptions'][language]['value']
+    if language != 'en' and 'en' in entity['labels']:
+        return entity['descriptions']['en']['value']
 
 def names_from_entity(entity, skip_lang=None):
     if not entity or 'labels' not in entity:

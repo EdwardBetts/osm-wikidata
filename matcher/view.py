@@ -1139,6 +1139,7 @@ def browse_index():
     for row in rows:
         item = {
             'label': row['continentLabel']['value'],
+            'description': row['continentDescription']['value'],
             'country_count': row['count']['value'],
             'qid': wikidata.wd_to_qid(row['continent']),
         }

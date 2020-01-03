@@ -138,6 +138,7 @@ def get_details(item_id, timing=None, lang=None, sort=None):
         place = place_from_qid(qid, entity=entity)
 
     name = wikidata.entity_label(entity, language=lang)
+    description = wikidata.entity_description(entity, language=lang)
     rows = wikidata.next_level_places(qid, entity, language=lang)
     timing.append(('next level places done', time()))
 
@@ -195,6 +196,7 @@ def get_details(item_id, timing=None, lang=None, sort=None):
         'item_id': item_id,
         'place': place,
         'name': name,
+        'description': description,
         'entity': entity,
         'languages': languages,
         'current_places': current_places,

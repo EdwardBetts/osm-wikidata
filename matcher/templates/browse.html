@@ -68,10 +68,13 @@
 {% endif %}
 
 {% if banner %}
-  <pre>{{ banner | pprint }}</pre>
   <div>
     <img src="{{ banner.url }}" class="img-fluid w-100" />
   </div>
+{% endif %}
+
+{% if description %}
+  <p>{{ description }}</p>
 {% endif %}
 
 <div class="mt-2">
