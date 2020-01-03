@@ -68,8 +68,9 @@
 {% endif %}
 
 {% if banner %}
+  <pre>{{ banner | pprint }}</pre>
   <div>
-    <img src="{{ banner.image }}" class="img-fluid w-100" />
+    <img src="{{ banner.url }}" class="img-fluid w-100" />
   </div>
 {% endif %}
 

@@ -710,7 +710,7 @@ def parse_item_tag_query(rows, items):
                     items[qid][k] = row[k]['value']
         items[qid]['tags'].add(tag_or_key)
 
-def page_banner_from_entity(entity, thumbwidth=None):
+def page_banner_from_entity(entity, **kwargs):
     property_key = 'P948'
     if property_key not in entity['claims']:
         return
@@ -718,8 +718,9 @@ def page_banner_from_entity(entity, thumbwidth=None):
     filename = entity['claims'][property_key][0]['mainsnak']['datavalue']['value']
 
     try:
-        return commons.image_detail([filename], thumbwidth=thumbwidth)[0]
-    except IndexError:
+        images = commons.image_detail([filename], **kwargs)
+        return images[filename]
+    except Exception:
         return
 
 def entity_label(entity, language=None):

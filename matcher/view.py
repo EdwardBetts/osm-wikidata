@@ -1150,15 +1150,13 @@ def browse_index():
             pass
         items.append(item)
         row['item'] = item
-    images = {image['name']: image
-              for image in commons.image_detail(banner_filenames)}
+    images = commons.image_detail(banner_filenames)
     for item in items:
         banner = item.get('banner')
         if not banner:
             continue
-        item['banner_url'] = images[banner]['image']
-    return render_template('browse_index.html',
-                           items=items)
+        item['banner_url'] = images[banner]['url']
+    return render_template('browse_index.html', items=items)
 
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
