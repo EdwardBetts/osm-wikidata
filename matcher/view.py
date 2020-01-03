@@ -1066,6 +1066,17 @@ def api_get(wikidata_id, entity, radius):
 
     return data
 
+@app.route('/api/1/place_items/<osm_type>/<osm_id>')
+def api_place_items(osm_type, osm_id):
+    place = Place.get_by_osm(osm_type, osm_id)
+    items = [{'qid': item.qid, 'label': item.query_label} for item in place.items]
+
+    return jsonify({
+        'osm_type': osm_type,
+        'osm_id': osm_id,
+        'items': items,
+    })
+
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
     '''API call: find matches for Wikidata item
