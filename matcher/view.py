@@ -1,21 +1,19 @@
-from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
-               user_agent_headers, overpass, mail, browse, edit, utils, commons,
-               osm_oauth)
+from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
+               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
-                    WikidataItem)
+                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter)
 from .place import Place, get_top_existing
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response, session
+from flask import (Flask, render_template, request, Response, redirect, url_for, g,
+                   jsonify, flash, abort, make_response, session)
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
