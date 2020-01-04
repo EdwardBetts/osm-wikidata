@@ -1553,4 +1553,5 @@ def admin_demo_mode():
 @app.route('/admin/users')
 @login_required
 def list_users():
-    return render_template('admin/users.html', users=User.query)
+    q = User.query.order_by(User.sign_up.desc())
+    return render_template('admin/users.html', users=q)
