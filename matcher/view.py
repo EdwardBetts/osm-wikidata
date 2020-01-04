@@ -1549,3 +1549,8 @@ def admin_demo_mode():
     session['demo_mode'] = not demo_mode
     flash('demo mode ' + ('activated' if demo_mode else 'deactivated'))
     return redirect(url_for(request.endpoint))
+
+@app.route('/admin/users')
+@login_required
+def list_users():
+    return render_template('admin/users.html', users=User.query)

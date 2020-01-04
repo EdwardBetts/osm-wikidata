@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+
+  <h1>Users</h1>
+
+  <p>There are {{ users.count() }} registered users.</p>
+
+{% for user in users %}
+
+<div class="card">
+  {% if user.img %}
+    <img src="{{ user.img }}" class="card-img-top">
+  {% endif %}
+  <div class="card-body">
+    <h5 class="card-title">{{ user.username }}</h5>
+    <p class="card-text">{{ user.description }}</p>
+    <p class="card-text">
+      Sign up: {{ user.sign_up.strftime('%d %b %Y') }}<br>
+      OSM account created: {{ user.osm_account_created.strftime('%d %b %Y') }}<br>
+      Changesets: {{ user.changesets.count() }}
+    </p>
+  </div>
+</div>
+{% endfor %}
+
+</div>
+{% endblock %}
