@@ -30,7 +30,7 @@ from flask_sockets import Sockets
 
 import json
 import operator
-import sys
+import inspect
 import requests
 import os.path
 import re
@@ -248,14 +248,12 @@ def query_error(e):
 @app.errorhandler(InternalServerError)
 def exception_handler(e):
     tb = get_current_traceback()
-    return render_template('show_error.html', tb=tb), 500
-
-    exc_type, exc_value, tb = sys.exc_info()
-
-    if exc_value is e:
-        reraise(exc_type, exc_value, tb)
-    else:
-        raise e
+    last_frame = tb.frames[-1]
+    last_frame_args = inspect.getargs(last_frame.code)
+    return render_template('show_error.html',
+                           tb=tb,
+                           last_frame=last_frame,
+                           last_frame_args=last_frame_args), 500
 
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
