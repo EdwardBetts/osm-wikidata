@@ -369,6 +369,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
             ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs', 'nat_ref'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
+            ('P6082', ['nycdoitt:bin'], 'NYC Building Identification Number'),
         ]
 
         tags = defaultdict(list)
