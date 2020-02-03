@@ -7,6 +7,12 @@ import traceback
 import sys
 
 def send_mail(subject, body, config=None):
+    try:
+        send_mail_main(subject, body, config=config)
+    except smtplib.SMTPDataError:
+        pass  # ignore email errors
+
+def send_mail_main(subject, body, config=None):
     if config is None:
         config = current_app.config
 
