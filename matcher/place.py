@@ -995,30 +995,29 @@ class Place(Base):
 
         conn.close()
 
-    def load_isa(self):
-        items = [item.qid for item in self.items_with_instanceof()]
-        if not items:
-            return
+    def load_isa(self, progress=None):
+        if progress is None:
+            def progress(msg):
+                pass
 
-        isa_map = {}
-        for cur in utils.chunk(items, 500):
-            isa_map.update(wikidata.get_isa(cur))
+        isa_map = {item.qid: [isa_qid for isa_qid in item.instanceof()]
+                   for item in self.items}
+        isa_map = {qid: l for qid, l in isa_map.items() if l}
+
+        if not isa_map:
+            return
 
         download_isa = set()
         isa_obj_map = {}
         for qid, isa_list in isa_map.items():
             isa_objects = []
-            for isa_dict in isa_list:
-                isa_qid = isa_dict['qid']
+            for isa_qid in isa_list:
                 item_id = int(isa_qid[1:])
                 isa = IsA.query.get(item_id)
-                if isa:
-                    isa.label = isa_dict['label']
-                    if not isa.entity:
-                        download_isa.add(isa_qid)
-                else:
-                    isa = IsA(item_id=item_id, label=isa_dict['label'])
+                if not isa or not isa.entity:
                     download_isa.add(isa_qid)
+                if not isa:
+                    isa = IsA(item_id=item_id)
                     session.add(isa)
                 isa_obj_map[isa_qid] = isa
                 isa_objects.append(isa)

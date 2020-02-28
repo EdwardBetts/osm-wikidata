@@ -178,8 +178,7 @@ class MatcherJob(threading.Thread):
             self.merge_chunks(chunks)
 
         self.run_osm2pgsql()
-        self.place.load_isa()
-
+        self.load_isa()
         self.run_matcher()
         self.place.clean_up()
 
@@ -416,6 +415,13 @@ class MatcherJob(threading.Thread):
         subprocess.run(cmd, env=env, check=True)
         print('osm2pgsql done')
         self.status('osm2pgsql done')
+
+    def load_isa(self):
+        def progress(msg):
+            self.status(msg)
+        self.status("downloading 'instance of' data for Wikidata items")
+        self.place.load_isa(progress)
+        self.status("Wikidata 'instance of' download complete")
 
     def run_matcher(self):
         def progress(candidates, item):
