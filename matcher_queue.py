@@ -117,7 +117,6 @@ class MatcherJob(threading.Thread):
         self.subscribers = {}
         self.t0 = time()
         self.name = f'{osm_type}/{osm_id}  {self.t0}'
-        self.active = True
         self.user_id = user
         self.remote_addr = remote_addr
         self.user_agent = user_agent
@@ -219,12 +218,19 @@ class MatcherJob(threading.Thread):
         print('sending done')
         self.send('done')
         print('done sent')
-        self.active = False
         del active_jobs[(self.osm_type, self.osm_id)]
 
     def run(self):
         with app.app_context():
-            self.run_in_app_context()
+            try:
+                self.run_in_app_context()
+            except Exception as e:
+                error_str = f'{type(e).__name__}: {e}'
+                self.send('error', error=error_str)
+                del active_jobs[(self.osm_type, self.osm_id)]
+
+                info = 'matcher queue'
+                mail.send_traceback(info, prefix='matcher queue')
 
         print('end thread:', self.name)
 
@@ -465,7 +471,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
             msg = updates.get()
             try:
                 self.send_msg(msg)
-                if msg['type'] == 'done':
+                if msg['type'] in ('done', 'error'):
                     break
             except BrokenPipeError:
                 self.job_thread.unsubscribe(t.name)
@@ -474,9 +480,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     def stop_job(self):
         return
 
-    def handle(self):
-        print('New connection from %s:%s' % self.client_address)
-        msg = json.loads(netstring.read(self.request))
+    def handle_message(self, msg):
         if msg['type'] == 'ping':
             self.send_msg({'type': 'pong'})
             return
@@ -501,6 +505,19 @@ class RequestHandler(socketserver.BaseRequestHandler):
         if msg['type'] == 'stop_job':
             self.place_from_msg(self, msg)
             return self.stop_job()
+
+    def handle(self):
+        print('New connection from %s:%s' % self.client_address)
+        msg = json.loads(netstring.read(self.request))
+        with app.app_context():
+            try:
+                return self.handle_message(msg)
+            except Exception as e:
+                error_str = f'{type(e).__name__}: {e}'
+                self.send_msg({'type': 'error', 'error': error_str})
+
+                info = 'matcher queue'
+                mail.send_traceback(info, prefix='matcher queue')
 
 def build_item_list(items):
     item_list = []
