@@ -85,6 +85,16 @@ class IsA(Base):
     def url(self):
         return f'https://www.wikidata.org/wiki/Q{self.item_id}'
 
+    def label_best_language(self, languages):
+        if not languages:
+            return self.label()
+        labels = self.entity['labels']
+        for lang in languages:
+            code = lang if isinstance(lang, str) else lang.wikimedia_language_code
+            if code in labels:
+                return labels[code]['value']
+        return self.entity_label()
+
     def entity_label(self, lang='en'):
         labels = self.entity['labels']
         if lang in labels:
