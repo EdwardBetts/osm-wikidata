@@ -133,9 +133,9 @@ reply:
 
     send_mail('error creating changeset:' + place.name, body)
 
-def send_traceback(info):
+def send_traceback(info, prefix='osm-wikidata'):
     exception_name = sys.exc_info()[0].__name__
-    subject = f'osm-wikidata error: {exception_name}'
+    subject = f'{prefix} error: {exception_name}'
     body = f'user: {get_username()}\n' + info + '\n' + traceback.format_exc()
     send_mail(subject, body)
 
