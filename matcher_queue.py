@@ -34,13 +34,13 @@ def wait_for_slot(send_queue):
         body = f'URL: {r.url}\n\nresponse:\n{r.text}'
         mail.send_mail('Overpass API unavailable', body)
         send_queue.put({'type': 'error',
-                        'error': "Can't access overpass API"})
+                        'msg': "Can't access overpass API"})
         return False
     except requests.exceptions.Timeout:
         body = 'Timeout talking to overpass API'
         mail.send_mail('Overpass API timeout', body)
         send_queue.put({'type': 'error',
-                        'error': "Can't access overpass API"})
+                        'msg': "Can't access overpass API"})
         return False
 
     print('status:', status)
@@ -226,7 +226,7 @@ class MatcherJob(threading.Thread):
                 self.run_in_app_context()
             except Exception as e:
                 error_str = f'{type(e).__name__}: {e}'
-                self.send('error', error=error_str)
+                self.send('error', msg=error_str)
                 del active_jobs[(self.osm_type, self.osm_id)]
 
                 info = 'matcher queue'
@@ -514,7 +514,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
                 return self.handle_message(msg)
             except Exception as e:
                 error_str = f'{type(e).__name__}: {e}'
-                self.send_msg({'type': 'error', 'error': error_str})
+                self.send_msg({'type': 'error', 'msg': error_str})
 
                 info = 'matcher queue'
                 mail.send_traceback(info, prefix='matcher queue')
