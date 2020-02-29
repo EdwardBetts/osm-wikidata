@@ -318,8 +318,10 @@ class Place(Base):
                 prev_part = part['name']
 
             n = ', '.join(name_parts)
-
-        return 'the ' + n if (' of ' in n or 'national park' in n.lower()) else n
+        if (' of ' in n or 'national park' in n.lower()) and ', ' not in n:
+            return 'the ' + n
+        else:
+            return n
 
     @classmethod
     def from_nominatim(cls, hit):
