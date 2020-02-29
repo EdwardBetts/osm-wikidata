@@ -211,7 +211,10 @@ class Place(Base):
     @property
     def area_in_range(self):
         min_area = current_app.config['PLACE_MIN_AREA']
-        max_area = current_app.config['PLACE_MAX_AREA']
+        if g.user.is_authenticated:
+            max_area = current_app.config['PLACE_MAX_AREA']
+        else:
+            max_area = current_app.config['PLACE_MAX_AREA_ANON']
 
         return min_area < self.area_in_sq_km < max_area
 
