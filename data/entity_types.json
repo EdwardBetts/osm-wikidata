@@ -87,7 +87,7 @@
     "dist": 2
 },
 {
-    "cats": ["Hospitals by country"],
+    "cats": ["Hospitals by country", "Medical research institutes"],
     "tags": ["amenity=hospital", "building=hospital"],
     "trim": ["hospital", "medical center", "medical centre"],
     "check_housename": true,
@@ -1484,10 +1484,10 @@
     "dist": 10
 },
 {
-    "cats": ["Research institutes"],
-    "tags": [],
+    "cats": ["Research institutes", "Research and development organizations", "Organizations", "Scientific organization"],
+    "tags": ["landuse=industrial", "building=commercial"],
     "check_housename": true,
-    "trim": [],
+    "trim": ["center", "centre"],
     "dist": 1
 },
 {
@@ -1520,7 +1520,7 @@
 {
     "cats": ["Science parks by country"],
     "tags": ["landuse=industrial", "amenity=science_park", "type=multipolygon"],
-    "trim": [],
+    "trim": ["center", "centre"],
     "check_housename": false,
     "wikidata": "Q1976594",
     "dist": 1
@@ -1548,13 +1548,6 @@
     "trim": [],
     "check_housename": false,
     "wikidata": "Q190928",
-    "dist": 1
-},
-{
-    "cats": ["Research and development organizations", "Organizations", "Scientific organization"],
-    "tags": ["landuse=industrial"],
-    "trim": ["center", "centre"],
-    "check_housename": false,
     "dist": 1
 },
 {
