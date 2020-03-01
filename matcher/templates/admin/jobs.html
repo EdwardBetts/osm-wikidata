@@ -18,8 +18,8 @@
     <tr>
       <td>{{ i.start.strftime('%a, %d %b %Y %H:%M:%S') }}</td>
       <td>
-        <a href="{{ place.matcher_progress_url }}">{{ name }}</a>
-        <a href="{{ url }}">(OSM)</a>
+        <a href="{{ place.matcher_progress_url() }}">{{ name }}</a>
+        [<a href="{{ url }}">view on OSM</a>]
       </td>
       <td>{{ place.display_area }}</td>
       <td>{{ i.subscribers }} subscriber(s)</td>
