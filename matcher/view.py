@@ -1,5 +1,6 @@
 from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
-               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth)
+               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
+               jobs)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter)
@@ -1553,3 +1554,9 @@ def admin_demo_mode():
 def list_users():
     q = User.query.order_by(User.sign_up.desc())
     return render_template('admin/users.html', users=q)
+
+@app.route('/admin/jobs')
+def list_jobs():
+    job_list = jobs.get_jobs()
+
+    return render_template('admin/jobs.html', items=job_list)

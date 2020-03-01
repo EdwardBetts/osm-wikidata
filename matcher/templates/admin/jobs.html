@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Jobs{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+
+  <h1>Jobs</h1>
+
+  <p>There are {{ items | length }} active jobs.</p>
+
+  {% if items %}
+  <table class="table">
+  {% for i in items %}
+    {% set url = 'https://www.openstreetmap.org/' + i.osm_type + '/' + i.osm_id|string %}
+    {% set place = i.place %}
+    {% set name = place.name_for_changeset %}
+    <tr>
+      <td>{{ i.start.strftime('%a, %d %b %Y %H:%M:%S') }}</td>
+      <td>{{ i.subscribers }} subscriber(s)</td>
+      <td><a href="{{ url }}">{{ i.osm_type }}/{{ i.osm_id }}</a></td>
+      <td>{{ name }}</td>
+      <td>{{ place.display_area }}</td>
+    </tr>
+  {% endfor %}
+  </table>
+  {% endif %}
+
+</div>
+{% endblock %}
