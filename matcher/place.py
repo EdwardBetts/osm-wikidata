@@ -1,5 +1,5 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, ItemIsA, osm_type_enum, get_bad
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
@@ -1016,7 +1016,15 @@ class Place(Base):
         isa_obj_map = {}
         for qid, isa_list in isa_map.items():
             isa_objects = []
+            # some Wikidata items feature two 'instance of' statements that point to
+            # the same item.
+            # Example: Cambridge University Museum of Zoology (Q5025605)
+            # https://www.wikidata.org/wiki/Q5025605
+            seen_isa_qid = set()
             for isa_qid in isa_list:
+                if isa_qid in seen_isa_qid:
+                    continue
+                seen_isa_qid.add(isa_qid)
                 item_id = int(isa_qid[1:])
                 isa = IsA.query.get(item_id)
                 if not isa or not isa.entity:
