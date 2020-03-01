@@ -17,10 +17,12 @@
     {% set name = place.name_for_changeset %}
     <tr>
       <td>{{ i.start.strftime('%a, %d %b %Y %H:%M:%S') }}</td>
-      <td>{{ i.subscribers }} subscriber(s)</td>
-      <td><a href="{{ url }}">{{ i.osm_type }}/{{ i.osm_id }}</a></td>
-      <td>{{ name }}</td>
+      <td>
+        <a href="{{ place.matcher_progress_url }}">{{ name }}</a>
+        <a href="{{ url }}">(OSM)</a>
+      </td>
       <td>{{ place.display_area }}</td>
+      <td>{{ i.subscribers }} subscriber(s)</td>
     </tr>
   {% endfor %}
   </table>
