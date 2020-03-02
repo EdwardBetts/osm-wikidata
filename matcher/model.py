@@ -576,6 +576,28 @@ https://www.wikidata.org/wiki/{self.qid}
             return True
         if not self.entity:
             return False
+
+        item_isa_set = set(self.instanceof())
+
+        skip_isa = {
+            'Q21561328',  # English unitary authority council
+            'Q21451686',  # Scottish unitary authority council
+            'Q21451695',  # Scottish local authority council
+            'Q1160920',   # unitary authority
+        }
+        if item_isa_set & skip_isa:
+            return True
+
+        isa = {
+            'Q349084',    # district of England
+            'Q1002812',   # metropolitan borough
+            'Q1006876',   # borough in the United Kingdom
+            'Q1187580',   # non-metropolitan district
+            'Q1136601',   # unitary authority of England
+        }
+        if item_isa_set & isa:
+            return False
+
         sitelinks = self.entity.get('sitelinks')
         if not sitelinks:
             return False
