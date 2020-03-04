@@ -276,7 +276,7 @@ class MatcherJob(threading.Thread):
             try:
                 items.update(self.place.bbox_wikidata_items(bbox))
             except wikidata_api.QueryTimeout:
-                msg = f'wikidata timeout, splitting chunk {num} info four'
+                msg = f'wikidata timeout, splitting chunk {num} into four'
                 print(msg)
                 self.status(msg)
                 chunks += bbox_chunk(bbox, 2)
