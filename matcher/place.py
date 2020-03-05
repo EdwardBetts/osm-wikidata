@@ -288,6 +288,7 @@ class Place(Base):
     @property
     def name_for_change_comment(self):
         n = self.name
+        first_part = n.lower()
 
         if self.address:
             if isinstance(self.address, dict):
@@ -321,7 +322,8 @@ class Place(Base):
                 prev_part = part['name']
 
             n = ', '.join(name_parts)
-        if (' of ' in n or 'national park' in n.lower()) and ', ' not in n:
+            first_part = name_parts[0].lower()
+        if ' of ' in first_part or 'national park' in first_part:
             return 'the ' + n
         else:
             return n
