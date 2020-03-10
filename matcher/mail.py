@@ -112,24 +112,21 @@ error:
     send_mail(subject, body)
 
 def open_changeset_error(place, changeset, r):
-    template = '''
-user: {change.user.username}
-name: {name}
+    url = place.candidates_url(_external=True)
+    body = f'''
+user: {g.user.username}
+name: {place.display_name}
 page: {url}
 
 sent:
 
-{sent}
+{changeset}
 
 reply:
 
-{reply}
+{r.text}
 
 '''
-    body = template.format(name=place.display_name,
-                           url=place.candidates_url(_external=True),
-                           sent=changeset,
-                           reply=r.text)
 
     send_mail('error creating changeset:' + place.name, body)
 
