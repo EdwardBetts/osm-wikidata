@@ -292,7 +292,7 @@ GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 # Q56061 == administrative territorial entity
 
 next_level_query = '''
-SELECT DISTINCT ?item ?itemLabel
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
@@ -311,12 +311,12 @@ WHERE {
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
-GROUP BY ?item ?itemLabel ?startLabel
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
 ORDER BY ?itemLabel
 '''
 
 next_level_query3 = '''
-SELECT DISTINCT ?item ?itemLabel
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
@@ -329,12 +329,12 @@ WHERE {
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
-GROUP BY ?item ?itemLabel ?startLabel
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
 ORDER BY ?itemLabel
 '''
 
 next_level_has_part_query = '''
-SELECT DISTINCT ?item ?itemLabel
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
@@ -350,7 +350,7 @@ WHERE {
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
-GROUP BY ?item ?itemLabel ?startLabel
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
 ORDER BY ?itemLabel
 '''
 
@@ -993,6 +993,8 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
             'population': pop_value,
             'area': (int(float(row['area']['value']) / 1e6) if row.get('area') else None),
             'label': row['itemLabel']['value'],
+            'description': (row['itemDescription']['value']
+                            if 'itemDescription' in row else None),
             'start': row['startLabel']['value'],
             'item_id': item_id,
             'qid': qid,
