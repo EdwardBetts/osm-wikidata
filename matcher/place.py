@@ -545,7 +545,7 @@ class Place(Base):
             filename = self.overpass_filename
         style = os.path.join(current_app.config['DATA_DIR'],
                              'matcher.style')
-        return ['osm2pgsql', '--create', '--drop', '--slim',
+        return ['osm2pgsql', '--create', '--slim',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
                 '--cache', '500',
