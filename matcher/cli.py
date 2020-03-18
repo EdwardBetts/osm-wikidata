@@ -936,7 +936,10 @@ def show_place_item_isa(place_identifier):
 def load_isa(place_identifier):
     place = get_place(place_identifier)
 
-    place.load_isa()
+    def progress(msg):
+        print(msg)
+
+    place.load_isa(progress)
 
 @app.cli.command()
 @click.argument('place_identifier')
@@ -1219,3 +1222,28 @@ def match_subregions(qid):
 
         else:
             print('not found:', p['qid'], p['label'])
+
+def matcher_queue_send(msg_type):
+    sock = connect_to_queue()
+    msg = {'type': msg_type}
+    netstring.write(sock, json.dumps(msg))
+
+    while True:
+        network_msg = netstring.read(sock)
+        if network_msg is None:
+            break
+        reply = json.loads(network_msg)
+        print(reply)
+
+    sock.close()
+
+@app.cli.command()
+@click.argument('place_identifier')
+def matcher_update_place(place_identifier):
+    place = get_place(place_identifier)
+
+    if place.state == 'ready':
+        place.state = 'refresh'
+        database.session.commit()
+    for msg in update_place(place):
+        print(msg)
