@@ -109,7 +109,8 @@ def get_pins(place):
     return pins
 
 class MatcherJob(threading.Thread):
-    def __init__(self, osm_type, osm_id, user=None, remote_addr=None, user_agent=None):
+    def __init__(self, osm_type, osm_id,
+                 user=None, remote_addr=None, user_agent=None, want_isa=None):
         super(MatcherJob, self).__init__()
         self.osm_type = osm_type
         self.osm_id = osm_id
@@ -120,6 +121,7 @@ class MatcherJob(threading.Thread):
         self.user_id = user
         self.remote_addr = remote_addr
         self.user_agent = user_agent
+        self.want_isa = set(want_isa) if want_isa else set()
 
     def prepare_for_refresh(self):
         self.place.delete_overpass()
@@ -226,6 +228,7 @@ class MatcherJob(threading.Thread):
                 self.run_in_app_context()
             except Exception as e:
                 error_str = f'{type(e).__name__}: {e}'
+                print(error_str)
                 self.send('error', msg=error_str)
                 del active_jobs[(self.osm_type, self.osm_id)]
 
@@ -274,7 +277,8 @@ class MatcherJob(threading.Thread):
             print(msg)
             self.status(msg)
             try:
-                items.update(self.place.bbox_wikidata_items(bbox))
+                items.update(self.place.bbox_wikidata_items(bbox,
+                                                            want_isa=self.want_isa))
             except wikidata_api.QueryTimeout:
                 msg = f'wikidata timeout, splitting chunk {num} info four'
                 print(msg)
@@ -310,11 +314,14 @@ class MatcherJob(threading.Thread):
         ctx.push()  # to make url_for work
         place = self.place
         size = 22
-        chunk_size = place.wikidata_chunk_size(size=size)
+        if self.want_isa:
+            chunk_size = 1
+        else:
+            chunk_size = place.wikidata_chunk_size(size=size)
         if chunk_size == 1:
             print('wikidata unchunked')
             try:
-                wikidata_items = place.bbox_wikidata_items()
+                wikidata_items = place.bbox_wikidata_items(want_isa=self.want_isa)
             except wikidata_api.QueryTimeout:
                 place.wikidata_query_timeout = True
                 database.session.commit()
@@ -437,7 +444,8 @@ class MatcherJob(threading.Thread):
             msg = item.label_and_qid() + count
             self.item_line(msg)
 
-        self.place.run_matcher(progress=progress)
+        self.place.run_matcher(progress=progress,
+                               want_isa=self.want_isa)
 
 class RequestHandler(socketserver.BaseRequestHandler):
     def send_msg(self, msg):
@@ -458,6 +466,9 @@ class RequestHandler(socketserver.BaseRequestHandler):
             job_need_start = True
             kwargs = {key: msg.get(key)
                       for key in ('user', 'remote_addr', 'user_agent')}
+
+            kwargs['want_isa'] = set(msg.get('want_isa') or [])
+
             self.job_thread = MatcherJob(self.osm_type, self.osm_id, **kwargs)
             active_jobs[self.place_tuple] = self.job_thread
 

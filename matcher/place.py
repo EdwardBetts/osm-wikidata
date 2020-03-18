@@ -390,27 +390,30 @@ class Place(Base):
         query_map = wikidata.point_query_map(self.lat, self.lon, radius)
         return self.items_from_wikidata(query_map)
 
-    def bbox_wikidata_items(self, bbox=None):
+    def bbox_wikidata_items(self, bbox=None, want_isa=None):
         if bbox is None:
             bbox = self.bbox
 
-        query_map = wikidata.bbox_query_map(*bbox)
-        items = self.items_from_wikidata(query_map)
+        query_map = wikidata.bbox_query_map(*bbox, want_isa=want_isa)
+        items = self.items_from_wikidata(query_map, want_isa=want_isa)
 
         # Would be nice to include OSM chunk information with each
         # item. Not doing it at this point because it means lots
         # of queries. Easier once the items are loaded into the database.
         return {k: v for k, v in items.items() if self.covers(v)}
 
-    def items_from_wikidata(self, query_map):
-        rows = wikidata.run_query(query_map['enwiki'])
-        items = wikidata.parse_enwiki_query(rows)
+    def items_from_wikidata(self, query_map, want_isa=None):
+        if not want_isa:
+            rows = wikidata.run_query(query_map['enwiki'])
+            items = wikidata.parse_enwiki_query(rows)
 
-        try:  # add items with the coordinates in the HQ field
-            rows = wikidata.run_query(query_map['hq_enwiki'])
-            items.update(wikidata.parse_enwiki_query(rows))
-        except wikidata_api.QueryError:
-            pass  # HQ query timeout isn't fatal
+            try:  # add items with the coordinates in the HQ field
+                rows = wikidata.run_query(query_map['hq_enwiki'])
+                items.update(wikidata.parse_enwiki_query(rows))
+            except wikidata_api.QueryError:
+                pass  # HQ query timeout isn't fatal
+        else:
+            items = {}
 
         rows = wikidata.run_query(query_map['item_tag'])
         wikidata.parse_item_tag_query(rows, items)
@@ -939,7 +942,9 @@ class Place(Base):
                                      PlaceItem.done != true()))
                          .order_by(PlaceItem.item_id))
 
-    def run_matcher(self, debug=False, progress=None):
+    def run_matcher(self, debug=False, progress=None, want_isa=None):
+        if want_isa is None:
+            want_isa = set()
         if progress is None:
             def progress(candidates, item):
                 pass
@@ -959,7 +964,10 @@ class Place(Base):
                 print('searching for', item.label())
                 print(item.tags)
 
-            if item.skip_item_during_match():
+            item_isa_set = set(item.instanceof())
+            skip_item = want_isa and not (item_isa_set & want_isa)
+
+            if skip_item and item.skip_item_during_match():
                 candidates = []
             else:
                 t0 = time()

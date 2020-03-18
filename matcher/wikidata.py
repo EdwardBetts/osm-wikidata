@@ -581,15 +581,20 @@ def get_query(q, south, north, west, east):
                                   east=east)
 
 def query_map(prefix, **kwargs):
+    if 'want_isa' in kwargs:
+        queries = ('item_tag', 'hq_item_tag')
+    else:
+        queries = ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
+
     return {
         name: render_template(f'wikidata_query/{prefix}_{name}.sparql',
                               **kwargs)
-        for name in ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
+        for name in queries
     }
 
 
-def bbox_query_map(south, north, west, east):
-    return query_map('bbox', south=south, north=north, west=west, east=east)
+def bbox_query_map(south, north, west, east, **kwargs):
+    return query_map('bbox', south=south, north=north, west=west, east=east, **kwargs)
 
 def point_query_map(lat, lon, radius_m):
     return query_map('point', lat=lat, lon=lon, radius=radius_m / 1_000)

@@ -1163,13 +1163,16 @@ def connect_to_queue():
     sock.setblocking(True)
     return sock
 
-def update_place(place):
+def update_place(place, want_isa=None):
+    if want_isa is None:
+        want_isa = set()
 
     sock = connect_to_queue()
     msg = {
         'type': 'match',
         'osm_type': place.osm_type,
         'osm_id': place.osm_id,
+        'want_isa': want_isa,
     }
     netstring.write(sock, json.dumps(msg))
 
@@ -1246,4 +1249,16 @@ def matcher_update_place(place_identifier):
         place.state = 'refresh'
         database.session.commit()
     for msg in update_place(place):
+        print(msg)
+
+@app.cli.command()
+@click.argument('place_identifier')
+@click.argument('want_isa')
+def place_filter(place_identifier, want_isa):
+    place = get_place(place_identifier)
+    if place.state == 'ready':
+        place.state = 'refresh'
+        database.session.commit()
+
+    for msg in update_place(place, want_isa=want_isa.split(',')):
         print(msg)
