@@ -280,7 +280,7 @@ class MatcherJob(threading.Thread):
                 items.update(self.place.bbox_wikidata_items(bbox,
                                                             want_isa=self.want_isa))
             except wikidata_api.QueryTimeout:
-                msg = f'wikidata timeout, splitting chunk {num} info four'
+                msg = f'wikidata timeout, splitting chunk {num} into four'
                 print(msg)
                 self.status(msg)
                 chunks += bbox_chunk(bbox, 2)
