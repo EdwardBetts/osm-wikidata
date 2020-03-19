@@ -316,11 +316,11 @@ class MatcherJob(threading.Thread):
         ctx = app.test_request_context()
         ctx.push()  # to make url_for work
         place = self.place
-        size = 22
         if self.want_isa:
-            chunk_size = 1
+            size = 220
         else:
-            chunk_size = place.wikidata_chunk_size(size=size)
+            size = 22
+        chunk_size = place.wikidata_chunk_size(size=size)
         if chunk_size == 1:
             print('wikidata unchunked')
             try:
