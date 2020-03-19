@@ -581,7 +581,7 @@ def get_query(q, south, north, west, east):
                                   east=east)
 
 def query_map(prefix, **kwargs):
-    if 'want_isa' in kwargs:
+    if kwargs.get('want_isa'):
         queries = ('item_tag', 'hq_item_tag')
     else:
         queries = ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
