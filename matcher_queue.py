@@ -247,6 +247,9 @@ class MatcherJob(threading.Thread):
         if msg:
             self.send('msg', msg=msg)
 
+    def error(self, msg):
+        self.send('error', msg=msg)
+
     def item_line(self, msg):
         if msg:
             self.send('item', msg=msg)
