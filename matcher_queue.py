@@ -173,6 +173,7 @@ class MatcherJob(threading.Thread):
             root = lxml.etree.parse(filename).getroot()
             remark = root.find('.//remark')
             self.error('overpass: ' + remark.text)
+            mail.send_mail('Overpass error', remark.text)
             return  # FIXME report error to admin
 
         if len(chunks) > 1:
