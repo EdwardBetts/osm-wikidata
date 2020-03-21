@@ -152,11 +152,14 @@ class MatcherJob(threading.Thread):
 
         self.get_item_detail(db_items)
 
+        chunk_size = 96 if self.want_isa else None
+        skip = {'building', 'building=yes'} if self.want_isa else set()
+
         if place.osm_type == 'node':
             oql = place.get_oql()
             chunks = [{'filename': f'{place.place_id}.xml', 'num': 0, 'oql': oql}]
         else:
-            chunks = place.get_chunks()
+            chunks = place.get_chunks(chunk_size=chunk_size, skip=skip)
             self.report_empty_chunks(chunks)
 
         overpass_good = self.overpass_request(chunks)
