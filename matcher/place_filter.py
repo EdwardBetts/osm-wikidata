@@ -12,5 +12,3 @@ def get_filter_items():
     filter_items = [IsA.query.get(int(qid[1:])) for qid in filter_qids]
 
     return filter_items
-
-
