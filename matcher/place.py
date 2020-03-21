@@ -1171,8 +1171,10 @@ class Place(Base):
 
         return chunks
 
-    def get_chunks(self):
-        bbox_chunks = list(self.polygon_chunk(size=place_chunk_size))
+    def get_chunks(self, chunk_size=None, skip=None):
+        if chunk_size is None:
+            chunk_size = place_chunk_size
+        bbox_chunks = list(self.polygon_chunk(size=chunk_size))
 
         chunks = []
         need_self = True  # include self in first non-empty chunk
