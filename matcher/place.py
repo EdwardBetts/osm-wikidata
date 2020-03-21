@@ -1180,7 +1180,7 @@ class Place(Base):
         need_self = True  # include self in first non-empty chunk
         for num, chunk in enumerate(bbox_chunks):
             filename = self.chunk_filename(num, bbox_chunks)
-            oql = self.oql_for_chunk(chunk, include_self=need_self)
+            oql = self.oql_for_chunk(chunk, include_self=need_self, skip=skip)
             chunks.append({
                 'num': num,
                 'oql': oql,
@@ -1221,13 +1221,16 @@ class Place(Base):
         print(' '.join(cmd))
         subprocess.run(cmd)
 
-    def oql_for_chunk(self, chunk, include_self=False):
+    def oql_for_chunk(self, chunk, include_self=False, skip=None):
+        if skip is not None:
+            skip = set(skip)
         q = self.items.filter(cast(Item.location, Geometry).contained(envelope(chunk)))
 
         tags = set()
         for item in q:
             tags |= set(item.tags)
         tags.difference_update(skip_tags)
+        tags.difference_update(skip)
         tags = matcher.simplify_tags(tags)
         if not(tags):
             print('no tags, skipping')
