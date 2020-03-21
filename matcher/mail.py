@@ -7,6 +7,12 @@ import traceback
 import sys
 
 def send_mail(subject, body, config=None):
+    try:
+        send_mail_main(subject, body, config=config)
+    except smtplib.SMTPDataError:
+        pass  # ignore email errors
+
+def send_mail_main(subject, body, config=None):
     if config is None:
         config = current_app.config
 
@@ -106,30 +112,27 @@ error:
     send_mail(subject, body)
 
 def open_changeset_error(place, changeset, r):
-    template = '''
-user: {change.user.username}
-name: {name}
+    url = place.candidates_url(_external=True)
+    body = f'''
+user: {g.user.username}
+name: {place.display_name}
 page: {url}
 
 sent:
 
-{sent}
+{changeset}
 
 reply:
 
-{reply}
+{r.text}
 
 '''
-    body = template.format(name=place.display_name,
-                           url=place.candidates_url(_external=True),
-                           sent=changeset,
-                           reply=r.text)
 
     send_mail('error creating changeset:' + place.name, body)
 
-def send_traceback(info):
+def send_traceback(info, prefix='osm-wikidata'):
     exception_name = sys.exc_info()[0].__name__
-    subject = f'osm-wikidata error: {exception_name}'
+    subject = f'{prefix} error: {exception_name}'
     body = f'user: {get_username()}\n' + info + '\n' + traceback.format_exc()
     send_mail(subject, body)
 

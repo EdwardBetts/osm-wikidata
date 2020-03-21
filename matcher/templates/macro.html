@@ -11,7 +11,7 @@
 
 {% macro taginfo_link(tag) %}{% if '=' in tag %}<a href="https://taginfo.openstreetmap.org/tags/{{ tag }}">{{ tag }}</a>{% else %}<a href="https://taginfo.openstreetmap.org/keys/{{ tag }}" class="text-nowrap">{{ tag }}</a>{% endif -%}{%- endmacro -%}
 
-{% macro candidate_info(c, is_picked=false, is_bad=false, show_tags=false, identifiers=false) %}
+{% macro candidate_info(c, is_picked=false, is_bad=false, show_tags=false, identifiers=false, show_existing=true) %}
   {% set search_tags = c.item.tags %}
   {% set m = c.get_match() %}
     <li>{{c.osm_type}}:
@@ -61,16 +61,16 @@
          {% endfor %}
      {% endif %}
      <div{% if not show_tags %} class="hide-all-tags"{% endif %} id="candidate-{{ c.key }}">
-       {% for k, v in c.tags.items() if k != 'way_area' %}
+       {% for k, v in c.tags.items() if k != 'way_area' and (show_existing or k != 'wikidata') %}
         {% set tag = k + '=' + v %}
         {% if c.name_match and k in c.name_match %}
           <b>{{ tag }}</b> ({{ c.name_match_count(k) }} name matches)
         {% elif k in search_tags or tag in search_tags %}
-            <b>{{ tag }}</b> (OSM tag matches Wikidata or Wikipedia category)
+          <b>{{ tag }}</b> (OSM tag matches Wikidata or Wikipedia category)
         {% elif identifiers and k in identifiers and v in identifiers[k] %}
           <b>{{ tag }}</b> (OSM tag matches Wikidata identifier)
         {% else %}
-            {{ tag }}
+          {{ tag }}
         {% endif %}<br />
        {% endfor %}
      </div>
@@ -88,7 +88,7 @@
      </div>
      {% endif %}
 
-     {% if 'wikidata' in c.tags %}
+     {% if show_existing and 'wikidata' in c.tags %}
        <br>
        {% if c.tags.wikidata == c.item.qid %}
          wikidata <span class="match">match</span>: {{ c.tags.wikidata }}

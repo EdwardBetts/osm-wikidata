@@ -273,7 +273,7 @@ def bad_building_match(osm_tags, name_match, item):
     is_station = wd_station or osm_station
 
     for osm, detail_list in name_match.items():
-        for match_type, value, source in detail_list:
+        for match_type, _, source in detail_list:
             if match_type == 'both_trimmed':
                 continue
             if (not extract_name_good_enough and
@@ -421,7 +421,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     endings.discard('street')
 
     candidates = []
-    for osm_num, (src_type, src_id, osm_name, osm_tags, dist) in enumerate(rows):
+    for src_type, src_id, osm_name, osm_tags, dist in rows:
 
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
@@ -973,7 +973,7 @@ def filter_station(candidates):
             return
     return match
 
-def filter_candidates_more(items, bad=None):
+def filter_candidates_more(items, bad=None, ignore_existing=False):
     osm_count = Counter()
     by_osm = defaultdict(list)
 
@@ -1042,7 +1042,7 @@ def filter_candidates_more(items, bad=None):
             yield (item, {'note': 'OSM candidate matches multiple Wikidata items'})
             continue
 
-        if 'wikidata' in candidate.tags:
+        if not ignore_existing and 'wikidata' in candidate.tags:
             yield (item, {'note': 'candidate already tagged'})
             continue
 

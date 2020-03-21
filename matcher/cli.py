@@ -736,13 +736,16 @@ def load_languages():
     }
 
     known_lang = set()
+    print('creating language objects')
     for line in open(filename):
         qid, entity = eval(line)
+        # Skip Greek
         if qid == 'Q9129':
             continue
         item_id = int(qid[1:])
         claims = entity['claims']
-        print(entity['labels']['en']['value'])
+        en_label = entity['labels']['en']['value']
+        print(en_label or ('no English label:', qid))
 
         item = Language(item_id=item_id)
 
@@ -762,11 +765,14 @@ def load_languages():
     database.session.commit()
 
     print()
+    print('adding language labels')
     for line in open(filename):
         qid, entity = eval(line)
+        # Skip Greek
         if qid == 'Q9129':
             continue
-        print(entity['labels']['en']['value'])
+        en_label = entity['labels']['en']['value']
+        print(en_label or ('no English label:', qid))
         item_id = int(qid[1:])
         for k, v in entity['labels'].items():
             if k not in known_lang:
@@ -930,7 +936,10 @@ def show_place_item_isa(place_identifier):
 def load_isa(place_identifier):
     place = get_place(place_identifier)
 
-    place.load_isa()
+    def progress(msg):
+        print(msg)
+
+    place.load_isa(progress)
 
 @app.cli.command()
 @click.argument('place_identifier')
@@ -1099,7 +1108,7 @@ def load_bad_match_filters(filename):
     app.config.from_object('config.default')
     database.init_app(app)
     for line in open(filename):
-        i = BadMatchFilter(**json.load(line))
+        i = BadMatchFilter(**json.loads(line))
         database.session.add(i)
     database.session.commit()
 
@@ -1154,13 +1163,16 @@ def connect_to_queue():
     sock.setblocking(True)
     return sock
 
-def update_place(place):
+def update_place(place, want_isa=None):
+    if want_isa is None:
+        want_isa = set()
 
     sock = connect_to_queue()
     msg = {
         'type': 'match',
         'osm_type': place.osm_type,
         'osm_id': place.osm_id,
+        'want_isa': want_isa,
     }
     netstring.write(sock, json.dumps(msg))
 
@@ -1213,3 +1225,40 @@ def match_subregions(qid):
 
         else:
             print('not found:', p['qid'], p['label'])
+
+def matcher_queue_send(msg_type):
+    sock = connect_to_queue()
+    msg = {'type': msg_type}
+    netstring.write(sock, json.dumps(msg))
+
+    while True:
+        network_msg = netstring.read(sock)
+        if network_msg is None:
+            break
+        reply = json.loads(network_msg)
+        print(reply)
+
+    sock.close()
+
+@app.cli.command()
+@click.argument('place_identifier')
+def matcher_update_place(place_identifier):
+    place = get_place(place_identifier)
+
+    if place.state == 'ready':
+        place.state = 'refresh'
+        database.session.commit()
+    for msg in update_place(place):
+        print(msg)
+
+@app.cli.command()
+@click.argument('place_identifier')
+@click.argument('want_isa')
+def place_filter(place_identifier, want_isa):
+    place = get_place(place_identifier)
+    if place.state == 'ready':
+        place.state = 'refresh'
+        database.session.commit()
+
+    for msg in update_place(place, want_isa=want_isa.split(',')):
+        print(msg)

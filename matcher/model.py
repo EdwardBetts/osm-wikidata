@@ -35,6 +35,17 @@ osm_type_enum = postgresql.ENUM('node', 'way', 'relation',
 disused_prefix_key = {'amenity', 'railway', 'leisure', 'tourism',
                       'man_made', 'shop', 'building'}
 
+# example OSM extra_data:
+# {
+#   "id": "123456789",
+#   "access_token": {
+#       "oauth_token": "OAUTH TOKEN",
+#       "oauth_token_secret": "OAUTH TOKEN SECRET"
+#   },
+#   "account_created": "2005-07-15T15:45:44Z",
+#   "avatar": "AVATAR URL"
+# }
+
 class User(Base, UserMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
@@ -46,12 +57,17 @@ class User(Base, UserMixin):
     sign_up = Column(DateTime, default=now_utc())
     is_admin = Column(Boolean, default=False)
     description = Column(Text)
-    img = Column(String)
+    img = Column(String)  # OSM avatar
     languages = Column(postgresql.ARRAY(String))
     single = Column(String)
     multi = Column(String)
     units = Column(String)
     wikipedia_tag = Column(Boolean, default=False)
+
+    osm_id = Column(Integer, index=True)
+    osm_account_created = Column(DateTime)
+    osm_oauth_token = Column(String)
+    osm_oauth_token_secret = Column(String)
 
     def is_active(self):
         return self.active
@@ -68,6 +84,16 @@ class IsA(Base):
 
     def url(self):
         return f'https://www.wikidata.org/wiki/Q{self.item_id}'
+
+    def label_best_language(self, languages):
+        if not languages:
+            return self.label()
+        labels = self.entity['labels']
+        for lang in languages:
+            code = lang if isinstance(lang, str) else lang.wikimedia_language_code
+            if code in labels:
+                return labels[code]['value']
+        return self.entity_label()
 
     def entity_label(self, lang='en'):
         labels = self.entity['labels']
@@ -353,6 +379,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P3562', ['seamark:light:reference'], 'Admiralty number'),
             ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs', 'nat_ref'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
+            ('P6082', ['nycdoitt:bin'], 'NYC Building Identification Number'),
         ]
 
         tags = defaultdict(list)
@@ -549,6 +576,28 @@ https://www.wikidata.org/wiki/{self.qid}
             return True
         if not self.entity:
             return False
+
+        item_isa_set = set(self.instanceof())
+
+        skip_isa = {
+            'Q21561328',  # English unitary authority council
+            'Q21451686',  # Scottish unitary authority council
+            'Q21451695',  # Scottish local authority council
+            'Q1160920',   # unitary authority
+        }
+        if item_isa_set & skip_isa:
+            return True
+
+        isa = {
+            'Q349084',    # district of England
+            'Q1002812',   # metropolitan borough
+            'Q1006876',   # borough in the United Kingdom
+            'Q1187580',   # non-metropolitan district
+            'Q1136601',   # unitary authority of England
+        }
+        if item_isa_set & isa:
+            return False
+
         sitelinks = self.entity.get('sitelinks')
         if not sitelinks:
             return False

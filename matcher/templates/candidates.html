@@ -33,7 +33,7 @@
   {% elif isa_list %}
     item type:
     {% for isa in isa_list %}
-      <a href="{{ isa.url() }}">{{ isa.label }}</a>{% if not loop.last %} / {% endif %}
+      <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) }}</a>{% if not loop.last %} / {% endif %}
     {% endfor %}
   {% else %}
     search tags: {{ ', '.join(search_tags | sort) }}
@@ -84,7 +84,8 @@
                       is_picked=(item.candidates.count() > 1 and c == picked),
                       is_bad=is_bad,
                       show_tags=show_tags,
-                      identifiers=identifiers) }}
+                      identifiers=identifiers,
+                      show_existing=not session.demo_mode) }}
   {% endfor %}
   </ul>
 
@@ -390,9 +391,9 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
     {% if filter_okay and not upload_okay %}
       {% if config.DISABLE_SOCIAL %}
-        <p>login to upload wikidata tags</p>
+        <p><a class="btn btn-primary" href="#">login to upload wikidata tags</a></p>
       {% else %}
-        <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+        <p><a class="btn btn-primary" href="{{ url_for('login_route', next=request.script_root + request.full_path.rstrip('?')) }}">login to upload wikidata tags</a></p>
       {% endif %}
     {% endif %}
 

@@ -1,5 +1,5 @@
 from flask import current_app, url_for, g, abort
-from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, ItemIsA, osm_type_enum, get_bad
+from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy import func, select, cast
 from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
@@ -214,7 +214,10 @@ class Place(Base):
     @property
     def area_in_range(self):
         min_area = current_app.config['PLACE_MIN_AREA']
-        max_area = current_app.config['PLACE_MAX_AREA']
+        if g.user.is_authenticated:
+            max_area = current_app.config['PLACE_MAX_AREA']
+        else:
+            max_area = current_app.config['PLACE_MAX_AREA_ANON']
 
         return min_area < self.area_in_sq_km < max_area
 
@@ -288,6 +291,7 @@ class Place(Base):
     @property
     def name_for_change_comment(self):
         n = self.name
+        first_part = n.lower()
 
         if self.address:
             if isinstance(self.address, dict):
@@ -321,8 +325,11 @@ class Place(Base):
                 prev_part = part['name']
 
             n = ', '.join(name_parts)
-
-        return 'the ' + n if (' of ' in n or 'national park' in n.lower()) else n
+            first_part = name_parts[0].lower()
+        if ' of ' in first_part or 'national park' in first_part:
+            return 'the ' + n
+        else:
+            return n
 
     @classmethod
     def from_nominatim(cls, hit):
@@ -386,27 +393,30 @@ class Place(Base):
         query_map = wikidata.point_query_map(self.lat, self.lon, radius)
         return self.items_from_wikidata(query_map)
 
-    def bbox_wikidata_items(self, bbox=None):
+    def bbox_wikidata_items(self, bbox=None, want_isa=None):
         if bbox is None:
             bbox = self.bbox
 
-        query_map = wikidata.bbox_query_map(*bbox)
-        items = self.items_from_wikidata(query_map)
+        query_map = wikidata.bbox_query_map(*bbox, want_isa=want_isa)
+        items = self.items_from_wikidata(query_map, want_isa=want_isa)
 
         # Would be nice to include OSM chunk information with each
         # item. Not doing it at this point because it means lots
         # of queries. Easier once the items are loaded into the database.
         return {k: v for k, v in items.items() if self.covers(v)}
 
-    def items_from_wikidata(self, query_map):
-        rows = wikidata.run_query(query_map['enwiki'])
-        items = wikidata.parse_enwiki_query(rows)
+    def items_from_wikidata(self, query_map, want_isa=None):
+        if not want_isa:
+            rows = wikidata.run_query(query_map['enwiki'])
+            items = wikidata.parse_enwiki_query(rows)
 
-        try:  # add items with the coordinates in the HQ field
-            rows = wikidata.run_query(query_map['hq_enwiki'])
-            items.update(wikidata.parse_enwiki_query(rows))
-        except wikidata_api.QueryError:
-            pass  # HQ query timeout isn't fatal
+            try:  # add items with the coordinates in the HQ field
+                rows = wikidata.run_query(query_map['hq_enwiki'])
+                items.update(wikidata.parse_enwiki_query(rows))
+            except wikidata_api.QueryError:
+                pass  # HQ query timeout isn't fatal
+        else:
+            items = {}
 
         rows = wikidata.run_query(query_map['item_tag'])
         wikidata.parse_item_tag_query(rows, items)
@@ -541,7 +551,7 @@ class Place(Base):
             filename = self.overpass_filename
         style = os.path.join(current_app.config['DATA_DIR'],
                              'matcher.style')
-        return ['osm2pgsql', '--create', '--drop', '--slim',
+        return ['osm2pgsql', '--create', '--slim', '--drop',
                 '--hstore-all', '--hstore-add-index',
                 '--prefix', self.prefix,
                 '--cache', '500',
@@ -694,8 +704,7 @@ class Place(Base):
         else:
             endpoint = 'candidates'
 
-        return self.place_url(endpoint,
-                              **kwargs)
+        return self.place_url(endpoint, **kwargs)
 
     def place_url(self, endpoint, **kwargs):
         return url_for(endpoint,
@@ -936,7 +945,9 @@ class Place(Base):
                                      PlaceItem.done != true()))
                          .order_by(PlaceItem.item_id))
 
-    def run_matcher(self, debug=False, progress=None):
+    def run_matcher(self, debug=False, progress=None, want_isa=None):
+        if want_isa is None:
+            want_isa = set()
         if progress is None:
             def progress(candidates, item):
                 pass
@@ -956,7 +967,10 @@ class Place(Base):
                 print('searching for', item.label())
                 print(item.tags)
 
-            if item.skip_item_during_match():
+            item_isa_set = set(item.instanceof())
+            skip_item = want_isa and not (item_isa_set & want_isa)
+
+            if skip_item and item.skip_item_during_match():
                 candidates = []
             else:
                 t0 = time()
@@ -999,30 +1013,37 @@ class Place(Base):
 
         conn.close()
 
-    def load_isa(self):
-        items = [item.qid for item in self.items_with_instanceof()]
-        if not items:
-            return
+    def load_isa(self, progress=None):
+        if progress is None:
+            def progress(msg):
+                pass
 
-        isa_map = {}
-        for cur in utils.chunk(items, 500):
-            isa_map.update(wikidata.get_isa(cur))
+        isa_map = {item.qid: [isa_qid for isa_qid in item.instanceof()]
+                   for item in self.items}
+        isa_map = {qid: l for qid, l in isa_map.items() if l}
+
+        if not isa_map:
+            return
 
         download_isa = set()
         isa_obj_map = {}
         for qid, isa_list in isa_map.items():
             isa_objects = []
-            for isa_dict in isa_list:
-                isa_qid = isa_dict['qid']
+            # some Wikidata items feature two 'instance of' statements that point to
+            # the same item.
+            # Example: Cambridge University Museum of Zoology (Q5025605)
+            # https://www.wikidata.org/wiki/Q5025605
+            seen_isa_qid = set()
+            for isa_qid in isa_list:
+                if isa_qid in seen_isa_qid:
+                    continue
+                seen_isa_qid.add(isa_qid)
                 item_id = int(isa_qid[1:])
                 isa = IsA.query.get(item_id)
-                if isa:
-                    isa.label = isa_dict['label']
-                    if not isa.entity:
-                        download_isa.add(isa_qid)
-                else:
-                    isa = IsA(item_id=item_id, label=isa_dict['label'])
+                if not isa or not isa.entity:
                     download_isa.add(isa_qid)
+                if not isa:
+                    isa = IsA(item_id=item_id)
                     session.add(isa)
                 isa_obj_map[isa_qid] = isa
                 isa_objects.append(isa)
@@ -1154,14 +1175,16 @@ class Place(Base):
 
         return chunks
 
-    def get_chunks(self):
-        bbox_chunks = list(self.polygon_chunk(size=place_chunk_size))
+    def get_chunks(self, chunk_size=None, skip=None):
+        if chunk_size is None:
+            chunk_size = place_chunk_size
+        bbox_chunks = list(self.polygon_chunk(size=chunk_size))
 
         chunks = []
         need_self = True  # include self in first non-empty chunk
         for num, chunk in enumerate(bbox_chunks):
             filename = self.chunk_filename(num, bbox_chunks)
-            oql = self.oql_for_chunk(chunk, include_self=need_self)
+            oql = self.oql_for_chunk(chunk, include_self=need_self, skip=skip)
             chunks.append({
                 'num': num,
                 'oql': oql,
@@ -1202,13 +1225,16 @@ class Place(Base):
         print(' '.join(cmd))
         subprocess.run(cmd)
 
-    def oql_for_chunk(self, chunk, include_self=False):
+    def oql_for_chunk(self, chunk, include_self=False, skip=None):
+        if skip is not None:
+            skip = set(skip)
         q = self.items.filter(cast(Item.location, Geometry).contained(envelope(chunk)))
 
         tags = set()
         for item in q:
             tags |= set(item.tags)
         tags.difference_update(skip_tags)
+        tags.difference_update(skip)
         tags = matcher.simplify_tags(tags)
         if not(tags):
             print('no tags, skipping')

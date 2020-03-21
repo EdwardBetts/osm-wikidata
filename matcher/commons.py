@@ -1,44 +1,44 @@
 import requests
-import lxml.etree
 import urllib.parse
 from . import utils
 
-commons_api_url = 'https://tools.wmflabs.org/magnus-toolserver/commonsapi.php'
 commons_start = 'http://commons.wikimedia.org/wiki/Special:FilePath/'
+commons_url = 'https://www.wikidata.org/w/api.php'
+page_size = 50
 
 def commons_uri_to_filename(uri):
     return urllib.parse.unquote(utils.drop_start(uri, commons_start))
 
-def image_detail(filenames, thumbwidth=None):
-    if not isinstance(filenames, list):
-        filenames = [filenames]
-    params = {'image': '|'.join(filenames)}
+def api_call(params):
+    call_params = {
+        'format': 'json',
+        'formatversion': 2,
+        **params,
+    }
+
+    return requests.get(commons_url, params=call_params, timeout=5)
+
+def image_detail(filenames, thumbheight=None, thumbwidth=None):
+    params = {
+        'action': 'query',
+        'prop': 'imageinfo',
+        'iiprop': 'url',
+    }
+    if thumbheight is not None:
+        params['iiurlheight'] = thumbheight
     if thumbwidth is not None:
-        params['thumbwidth'] = thumbwidth
-    r = requests.get(commons_api_url, params=params)
-    print(r.url)
-    root = lxml.etree.fromstring(r.content)
+        params['iiurlwidth'] = thumbwidth
 
-    images = []
-    for image in root:
-        if image.tag == 'image':
-            file_element = image.find('./file')
-        elif image.tag == 'file':
-            file_element = image
-        else:
-            continue
-        thumb_element = file_element.find('./urls/thumbnail')
+    images = {}
 
-        image = {
-            'name': image.get('name'),
-            'image': file_element.find('./urls/file').text,
-            'height': int(file_element.find('./height').text),
-            'width': int(file_element.find('./width').text),
-        }
+    for cur in utils.chunk(filenames, page_size):
+        call_params = params.copy()
+        call_params['titles'] = '|'.join(f'File:{f}' for f in cur)
 
-        if thumb_element is not None:
-            image['thumbnail'] = thumb_element.text
+        r = api_call(call_params)
 
-        images.append(image)
+        for image in r.json()['query']['pages']:
+            filename = utils.drop_start(image['title'], 'File:')
+            images[filename] = image['imageinfo'][0] if 'imageinfo' in image else None
 
     return images

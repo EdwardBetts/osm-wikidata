@@ -292,7 +292,7 @@ GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 # Q56061 == administrative territorial entity
 
 next_level_query = '''
-SELECT DISTINCT ?item ?itemLabel
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
@@ -311,12 +311,12 @@ WHERE {
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
-GROUP BY ?item ?itemLabel ?startLabel
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
 ORDER BY ?itemLabel
 '''
 
 next_level_query3 = '''
-SELECT DISTINCT ?item ?itemLabel
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
                 (SAMPLE(?pop) AS ?pop)
                 (SAMPLE(?area) AS ?area)
@@ -329,7 +329,28 @@ WHERE {
   OPTIONAL { ?item wdt:P31 ?isa } .
   SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
 }
-GROUP BY ?item ?itemLabel ?startLabel
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
+ORDER BY ?itemLabel
+'''
+
+next_level_has_part_query = '''
+SELECT DISTINCT ?item ?itemLabel ?itemDescription
+                ?startLabel
+                (SAMPLE(?pop) AS ?pop)
+                (SAMPLE(?area) AS ?area)
+                (GROUP_CONCAT(DISTINCT ?isa) as ?isa_list)
+WHERE {
+  VALUES ?start { wd:QID } .
+  ?start wdt:P527 ?item .
+  ?item wdt:P31/wdt:P279* wd:Q56061 .
+  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  OPTIONAL { ?item wdt:P1082 ?pop } .
+  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
+  OPTIONAL { ?item wdt:P31 ?isa } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
+}
+GROUP BY ?item ?itemLabel ?itemDescription ?startLabel
 ORDER BY ?itemLabel
 '''
 
@@ -540,13 +561,13 @@ GROUP BY ?item ?itemLabel ?countryLabel
 '''
 
 continents_with_country_count_query = '''
-SELECT ?continent ?continentLabel ?banner (COUNT(?country) AS ?count) WHERE {
+SELECT ?continent ?continentLabel ?continentDescription ?banner (COUNT(?country) AS ?count) WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
   ?country wdt:P30 ?continent .
   ?country wdt:P31 wd:Q6256 .
   ?continent wdt:P948 ?banner
 }
-GROUP BY ?continent ?continentLabel ?banner
+GROUP BY ?continent ?continentLabel ?continentDescription ?banner
 ORDER BY ?continentLabel
 '''
 
@@ -560,15 +581,20 @@ def get_query(q, south, north, west, east):
                                   east=east)
 
 def query_map(prefix, **kwargs):
+    if kwargs.get('want_isa'):
+        queries = ('item_tag', 'hq_item_tag')
+    else:
+        queries = ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
+
     return {
         name: render_template(f'wikidata_query/{prefix}_{name}.sparql',
                               **kwargs)
-        for name in ('enwiki', 'hq_enwiki', 'item_tag', 'hq_item_tag')
+        for name in queries
     }
 
 
-def bbox_query_map(south, north, west, east):
-    return query_map('bbox', south=south, north=north, west=west, east=east)
+def bbox_query_map(south, north, west, east, **kwargs):
+    return query_map('bbox', south=south, north=north, west=west, east=east, **kwargs)
 
 def point_query_map(lat, lon, radius_m):
     return query_map('point', lat=lat, lon=lon, radius=radius_m / 1_000)
@@ -692,7 +718,7 @@ def parse_item_tag_query(rows, items):
                     items[qid][k] = row[k]['value']
         items[qid]['tags'].add(tag_or_key)
 
-def page_banner_from_entity(entity, thumbwidth=None):
+def page_banner_from_entity(entity, **kwargs):
     property_key = 'P948'
     if property_key not in entity['claims']:
         return
@@ -700,8 +726,9 @@ def page_banner_from_entity(entity, thumbwidth=None):
     filename = entity['claims'][property_key][0]['mainsnak']['datavalue']['value']
 
     try:
-        return commons.image_detail([filename], thumbwidth=thumbwidth)[0]
-    except IndexError:
+        images = commons.image_detail([filename], **kwargs)
+        return images[filename]
+    except Exception:
         return
 
 def entity_label(entity, language=None):
@@ -712,6 +739,12 @@ def entity_label(entity, language=None):
 
     # pick a label at random
     return list(entity['labels'].values())[0]['value']
+
+def entity_description(entity, language=None):
+    if language and language in entity['descriptions']:
+        return entity['descriptions'][language]['value']
+    if language != 'en' and 'en' in entity['labels']:
+        return entity['descriptions']['en']['value']
 
 def names_from_entity(entity, skip_lang=None):
     if not entity or 'labels' not in entity:
@@ -934,6 +967,12 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
         mail.error_mail('wikidata browse query error', query, r)
         raise QueryError(query, r)
 
+    if not query_rows and 'P527' in entity['claims']:
+        query = (next_level_has_part_query.replace('QID', qid)
+                                          .replace('LANGUAGE', language))
+        r = run_query(query, name=name, return_json=False, send_error_mail=True)
+        query_rows = r.json()['results']['bindings']
+
     if not query_rows:
         claims = entity.get('claims', {})
         located_in = {i['mainsnak']['datavalue']['value']['id']
@@ -971,6 +1010,8 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
             'population': pop_value,
             'area': (int(float(row['area']['value']) / 1e6) if row.get('area') else None),
             'label': row['itemLabel']['value'],
+            'description': (row['itemDescription']['value']
+                            if 'itemDescription' in row else None),
             'start': row['startLabel']['value'],
             'item_id': item_id,
             'qid': qid,

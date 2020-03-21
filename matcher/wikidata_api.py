@@ -3,7 +3,7 @@ import requests.exceptions
 import time
 import simplejson.errors
 from .utils import chunk
-from . import user_agent_headers
+from . import user_agent_headers, mail
 
 wikidata_url = 'https://www.wikidata.org/w/api.php'
 page_size = 50
@@ -48,6 +48,9 @@ def entity_iter(ids, debug=False, attempts=5):
                 time.sleep(1)
         r.raise_for_status()
         json_data = r.json()
+        if 'entities' not in json_data:
+            mail.send_mail('error fetching wikidata entities', r.text)
+
         for qid, entity in json_data['entities'].items():
             yield qid, entity
 

@@ -50,11 +50,11 @@
             <a class="nav-link" href="{{ url_for('account_settings_page') }}">settings</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('logout', next=request.script_root + request.full_path) }}">logout</a>
+            <a class="nav-link" href="{{ url_for('logout', next=request.script_root + request.full_path.rstrip('?')) }}">logout</a>
           </li>
         {% else %}
           <li class="nav-item">
-            {% set login_url = url_for('login_route', next=request.script_root + request.full_path)
+            {% set login_url = url_for('login_route', next=request.script_root + request.full_path.rstrip('?'))
                                if request.endpoint != 'social.complete'
                                else url_for('login_route') %}
             <a class="nav-link" href="{{ login_url }}">login with OSM</a>

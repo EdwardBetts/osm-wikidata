@@ -134,7 +134,7 @@
         {% if config.DISABLE_SOCIAL %}
           <p>login to upload wikidata tags</p>
         {% else %}
-          <p><a class="btn btn-primary" href="{{ url_for('social.auth', backend='openstreetmap', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
+          <p><a class="btn btn-primary" href="{{ url_for('login_route', next=request.script_root + request.full_path) }}">login to upload wikidata tags</a></p>
         {% endif %}
       {% endif %}
 

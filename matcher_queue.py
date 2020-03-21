@@ -34,13 +34,13 @@ def wait_for_slot(send_queue):
         body = f'URL: {r.url}\n\nresponse:\n{r.text}'
         mail.send_mail('Overpass API unavailable', body)
         send_queue.put({'type': 'error',
-                        'error': "Can't access overpass API"})
+                        'msg': "Can't access overpass API"})
         return False
     except requests.exceptions.Timeout:
         body = 'Timeout talking to overpass API'
         mail.send_mail('Overpass API timeout', body)
         send_queue.put({'type': 'error',
-                        'error': "Can't access overpass API"})
+                        'msg': "Can't access overpass API"})
         return False
 
     print('status:', status)
@@ -109,7 +109,8 @@ def get_pins(place):
     return pins
 
 class MatcherJob(threading.Thread):
-    def __init__(self, osm_type, osm_id, user=None, remote_addr=None, user_agent=None):
+    def __init__(self, osm_type, osm_id,
+                 user=None, remote_addr=None, user_agent=None, want_isa=None):
         super(MatcherJob, self).__init__()
         self.osm_type = osm_type
         self.osm_id = osm_id
@@ -117,10 +118,10 @@ class MatcherJob(threading.Thread):
         self.subscribers = {}
         self.t0 = time()
         self.name = f'{osm_type}/{osm_id}  {self.t0}'
-        self.active = True
         self.user_id = user
         self.remote_addr = remote_addr
         self.user_agent = user_agent
+        self.want_isa = set(want_isa) if want_isa else set()
 
     def prepare_for_refresh(self):
         self.place.delete_overpass()
@@ -151,11 +152,14 @@ class MatcherJob(threading.Thread):
 
         self.get_item_detail(db_items)
 
+        chunk_size = 96 if self.want_isa else None
+        skip = {'building', 'building=yes'} if self.want_isa else set()
+
         if place.osm_type == 'node':
             oql = place.get_oql()
             chunks = [{'filename': f'{place.place_id}.xml', 'num': 0, 'oql': oql}]
         else:
-            chunks = place.get_chunks()
+            chunks = place.get_chunks(chunk_size=chunk_size, skip=skip)
             self.report_empty_chunks(chunks)
 
         overpass_good = self.overpass_request(chunks)
@@ -172,14 +176,14 @@ class MatcherJob(threading.Thread):
             root = lxml.etree.parse(filename).getroot()
             remark = root.find('.//remark')
             self.error('overpass: ' + remark.text)
+            mail.send_mail('Overpass error', remark.text)
             return  # FIXME report error to admin
 
         if len(chunks) > 1:
             self.merge_chunks(chunks)
 
         self.run_osm2pgsql()
-        self.place.load_isa()
-
+        self.load_isa()
         self.run_matcher()
         self.place.clean_up()
 
@@ -220,12 +224,20 @@ class MatcherJob(threading.Thread):
         print('sending done')
         self.send('done')
         print('done sent')
-        self.active = False
         del active_jobs[(self.osm_type, self.osm_id)]
 
     def run(self):
         with app.app_context():
-            self.run_in_app_context()
+            try:
+                self.run_in_app_context()
+            except Exception as e:
+                error_str = f'{type(e).__name__}: {e}'
+                print(error_str)
+                self.send('error', msg=error_str)
+                del active_jobs[(self.osm_type, self.osm_id)]
+
+                info = 'matcher queue'
+                mail.send_traceback(info, prefix='matcher queue')
 
         print('end thread:', self.name)
 
@@ -238,6 +250,9 @@ class MatcherJob(threading.Thread):
     def status(self, msg):
         if msg:
             self.send('msg', msg=msg)
+
+    def error(self, msg):
+        self.send('error', msg=msg)
 
     def item_line(self, msg):
         if msg:
@@ -269,9 +284,10 @@ class MatcherJob(threading.Thread):
             print(msg)
             self.status(msg)
             try:
-                items.update(self.place.bbox_wikidata_items(bbox))
+                items.update(self.place.bbox_wikidata_items(bbox,
+                                                            want_isa=self.want_isa))
             except wikidata_api.QueryTimeout:
-                msg = f'wikidata timeout, splitting chunk {num} info four'
+                msg = f'wikidata timeout, splitting chunk {num} into four'
                 print(msg)
                 self.status(msg)
                 chunks += bbox_chunk(bbox, 2)
@@ -304,12 +320,15 @@ class MatcherJob(threading.Thread):
         ctx = app.test_request_context()
         ctx.push()  # to make url_for work
         place = self.place
-        size = 22
+        if self.want_isa:
+            size = 220
+        else:
+            size = 22
         chunk_size = place.wikidata_chunk_size(size=size)
         if chunk_size == 1:
             print('wikidata unchunked')
             try:
-                wikidata_items = place.bbox_wikidata_items()
+                wikidata_items = place.bbox_wikidata_items(want_isa=self.want_isa)
             except wikidata_api.QueryTimeout:
                 place.wikidata_query_timeout = True
                 database.session.commit()
@@ -417,6 +436,13 @@ class MatcherJob(threading.Thread):
         print('osm2pgsql done')
         self.status('osm2pgsql done')
 
+    def load_isa(self):
+        def progress(msg):
+            self.status(msg)
+        self.status("downloading 'instance of' data for Wikidata items")
+        self.place.load_isa(progress)
+        self.status("Wikidata 'instance of' download complete")
+
     def run_matcher(self):
         def progress(candidates, item):
             num = len(candidates)
@@ -425,7 +451,8 @@ class MatcherJob(threading.Thread):
             msg = item.label_and_qid() + count
             self.item_line(msg)
 
-        self.place.run_matcher(progress=progress)
+        self.place.run_matcher(progress=progress,
+                               want_isa=self.want_isa)
 
 class RequestHandler(socketserver.BaseRequestHandler):
     def send_msg(self, msg):
@@ -446,6 +473,9 @@ class RequestHandler(socketserver.BaseRequestHandler):
             job_need_start = True
             kwargs = {key: msg.get(key)
                       for key in ('user', 'remote_addr', 'user_agent')}
+
+            kwargs['want_isa'] = set(msg.get('want_isa') or [])
+
             self.job_thread = MatcherJob(self.osm_type, self.osm_id, **kwargs)
             active_jobs[self.place_tuple] = self.job_thread
 
@@ -459,7 +489,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
             msg = updates.get()
             try:
                 self.send_msg(msg)
-                if msg['type'] == 'done':
+                if msg['type'] in ('done', 'error'):
                     break
             except BrokenPipeError:
                 self.job_thread.unsubscribe(t.name)
@@ -468,9 +498,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
     def stop_job(self):
         return
 
-    def handle(self):
-        print('New connection from %s:%s' % self.client_address)
-        msg = json.loads(netstring.read(self.request))
+    def handle_message(self, msg):
         if msg['type'] == 'ping':
             self.send_msg({'type': 'pong'})
             return
@@ -495,6 +523,19 @@ class RequestHandler(socketserver.BaseRequestHandler):
         if msg['type'] == 'stop_job':
             self.place_from_msg(self, msg)
             return self.stop_job()
+
+    def handle(self):
+        print('New connection from %s:%s' % self.client_address)
+        msg = json.loads(netstring.read(self.request))
+        with app.app_context():
+            try:
+                return self.handle_message(msg)
+            except Exception as e:
+                error_str = f'{type(e).__name__}: {e}'
+                self.send_msg({'type': 'error', 'msg': error_str})
+
+                info = 'matcher queue'
+                mail.send_traceback(info, prefix='matcher queue')
 
 def build_item_list(items):
     item_list = []

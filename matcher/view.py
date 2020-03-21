@@ -1,29 +1,27 @@
-from . import (database, nominatim, wikidata, wikidata_api, wikidata_language, matcher,
-               user_agent_headers, overpass, mail, browse, edit, utils, commons,
-               place_filter)
+from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
+               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
+               jobs, place_filter)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, IsA, EditMatchReject, BadMatchFilter,
-                    WikidataItem)
-from .place import Place, get_top_existing
+                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter)
+from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
 
-from flask import Flask, render_template, request, Response, redirect, url_for, g, jsonify, flash, abort, make_response, session
+from flask import (Flask, render_template, request, Response, redirect, url_for, g,
+                   jsonify, flash, abort, make_response, session)
 from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
-from social.apps.flask_app.routes import social_auth
 from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy.orm import load_only
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
-from dogpile.cache import make_region
 from werkzeug.debug.tbtools import get_current_traceback
+from requests_oauthlib import OAuth1Session
 
 from .matcher_view import matcher_blueprint
 from .websocket import ws
@@ -32,7 +30,7 @@ from flask_sockets import Sockets
 
 import json
 import operator
-import sys
+import inspect
 import requests
 import os.path
 import re
@@ -47,19 +45,12 @@ app.register_blueprint(matcher_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
-app.register_blueprint(social_auth)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login_route'
 
 cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
 really_save = True
-
-region = make_region().configure(
-    'dogpile.cache.pylibmc',
-    expiration_time=3600,
-    arguments={'url': ["127.0.0.1"]}
-)
 
 navbar_pages = {
     'criteria_page': 'Criteria',
@@ -140,8 +131,12 @@ def navbar():
 
 @app.route('/login')
 def login_route():
-    return redirect(url_for('social.auth',
-                            backend='openstreetmap',
+    return redirect(url_for('start_oauth',
+                            next=request.args.get('next')))
+
+@app.route('/login/openstreetmap/')
+def login_openstreetmap():
+    return redirect(url_for('start_oauth',
                             next=request.args.get('next')))
 
 @app.route('/logout')
@@ -155,6 +150,78 @@ def logout():
 def done():
     flash('login successful')
     return redirect(url_for('index'))
+
+@app.route('/oauth/start')
+def start_oauth():
+    next_page = request.args.get('next')
+    if next_page:
+        session['next'] = next_page
+
+    client_key = app.config['CLIENT_KEY']
+    client_secret = app.config['CLIENT_SECRET']
+
+    request_token_url = 'https://www.openstreetmap.org/oauth/request_token'
+
+    callback = url_for('oauth_callback', _external=True)
+
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          callback_uri=callback)
+    fetch_response = oauth.fetch_request_token(request_token_url)
+
+    session['owner_key'] = fetch_response.get('oauth_token')
+    session['owner_secret'] = fetch_response.get('oauth_token_secret')
+
+    base_authorization_url = 'https://www.openstreetmap.org/oauth/authorize'
+    authorization_url = oauth.authorization_url(base_authorization_url,
+                                                oauth_consumer_key=client_key)
+    return redirect(authorization_url)
+
+@app.route("/oauth/callback", methods=["GET"])
+def oauth_callback():
+    client_key = app.config['CLIENT_KEY']
+    client_secret = app.config['CLIENT_SECRET']
+
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          resource_owner_key=session['owner_key'],
+                          resource_owner_secret=session['owner_secret'])
+
+    oauth_response = oauth.parse_authorization_response(request.url)
+    verifier = oauth_response.get('oauth_verifier')
+    access_token_url = 'https://www.openstreetmap.org/oauth/access_token'
+    oauth = OAuth1Session(client_key,
+                          client_secret=client_secret,
+                          resource_owner_key=session['owner_key'],
+                          resource_owner_secret=session['owner_secret'],
+                          verifier=verifier)
+
+    oauth_tokens = oauth.fetch_access_token(access_token_url)
+    session['owner_key'] = oauth_tokens.get('oauth_token')
+    session['owner_secret'] = oauth_tokens.get('oauth_token_secret')
+
+    r = oauth.get(osm_api_base + '/user/details')
+    info = osm_oauth.parse_userinfo_call(r.content)
+
+    user = User.query.filter_by(osm_id=info['id']).one_or_none()
+
+    if user:
+        user.osm_oauth_token = oauth_tokens.get('oauth_token')
+        user.osm_oauth_token_secret = oauth_tokens.get('oauth_token_secret')
+    else:
+        user = User(
+            username=info['username'],
+            description=info['description'],
+            img=info['img'],
+            osm_id=info['id'],
+            osm_account_created=info['account_created'],
+        )
+        database.session.add(user)
+    database.session.commit()
+    session['user_id'] = user.id
+
+    next_page = session.get('next') or url_for('index')
+    return redirect(next_page)
 
 def reraise(tp, value, tb=None):
     if value.__traceback__ is not tb:
@@ -175,14 +242,12 @@ def query_error(e):
 @app.errorhandler(InternalServerError)
 def exception_handler(e):
     tb = get_current_traceback()
-    return render_template('show_error.html', tb=tb), 500
-
-    exc_type, exc_value, tb = sys.exc_info()
-
-    if exc_value is e:
-        reraise(exc_type, exc_value, tb)
-    else:
-        raise e
+    last_frame = tb.frames[-1]
+    last_frame_args = inspect.getargs(last_frame.code)
+    return render_template('show_error.html',
+                           tb=tb,
+                           last_frame=last_frame,
+                           last_frame_args=last_frame_args), 500
 
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
@@ -765,16 +830,6 @@ def type_filter():
         hits = []
     return render_template('type_filter.html', q=q, lang=lang, hits=hits)
 
-@region.cache_on_arguments()
-def get_place_cards():
-    return render_template('top_places.html', existing=get_top_existing())
-
-@app.route('/refresh_index')
-def refresh_index():
-    get_place_cards.refresh()
-    flash('Top place cards refreshed.')
-    return redirect(url_for('index'))
-
 @app.route('/instance_of/Q<item_id>')
 def instance_of_page(item_id):
     qid = f'Q{item_id}'
@@ -831,14 +886,7 @@ def index():
     if q:
         return redirect(url_for('search_results', q=q))
 
-    if 'filter' in request.args:
-        arg_filter = request.args['filter'].strip().replace(' ', '_')
-        if arg_filter:
-            return redirect(url_for('saved_with_filter', name_filter=arg_filter))
-        else:
-            return redirect(url_for('saved_places'))
-
-    return render_template('index.html', place_cards=get_place_cards())
+    return render_template('index.html')
 
 @app.route('/criteria')
 def criteria_page():
@@ -870,7 +918,6 @@ def saved_with_filter(name_filter):
     g.filter = name_filter.replace('_', ' ')
     return saved_places()
 
-@region.cache_on_arguments()
 def get_place_tbody(sort):
     return render_template('place_tbody.html', existing=get_existing(sort, None))
 
@@ -1007,6 +1054,17 @@ def api_get(wikidata_id, entity, radius):
 
     return data
 
+@app.route('/api/1/place_items/<osm_type>/<osm_id>')
+def api_place_items(osm_type, osm_id):
+    place = Place.get_by_osm(osm_type, osm_id)
+    items = [{'qid': item.qid, 'label': item.query_label} for item in place.items]
+
+    return jsonify({
+        'osm_type': osm_type,
+        'osm_id': osm_id,
+        'items': items,
+    })
+
 @app.route('/api/1/item/Q<int:wikidata_id>')
 def api_item_match(wikidata_id):
     '''API call: find matches for Wikidata item
@@ -1071,6 +1129,7 @@ def browse_index():
     for row in rows:
         item = {
             'label': row['continentLabel']['value'],
+            'description': row['continentDescription']['value'],
             'country_count': row['count']['value'],
             'qid': wikidata.wd_to_qid(row['continent']),
         }
@@ -1082,15 +1141,13 @@ def browse_index():
             pass
         items.append(item)
         row['item'] = item
-    images = {image['name']: image
-              for image in commons.image_detail(banner_filenames)}
+    images = commons.image_detail(banner_filenames)
     for item in items:
         banner = item.get('banner')
         if not banner:
             continue
-        item['banner_url'] = images[banner]['image']
-    return render_template('browse_index.html',
-                           items=items)
+        item['banner_url'] = images[banner]['url']
+    return render_template('browse_index.html', items=items)
 
 @app.route('/browse/Q<int:item_id>')
 def browse_page(item_id):
@@ -1304,27 +1361,6 @@ def item_page(wikidata_id):
         return render_template('error_page.html',
                                message="query.wikidata.org isn't working")
 
-@app.route('/space')
-def space():
-    overpass_dir = app.config['OVERPASS_DIR']
-    files = [{'file': f, 'size': f.stat().st_size} for f in os.scandir(overpass_dir) if '_' not in f.name and f.name.endswith('.xml')]
-    files.sort(key=lambda f: f['size'], reverse=True)
-    files = files[:200]
-
-    place_lookup = {int(f['file'].name[:-4]): f for f in files}
-    # q = Place.query.outerjoin(Changeset).filter(Place.place_id.in_(place_lookup.keys())).add_columns(func.count(Changeset.id))
-    q = (database.session.query(Place, func.count(Changeset.id))
-                         .outerjoin(Changeset)
-                         .filter(Place.place_id.in_(place_lookup.keys()))
-                         .options(load_only(Place.place_id, Place.display_name, Place.state))
-                         .group_by(Place.place_id, Place.display_name, Place.state))
-    for place, num in q:
-        place_id = place.place_id
-        place_lookup[place_id]['place'] = place
-        place_lookup[place_id]['changesets'] = num
-
-    return render_template('space.html', files=files)
-
 @app.route('/reports/edit_match')
 def reports_view():
     timestamp = request.args.get('timestamp')
@@ -1338,9 +1374,9 @@ def reports_view():
         q = q.filter(~EditMatchReject.edit.candidate.item.query_label.like('%farm%house%'))
     return render_template('reports/list.html', q=q)
 
-@app.route('/db_space')
+@app.route('/admin/space')
 @login_required
-def db_space():
+def space_report():
     rows = database.get_big_table_list()
     items = [{
         'place_id': place_id,
@@ -1355,9 +1391,9 @@ def db_space():
 
     free_space = utils.get_free_space(app.config)
 
-    return render_template('db_space.html', items=items, free_space=free_space)
+    return render_template('space.html', items=items, free_space=free_space)
 
-@app.route('/old_places')
+@app.route('/report/old_places')
 @login_required
 def old_places():
     rows = database.get_old_place_list()
@@ -1374,7 +1410,7 @@ def old_places():
 
     free_space = utils.get_free_space(app.config)
 
-    return render_template('db_space.html', items=items, free_space=free_space)
+    return render_template('space.html', items=items, free_space=free_space)
 
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
 @login_required
@@ -1503,3 +1539,15 @@ def admin_demo_mode():
     session['demo_mode'] = not demo_mode
     flash('demo mode ' + ('activated' if demo_mode else 'deactivated'))
     return redirect(url_for(request.endpoint))
+
+@app.route('/admin/users')
+@login_required
+def list_users():
+    q = User.query.order_by(User.sign_up.desc())
+    return render_template('admin/users.html', users=q)
+
+@app.route('/admin/jobs')
+def list_jobs():
+    job_list = jobs.get_jobs()
+
+    return render_template('admin/jobs.html', items=job_list)
