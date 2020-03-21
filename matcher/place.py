@@ -701,8 +701,7 @@ class Place(Base):
         else:
             endpoint = 'candidates'
 
-        return self.place_url(endpoint,
-                              **kwargs)
+        return self.place_url(endpoint, **kwargs)
 
     def place_url(self, endpoint, **kwargs):
         return url_for(endpoint,
