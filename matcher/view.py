@@ -4,7 +4,7 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter)
-from .place import Place, get_top_existing
+from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
@@ -20,7 +20,6 @@ from werkzeug.exceptions import InternalServerError
 from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
-from dogpile.cache import make_region
 from werkzeug.debug.tbtools import get_current_traceback
 from requests_oauthlib import OAuth1Session
 
@@ -52,12 +51,6 @@ login_manager.login_view = 'login_route'
 cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
 really_save = True
-
-region = make_region().configure(
-    'dogpile.cache.pylibmc',
-    expiration_time=3600,
-    arguments={'url': ["127.0.0.1"]}
-)
 
 navbar_pages = {
     'criteria_page': 'Criteria',
@@ -821,16 +814,6 @@ def search_results():
 
     return render_template('results_page.html', results=results, q=q)
 
-@region.cache_on_arguments()
-def get_place_cards():
-    return render_template('top_places.html', existing=get_top_existing())
-
-@app.route('/refresh_index')
-def refresh_index():
-    get_place_cards.refresh()
-    flash('Top place cards refreshed.')
-    return redirect(url_for('index'))
-
 @app.route('/instance_of/Q<item_id>')
 def instance_of_page(item_id):
     qid = f'Q{item_id}'
@@ -887,14 +870,7 @@ def index():
     if q:
         return redirect(url_for('search_results', q=q))
 
-    if 'filter' in request.args:
-        arg_filter = request.args['filter'].strip().replace(' ', '_')
-        if arg_filter:
-            return redirect(url_for('saved_with_filter', name_filter=arg_filter))
-        else:
-            return redirect(url_for('saved_places'))
-
-    return render_template('index.html', place_cards=get_place_cards())
+    return render_template('index.html')
 
 @app.route('/criteria')
 def criteria_page():
@@ -926,7 +902,6 @@ def saved_with_filter(name_filter):
     g.filter = name_filter.replace('_', ' ')
     return saved_places()
 
-@region.cache_on_arguments()
 def get_place_tbody(sort):
     return render_template('place_tbody.html', existing=get_existing(sort, None))
 
