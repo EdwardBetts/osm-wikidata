@@ -1177,7 +1177,6 @@ def matcher_wikidata(item_id):
     session['redirect_on_single'] = True
     return redirect(url_for('search_results', q=q))
 
-@region.cache_on_arguments()
 def get_tag_list(sort):
     count = func.count(distinct(Item.item_id))
     order_by = ([count, ItemTag.tag_or_key] if sort == 'count' else [ItemTag.tag_or_key])
