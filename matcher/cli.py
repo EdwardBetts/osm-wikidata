@@ -1,15 +1,14 @@
 from flask import render_template
 from .view import app, get_top_existing, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
-                    LanguageLabel, PlaceItem, OsmCandidate, IsA, User, Extract,
-                    ChangesetEdit, EditMatchReject, BadMatchFilter, SpaceWarning,
-                    WikidataItem)
+                    LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
+                    EditMatchReject, BadMatchFilter)
 from .place import Place
-from . import database, mail, matcher, nominatim, utils, netstring, wikidata, osm_api, wikidata_api, browse
-from social.apps.flask_app.default.models import UserSocialAuth, Nonce, Association
+from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
+               wikidata_api, browse)
 from datetime import datetime, timedelta
 from tabulate import tabulate
-from sqlalchemy import inspect, func, cast
+from sqlalchemy import inspect, func
 from geoalchemy2 import Geometry, Geography
 from time import time, sleep
 from pprint import pprint
@@ -18,12 +17,10 @@ from sqlalchemy.schema import CreateTable, CreateIndex
 from sqlalchemy.dialects.postgresql.base import CreateEnumType
 import unicodedata
 import sqlalchemy.exc
-import math
 import os.path
 import re
 import json
 import click
-import socket
 import sys
 
 @app.cli.command()
@@ -368,46 +365,6 @@ def show_chunks(place_identifier):
         oql = chunk['oql']
         if oql:
             print(oql)
-
-@app.cli.command()
-@click.argument('place_identifier')
-def add_to_queue(place_identifier):
-    place = get_place(place_identifier)
-
-    host, port = 'localhost', 6020
-    sock = socket.create_connection((host, port))
-    sock.setblocking(True)
-
-    chunks = place.get_chunks()
-
-    fields = ['place_id', 'osm_id', 'osm_type']
-    msg = {
-        'place': {f: getattr(place, f) for f in fields},
-        'chunks': chunks,
-    }
-
-    netstring.write(sock, json.dumps(msg))
-    reply = netstring.read(sock)
-    print(reply)
-    while True:
-        from_network = netstring.read(sock)
-        print('from network:', from_network)
-        if from_network is None:
-            break
-        netstring.write(sock, 'ack')
-    print('socket closed')
-
-@app.cli.command()
-def queue_sample_items():
-
-    host, port = 'localhost', 6020
-    sock = socket.create_connection((host, port))
-    sock.setblocking(True)
-
-    chunks = list(range(5))
-    msg = {'place': {}, 'chunks': chunks, 'sample': True}
-
-    netstring.write(sock, json.dumps(msg))
 
 @app.cli.command()
 @click.argument('place_identifier')
@@ -1157,30 +1114,24 @@ def first_paragraph():
         print(repr(html))
         print()
 
-def connect_to_queue():
-    address = ('localhost', 6030)
-    sock = socket.create_connection(address)
-    sock.setblocking(True)
-    return sock
-
 def update_place(place, want_isa=None):
     if want_isa is None:
         want_isa = set()
 
-    sock = connect_to_queue()
+    sock = chat.connect_to_queue()
     msg = {
         'type': 'match',
         'osm_type': place.osm_type,
         'osm_id': place.osm_id,
         'want_isa': want_isa,
     }
-    netstring.write(sock, json.dumps(msg))
+    chat.send_command(sock, 'match', **msg)
 
     while True:
-        network_msg = netstring.read(sock)
-        if network_msg is None:
+        msg = chat.read_json_line(sock)
+        if msg is None:
             break
-        yield(json.loads(network_msg))
+        yield(msg)
 
     sock.close()
 
@@ -1226,17 +1177,15 @@ def match_subregions(qid):
         else:
             print('not found:', p['qid'], p['label'])
 
-def matcher_queue_send(msg_type):
-    sock = connect_to_queue()
-    msg = {'type': msg_type}
-    netstring.write(sock, json.dumps(msg))
+def matcher_queue_send(cmd):
+    sock = chat.connect_to_queue()
+    chat.send_command(sock, cmd)
 
     while True:
-        network_msg = netstring.read(sock)
-        if network_msg is None:
+        msg = chat.read_json_line(sock)
+        if msg is None:
             break
-        reply = json.loads(network_msg)
-        print(reply)
+        print(msg)
 
     sock.close()
 

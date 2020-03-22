@@ -10,8 +10,8 @@ import re
 import lxml.etree
 import subprocess
 
-from matcher import (wikipedia, database, wikidata_api, netstring,
-                     mail, overpass, space_alert, model)
+from matcher import (wikipedia, database, wikidata_api,
+                     mail, overpass, space_alert, model, chat)
 from time import time, sleep
 from datetime import datetime
 from matcher.place import Place, PlaceMatcher, bbox_chunk
@@ -456,7 +456,7 @@ class MatcherJob(threading.Thread):
 
 class RequestHandler(socketserver.BaseRequestHandler):
     def send_msg(self, msg):
-        netstring.write(self.request, json.dumps(msg))
+        return chat.send_json(self.request, msg)
 
     def join_job(self):
         return
@@ -499,13 +499,15 @@ class RequestHandler(socketserver.BaseRequestHandler):
         return
 
     def handle_message(self, msg):
-        if msg['type'] == 'ping':
+        print(f'handle: {msg!r}')
+        if msg == 'ping':
             self.send_msg({'type': 'pong'})
             return
-        if msg['type'] == 'match':
-            self.place_from_msg(msg)
-            return self.match_place(msg)
-        if msg['type'] == 'jobs':
+        if msg.startswith('match'):
+            json_msg = json.loads(msg[6:])
+            self.place_from_msg(json_msg)
+            return self.match_place(json_msg)
+        if msg == 'jobs':
             job_list = []
             for t in threading.enumerate():
                 if not isinstance(t, MatcherJob):
@@ -520,13 +522,15 @@ class RequestHandler(socketserver.BaseRequestHandler):
                 job_list.append(item)
             self.send_msg({'type': 'jobs', 'items': job_list})
             return
-        if msg['type'] == 'stop_job':
-            self.place_from_msg(self, msg)
+        if msg.startswith('stop_job'):
+            json_msg = json.loads(msg[9:])
+            self.place_from_msg(json_msg)
             return self.stop_job()
 
     def handle(self):
         print('New connection from %s:%s' % self.client_address)
-        msg = json.loads(netstring.read(self.request))
+        msg = chat.read_line(self.request)
+
         with app.app_context():
             try:
                 return self.handle_message(msg)

@@ -1,15 +1,15 @@
 from flask import Blueprint, g, request
 from flask_login import current_user
 from .place import Place
-from . import database, netstring, edit, mail
+from . import database, edit, mail, chat
 from .model import ItemCandidate, ChangesetEdit
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 import requests
 import re
 import json
-import socket
 import select
+import traceback
 
 ws = Blueprint('ws', __name__)
 re_point = re.compile(r'^Point\(([-E0-9.]+) ([-E0-9.]+)\)$')
@@ -36,12 +36,6 @@ def add_wikipedia_tag(root, m):
     tag = etree.Element('tag', k='wikipedia', v=value)
     root[0].append(tag)
 
-def connect_to_queue():
-    address = ('localhost', 6030)
-    sock = socket.create_connection(address)
-    sock.setblocking(True)
-    return sock
-
 @ws.route('/websocket/matcher/<osm_type>/<int:osm_id>')
 def ws_matcher(ws_sock, osm_type, osm_id):
     # idea: catch exceptions, then pass to pass to web page as status update
@@ -58,8 +52,8 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
         user_agent = request.headers.get('User-Agent')
         user_id = current_user.id if current_user.is_authenticated else None
-        queue_socket = connect_to_queue()
-        msg = {
+        queue_socket = chat.connect_to_queue()
+        params = {
             'type': 'match',
             'osm_type': osm_type,
             'osm_id': osm_id,
@@ -67,12 +61,12 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             'remote_addr': request.remote_addr,
             'user_agent': user_agent,
         }
-        netstring.write(queue_socket, json.dumps(msg))
+        chat.send_command(queue_socket, 'match', **params)
 
         while not ws_sock.closed:
             readable = select.select([queue_socket], [], [], timeout=PING_SECONDS)[0]
             if readable:
-                item = netstring.read(queue_socket)
+                item = chat.read_line(queue_socket)
             else:  # timeout
                 item = json.dumps({'type': 'ping'})
 
@@ -94,6 +88,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
     except Exception as e:
         msg = type(e).__name__ + ': ' + str(e)
         print(msg)
+        print(traceback.format_exc())
         ws_sock.send(json.dumps({'type': 'error', 'msg': msg}))
 
         g.user = current_user

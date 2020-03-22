@@ -1,26 +1,17 @@
-from . import netstring
+from . import chat
 from datetime import datetime
 from .place import Place
-import socket
-import json
 
-
-def connect_to_queue():
-    address = ('localhost', 6030)
-    sock = socket.create_connection(address)
-    sock.setblocking(True)
-    return sock
-
-def matcher_queue_request(send_msg):
-    sock = connect_to_queue()
-    netstring.write(sock, json.dumps(send_msg))
+def matcher_queue_request(command):
+    sock = chat.connect_to_queue()
+    chat.send_msg(sock, command)
 
     replies = []
     while True:
-        network_msg = netstring.read(sock)
-        if network_msg is None:
+        msg = chat.read_json_line(sock)
+        if msg is None:
             break
-        replies.append(json.loads(network_msg))
+        replies.append(msg)
 
     sock.close()
 
@@ -28,7 +19,7 @@ def matcher_queue_request(send_msg):
     return replies[0]
 
 def get_jobs():
-    reply = matcher_queue_request({'type': 'jobs'})
+    reply = matcher_queue_request('jobs')
     assert reply['type'] == 'jobs'
 
     job_list = []
