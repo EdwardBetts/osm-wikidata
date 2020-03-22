@@ -1,7 +1,8 @@
-def write(sock, to_send):
-    sock.sendall(b'%d' % len(to_send))
+def write(sock, send_str):
+    send_bytes = send_str.encode('utf-8')
+    sock.sendall(b'%d' % len(send_bytes))
     sock.sendall(b':')
-    sock.sendall(to_send.encode('utf-8'))
+    sock.sendall(send_bytes)
     sock.sendall(b',')
 
 def read(sock):
