@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="container my-2">
+  {% include "flash_msg.html" %}
 
   <h1>Jobs</h1>
 
@@ -19,7 +20,14 @@
       <td>{{ i.start.strftime('%a, %d %b %Y %H:%M:%S') }}</td>
       <td>
         <a href="{{ place.matcher_progress_url() }}">{{ name }}</a>
-        [<a href="{{ url }}">view on OSM</a>]
+        |
+        <a href="{{ url }}">view on OSM</a>
+        |
+        {% if i.stopping %}
+          job is stopping
+        {% else %}
+          <a href="{{ url_for('stop_job', osm_type=i.osm_type, osm_id=i.osm_id) }}">stop job</a>
+        {% endif %}
       </td>
       <td>{{ place.display_area }}</td>
       <td>{{ i.subscribers }} subscriber(s)</td>

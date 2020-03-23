@@ -1,0 +1,28 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-2">
+  {% include "flash_msg.html" %}
+
+  <h1>{{ place.name }}</h1>
+
+  {{ place_box(place) }}
+
+  <p>job started {{ job.start.strftime('%a, %d %b %Y %H:%M:%S') }} |
+
+  <a href="{{ url }}">view on OSM</a></p>
+
+  <h3 class="my-3">Stop job?</h3>
+
+  <form method="POST">
+  <input type="hidden" name="type" value="full">
+  <button class="btn btn-primary">Yes, stop job</button>
+  <a href="{{ url_for('list_jobs') }}" class="btn btn-secondary">Cancel and return to job list</a>
+  </form>
+
+
+
+</div>
+{% endblock %}

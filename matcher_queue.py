@@ -108,6 +108,9 @@ def get_pins(place):
         pins.append(pin)
     return pins
 
+class MatcherJobStopped(Exception):
+    pass
+
 class MatcherJob(threading.Thread):
     def __init__(self, osm_type, osm_id,
                  user=None, remote_addr=None, user_agent=None, want_isa=None):
@@ -122,6 +125,18 @@ class MatcherJob(threading.Thread):
         self.remote_addr = remote_addr
         self.user_agent = user_agent
         self.want_isa = set(want_isa) if want_isa else set()
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        self._stop_event.set()
+
+    @property
+    def stopping(self):
+        return self._stop_event.is_set()
+
+    def check_for_stop(self):
+        if self._stop_event.is_set():
+            raise MatcherJobStopped
 
     def prepare_for_refresh(self):
         self.place.delete_overpass()
@@ -150,6 +165,7 @@ class MatcherJob(threading.Thread):
         item_count = len(db_items)
         self.status('{:,d} Wikidata items found'.format(item_count))
 
+        self.check_for_stop()
         self.get_item_detail(db_items)
 
         chunk_size = 96 if self.want_isa else None
@@ -161,12 +177,15 @@ class MatcherJob(threading.Thread):
         else:
             chunks = place.get_chunks(chunk_size=chunk_size, skip=skip)
             self.report_empty_chunks(chunks)
+        self.check_for_stop()
 
         overpass_good = self.overpass_request(chunks)
         assert overpass_good
+        self.check_for_stop()
 
         overpass_dir = app.config['OVERPASS_DIR']
         for chunk in chunks:
+            self.check_for_stop()
             if not chunk['oql']:
                 continue  # empty chunk
             filename = os.path.join(overpass_dir, chunk['filename'])
@@ -182,9 +201,13 @@ class MatcherJob(threading.Thread):
         if len(chunks) > 1:
             self.merge_chunks(chunks)
 
+        self.check_for_stop()
         self.run_osm2pgsql()
+        self.check_for_stop()
         self.load_isa()
+        self.check_for_stop()
         self.run_matcher()
+        self.check_for_stop()
         self.place.clean_up()
 
     def run_in_app_context(self):
@@ -258,6 +281,7 @@ class MatcherJob(threading.Thread):
         if msg:
             self.send('item', msg=msg)
 
+    @property
     def subscriber_count(self):
         return len(self.subscribers)
 
@@ -278,6 +302,7 @@ class MatcherJob(threading.Thread):
         items = {}
         num = 0
         while chunks:
+            self.check_for_stop()
             bbox = chunks.pop()
             num += 1
             msg = f'requesting wikidata chunk {num}'
@@ -302,13 +327,19 @@ class MatcherJob(threading.Thread):
         else:
             wikidata_items = self.get_items_bbox()
 
+        self.check_for_stop()
+
         self.status('wikidata query complete')
         pins = build_item_list(wikidata_items)
         self.send('pins', pins=pins)
 
+        self.check_for_stop()
+
         self.send('load_cat')
         wikipedia.add_enwiki_categories(wikidata_items)
         self.send('load_cat_done')
+
+        self.check_for_stop()
 
         self.place.save_items(wikidata_items)
         self.send('items_saved')
@@ -439,6 +470,7 @@ class MatcherJob(threading.Thread):
     def load_isa(self):
         def progress(msg):
             self.status(msg)
+            self.check_for_stop()
         self.status("downloading 'instance of' data for Wikidata items")
         self.place.load_isa(progress)
         self.status("Wikidata 'instance of' download complete")
@@ -450,6 +482,7 @@ class MatcherJob(threading.Thread):
             count = f': {num} {noun} found'
             msg = item.label_and_qid() + count
             self.item_line(msg)
+            self.check_for_stop()
 
         self.place.run_matcher(progress=progress,
                                want_isa=self.want_isa)
@@ -496,7 +529,14 @@ class RequestHandler(socketserver.BaseRequestHandler):
                 break
 
     def stop_job(self):
-        return
+        for t in threading.enumerate():
+            if not isinstance(t, MatcherJob):
+                continue
+            print(t.osm_type, t.osm_id)
+            if t.osm_type != self.osm_type or t.osm_id != self.osm_id:
+                continue
+            print('STOP')
+            t.stop()
 
     def handle_message(self, msg):
         print(f'handle: {msg!r}')
@@ -516,16 +556,18 @@ class RequestHandler(socketserver.BaseRequestHandler):
                 item = {
                     'osm_id': t.osm_id,
                     'osm_type': t.osm_type,
-                    'subscribers': t.subscriber_count(),
+                    'subscribers': t.subscriber_count,
                     'start': str(start),
+                    'stopping': t.stopping,
                 }
                 job_list.append(item)
             self.send_msg({'type': 'jobs', 'items': job_list})
             return
-        if msg.startswith('stop_job'):
-            json_msg = json.loads(msg[9:])
+        if msg.startswith('stop'):
+            json_msg = json.loads(msg[5:])
             self.place_from_msg(json_msg)
-            return self.stop_job()
+            self.stop_job()
+            self.send_msg({'type': 'stop', 'success': True})
 
     def handle(self):
         print('New connection from %s:%s' % self.client_address)
