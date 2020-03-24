@@ -1174,6 +1174,8 @@ class Place(Base):
     def get_chunks(self, chunk_size=None, skip=None):
         if chunk_size is None:
             chunk_size = place_chunk_size
+        if skip is None:
+            skip = set()
         bbox_chunks = list(self.polygon_chunk(size=chunk_size))
 
         chunks = []
@@ -1222,8 +1224,7 @@ class Place(Base):
         subprocess.run(cmd)
 
     def oql_for_chunk(self, chunk, include_self=False, skip=None):
-        if skip is not None:
-            skip = set(skip)
+        skip = set(skip or [])
         q = self.items.filter(cast(Item.location, Geometry).contained(envelope(chunk)))
 
         tags = set()
