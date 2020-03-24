@@ -1,0 +1,88 @@
+{% from "macro.html" import place_box with context %}
+
+{% extends "base.html" %}
+
+{% block style %}
+<style>
+#mapid { height: 100%; }
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+{% endblock %}
+
+{% block script %}
+<script>
+var json_url = {{ url_for('matcher.chunk_size_json', osm_type=place.osm_type, osm_id=place.osm_id) | tojson }};
+
+$('input.chunk-size').change((e) => {
+  var site = e.target.id.substring(0, 8);
+  var value = e.target.value;
+
+  var params = {[site + '_chunk_size']: value};
+
+  $.getJSON(json_url, params, (data) => {
+    console.log(data);
+    console.log('#' + site + '-chunk-count',
+      site + '_chunk_count',
+      data[site + '_chunk_count']);
+    $('#' + site + '-chunk-count').text(data[site + '_chunk_count']);
+
+    if (site == 'overpass') {
+      map.removeLayer(layer);
+      layer = L.geoJSON(data.chunk_geojson);
+      layer.addTo(map);
+    }
+
+  });
+
+});
+
+var osm_type = {{ place.osm_type | tojson }};
+var osm_id = {{ place.osm_id | tojson }};
+var chunk_geojson = [{{ place.geojson_chunks(overpass_chunk_size) | join(',') | safe }}];
+
+</script>
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+  <div class="row">
+    <div class="col">
+  {% include "flash_msg.html" %}
+
+  <h1>{{ place.name }}</h1>
+
+  {{ place_box(place) }}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+
+  <form method="POST">
+
+  <p>
+    area: {{ '{:,.2f}'.format(place.area_in_sq_km) }} km&sup2;<br/>
+    wikidata: {{ place.wikidata }}<br/>
+    wikidata chunk size: <input type="number" class="chunk-size" name="wikidata_chunk_size" id="wikidata-chunk-size" value="{{ wikidata_chunk_size }}"><br/>
+    wikidata chunk count: <span id="wikidata-chunk-count">{{ wikidata_chunk_count }}</span><br/>
+    overpass chunk size: <input type="number" class="chunk-size" name="overpass_chunk_size" id="overpass-chunk-size" value="{{ overpass_chunk_size }}"><br/>
+    overpass chunk count: <span id="overpass-chunk-count">{{ overpass_chunk_count }}</span>
+  </p>
+
+  <p>IsA filter: <input name="want_isa"></p>
+
+  <h3 class="my-3">Run matcher?</h3>
+
+  <input type="hidden" name="type" value="full">
+  <button class="btn btn-primary">Yes, run it</button>
+  <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel, don't run matcher</a>
+  </form>
+    </div>
+    <div class="col">
+      <div id="mapid"></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

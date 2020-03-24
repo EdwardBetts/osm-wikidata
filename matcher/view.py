@@ -999,6 +999,7 @@ def search_results():
         return render_template('error_page.html', message=message)
 
     update_search_results(results)
+    session['cancel_match'] = url_for(request.endpoint, q=q)
 
     if redirect_on_single:
         session['redirect_on_single'] = False
@@ -1328,6 +1329,14 @@ def matcher_wikidata(item_id):
     def get_search_string(qid):
         entity = wikidata_api.get_entity(qid)
         return browse.qid_to_search_string(qid, entity)
+
+    # If the user cancels on the matcher confirmation page we redirect to the browse
+    # page where they came from.
+    from_qid = request.args.get('from')
+    if from_qid:
+        session['cancel_match'] = url_for('browse_page',
+                                          item_id=int(from_qid[1:]),
+                                          sort=request.args.get('sort'))
 
     qid = 'Q{}'.format(item_id)
     place = Place.get_by_wikidata(qid)

@@ -1,4 +1,4 @@
-from flask import Blueprint, g, request
+from flask import Blueprint, g, request, session
 from flask_login import current_user
 from .place import Place
 from . import database, edit, mail, chat
@@ -45,6 +45,9 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
     try:
         place = Place.get_by_osm(osm_type, osm_id)
+        session_key = f'match_params/{osm_type}/{osm_id}'
+        match_params = session.get(session_key)
+        want_isa = match_params.get('want_isa') or []
 
         if place.state == 'ready':
             ws_sock.send(json.dumps({'type': 'already_done'}))
@@ -60,6 +63,9 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             'user': user_id,
             'remote_addr': request.remote_addr,
             'user_agent': user_agent,
+            'want_isa': want_isa,
+            'wikidata_chunk_size': match_params.get('wikidata_chunk_size'),
+            'overpass_chunk_size': match_params.get('overpass_chunk_size'),
         }
         chat.send_command(queue_socket, 'match', **params)
 

@@ -1259,9 +1259,9 @@ class Place(Base):
     def chunk_count(self):
         return sum(1 for _ in self.polygon_chunk(size=place_chunk_size))
 
-    def geojson_chunks(self):
+    def geojson_chunks(self, size=None):
         chunks = []
-        for chunk in self.polygon_chunk(size=place_chunk_size):
+        for chunk in self.polygon_chunk(size=size or place_chunk_size):
             clip = func.ST_Intersection(Place.geom, envelope(chunk))
 
             geojson = (session.query(func.ST_AsGeoJSON(clip, 4))

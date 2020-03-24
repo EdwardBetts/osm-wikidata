@@ -113,7 +113,8 @@ class MatcherJobStopped(Exception):
 
 class MatcherJob(threading.Thread):
     def __init__(self, osm_type, osm_id,
-                 user=None, remote_addr=None, user_agent=None, want_isa=None):
+                 user=None, remote_addr=None, user_agent=None, want_isa=None,
+                 wikidata_chunk_size=None, overpass_chunk_size=None):
         super(MatcherJob, self).__init__()
         self.osm_type = osm_type
         self.osm_id = osm_id
@@ -126,6 +127,8 @@ class MatcherJob(threading.Thread):
         self.user_agent = user_agent
         self.want_isa = set(want_isa) if want_isa else set()
         self._stop_event = threading.Event()
+        self.wikidata_chunk_size = wikidata_chunk_size
+        self.overpass_chunk_size = overpass_chunk_size
 
     def stop(self):
         self._stop_event.set()
@@ -168,7 +171,13 @@ class MatcherJob(threading.Thread):
         self.check_for_stop()
         self.get_item_detail(db_items)
 
-        chunk_size = 96 if self.want_isa else None
+        if self.overpass_chunk_size:
+            chunk_size = self.overpass_chunk_size
+        elif self.want_isa:
+            chunk_size = 96
+        else:
+            chunk_size = None
+
         skip = {'building', 'building=yes'} if self.want_isa else set()
 
         if place.osm_type == 'node':
@@ -208,7 +217,7 @@ class MatcherJob(threading.Thread):
         self.check_for_stop()
         self.run_matcher()
         self.check_for_stop()
-        self.place.clean_up()
+        # self.place.clean_up()
 
     def run_in_app_context(self):
         self.place = Place.get_by_osm(self.osm_type, self.osm_id)
@@ -351,7 +360,9 @@ class MatcherJob(threading.Thread):
         ctx = app.test_request_context()
         ctx.push()  # to make url_for work
         place = self.place
-        if self.want_isa:
+        if self.wikidata_chunk_size:
+            size = self.wikidata_chunk_size
+        elif self.want_isa:
             size = 220
         else:
             size = 22
@@ -504,12 +515,14 @@ class RequestHandler(socketserver.BaseRequestHandler):
         job_need_start = False
         if not self.job_thread:
             job_need_start = True
-            kwargs = {key: msg.get(key)
-                      for key in ('user', 'remote_addr', 'user_agent')}
+            keys = ('user', 'remote_addr', 'user_agent',
+                    'wikidata_chunk_size', 'overpass_chunk_size')
+            kwargs = {key: msg.get(key) for key in keys}
 
-            kwargs['want_isa'] = set(msg.get('want_isa') or [])
-
-            self.job_thread = MatcherJob(self.osm_type, self.osm_id, **kwargs)
+            self.job_thread = MatcherJob(self.osm_type,
+                                         self.osm_id,
+                                         want_isa=set(msg.get('want_isa') or []),
+                                         **kwargs)
             active_jobs[self.place_tuple] = self.job_thread
 
         status_queue = queue.Queue()
