@@ -362,11 +362,6 @@ def export_osm(osm_type, osm_id, name):
 def redirect_to_matcher(place):
     return redirect(place.matcher_progress_url())
 
-@app.route('/filtered/<name_filter>/candidates/<osm_type>/<int:osm_id>')
-def candidates_with_filter(name_filter, osm_type, osm_id):
-    g.filter = name_filter.replace('_', ' ')
-    return candidates(osm_type, osm_id)
-
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
@@ -906,11 +901,6 @@ def criteria_page():
                            entity_types=entity_types,
                            cat_counts=cat_counts,
                            taginfo=taginfo)
-
-@app.route('/filtered/<name_filter>')
-def saved_with_filter(name_filter):
-    g.filter = name_filter.replace('_', ' ')
-    return saved_places()
 
 def get_place_tbody(sort):
     return render_template('place_tbody.html', existing=get_existing(sort, None))
