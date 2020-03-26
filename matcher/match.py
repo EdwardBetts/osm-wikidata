@@ -2,7 +2,7 @@
 from collections import defaultdict
 from unidecode import unidecode
 from num2words import num2words
-from .utils import normalize_url, any_upper
+from .utils import normalize_url, any_upper, contains_digit
 
 import re
 
@@ -16,6 +16,7 @@ re_keep_commas = re.compile(r'[^@\w, ]', re.U)
 re_number_start = re.compile(r'^(?:House at )?(?:(?:Number|No)s?\.? )?(\d[-\d]*,? .*$)')
 re_article = re.compile(r'^(\W*)(the|le|la|les)[- ]')
 re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
+re_digits = re.compile(r'\d+')
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
@@ -72,6 +73,7 @@ class Match(object):
 def tidy_name(n):
     # expects to be passed a name in lowercase
     n = unidecode(n).strip().rstrip("'")
+    n = n.replace(' no. ', ' number ')
     n = n.replace('saint ', 'st ')
     n = n.replace('mount ', 'mt ')
     n = n.replace(' mountain', ' mtn')
@@ -276,6 +278,9 @@ def plural_word_name_in_other_name(n1, n2):
             n1 not in n2 and
             n1[:-1] in n2)
 
+def number_to_words(name):
+    return re_digits.sub(lambda m: num2words(int(m.group(0))), name)
+
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
@@ -328,6 +333,11 @@ def name_match_main(osm, wd, endings=None, debug=False):
 
     if wd_tidy1 == osm_tidy1:
         return Match(MatchType.good, 'tidy')
+
+    if contains_digit(wd_tidy1) and number_to_words(wd_tidy1) == osm_tidy1:
+        return Match(MatchType.good, 'number to words')
+    if contains_digit(osm_tidy1) and wd_tidy1 == number_to_words(osm_tidy1):
+        return Match(MatchType.good, 'number to words')
 
     wd_tidy2 = strip_words(wd_tidy1)
     osm_tidy2 = strip_words(osm_tidy1)

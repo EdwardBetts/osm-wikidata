@@ -315,6 +315,13 @@ def test_name_match():
     n2 = 'CBSO Centre'
     assert match.name_match(n1, n2)
 
+def test_number_in_name():
+    # https://www.wikidata.org/wiki/Q88276810
+    n1 = 'Lake Number Ten'
+    n2 = 'Lake No. 10'
+    assert bool(match.name_match(n1, n2))
+    assert bool(match.name_match(n2, n1))
+
 def test_match_german_church():
     # n1 = 'Alte Johanneskirche'
     # n2 = 'Johann'

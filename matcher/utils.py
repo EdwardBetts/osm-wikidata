@@ -29,6 +29,9 @@ def normalize_url(url):
         url = remove_start(url, start)
     return url.rstrip('/')
 
+def contains_digit(s):
+    return any(c.isdigit() for c in s)
+
 def cache_dir():
     return current_app.config['CACHE_DIR']
 
