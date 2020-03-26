@@ -17,6 +17,7 @@ from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
 from time import time
+import pattern.en
 
 import re
 
@@ -85,21 +86,25 @@ class IsA(Base):
     def url(self):
         return f'https://www.wikidata.org/wiki/Q{self.item_id}'
 
-    def label_best_language(self, languages):
-        if not languages:
-            return self.label()
+    def label_best_language(self, languages, plural=False):
+        def plural_if_needed(label, lang='en'):
+            return pattern.en.pluralize(label) if plural and lang == 'en' else label
+
         labels = self.entity['labels']
         for lang in languages:
             code = lang if isinstance(lang, str) else lang.wikimedia_language_code
             if code in labels:
-                return labels[code]['value']
+                return plural_if_needed(labels[code]['value'])
+        if plural and 'en' in labels:
+            return pattern.en.pluralize(labels['en']['value'])
+
         return self.entity_label()
 
     def entity_label(self, lang='en'):
         labels = self.entity['labels']
         if lang in labels:
             return labels[lang]['value']
-        elif lang != 'en' and 'en' in labels:
+        elif 'en' in labels:
             return labels['en']['value']
         elif labels:
             return list(labels.values())[0]['value']
