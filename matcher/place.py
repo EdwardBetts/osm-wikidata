@@ -252,10 +252,15 @@ class Place(Base):
         self.wikidata = hit['extratags'].get('wikidata')
         self.geom = hit['geotext']
 
-    def change_comment(self, item_count):
+    def change_comment(self, item_count, isa_labels=None):
         if item_count == 1:
             return g.user.single or default_change_comments['single']
-        comment = getattr(g.user, 'multi', None) or default_change_comments['multi']
+
+        if isa_labels:
+            isa = ", ".join(isa_labels[:-2] + [' and '.join(isa_labels[-2:])])
+            comment = f'Add wikidata tags to {isa} in PLACE.'
+        else:
+            comment = getattr(g.user, 'multi', None) or default_change_comments['multi']
         return comment.replace('PLACE', self.name_for_change_comment)
 
     @property

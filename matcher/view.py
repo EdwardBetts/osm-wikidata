@@ -3,12 +3,13 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
                jobs)
 from .utils import cache_filename, get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter)
+                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA)
 from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
+from .isa_facets import get_isa_facets
 
 from flask import (Flask, render_template, request, Response, redirect, url_for, g,
                    jsonify, flash, abort, make_response, session)
@@ -456,10 +457,15 @@ def add_tags(osm_type, osm_id):
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
 
+    isa_filter = request.form.getlist('isa') or []
+    isa_labels = [IsA.query.get(isa[1:]).label_best_language(languages, plural=True)
+                  for isa in isa_filter]
+
     return render_template('add_tags.html',
                            place=place,
                            osm_id=osm_id,
                            ws_scheme=ws_scheme,
+                           isa_labels=isa_labels,
                            items=items,
                            table=table,
                            languages=languages,
@@ -567,17 +573,12 @@ def candidates(osm_type, osm_id):
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
-    multiple_match_count = place.items_with_multiple_candidates().count()
-
     demo_mode_active = demo_mode()
 
     if demo_mode_active:
         items = place.items_with_candidates().all()
     else:
         items = place.get_candidate_items()
-
-    full_count = len(items)
-    multiple_match_count = sum(1 for item in items if item.candidates.count() > 1)
 
     filter_iter = matcher.filter_candidates_more(items,
                                                  bad=get_bad(items),
@@ -591,16 +592,25 @@ def candidates(osm_type, osm_id):
     languages_with_counts = get_place_language_with_counts(place)
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
+    isa_facets = get_isa_facets(items, languages=languages)
+
+    isa_filter = set(request.args.getlist('isa') or [])
+    if isa_filter:
+        items = [item for item in items if item.is_instance_of(isa_filter)]
+
+    full_count = len(items)
+
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
+                           isa_facets=isa_facets,
+                           isa_filter=isa_filter,
                            filter_okay=filter_okay,
                            upload_okay=upload_okay,
                            tab_pages=tab_pages,
                            filtered=filtered,
                            bad_matches=bad_matches,
                            full_count=full_count,
-                           multiple_match_count=multiple_match_count,
                            candidates=items,
                            languages_with_counts=languages_with_counts,
                            languages=languages)

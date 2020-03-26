@@ -685,6 +685,14 @@ https://www.wikidata.org/wiki/{self.qid}
         '''Is this a National Heritage List for England item?'''
         return self.entity and 'P1216' in self.entity.get('claims', {})
 
+    def is_instance_of(self, isa_filter):
+        for isa in self.isa:
+            if isa.qid in isa_filter:
+                return True
+            for claim in isa.entity['claims'].get('P279', []):
+                if claim['mainsnak']['datavalue']['value']['id'] in isa_filter:
+                    return True
+
 class ItemTag(Base):
     __tablename__ = 'item_tag'
 

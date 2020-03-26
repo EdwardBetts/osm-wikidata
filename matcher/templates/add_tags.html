@@ -36,7 +36,7 @@
 
   <div class="form-inline">
     <label for="comment">change comment:</label>
-    {% set comment = place.change_comment(table | length) %}
+    {% set comment = place.change_comment(table | length, isa_labels) %}
     <input class="form-control m-2"
            id="comment"
            name="comment"
