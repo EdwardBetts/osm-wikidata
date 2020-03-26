@@ -1,5 +1,5 @@
 from flask import render_template
-from .view import app, get_top_existing, get_existing
+from .view import app, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
                     EditMatchReject, BadMatchFilter)
@@ -103,28 +103,6 @@ def recent():
              obj.place.name_for_changeset) for obj in q.limit(25)]
     click.echo(tabulate(rows,
                         headers=['when', 'who', '#', 'where'],
-                        tablefmt='simple'))
-
-@app.cli.command()
-def top():
-    app.config.from_object('config.default')
-    database.init_app(app)
-    top_places = get_top_existing()
-    headers = ['id', 'name', 'candidates', 'items', 'changesets']
-
-    places = []
-    for p, changeset_count in top_places:
-        name = p.display_name
-        if len(name) > 60:
-            name = name[:56] + ' ...'
-        places.append((p.place_id,
-                       name,
-                       p.candidate_count,
-                       p.item_count,
-                       changeset_count))
-
-    click.echo(tabulate(places,
-                        headers=headers,
                         tablefmt='simple'))
 
 def object_as_dict(obj):
@@ -575,18 +553,6 @@ def nominatim_refresh():
         print(place.display_name)
         place.refresh_nominatim()
         sleep(10)
-
-@app.cli.command()
-def hide_top_places_from_index():
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    top_places = get_top_existing()
-    for p in top_places:
-        print((p.osm_type, p.osm_id, p.display_name))
-        p.index_hide = True
-
-    database.session.commit()
 
 def wikidata_chunk_size(area):
     return 1 if area < 10000 else utils.calc_chunk_size(area, size=32)
