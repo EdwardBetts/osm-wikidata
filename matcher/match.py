@@ -278,9 +278,6 @@ def plural_word_name_in_other_name(n1, n2):
             n1 not in n2 and
             n1[:-1] in n2)
 
-def number_to_words(name):
-    return re_digits.sub(lambda m: num2words(int(m.group(0))), name)
-
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
@@ -334,9 +331,15 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if wd_tidy1 == osm_tidy1:
         return Match(MatchType.good, 'tidy')
 
-    if contains_digit(wd_tidy1) and number_to_words(wd_tidy1) == osm_tidy1:
-        return Match(MatchType.good, 'number to words')
-    if contains_digit(osm_tidy1) and wd_tidy1 == number_to_words(osm_tidy1):
+    def number_to_words_match(n1, n2):
+        if not any(c.isdigit() for c in n1):
+            return False
+        n1_words = re_digits.sub(lambda m: num2words(int(m.group(0))), n1)
+
+        return n1_words.replace('-', ' ') == n2.replace('-', ' ')
+
+    if (number_to_words_match(wd_tidy1, osm_tidy1) or
+            number_to_words_match(osm_tidy1, wd_tidy1)):
         return Match(MatchType.good, 'number to words')
 
     wd_tidy2 = strip_words(wd_tidy1)

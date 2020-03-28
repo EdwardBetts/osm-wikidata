@@ -322,6 +322,11 @@ def test_number_in_name():
     assert bool(match.name_match(n1, n2))
     assert bool(match.name_match(n2, n1))
 
+    n1 = 'Test forty two'
+    n2 = 'Test 42'
+    assert bool(match.name_match(n1, n2))
+    assert bool(match.name_match(n2, n1))
+
 def test_match_german_church():
     # n1 = 'Alte Johanneskirche'
     # n2 = 'Johann'
