@@ -4,6 +4,7 @@ from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
                     EditMatchReject, BadMatchFilter)
 from .place import Place
+from .isa_facets import get_isa_facets
 from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
                wikidata_api, browse)
 from datetime import datetime, timedelta
@@ -1177,3 +1178,13 @@ def place_filter(place_identifier, want_isa):
 
     for msg in update_place(place, want_isa=want_isa.split(',')):
         print(msg)
+
+@app.cli.command()
+@click.argument('place_identifier')
+def candidate_filters(place_identifier):
+    place = get_place(place_identifier)
+
+    items = place.items_with_candidates().all()
+
+    for isa in get_isa_facets(items):
+        print(f"{isa['count']:3d}: {isa['label']} ({isa['qid']})")
