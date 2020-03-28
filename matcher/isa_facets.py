@@ -9,8 +9,6 @@ def get_isa_facets(items, languages=None, min_count=4):
     isa_labels = {}
 
     for item in items:
-        label = item.label_best_language(languages)
-        # print(f'{label} ({item.qid})')
         for isa in item.isa:
             isa_counts[isa.qid] += 1
             if isa.qid not in isa_labels:
