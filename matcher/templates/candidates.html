@@ -10,6 +10,7 @@
 <div id="{{ item.qid }}" class="card my-2">
   <div class="card-body">
 <p>
+  <div>
   {% set picked = filtered[item.item_id]['candidate'] or none %}
   {% set checked = upload_okay and picked and picked.checkbox_ticked() %}
   {% if upload_okay %}
@@ -23,8 +24,15 @@
         ✕
       {% endif %}
   {% endif %}
+  {% set label_detail = item.label_and_description(languages) %}
   <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
-    {{- item.label_best_language(languages) }} ({{ item.qid }})</a>
+    {{- label_detail.label }} ({{ item.qid }})</a>
+    {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
+    {% if label_detail.lang != languages.0 %}
+      [{{ label_detail.lang.label(with_code=False) }} label]
+    {% endif %}
+  </div>
+  <div>
 
   {% set search_tags = item.tags %}
   {% set isa_list = item.isa %}
@@ -41,12 +49,7 @@
 
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map btn btn-primary btn-sm" id="map_{{ item.qid }}">show on map</a>
-
-  {% if config.SHOW_WIKIDATA_DESCRIPTIONS and item.entity.descriptions %}
-    {% for description in item.entity.descriptions.values() %}
-      <div><strong>{{ description.language }}</strong>: {{ description.value }}</div>
-    {% endfor %}
-  {% endif %}
+  </div>
 
   {% set fp = item.first_paragraph(languages) %}
   {% if fp %}

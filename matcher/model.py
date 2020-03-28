@@ -218,6 +218,21 @@ class Item(Base):
             return
         return self.lang_text('descriptions', lang=lang)
 
+    def label_and_description(self, languages):
+        labels = self.entity['labels']
+        descriptions = self.entity['descriptions']
+        for lang in languages:
+            code = lang.wikimedia_language_code
+            if code not in labels:
+                continue
+
+            description = descriptions[code]['value'] if code in descriptions else None
+            return {
+                'lang': lang,
+                'label': labels[code]['value'],
+                'description': description,
+            }
+
     def label_best_language(self, languages):
         if not languages:
             return self.label()
