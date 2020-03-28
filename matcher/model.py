@@ -648,7 +648,10 @@ https://www.wikidata.org/wiki/{self.qid}
         if not extract:
             return
 
-        empty_list = ['<p><span></span></p>', '<p class="mw-empty-elt">\n</p>']
+        empty_list = ['<p><span></span></p>',
+                      '<p class="mw-empty-elt">\n</p>'
+                      '<p class="mw-empty-elt">\n\n</p>',
+                      '<p class="mw-empty-elt">\n\n\n</p>']
 
         text = extract.strip()
         for empty in empty_list:
