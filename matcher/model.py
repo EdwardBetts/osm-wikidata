@@ -653,6 +653,7 @@ https://www.wikidata.org/wiki/{self.qid}
                       '<p><span></span>\n\n</p>',
                       '<p>\n<span></span>\n</p>',
                       '<p>\n\n<span></span>\n</p>',
+                      '<p>.\n</p>',
                       '<p class="mw-empty-elt">\n</p>',
                       '<p class="mw-empty-elt">\n\n</p>',
                       '<p class="mw-empty-elt">\n\n\n</p>']
