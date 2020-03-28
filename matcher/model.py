@@ -651,14 +651,21 @@ https://www.wikidata.org/wiki/{self.qid}
         empty_list = ['<p><span></span></p>',
                       '<p><span></span>\n</p>',
                       '<p><span></span>\n\n</p>',
+                      '<p>\n<span></span>\n</p>',
+                      '<p>\n\n<span></span>\n</p>',
                       '<p class="mw-empty-elt">\n</p>',
                       '<p class="mw-empty-elt">\n\n</p>',
                       '<p class="mw-empty-elt">\n\n\n</p>']
 
         text = extract.strip()
-        for empty in empty_list:
-            if text.startswith(empty):
-                text = text[len(empty):].strip()
+        while True:
+            found_empty = False
+            for empty in empty_list:
+                if text.startswith(empty):
+                    text = text[len(empty):].strip()
+                    found_empty = True
+            if not found_empty:
+                break
 
         close_tag = '</p>'
         first_end_p_tag = text.find(close_tag)
