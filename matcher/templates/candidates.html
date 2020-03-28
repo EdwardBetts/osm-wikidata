@@ -26,7 +26,7 @@
   {% endif %}
   {% set label_detail = item.label_and_description(languages) %}
   <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
-    {{- label_detail.label }} ({{ item.qid }})</a>
+    {{- label_detail.label or '[label missing]'}} ({{ item.qid }})</a>
     {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
     {% if label_detail.lang != languages.0 %}
       [{{ label_detail.lang.label(with_code=False) }} label]
@@ -36,9 +36,7 @@
 
   {% set search_tags = item.tags %}
   {% set isa_list = item.isa %}
-  {% if 'note' in filtered[item.item_id] %}
-    {{ filtered[item.item_id]['note'] }}
-  {% elif isa_list %}
+  {% if isa_list %}
     item type:
     {% for isa in isa_list %}
       <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) }}</a>{% if not loop.last %} / {% endif %}
@@ -46,10 +44,13 @@
   {% else %}
     search tags: {{ ', '.join(search_tags | sort) }}
   {% endif %}
-
   {% set lat, lon = item.get_lat_lon() %}
   <a href="#" class="show_on_map btn btn-primary btn-sm" id="map_{{ item.qid }}">show on map</a>
   </div>
+
+  {% if 'note' in filtered[item.item_id] %}
+    <div><span class="badge badge-danger">{{ filtered[item.item_id]['note'] }}</span></div>
+  {% endif %}
 
   {% set fp = item.first_paragraph(languages) %}
   {% if fp %}
