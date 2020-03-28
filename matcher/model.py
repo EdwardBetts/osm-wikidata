@@ -637,11 +637,11 @@ https://www.wikidata.org/wiki/{self.qid}
 
     def first_paragraph(self, languages=None):
         if languages is None:
-            return self.first_paragraph_language('enwiki')
+            languages = [Language.get_by_code('en')]
         for lang in languages:
             extract = self.first_paragraph_language(lang.site_name)
             if extract:
-                return extract
+                return {'lang': lang, 'extract': extract}
 
     def first_paragraph_language(self, lang):
         extract = self.extracts.get(lang)
@@ -1126,17 +1126,21 @@ class Language(Base):
         if name:
             return name.label
 
-    def label(self):
+    def label(self, with_code=True):
         name = self.self_name()
         if not name:  # self label missing for language
             name = self.english_name()
         elif self.wikimedia_language_code != 'en':  # add name in English
             name = capfirst(name) + ' / ' + capfirst(self.english_name())
-        return f'{name} [{self.wikimedia_language_code}]'
+        return f'{name} [{self.wikimedia_language_code}]' if with_code else name
 
     @property
     def site_name(self):
         return f'{self.wikimedia_language_code}wiki'
+
+    @classmethod
+    def get_by_code(cls, code):
+        return cls.query.filter_by(wikimedia_language_code=code).one()
 
 class LanguageLabel(Base):
     __tablename__ = 'language_label'

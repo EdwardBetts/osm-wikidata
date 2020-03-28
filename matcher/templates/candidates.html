@@ -48,7 +48,14 @@
     {% endfor %}
   {% endif %}
 
-  {{ (item.first_paragraph(languages) or '') | safe }}
+  {% set fp = item.first_paragraph(languages) %}
+  {% if fp %}
+    <div class="summary mt-0">
+      <div><em>Summary from {{ fp.lang.label(with_code=False) }}
+        Wikipedia ({{fp.lang.site_name}})</em></div>
+      {{ fp.extract | safe }}
+  </div>
+  {% endif %}
 
   {% set identifiers = item.identifier_values() %}
   {% if identifiers %}
