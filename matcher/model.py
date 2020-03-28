@@ -649,6 +649,8 @@ https://www.wikidata.org/wiki/{self.qid}
             return
 
         empty_list = ['<p><span></span></p>',
+                      '<p><span></span>\n</p>',
+                      '<p><span></span>\n\n</p>',
                       '<p class="mw-empty-elt">\n</p>',
                       '<p class="mw-empty-elt">\n\n</p>',
                       '<p class="mw-empty-elt">\n\n\n</p>']
