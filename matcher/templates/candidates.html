@@ -27,9 +27,11 @@
   {% set label_detail = item.label_and_description(languages) %}
   <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
     {{- label_detail.label or '[label missing]'}} ({{ item.qid }})</a>
-    {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
-    {% if label_detail.lang != languages.0 %}
-      [{{ label_detail.lang.label(with_code=False) }} label]
+    {% if label_detail %}
+      {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
+      {% if label_detail.lang != languages.0 %}
+        [{{ label_detail.lang.label(with_code=False) }} label]
+      {% endif %}
     {% endif %}
   </div>
   <div>
