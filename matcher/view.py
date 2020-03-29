@@ -817,6 +817,12 @@ def search_results():
 
     try:
         results = nominatim.lookup(q)
+        city_of = 'City of '
+        if q.startswith(city_of) and not results:
+            q_trim = q[len(city_of):]
+            results = nominatim.lookup(q_trim)
+            if results:
+                q = q_trim
     except nominatim.SearchError:
         message = 'nominatim API search error'
         return render_template('error_page.html', message=message)
