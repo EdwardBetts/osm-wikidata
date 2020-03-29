@@ -12,7 +12,7 @@ def get_isa_facets(items, languages=None, min_count=4):
         for isa in item.isa:
             isa_counts[isa.qid] += 1
             if isa.qid not in isa_labels:
-                isa_labels[isa.qid] = isa.label_best_language(languages)
+                isa_labels[isa.qid] = isa.label_and_description(languages)
             super_list = [claim['mainsnak']['datavalue']['value']['id']
                           for claim in isa.entity['claims'].get('P279', [])]
             for super_isa in super_list:
@@ -29,10 +29,12 @@ def get_isa_facets(items, languages=None, min_count=4):
             isa = IsA.query.get(qid[1:])
             if isa is None:
                 continue
-            label = isa.label_best_language(languages)
+            label = isa.label_and_description(languages)
         top_facets.append({
             'count': count,
-            'label': label,
+            'label': label['label'],
+            'lang': label['lang'],
+            'description': label['description'],
             'qid': qid,
         })
 

@@ -395,7 +395,10 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="isa" value="{{ isa.qid }}" id="{{ isa.qid }}"{% if isa.qid in isa_filter %} checked="checked"{% endif %}>
             <label class="form-check-label" for="{{ isa.qid }}">
-            {{ isa.label }} ({{ isa.qid }}): {{ isa.count }} matches
+              {{ isa.label }} ({{ isa.qid }}): <strong>{{ isa.count }}</strong> matches
+              {% if isa.description %}
+                <em> &ndash; {{ isa.description }}</em>
+              {% endif -%}
             </label>
           </div>
 
