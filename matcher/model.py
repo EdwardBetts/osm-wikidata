@@ -930,15 +930,18 @@ class ItemCandidate(Base):
 
         return utils.display_distance(units, self.dist)
 
-    def checkbox_ticked(self):
+    def get_max_dist(self):
         max_dist = 500
         if any(tag == 'place' or (tag != 'place=farm' and tag.startswith('place='))
                for tag in self.matching_tags()):
             max_dist = 2000
         elif self.item.is_nhle:
             max_dist = 100
+        return max_dist
+
+    def checkbox_ticked(self):
         return ((not self.dist or
-                 self.dist < max_dist and
+                 self.dist < self.get_max_dist() and
                  'designation=civil_parish' not in self.matching_tags()) or
                  self.item.candidates.count() > 1)
 

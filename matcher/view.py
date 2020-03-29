@@ -595,6 +595,22 @@ def candidates(osm_type, osm_id):
 
     full_count = len(items)
 
+    unsure_items = []
+    ticked_items = []
+
+    for item in items:
+        picked = filtered[item.item_id].get('candidate')
+        if picked and not picked.checkbox_ticked():
+            unsure_items.append(item)
+            if 'note' not in filtered[item.item_id]:
+                max_dist = picked.get_max_dist()
+                print(max_dist, picked.dist)
+                if max_dist < picked.dist:
+                    note = f'distance between OSM and Wikidata is greater than {max_dist}m'
+                    filtered[item.item_id]['note'] = note
+        else:
+            ticked_items.append(item)
+
     return render_template('candidates.html',
                            place=place,
                            osm_id=osm_id,
@@ -608,7 +624,9 @@ def candidates(osm_type, osm_id):
                            full_count=full_count,
                            candidates=items,
                            languages_with_counts=languages_with_counts,
-                           languages=languages)
+                           languages=languages,
+                           unsure_items=unsure_items,
+                           ticked_items=ticked_items)
 
 @app.route('/test_candidates/<osm_type>/<int:osm_id>')
 def test_candidates(osm_type, osm_id):

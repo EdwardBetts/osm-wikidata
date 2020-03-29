@@ -443,14 +443,23 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     {% endif %}
 
     <div class="my-3">
-    {% for item in candidates %}
-        {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if picked and not picked.checkbox_ticked() %}
-            {{ candidate_item(item) }}
-        {% endif %}
-    {% endfor %}
+    {% if unsure_items %}
+      {% if ticked_items %}
+        <h5>Less certain matches</h5>
+        <p>The following matches are less certain, mostly because the OSM and Wikidata locations are two far apart.</p>
+      {% endif %}
+      {% for item in unsure_items %}
+          {% set picked = filtered[item.item_id]['candidate'] or none %}
+          {% if picked and not picked.checkbox_ticked() %}
+              {{ candidate_item(item) }}
+          {% endif %}
+      {% endfor %}
 
-    {% for item in candidates %}
+      {% if ticked_items %}
+        <h5>More certain matches</h5>
+      {% endif %}
+    {% endif %}
+    {% for item in ticked_items %}
         {% set picked = filtered[item.item_id]['candidate'] or none %}
         {% if not picked or picked.checkbox_ticked() %}
             {{ candidate_item(item) }}
