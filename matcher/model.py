@@ -756,12 +756,12 @@ https://www.wikidata.org/wiki/{self.qid}
                 if code not in found:
                     found[code] = {
                         'wikidata': l['wikidata'],
-                        'osm': l['osm'],
+                        'osm': l['osm'] or 0,
                         'code': code,
                     }
                 else:
                     for key in 'wikidata', 'osm':
-                        found[code][key] += (l[key] or 0)
+                        found[code][key] += l[key] or 0
 
         top = sorted(found.items(),
                      key=lambda i: i[1]['wikidata'],
