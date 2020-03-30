@@ -25,6 +25,24 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     var marker = L.marker([lat, lon]).addTo(map);
 
+    var item_candidate_json_url = {{ url_for('item_candidate_json',
+                                             item_id=item.item_id) | tojson }};
+
+    $.getJSON(item_candidate_json_url).done((data) => {
+      if(data.candidates.length == 0) {
+        map.setView(marker.getLatLng(), 18);
+        return;
+      }
+      var mapStyle = {fillOpacity: 0};
+      osm_layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
+      $.each(data.candidates, (index, candidate) => {
+        osm_layer.addData(candidate.geojson);
+      });
+      bounds = osm_layer.getBounds();
+      bounds.extend(marker.getLatLng());
+      map.fitBounds(bounds);
+    });
+
   </script>
   {% endif %}
 
@@ -307,5 +325,3 @@
   </div>
 </div>
 {% endblock %}
-
-
