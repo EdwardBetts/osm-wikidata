@@ -673,6 +673,8 @@ https://www.wikidata.org/wiki/{self.qid}
 
     def first_paragraph_all(self, languages):
         for lang in languages:
+            if not lang:
+                continue
             extract = self.first_paragraph_language(lang.site_name)
             if extract:
                 yield {'lang': lang, 'extract': extract}

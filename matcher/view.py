@@ -1287,8 +1287,9 @@ def build_item_page(wikidata_id, item):
     osm_keys = entity.osm_keys
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
     entity.report_broken_wikidata_osm_tags()
-    languages = [get_wikidata_language(l['code'])
-                 for l in item.place_languages()]
+    languages = [lang for lang in
+                 (get_wikidata_language(l['code']) for l in item.place_languages())
+                 if lang]
 
     criteria = entity.criteria()
 
