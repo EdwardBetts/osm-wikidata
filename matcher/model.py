@@ -501,6 +501,12 @@ https://www.wikidata.org/wiki/{self.qid}
         for item_cat in self.categories or []:
             if item_cat in exclude:
                 continue
+            if item_cat.startswith('Former') and item_cat.endswith('Railway stations'):
+                # Category:Railway stations in the United Kingdom by former operator
+                # contains subcategories named 'Former ... Railway stations.'
+                # Most of the stations in these subcategories still exist.
+                # If a station doesn't exist it'll be in other defunct categories.
+                continue
             lc_item_cat = item_cat.lower()
             found += [item_cat for i in words if i in lc_item_cat]
         return found
