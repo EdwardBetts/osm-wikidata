@@ -671,6 +671,12 @@ https://www.wikidata.org/wiki/{self.qid}
             names[v].append(('sitelink', k))
         return names
 
+    def first_paragraph_all(self, languages):
+        for lang in languages:
+            extract = self.first_paragraph_language(lang.site_name)
+            if extract:
+                yield {'lang': lang, 'extract': extract}
+
     def first_paragraph(self, languages=None):
         if languages is None:
             languages = [Language.get_by_code('en')]
@@ -741,6 +747,27 @@ https://www.wikidata.org/wiki/{self.qid}
             for claim in isa.entity['claims'].get('P279', []):
                 if claim['mainsnak']['datavalue']['value']['id'] in isa_filter:
                     return True
+
+    def place_languages(self):
+        found = {}
+        for place in self.places:
+            for l in place.languages():
+                code = l['code']
+                if code not in found:
+                    found[code] = {
+                        'wikidata': l['wikidata'],
+                        'osm': l['osm'],
+                        'code': code,
+                    }
+                else:
+                    for key in 'wikidata', 'osm':
+                        found[code][key] += (l[key] or 0)
+
+        top = sorted(found.items(),
+                     key=lambda i: i[1]['wikidata'],
+                     reverse=True)[:10]
+        return [v for k, v in top]
+
 
 class ItemTag(Base):
     __tablename__ = 'item_tag'

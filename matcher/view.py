@@ -1287,6 +1287,8 @@ def build_item_page(wikidata_id, item):
     osm_keys = entity.osm_keys
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)
     entity.report_broken_wikidata_osm_tags()
+    languages = [get_wikidata_language(l['code'])
+                 for l in item.place_languages()]
 
     criteria = entity.criteria()
 
@@ -1307,6 +1309,7 @@ def build_item_page(wikidata_id, item):
                                entity=entity,
                                wikidata_query=entity.osm_key_query(),
                                wikidata_osm_tags=wikidata_osm_tags,
+                               languages=languages,
                                criteria=criteria,
                                filtered=filtered,
                                qid=qid,
@@ -1345,6 +1348,7 @@ def build_item_page(wikidata_id, item):
                            item=item,
                            wikidata_query=entity.osm_key_query(),
                            entity=entity,
+                           languages=languages,
                            wikidata_osm_tags=wikidata_osm_tags,
                            overpass_reply=overpass_reply,
                            upload_option=upload_option,
