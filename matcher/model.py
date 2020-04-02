@@ -83,6 +83,9 @@ class IsA(Base):
     qid = column_property('Q' + cast(item_id, String))
     label = Column(String)
 
+    def __repr__(self):
+        return f'<matcher.model.IsA object: {self.qid}>'
+
     def url(self):
         return f'https://www.wikidata.org/wiki/Q{self.item_id}'
 
@@ -101,6 +104,8 @@ class IsA(Base):
         return self.entity_label()
 
     def label_and_description(self, languages):
+        if 'labels' not in self.entity:
+            return {'lang': None, 'label': None, 'description': None}
         labels = self.entity['labels']
         descriptions = self.entity['descriptions']
         for lang in languages:
