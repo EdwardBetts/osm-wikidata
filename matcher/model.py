@@ -104,7 +104,7 @@ class IsA(Base):
         return self.entity_label()
 
     def label_and_description(self, languages):
-        if 'labels' not in self.entity:
+        if self.entity is None or 'labels' not in self.entity:
             return {'lang': None, 'label': None, 'description': None}
         labels = self.entity['labels']
         descriptions = self.entity['descriptions']
