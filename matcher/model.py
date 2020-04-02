@@ -104,9 +104,10 @@ class IsA(Base):
         return self.entity_label()
 
     def label_and_description(self, languages):
-        if self.entity is None or 'labels' not in self.entity:
+        try:
+            labels = self.entity['labels']
+        except (TypeError, KeyError):
             return {'lang': None, 'label': None, 'description': None}
-        labels = self.entity['labels']
         descriptions = self.entity['descriptions']
         for lang in languages:
             code = lang.wikimedia_language_code
