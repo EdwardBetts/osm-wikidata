@@ -134,7 +134,7 @@ def process_match(ws_sock, changeset_id, m):
 
     element_data = etree.tostring(root)
     try:
-        edit.save_element(osm_type, osm_id, element_data)
+        success = edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 409 and 'Version mismatch' in r.text:
             raise VersionMismatch
@@ -142,6 +142,9 @@ def process_match(ws_sock, changeset_id, m):
                         element_data.decode('utf-8'),
                         e.response)
         database.session.commit()
+        return 'element-error'
+
+    if not success:
         return 'element-error'
 
     osm.tags['wikidata'] = m['qid']

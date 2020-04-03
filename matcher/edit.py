@@ -1,5 +1,5 @@
 from flask import g
-from . import user_agent_headers, database, osm_oauth
+from . import user_agent_headers, database, osm_oauth, mail
 from .model import Changeset
 import requests
 import html
@@ -31,9 +31,22 @@ def close_changeset(changeset_id):
     return osm_request(f'/changeset/{changeset_id}/close')
 
 def save_element(osm_type, osm_id, element_data):
-    r = osm_request(f'/{osm_type}/{osm_id}', data=element_data)
-    assert(r.text.strip().isdigit())
-    return r
+    osm_path = f'/{osm_type}/{osm_id}'
+    r = osm_request(osm_path, data=element_data)
+    reply = r.text.strip()
+    if reply.isdigit():
+        return r
+
+    subject = f'matcher error saving element: {osm_path}'
+    body = f'''
+https://www.openstreetmap.org{osm_path}
+
+error:
+{reply}
+'''
+
+    mail.send_mail(subject, body)
+
 
 def record_changeset(**kwargs):
     change = Changeset(created=database.now_utc(), user=g.user, **kwargs)
