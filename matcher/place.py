@@ -865,7 +865,7 @@ class Place(Base):
                 candidate_has_language_count += 1
 
         return sorted(lang_count.items(),
-                      key=lambda i:i[1],
+                      key=lambda i: i[1],
                       reverse=True)
 
     def languages_wikidata(self):
@@ -907,12 +907,11 @@ class Place(Base):
         wikidata = self.languages_wikidata()
         osm = dict(self.languages_osm())
 
-        return [
-            {
-                'code': code,
-                'wikidata': count,
-                'osm': osm.get(code)
-            } for code, count in wikidata]
+        return [{
+            'code': code,
+            'wikidata': count,
+            'osm': osm.get(code)
+        } for code, count in wikidata]
 
     def most_common_language(self):
         lang_count = Counter()
