@@ -120,6 +120,7 @@ class IsA(Base):
                 'label': labels[code]['value'],
                 'description': description,
             }
+        return {'lang': None, 'label': None, 'description': None}
 
     def entity_label(self, lang='en'):
         labels = self.entity['labels']
