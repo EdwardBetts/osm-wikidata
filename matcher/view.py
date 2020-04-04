@@ -587,7 +587,9 @@ def candidates(osm_type, osm_id):
     languages_with_counts = get_place_language_with_counts(place)
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
-    isa_facets = get_isa_facets(items, languages=languages)
+    isa_facets = get_isa_facets([i for i in items if i.item_id in filtered and
+                                                     'candidate' in filtered[i.item_id]],
+                                languages=languages)
 
     isa_filter = set(request.args.getlist('isa') or [])
     if isa_filter:
