@@ -13,8 +13,11 @@ def get_isa_facets(items, languages=None, min_count=4):
             isa_counts[isa.qid] += 1
             if isa.qid not in isa_labels:
                 isa_labels[isa.qid] = isa.label_and_description(languages)
-            super_list = [claim['mainsnak']['datavalue']['value']['id']
-                          for claim in isa.entity['claims'].get('P279', [])]
+            try:
+                super_list = [claim['mainsnak']['datavalue']['value']['id']
+                              for claim in isa.entity['claims'].get('P279', [])]
+            except TypeError:
+                super_list = []
             for super_isa in super_list:
                 isa_counts[super_isa] += 1
 
