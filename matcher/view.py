@@ -590,7 +590,7 @@ def candidates(osm_type, osm_id):
     good_match = [i for i in items if filtered.get(i.item_id) and
                                       'candidate' in filtered[i.item_id] and
                                       'note' not in filtered[i.item_id]]
-    isa_facets = get_isa_facets(good_match, languages=languages)
+    isa_facets = get_isa_facets(good_match, languages=languages, min_count=3)
 
     isa_filter = set(request.args.getlist('isa') or [])
     if isa_filter:
