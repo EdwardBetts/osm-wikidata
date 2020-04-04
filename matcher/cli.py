@@ -1072,14 +1072,15 @@ def place_names():
 
 
 @app.cli.command()
-def first_paragraph():
+@click.argument('qid')
+def first_paragraph(qid):
     app.config.from_object('config.default')
     database.init_app(app)
 
-    for i in Extract.query:
-        html = i.extract
-        print(repr(html))
-        print()
+    item = Item.query.get(qid[1:])
+
+    fp = item.first_paragraph_language('enwiki')
+    print(repr(fp))
 
 def update_place(place, want_isa=None):
     if want_isa is None:
