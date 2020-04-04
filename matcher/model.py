@@ -93,6 +93,9 @@ class IsA(Base):
         def plural_if_needed(label, lang='en'):
             return pattern.en.pluralize(label) if plural and lang == 'en' else label
 
+        if not self.entity:
+            return
+
         labels = self.entity['labels']
         for lang in languages:
             code = lang if isinstance(lang, str) else lang.wikimedia_language_code

@@ -41,7 +41,7 @@
   {% if isa_list %}
     item type:
     {% for isa in isa_list %}
-      <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) }}</a>{% if not loop.last %} / {% endif %}
+      <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) or isa.qid }}</a>{% if not loop.last %} / {% endif %}
     {% endfor %}
   {% else %}
     search tags: {{ ', '.join(search_tags | sort) }}
