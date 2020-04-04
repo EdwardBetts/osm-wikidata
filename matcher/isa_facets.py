@@ -1,9 +1,9 @@
 from collections import Counter
-from .model import IsA
+from .model import IsA, Language
 
 def get_isa_facets(items, languages=None, min_count=4):
     if languages is None:
-        languages = ['en']
+        languages = [Language.get_by_code('en')]
 
     isa_counts = Counter()
     isa_labels = {}
