@@ -1188,4 +1188,4 @@ def candidate_filters(place_identifier):
     items = place.items_with_candidates().all()
 
     for isa in get_isa_facets(items):
-        print(f"{isa['count']:3d}: {isa['label']} ({isa['qid']})")
+        print(f"{isa['count']:3d}: {isa['label']} ({isa['qid']}) - {isa['description']}")
