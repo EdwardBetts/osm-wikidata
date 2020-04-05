@@ -560,10 +560,19 @@ def mobile(osm_type, osm_id):
                            filtered=filtered,
                            candidates=items)
 
+def check_still_auth():
+    if not g.user.is_authenticated:
+        return
+    r = osm_oauth.api_request('user/details')
+    if r.status_code == 401:
+        logout_user()
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
+
+    check_still_auth()
 
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
