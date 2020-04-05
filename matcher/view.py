@@ -571,7 +571,7 @@ def check_still_auth():
 def debug_user_details():
     r = osm_oauth.api_request('user/details')
     content_type = r.headers.get('Content-Type') or 'text/plain'
-    return r.text, r.status_code, ('Content-Type', content_type)
+    return r.text, r.status_code, {'Content-Type': content_type}
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
