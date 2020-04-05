@@ -567,6 +567,11 @@ def check_still_auth():
     if r.status_code == 401:
         logout_user()
 
+@app.route('/debug/user/details')
+def debug_user_details():
+    r = osm_oauth.api_request('user/details')
+    return r.text, 200, 'text/xml'
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
