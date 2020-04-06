@@ -731,7 +731,7 @@ def page_banner_from_entity(entity, **kwargs):
 def entity_label(entity, language=None):
     if language and language in entity['labels']:
         return entity['labels'][language]['value']
-    if language != 'en' and 'en' in entity['labels']:
+    if 'en' in entity['labels']:
         return entity['labels']['en']['value']
 
     # pick a label at random
@@ -740,7 +740,7 @@ def entity_label(entity, language=None):
 def entity_description(entity, language=None):
     if language and language in entity['descriptions']:
         return entity['descriptions'][language]['value']
-    if language != 'en' and 'en' in entity['labels']:
+    if 'en' in entity['descriptions']:
         return entity['descriptions']['en']['value']
 
 def names_from_entity(entity, skip_lang=None):
