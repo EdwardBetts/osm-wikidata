@@ -13,7 +13,6 @@ from .isa_facets import get_isa_facets
 
 from flask import (Flask, render_template, request, Response, redirect, url_for, g,
                    jsonify, flash, abort, make_response, session)
-from flask_login import current_user, logout_user, LoginManager, login_required
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func, distinct
@@ -29,6 +28,7 @@ from .websocket import ws
 
 from flask_sockets import Sockets
 
+import flask_login
 import json
 import operator
 import inspect
@@ -46,7 +46,7 @@ app.register_blueprint(matcher_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
-login_manager = LoginManager(app)
+login_manager = flask_login.LoginManager(app)
 login_manager.login_view = 'login_route'
 
 cat_to_ending = None
@@ -111,7 +111,7 @@ def global_user():
     if demo_mode():
         g.user = User.query.get(1)
     else:
-        g.user = current_user._get_current_object()
+        g.user = flask_login.current_user._get_current_object()
 
 @app.before_request
 def slow_crawl():
@@ -143,7 +143,7 @@ def login_openstreetmap():
 @app.route('/logout')
 def logout():
     next_url = request.args.get('next') or url_for('index')
-    logout_user()
+    flask_login.logout_user()
     flash('you are logged out')
     return redirect(next_url)
 
@@ -219,7 +219,7 @@ def oauth_callback():
         )
         database.session.add(user)
     database.session.commit()
-    session['user_id'] = user.id
+    flask_login.login_user(user)
 
     next_page = session.get('next') or url_for('index')
     return redirect(next_page)
@@ -565,7 +565,7 @@ def check_still_auth():
         return
     r = osm_oauth.api_request('user/details')
     if r.status_code == 401:
-        logout_user()
+        flask_login.logout_user()
 
 @app.route('/debug/user/details')
 def debug_user_details():
@@ -1404,7 +1404,7 @@ def reports_view():
     return render_template('reports/list.html', q=q)
 
 @app.route('/admin/space')
-@login_required
+@flask_login.login_required
 def space_report():
     rows = database.get_big_table_list()
     items = [{
@@ -1423,7 +1423,7 @@ def space_report():
     return render_template('space.html', items=items, free_space=free_space)
 
 @app.route('/report/old_places')
-@login_required
+@flask_login.login_required
 def old_places():
     rows = database.get_old_place_list()
     items = [{
@@ -1442,7 +1442,7 @@ def old_places():
     return render_template('space.html', items=items, free_space=free_space)
 
 @app.route('/delete/<int:place_id>', methods=['POST', 'DELETE'])
-@login_required
+@flask_login.login_required
 def delete_place(place_id):
     place = Place.query.get(place_id)
     place.clean_up()
@@ -1452,7 +1452,7 @@ def delete_place(place_id):
     return redirect(url_for(to_next))
 
 @app.route('/delete', methods=['POST', 'DELETE'])
-@login_required
+@flask_login.login_required
 def delete_places():
     place_list = request.form.getlist('place')
     for place_id in place_list:
@@ -1472,12 +1472,12 @@ def user_page(username):
     return render_template('user_page.html', user=user)
 
 @app.route('/account')
-@login_required
+@flask_login.login_required
 def account_page():
     return render_template('user/account.html', user=g.user)
 
 @app.route('/account/settings', methods=['GET', 'POST'])
-@login_required
+@flask_login.login_required
 def account_settings_page():
     form = AccountSettingsForm()
     if request.method == 'GET':
@@ -1570,7 +1570,7 @@ def admin_demo_mode():
     return redirect(url_for(request.endpoint))
 
 @app.route('/admin/users')
-@login_required
+@flask_login.login_required
 def list_users():
     q = User.query.order_by(User.sign_up.desc())
     return render_template('admin/users.html', users=q)
