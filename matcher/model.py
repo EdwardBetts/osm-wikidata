@@ -559,6 +559,9 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_church_building(self):
         return 'Q16970' in self.instanceof()
 
+    def is_reservoir(self):
+        return 'Q131681' in self.instanceof()
+
     def is_proposed(self):
         '''is this item a proposed building or structure?'''
 

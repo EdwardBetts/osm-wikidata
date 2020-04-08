@@ -973,6 +973,16 @@ def filter_station(candidates):
             return
     return match
 
+def filter_reservoir(candidates):
+    if len(candidates) < 2:
+        return
+
+    way = [c for c in candidates if c.osm_type == 'way']
+    node = [c for c in candidates if c.osm_type == 'node']
+
+    if len(way) == 1 and len(node) + 1 == len(candidates):
+        return way[0]
+
 def filter_candidates_more(items, bad=None, ignore_existing=False):
     osm_count = Counter()
     by_osm = defaultdict(list)
@@ -1031,6 +1041,11 @@ def filter_candidates_more(items, bad=None, ignore_existing=False):
         church = filter_churches(candidates)
         if church:
             candidates = [church]
+
+        if item.is_reservoir():
+            reservoir = filter_reservoir(candidates)
+            if reservoir:
+                candidates = [reservoir]
 
         if len(candidates) != 1:
             yield (item, {'note': 'more than one candidate found'})
