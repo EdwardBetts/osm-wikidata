@@ -413,17 +413,21 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
         </div>
       {% endif %}
 
-    <p>Language order preference.
-    <a href="{{ url_for('switch_languages',
-                        osm_type=place.osm_type,
-                        osm_id=place.osm_id) }}">edit</a></p>
-    <ol>
-    {% for l in languages_with_counts %}
-      <li>{{ l.lang.label() if l.lang is not none else l.code }}
-          ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
-      </li>
-    {% endfor %}
-    </ol>
+    {% if languages_with_counts | length > 1 %}
+      <p>Language order preference.
+      {% set switch_lang_url = url_for('switch_languages',
+                                       osm_type=place.osm_type,
+                                       osm_id=place.osm_id) %}
+      <a href="{{ switch_lang_url }}">edit</a></p>
+      <ol>
+      {% for l in languages_with_counts %}
+        <li>{{ l.lang.label() if l.lang is not none else l.code }}
+            ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
+            <a href="{{switch_lang_url }}?top={{ l.code }}">[move to top]</a>
+        </li>
+      {% endfor %}
+      </ol>
+    {% endif %}
 
     <p>{{ refresh_button(place) }}</p>
 

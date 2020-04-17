@@ -491,6 +491,21 @@ def get_wikidata_language(code):
 def switch_languages(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
 
+    top = request.args.get('top')
+    if top:
+        cookie_name = 'language_order'
+        place_identifier = f'{osm_type}/{osm_id}'
+
+        cookie = read_language_order()
+        current_order = cookie[place_identifier]
+        current_order.remove(top)
+        cookie[place_identifier] = [top] + current_order
+
+        flash('language order updated')
+        response = make_response(redirect(place.candidates_url()))
+        response.set_cookie(cookie_name, json.dumps(cookie))
+        return response
+
     languages = place.languages()
     for l in languages:
         l['lang'] = get_wikidata_language(l['code'])
