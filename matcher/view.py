@@ -563,8 +563,22 @@ def save_language_order(osm_type, osm_id):
     response.set_cookie(cookie_name, json.dumps(cookie))
     return response
 
-@app.route('/debug/languages')
+def clear_languard_cookie():
+    cookie_name = 'language_order'
+    cookie = {}
+
+    flash('language order cleared')
+    response = make_response(redirect(url_for(request.endpoint)))
+    response.set_cookie(cookie_name, json.dumps(cookie))
+    return response
+
+@app.route('/debug/languages', methods=['GET', 'POST'])
 def debug_languages():
+    if request.method == 'POST':
+        if request.form.get('clear') == 'yes':
+            return clear_languard_cookie()
+
+        return redirect(url_for(request.endpoint))
     cookie = read_language_order()
     place_list = []
     all_codes = set(utils.flatten(cookie.values()))

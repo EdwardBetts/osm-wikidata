@@ -5,12 +5,21 @@
 {% block content %}
 <div class="container my-2">
 
+  <h1>Language order preferences</h1>
+
+  {% include "flash_msg.html" %}
+
 <p>cookie size: {{ request.cookies.language_order | length }} characters</p>
+
+<form method="POST">
+  <input type="hidden" name="clear" value="yes">
+  <button class="btn btn-danger">clear language preferences</button>
+</form>
 
 {% for place, languages in place_list %}
   <h4>{{ place.display_name or 'no name' }}</h4>
   <p>{{ place.osm_type}}/{{ place.osm_id }}:
-    <a href="{{ place.candidates_url }}">candidates page</a></p>
+    <a href="{{ place.candidates_url() }}">candidates page</a></p>
   <ul>
     {% for l in languages %}
       <li>
