@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+
+<p>cookie size: {{ request.cookies.language_order | length }} characters</p>
+
+{% for place, languages in place_list %}
+  <h4>{{ place.display_name or 'no name' }}</h4>
+  <p>{{ place.osm_type}}/{{ place.osm_id }}:
+    <a href="{{ place.candidates_url }}">candidates page</a></p>
+  <ul>
+    {% for l in languages %}
+      <li>{{ l.label() }}</li>
+    {% endfor %}
+  </ul>
+
+  <p>{{ language_codes }}</p>
+{% endfor %}
+
+</div>
+{% endblock %}

@@ -563,6 +563,25 @@ def save_language_order(osm_type, osm_id):
     response.set_cookie(cookie_name, json.dumps(cookie))
     return response
 
+@app.route('/debug/languages')
+def debug_languages():
+    cookie = read_language_order()
+    place_list = []
+    all_codes = set(utils.flatten(cookie.values()))
+    lookup = {}
+    q = Language.query.filter(Language.wikimedia_language_code.in_(all_codes))
+    for lang in q:
+        lookup[lang.wikimedia_language_code] = lang
+
+    for key, language_codes in cookie.items():
+        osm_type, _, osm_id = key.partition('/')
+        place = Place.get_by_osm(osm_type, osm_id)
+        if not place:
+            continue
+        place_list.append((place, [lookup[code] for code in language_codes]))
+
+    return render_template('debug/languages.html', place_list=place_list)
+
 @app.route('/mobile/<osm_type>/<int:osm_id>')
 def mobile(osm_type, osm_id):
     # FIXME: this is unfinished work
