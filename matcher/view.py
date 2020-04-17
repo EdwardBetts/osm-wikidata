@@ -593,8 +593,6 @@ def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
 
-    check_still_auth()
-
     if place.state not in ('ready', 'complete'):
         return redirect_to_matcher(place)
 
@@ -604,6 +602,8 @@ def candidates(osm_type, osm_id):
         items = place.items_with_candidates().all()
     else:
         items = place.get_candidate_items()
+        check_still_auth()
+
 
     filter_iter = matcher.filter_candidates_more(items,
                                                  bad=get_bad(items),
