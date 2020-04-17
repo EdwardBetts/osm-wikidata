@@ -297,11 +297,12 @@ function zoom_to_item(e) {
 {% block content %}
   <div id="page-body">
     <div class="m-2">
-  {% include "flash_msg.html" %}
     <h1>{{ place.name }}</h1>
   {% set q = place.display_name %}
 
   {{ place_box(place) }}
+
+  {% include "flash_msg.html" %}
 
   {% set run = place.latest_matcher_run() %}
   {% if run %}
