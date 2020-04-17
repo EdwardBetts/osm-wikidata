@@ -37,12 +37,7 @@ var map = L.map('mapid');
 
 var layer;
 
-if (chunk_geojson.length == 1) {
-  layer = L.geoJSON(chunk_geojson);
-} else {
-  // layer = L.geoJSON(chunk_geojson, {onEachFeature: onEachFeature});
-  layer = L.geoJSON(chunk_geojson);
-}
+layer = L.geoJSON(chunk_geojson);
 
 layer.addTo(map);
 map.fitBounds(layer.getBounds());
