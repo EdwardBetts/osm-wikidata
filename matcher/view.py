@@ -578,7 +578,7 @@ def debug_languages():
         place = Place.get_by_osm(osm_type, osm_id)
         if not place:
             continue
-        place_list.append((place, [lookup[code] for code in language_codes]))
+        place_list.append((place, [lookup.get(code, code) for code in language_codes]))
 
     return render_template('debug/languages.html', place_list=place_list)
 

@@ -13,7 +13,13 @@
     <a href="{{ place.candidates_url }}">candidates page</a></p>
   <ul>
     {% for l in languages %}
-      <li>{{ l.label() }}</li>
+      <li>
+        {% if l.label %}
+          {{ l.label() }}
+        {% else %}
+          language missing [code: {{ l }}]
+        {% endif %}
+      </li>
     {% endfor %}
   </ul>
 
