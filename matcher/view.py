@@ -487,24 +487,28 @@ def get_wikidata_language(code):
     return (Language.query.filter_by(wikimedia_language_code=code)
                           .one_or_none())
 
+def set_top_language(place, top):
+    languages = place.languages()
+    cookie_name = 'language_order'
+    place_identifier = f'{place.osm_type}/{place.osm_id}'
+
+    cookie = read_language_order()
+    current_order = cookie.get(place_identifier) or [l['code'] for l in languages]
+    current_order.remove(top)
+    cookie[place_identifier] = [top] + current_order
+
+    flash('language order updated')
+    response = make_response(redirect(place.candidates_url()))
+    response.set_cookie(cookie_name, json.dumps(cookie))
+    return response
+
 @app.route('/languages/<osm_type>/<int:osm_id>')
 def switch_languages(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
 
     top = request.args.get('top')
     if top:
-        cookie_name = 'language_order'
-        place_identifier = f'{osm_type}/{osm_id}'
-
-        cookie = read_language_order()
-        current_order = cookie[place_identifier]
-        current_order.remove(top)
-        cookie[place_identifier] = [top] + current_order
-
-        flash('language order updated')
-        response = make_response(redirect(place.candidates_url()))
-        response.set_cookie(cookie_name, json.dumps(cookie))
-        return response
+        return set_top_language(place, top)
 
     languages = place.languages()
     for l in languages:
