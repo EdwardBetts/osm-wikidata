@@ -423,7 +423,9 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
       {% for l in languages_with_counts %}
         <li>{{ l.lang.label() if l.lang is not none else l.code }}
             ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
-            <a href="{{switch_lang_url }}?top={{ l.code }}">[move to top]</a>
+            {% if not loop.first %}
+              <a href="{{switch_lang_url }}?top={{ l.code }}">[move to top]</a>
+            {% endif %}
         </li>
       {% endfor %}
       </ol>
