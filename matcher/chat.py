@@ -8,6 +8,8 @@ def connect_to_queue():
     return sock
 
 def read_line(sock):
+    '''Read a single line from a socket. The line is terminated with CR+LF.'''
+
     char = sock.recv(1)
     if char == b'':
         return
