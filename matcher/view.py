@@ -892,30 +892,6 @@ def instance_of_page(item_id):
                            entity=entity,
                            items=items)
 
-@app.route('/is_in/way/<way_id>')
-def is_in_way(way_id):
-
-    oql = f'''
-[out:json][timeout:5];
-way({way_id});>;
-is_in->.a;
-(way(pivot.a); rel(pivot.a););
-out tags;
-'''
-    elements = overpass.get_elements(oql)
-    osm_type = 'way'
-
-    name_by_admin_level = {}
-    for e in elements:
-        tags = e['tags']
-        name = tags.get('name')
-        admin_level = tags.get('admin_level')
-        if name and admin_level:
-            name_by_admin_level[int(admin_level)] = name
-
-    q = ', '.join(v for k, v in sorted(name_by_admin_level.items(), reverse=True))
-    return redirect(url_for('search_results', q=q))
-
 @app.route('/')
 def index():
     q = request.args.get('q')
