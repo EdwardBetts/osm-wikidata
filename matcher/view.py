@@ -254,14 +254,11 @@ def add_wikidata_tag():
     '''Add wikidata tags for a single item'''
     wikidata_id = request.form['wikidata']
     osm = request.form.get('osm')
-    if osm:
-        osm_type, _, osm_id = osm.partition('/')
-    elif 'osm_id' in request.form and 'osm_type' in request.form:
-        osm_id = request.form['osm_id']  # old form parameters
-        osm_type = request.form['osm_type']
-    else:
+    if not osm:
         flash('no candidate selected')
         return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
+
+    osm_type, _, osm_id = osm.partition('/')
 
     user = g.user
     assert user.is_authenticated
