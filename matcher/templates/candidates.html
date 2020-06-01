@@ -374,12 +374,6 @@ added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
     <p>
     {{ '{:,d}'.format(full_count) }} candidates found
     </p>
-    {#
-    {% if filter_okay %}
-        {% set url = url_for('export_osm', osm_type=place.osm_type, osm_id=place.osm_id, name=place.export_name) %}
-        <p><a href="{{ url }}">Download as OSM XML file</a></p>
-    {% endif %}
-    #}
   {% endif %}
 
   {% if not candidates %}

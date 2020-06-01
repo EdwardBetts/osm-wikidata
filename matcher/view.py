@@ -1,7 +1,7 @@
 from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
                user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
                jobs)
-from .utils import cache_filename, get_int_arg
+from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA)
 from .place import Place
@@ -33,7 +33,6 @@ import json
 import operator
 import inspect
 import requests
-import os.path
 import re
 import random
 
@@ -318,47 +317,6 @@ def add_wikidata_tag():
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
 
-@app.route('/export/wikidata_<osm_type>_<int:osm_id>_<name>.osm')
-def export_osm(osm_type, osm_id, name):
-    place = Place.get_or_abort(osm_type, osm_id)
-    items = place.items_with_candidates()
-
-    items = list(matcher.filter_candidates_more(items, bad=get_bad(items)))
-
-    if not any('candidate' in match for _, match in items):
-        abort(404)
-
-    items = [(item, match['candidate']) for item, match in items if 'candidate' in match]
-
-    lookup = {}
-    for item, osm in items:
-        lookup[(osm.osm_type, osm.osm_id)] = item
-
-    filename = cache_filename('{}_{}_overpass_export.xml'.format(osm_type, osm_id))
-    if os.path.exists(filename):
-        overpass_xml = open(filename, 'rb').read()
-    else:
-        overpass_xml = overpass.items_as_xml(items)
-        with open(filename, 'wb') as f:
-            f.write(overpass_xml)
-    root = etree.fromstring(overpass_xml)
-
-    for e in root:
-        if e.tag not in {'way', 'node', 'relation'}:
-            continue
-        for f in 'uid', 'user', 'timestamp', 'changeset':
-            del e.attrib[f]
-        pair = (e.tag, int(e.attrib['id']))
-        item = lookup.get(pair)
-        if not item:
-            continue
-        e.attrib['action'] = 'modify'
-        tag = etree.Element('tag', k='wikidata', v=item.qid)
-        e.append(tag)
-
-    xml = etree.tostring(root, pretty_print=True)
-    return Response(xml, mimetype='text/xml')
-
 def redirect_to_matcher(place):
     return redirect(place.matcher_progress_url())
 
@@ -640,7 +598,6 @@ def candidates(osm_type, osm_id):
     else:
         items = place.get_candidate_items()
         check_still_auth()
-
 
     filter_iter = matcher.filter_candidates_more(items,
                                                  bad=get_bad(items),
