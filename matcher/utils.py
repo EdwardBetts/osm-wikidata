@@ -58,6 +58,7 @@ def file_missing_or_empty(filename):
         os.stat(filename).st_size == 0)
 
 def is_bot():
+    ''' Is the current request from a web robot? '''
     ua = request.headers.get('User-Agent')
     return ua and user_agents.parse(ua).is_bot
 
