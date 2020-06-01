@@ -1445,14 +1445,6 @@ def delete_places():
     to_next = request.form.get('next', 'db_space')
     return redirect(url_for(to_next))
 
-@app.route('/user/<path:username>')
-def user_page(username):
-    user = User.query.filter(User.username.ilike(username)).one_or_none()
-    if not user:
-        abort(404)
-
-    return render_template('user_page.html', user=user)
-
 @app.route('/account')
 @flask_login.login_required
 def account_page():
