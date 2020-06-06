@@ -272,6 +272,18 @@ def exception_handler(e):
                            last_frame=last_frame,
                            last_frame_args=last_frame_args), 500
 
+def get_osm_object(osm_type, osm_id, attempts=5):
+    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
+    for attempt in range(attempts):
+        try:
+            r = requests.get(url, headers=user_agent_headers())
+            return etree.fromstring(r.content)
+        except etree.XMLSyntaxError:
+            if attempt == attempts - 1:
+                mail.error_mail('error requesting element', url, r)
+                raise
+            sleep(1)
+
 @app.route('/add_wikidata_tag', methods=['POST'])
 def add_wikidata_tag():
     '''Add wikidata tags for a single item'''
@@ -286,18 +298,7 @@ def add_wikidata_tag():
     user = g.user
     assert user.is_authenticated
 
-    url = '{}/{}/{}'.format(osm_api_base, osm_type, osm_id)
-    attempts = 5
-    for attempt in range(attempts):
-        try:
-            r = requests.get(url, headers=user_agent_headers())
-            root = etree.fromstring(r.content)
-            break
-        except etree.XMLSyntaxError:
-            if attempt == attempts - 1:
-                mail.error_mail('error requesting element', url, r)
-                raise
-            sleep(1)
+    root = get_osm_object(osm_type, osm_id)
 
     if root.find('.//tag[@k="wikidata"]') is not None:
         flash('no edit needed: OSM element already had wikidata tag')
