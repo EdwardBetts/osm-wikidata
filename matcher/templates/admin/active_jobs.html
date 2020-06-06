@@ -8,9 +8,13 @@
 
   <h1>Jobs</h1>
 
-  <p>There are {{ items | length }} active jobs.</p>
+  <ul>
+    {% for endpoint, label in admin_job_lists %}
+      <li><a href="{{ url_for(endpoint) }}">{{ label }}</a></li>
+    {% endfor %}
+  </ul>
 
-  <p><a href="{{ url_for('list_past_jobs') }}">Most recent past jobs</a></p>
+  <p>There are {{ items | length }} active jobs.</p>
 
   {% if items %}
   <table class="table">

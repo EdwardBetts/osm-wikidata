@@ -1576,13 +1576,25 @@ def list_users():
     q = User.query.order_by(User.sign_up.desc())
     return render_template('admin/users.html', users=q)
 
+admin_job_lists = [
+    ('list_active_jobs', 'Active jobs'),
+    ('list_recent_jobs', 'Recent jobs'),
+    ('list_slow_jobs', 'Slowest jobs'),
+]
+
 @app.route('/admin/jobs')
 @flask_login.login_required
-def list_jobs():
+def list_active_jobs():
     assert_user_is_admin()
-    job_list = jobs.get_jobs()
+    try:
+        job_list = jobs.get_jobs()
+    except ConnectionRefusedError:
+        return render_template('error_page.html',
+                               message='Failed to talk to matcher queue.')
 
-    return render_template('admin/jobs.html', items=job_list)
+    return render_template('admin/active_jobs.html',
+                           admin_job_lists=admin_job_lists,
+                           items=job_list)
 
 @app.route('/admin/stop/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -1600,10 +1612,28 @@ def stop_job(osm_type, osm_id):
 
     return render_template('admin/stop_job.html', job=job, place=place)
 
-@app.route('/admin/jobs/past')
+@app.route('/admin/jobs/recent')
 @flask_login.login_required
-def list_past_jobs():
+def list_recent_jobs():
     assert_user_is_admin()
     jobs = PlaceMatcher.query.order_by(PlaceMatcher.start.desc()).limit(100)
 
-    return render_template('admin/past_jobs.html', items=jobs)
+    return render_template('admin/jobs_list.html',
+                           title='Past jobs',
+                           admin_job_lists=admin_job_lists,
+                           items=jobs)
+
+@app.route('/admin/jobs/slowest')
+@flask_login.login_required
+def list_slow_jobs():
+    assert_user_is_admin()
+    duration = PlaceMatcher.end - PlaceMatcher.start
+    jobs = (PlaceMatcher.query
+                        .filter(PlaceMatcher.end.isnot(None))
+                        .order_by(duration.desc())
+                        .limit(100))
+
+    return render_template('admin/jobs_list.html',
+                           title='Slowest jobs',
+                           admin_job_lists=admin_job_lists,
+                           items=jobs)
