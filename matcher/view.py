@@ -1380,6 +1380,7 @@ def build_item_page(wikidata_id, item):
 
 @app.route('/Q<int:wikidata_id>')
 def item_page(wikidata_id):
+    check_still_auth()
     item = Item.query.get(wikidata_id)
     if item:
         item.set_country_code()
