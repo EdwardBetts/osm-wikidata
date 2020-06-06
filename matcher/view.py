@@ -590,6 +590,7 @@ def check_still_auth():
         return
     r = osm_oauth.api_request('user/details')
     if r.status_code == 401:
+        flash('Not authenticated with OpenStreetMap')
         flask_login.logout_user()
 
 @app.route('/debug/user/details')
