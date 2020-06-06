@@ -152,6 +152,11 @@ def dev_login():
 
     return redirect(dest)
 
+def assert_user_is_admin():
+    user = flask_login.current_user
+    if not (user.is_authenticated and user.is_admin):
+        abort(403)
+
 @app.route('/login/openstreetmap/')
 def login_openstreetmap():
     return redirect(url_for('start_oauth',
@@ -1554,6 +1559,7 @@ def admin_bad_match():
     return render_template('admin/bad_match.html', q=q)
 
 @app.route('/admin/demo', methods=['GET', 'POST'])
+@flask_login.login_required
 def admin_demo_mode():
     demo_mode = session.get('demo_mode', False)
     if request.method != 'POST':
@@ -1566,17 +1572,22 @@ def admin_demo_mode():
 @app.route('/admin/users')
 @flask_login.login_required
 def list_users():
+    assert_user_is_admin()
     q = User.query.order_by(User.sign_up.desc())
     return render_template('admin/users.html', users=q)
 
 @app.route('/admin/jobs')
+@flask_login.login_required
 def list_jobs():
+    assert_user_is_admin()
     job_list = jobs.get_jobs()
 
     return render_template('admin/jobs.html', items=job_list)
 
 @app.route('/admin/stop/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
+@flask_login.login_required
 def stop_job(osm_type, osm_id):
+    assert_user_is_admin()
     place = Place.get_or_abort(osm_type, osm_id)
     job = jobs.get_job(place)
     job or abort(404)
@@ -1592,6 +1603,7 @@ def stop_job(osm_type, osm_id):
 @app.route('/admin/jobs/past')
 @flask_login.login_required
 def list_past_jobs():
+    assert_user_is_admin()
     jobs = PlaceMatcher.query.order_by(PlaceMatcher.start.desc()).limit(100)
 
     return render_template('admin/past_jobs.html', items=jobs)
