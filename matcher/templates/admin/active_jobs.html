@@ -10,7 +10,9 @@
 
   <ul>
     {% for endpoint, label in admin_job_lists %}
-      <li><a href="{{ url_for(endpoint) }}">{{ label }}</a></li>
+      {% if request.endpoint != endpoint %}
+        <li><a href="{{ url_for(endpoint) }}">{{ label }}</a></li>
+      {% endif %}
     {% endfor %}
   </ul>
 
