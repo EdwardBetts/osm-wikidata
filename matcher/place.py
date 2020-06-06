@@ -959,7 +959,7 @@ class Place(Base):
         place_items = self.matcher_query()
         total = place_items.count()
         # too many items means something has gone wrong
-        assert total < 60_000
+        assert total < 200_000
         for num, place_item in enumerate(place_items):
             item = place_item.item
 
