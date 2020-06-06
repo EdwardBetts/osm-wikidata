@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Development mode - login{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+  <h1>{{ self.title() }}</h1>
+
+  <form method="POST" action="{{ url_for('dev_login') }}">
+    <select name="user_id">
+      <option value=""></option>
+      {% for user in users %}
+        <option value="{{user.id}}">{{ user.username }}</option>
+      {% endfor %}
+    <input type="hidden" name="next" value="{{ request.args.next }}" />
+    <input type="submit" value="login" />
+  </form>
+
+</div>
+{% endblock %}

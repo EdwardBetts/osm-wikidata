@@ -131,8 +131,26 @@ def navbar():
 
 @app.route('/login')
 def login_route():
+    if app.env == 'development':
+        users = User.query
+        return render_template('dev/login.html',
+                               users=users,
+                               next=request.args.get('next'))
+
     return redirect(url_for('start_oauth',
                             next=request.args.get('next')))
+
+@app.route('/dev/login', methods=['POST'])
+def dev_login():
+    if app.env != 'development':
+        abort(403)
+    dest = request.form.get('next') or url_for('index')
+    user_id = request.form['user_id']
+    user = User.query.filter_by(id=user_id).one_or_none()
+
+    flask_login.login_user(user)
+
+    return redirect(dest)
 
 @app.route('/login/openstreetmap/')
 def login_openstreetmap():
