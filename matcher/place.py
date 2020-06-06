@@ -1446,7 +1446,12 @@ class PlaceMatcher(Base):
 
         total_seconds = int((self.end - self.start).total_seconds())
         mins, secs = divmod(total_seconds, 60)
-        return f'{mins} mins {secs} secs' if mins else f'{secs} secs'
+        hours, mins = divmod(mins, 60)
+        if hours:
+            return f'{hours}h {mins}m {secs}s'
+        if mins:
+            return f'{mins}m {secs}s'
+        return f'{secs}s'
 
     def complete(self):
         self.end = now_utc()
