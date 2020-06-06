@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Jobs{% endblock %}
+{% block title %}Past jobs{% endblock %}
 
 {% block content %}
 <div class="container my-2">
   {% include "flash_msg.html" %}
 
   <h1>Past jobs</h1>
+
+  <p><a href="{{ url_for('list_jobs') }}">Active jobs</a></p>
 
   {% if items %}
   <table class="table">

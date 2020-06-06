@@ -10,6 +10,8 @@
 
   <p>There are {{ items | length }} active jobs.</p>
 
+  <p><a href="{{ url_for('list_past_jobs') }}">Most recent past jobs</a></p>
+
   {% if items %}
   <table class="table">
   {% for i in items %}
