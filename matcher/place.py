@@ -379,7 +379,7 @@ class Place(Base):
 
     @property
     def display_area(self):
-        return '{:.1f} km²'.format(self.area_in_sq_km)
+        return '{:,.1f} km²'.format(self.area_in_sq_km)
 
     def get_wikidata_query(self):
         # this is an old function, it isn't used by the matcher
