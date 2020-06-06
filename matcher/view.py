@@ -4,7 +4,7 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA)
-from .place import Place
+from .place import Place, PlaceMatcher
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
@@ -1586,3 +1586,10 @@ def stop_job(osm_type, osm_id):
         return redirect(url_for('list_jobs'))
 
     return render_template('admin/stop_job.html', job=job, place=place)
+
+@app.route('/admin/jobs/past')
+@flask_login.login_required
+def list_past_jobs():
+    jobs = PlaceMatcher.query.order_by(PlaceMatcher.start.desc()).limit(100)
+
+    return render_template('admin/past_jobs.html', items=jobs)
