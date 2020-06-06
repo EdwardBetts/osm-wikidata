@@ -18,6 +18,7 @@ import json
 import subprocess
 import os.path
 import re
+import user_agents
 
 radius_default = 1_000  # in metres, only for nodes
 
@@ -1455,6 +1456,10 @@ class PlaceMatcher(Base):
 
     def complete(self):
         self.end = now_utc()
+
+    def is_bot(self):
+        ua = self.user_agent
+        return ua and user_agents.parse(ua).is_bot
 
 def get_top_existing(limit=39):
     cols = [Place.place_id, Place.display_name, Place.area, Place.state,

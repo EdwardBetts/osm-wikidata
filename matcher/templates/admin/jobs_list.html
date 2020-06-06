@@ -40,7 +40,14 @@
     {% if i.user_agent or i.user or i.remote_addr %}
     <tr>
       <td class="text-nowrap text-right">{{ i.user.username if i.user else '[no auth]' }}</td>
-      <td colspan="2">{{ i.user_agent or '' }}</td>
+      <td colspan="2">
+        {% if i.user_agent %}
+          {{ i.user_agent }}
+          {% if i.is_bot() %}
+            <span class="badge badge-warning">bot</span>
+          {% endif %}
+        {% endif %}
+      </td>
       <td class="text-nowrap text-right">{{ i.remote_addr or '' }}</td>
     </tr>
     {% endif %}
