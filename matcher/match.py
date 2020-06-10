@@ -56,7 +56,8 @@ re_road_end = re.compile('^(.+)(' + '|'.join(list(road_abbr.keys()) + list(road_
 
 bad_name_fields = {'tiger:name_base', 'name:right',
                    'name:left', 'gnis:county_name',
-                   'openGeoDB:name', 'addr:street:name'}
+                   'openGeoDB:name', 'addr:street:name',
+                   'name:source'}
 
 def no_alpha(s):
     return all(not c.isalpha() for c in s)
