@@ -436,6 +436,10 @@ def find_item_matches(cur, item, prefix, debug=False):
         if item_is_a_historic_district and 'building' in osm_tags:
             continue  # historic district shouldn't match building
 
+        if (all(key.startswith('addr:') or key == 'entrance' for key in osm_tags.keys()) and
+                src_type == 'node' and 'addr:housename' not in osm_tags):
+            continue  # Don't match address nodes. There are lots of these in New York.
+
         try:
             admin_level = int(osm_tags['admin_level']) if 'admin_level' in osm_tags else None
         except Exception:
