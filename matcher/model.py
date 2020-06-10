@@ -924,30 +924,34 @@ class ItemCandidate(Base):
 
     @property
     def label(self):
+        tags = self.tags
+
         for key in 'bridge:name', 'tunnel:name', 'lock_name':
-            if key in self.tags:
-                return self.tags[key]
+            if key in tags:
+                return tags[key]
 
-        if 'name' in self.tags:
-            name = self.tags['name']
-            if 'addr:housename' in self.tags:
-                return f'{name} (house name: {self.tags["addr:housename"]})'
+        if 'name' in tags:
+            if 'addr:housename' in tags:
+                return f"{tags['name']} (house name: {tags['addr:housename']})"
             else:
-                return name
+                return tags['name']
 
-        if 'name:en' in self.tags:
-            return self.tags['name:en']
-        for k, v in self.tags.items():
-            if k.startswith('name:'):
-                return v
-        for k, v in self.tags.items():
-            if 'name' in k:
+        if 'name:en' in tags:
+            return tags['name:en']
+
+        for k, v in tags.items():
+            if k.startswith('name:') and k != 'name:source':
                 return v
 
-        if all(tag in self.tags for tag in ('addr:housenumber', 'addr:street')):
-            housenumber = self.tags['addr:housenumber']
-            street = self.tags['addr:street']
-            return f'{housenumber} {street}'
+        if 'addr:housename' in tags:
+            return tags['addr:housename']
+
+        for k, v in tags.items():
+            if 'name' in k and k not in ('addr:street:name', 'name:source'):
+                return v
+
+        if all(tag in tags for tag in ('addr:housenumber', 'addr:street')):
+            return f"{tags['addr:housenumber']} {tags['addr:street']}"
 
         return f'{self.osm_type}/{self.osm_id}'
 
