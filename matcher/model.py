@@ -909,7 +909,7 @@ class ItemCandidate(Base):
                 return self.tags[key]
 
         names = {k[5:]: v for k, v in self.tags.items()
-                 if k.startswith('name:')}
+                 if k.startswith('name:') and 'name:source' != k}
         if 'name' in self.tags:
             top_lang = g.default_languages[0]['code']
             if top_lang not in names:
