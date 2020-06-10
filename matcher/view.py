@@ -818,6 +818,13 @@ def update_search_results(results):
     for hit in results:
         if not ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit):
             continue
+
+        p = Place.query.get(hit['place_id'])
+        if p and (p.osm_type != hit['osm_type'] or p.osm_id != hit['osm_id']):
+            db_place_hit = nominatim.reverse(p.osm_type, p.osm_id)
+            p.place_id = db_place_hit['place_id']
+            need_commit = True
+
         p = Place.query.filter_by(osm_type=hit['osm_type'],
                                   osm_id=hit['osm_id']).one_or_none()
         if p and p.place_id != hit['place_id']:
