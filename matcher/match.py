@@ -2,7 +2,7 @@
 from collections import defaultdict
 from unidecode import unidecode
 from num2words import num2words
-from .utils import normalize_url, any_upper, contains_digit
+from .utils import normalize_url, any_upper
 
 import re
 
