@@ -50,7 +50,10 @@ def process_language_entities(entities):
         }
         if 'P424' not in claims:
             continue
-        p424 = claims['P424'][0]['mainsnak']['datavalue']['value']
+        mainsnak = claims['P424'][0]['mainsnak']
+        if 'datavalue' not in mainsnak:
+            continue
+        p424 = mainsnak['datavalue']['value']
         l['code'] = p424
         if p424 not in lang['labels']:
             continue
