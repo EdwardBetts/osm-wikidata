@@ -1577,6 +1577,7 @@ def list_users():
     q = User.query.order_by(User.sign_up.desc())
     return render_template('admin/users.html', users=q)
 
+
 admin_job_lists = [
     ('list_active_jobs', 'Active jobs'),
     ('list_recent_jobs', 'Recent jobs'),
