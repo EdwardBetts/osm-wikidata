@@ -38,8 +38,12 @@ def save_element(osm_type, osm_id, element_data):
         return r
 
     subject = f'matcher error saving element: {osm_path}'
+    username = g.user.username
     body = f'''
 https://www.openstreetmap.org{osm_path}
+
+user: {username}
+message user: https://www.openstreetmap.org/message/new/{username}
 
 error:
 {reply}
