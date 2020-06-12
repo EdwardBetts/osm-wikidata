@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Admin pages{% endblock %}
+
+{% block content %}
+<div class="container my-2">
+
+  <h1>Admin pages</h1>
+
+  <ul>
+    {% for endpoint, label in admin_pages %}
+      {% if request.endpoint != endpoint %}
+        <li><a href="{{ url_for(endpoint) }}">{{ label }}</a></li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+
+</div>
+{% endblock %}

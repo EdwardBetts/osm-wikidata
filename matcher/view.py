@@ -1579,6 +1579,23 @@ def single_item_match(osm_type, osm_id, item_id):
                            dict=dict,
                            candidates=candidates)
 
+
+admin_pages = [
+    ('admin_bad_match', 'Bad match'),
+    ('admin_demo_mode', 'Demo mode'),
+    ('list_users', 'Users'),
+    ('list_active_jobs', 'Active jobs'),
+    ('list_recent_jobs', 'Recent jobs'),
+    ('list_slow_jobs', 'Slowest jobs'),
+]
+
+@app.route('/admin')
+@flask_login.login_required
+def admin_index():
+    assert_user_is_admin()
+    return render_template('admin/index.html',
+                           admin_pages=admin_pages)
+
 @app.route('/admin/bad_match', methods=['GET', 'POST'])
 def admin_bad_match():
     if request.method == 'POST':
