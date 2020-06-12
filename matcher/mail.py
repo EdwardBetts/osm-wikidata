@@ -118,6 +118,8 @@ user: {g.user.username}
 name: {place.display_name}
 page: {url}
 
+message user: https://www.openstreetmap.org/message/new/{username}
+
 sent:
 
 {changeset}
