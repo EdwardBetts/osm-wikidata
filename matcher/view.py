@@ -3,7 +3,8 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
                jobs)
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA)
+                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA,
+                    ItemIsA)
 from .place import Place, PlaceMatcher
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -1417,6 +1418,29 @@ def reports_view():
     if hide == 'farmhouse':
         q = q.filter(~EditMatchReject.edit.candidate.item.query_label.like('%farm%house%'))
     return render_template('reports/list.html', q=q)
+
+@app.route('/reports/isa')
+def isa_list_report():
+    q = (database.session.query(IsA.item_id, IsA.label, func.count())
+                         .join(ItemIsA)
+                         .group_by(IsA.item_id, IsA.label)
+                         .order_by(func.count().desc())
+                         .limit(100))
+    return render_template('reports/isa_list.html', q=q)
+
+@app.route('/reports/isa/Q<int:isa_id>')
+def isa_item_report(isa_id):
+    item = IsA.query.get(isa_id)
+    return render_template('reports/isa_item.html', item=item, isa_id=isa_id)
+
+@app.route('/reports/isa/Q<int:isa_id>/refresh', methods=['POST'])
+def isa_item_refresh(isa_id):
+    item = IsA.query.get(isa_id)
+    qid = f'Q{isa_id}'
+    item.entity = wikidata_api.get_entity(qid)
+    database.session.commit()
+    flash('IsA item refreshed')
+    return redirect(url_for('isa_item_report', isa_id=isa_id))
 
 @app.route('/admin/space')
 @flask_login.login_required
