@@ -457,9 +457,30 @@ https://www.wikidata.org/wiki/{self.qid}
             return []
 
     def names(self):
+        part_of_names = set()
+        for p361 in self.entity['claims'].get('P361', []):
+            try:
+                part_of_id = p361['mainsnak']['datavalue']['value']['numeric-id']
+            except KeyError:
+                continue
+            # TODO: download item if it doesn't exist
+            part_of_item = Item.query.get(part_of_id)
+            if part_of_item:
+                part_of_names |= part_of_item.names().keys()
+
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
             d[name].append(('extract', 'enwiki'))
+
+        for name, sources in list(d.items()):
+            if len(sources) == 1 and sources[0][0] == 'image':
+                continue
+            for part_of_name in part_of_names:
+                if not name.startswith(part_of_name):
+                    continue
+                prefix_removed = name[len(part_of_name):].strip()
+                if prefix_removed not in d:
+                    d[prefix_removed] = sources
 
         # A terrace of buildings can be illustrated with a photo of a single building.
         # We try to determine if this is the case and avoid using the filename of the
