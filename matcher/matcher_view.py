@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request, flash
+from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request, flash, current_app
 from . import database, matcher, mail, utils
 from .model import Item
 from .place import Place, PlaceMatcher
@@ -10,6 +10,8 @@ matcher_blueprint = Blueprint('matcher', __name__)
 
 def announce_matcher_progress(place):
     ''' Send mail to announce when somebody runs the matcher. '''
+    if current_app.env == 'development':
+        return
     if g.user.is_authenticated:
         user = g.user.username
         subject = 'matcher: {} (user: {})'.format(place.name, user)
