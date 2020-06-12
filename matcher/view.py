@@ -4,7 +4,7 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA,
-                    ItemIsA)
+                    ItemIsA, SiteBanner)
 from .place import Place, PlaceMatcher
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -112,6 +112,10 @@ def global_user():
         g.user = User.query.get(1)
     else:
         g.user = flask_login.current_user._get_current_object()
+
+@app.before_request
+def site_banner():
+    g.banner = SiteBanner.query.filter(SiteBanner.end.is_(None)).one_or_none()
 
 @app.before_request
 def slow_crawl():

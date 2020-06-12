@@ -47,6 +47,15 @@ disused_prefix_key = {'amenity', 'railway', 'leisure', 'tourism',
 #   "avatar": "AVATAR URL"
 # }
 
+class SiteBanner(Base):
+    __tablename__ = 'site_banner'
+    id = Column(Integer, primary_key=True)
+    headline = Column(String, nullable=False)
+    body = Column(String, nullable=False)
+    alert_type = Column(String, nullable=False)
+    start = Column(DateTime)
+    end = Column(DateTime)
+
 class User(Base, UserMixin):
     __tablename__ = 'user'
     id = Column(Integer, primary_key=True)
