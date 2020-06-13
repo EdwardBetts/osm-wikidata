@@ -113,8 +113,9 @@ error:
 
 def open_changeset_error(place, changeset, r):
     url = place.candidates_url(_external=True)
+    username = g.user.username
     body = f'''
-user: {g.user.username}
+user: {username}
 name: {place.display_name}
 page: {url}
 
