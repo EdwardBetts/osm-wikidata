@@ -1189,3 +1189,13 @@ def candidate_filters(place_identifier):
 
     for isa in get_isa_facets(items):
         print(f"{isa['count']:3d}: {isa['label']} ({isa['qid']}) - {isa['description']}")
+
+@app.cli.command()
+def show_all_extract():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    q = Extract.query.filter(Extract.site == 'enwiki',
+                             Extract.extract.ilike('%chain%'))
+    for i in q:
+        print(json.dumps(i.extract))
