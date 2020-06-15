@@ -1122,7 +1122,23 @@ def claim_value(claim):
 def country_iso_codes_from_qid(qid):
     item = WikidataItem.retrieve_item(qid)
     extra = {'Q159583': 'VA'}  # Holy See
-    no_iso_3166_code = {'Q23427'}  # South Ossetia
+    no_iso_3166_code = {
+        'Q23427',    # South Ossetia
+        'Q3315371',  # Global Affairs Canada
+        'Q170355',   # Indigenous Australians
+        'Q6605',     # Sakha Republic
+        'Q53492009', # Embassy of the United States, Jerusalem
+    }
+
+    # Embassy of Canada, Washington, D.C. (Q137245) has two values in the
+    # operator (P137) property: Canada (Q16) and Global Affairs Canada (Q3315371)
+    # We ignore the second one
+
+    # Aboriginal Tent Embassy (Q189212) has the operator (P137) property as
+    # Indigenous Australians (Q170355)
+
+    # Tel Aviv Branch Office of the Embassy of the United States (Q53444085)
+    # operator (P137): Embassy of the United States, Jerusalem (Q53492009)
 
     if qid in no_iso_3166_code:
         return
