@@ -408,8 +408,11 @@ def add_tags_post(osm_type, osm_id):
     table = [(item, match['candidate'])
              for item, match in hits if 'candidate' in match]
 
-    candidates = [{'qid': i.qid, 'osm_type': c.osm_type, 'osm_id': c.osm_id}
-                  for i, c in table]
+    candidates = {
+        'isa_filter': request.form.getlist('isa') or [],
+        'list': [{'qid': i.qid, 'osm_type': c.osm_type, 'osm_id': c.osm_id}
+                 for i, c in table]
+    }
 
     existing = InProgress.query.get((g.user.id, osm_type, osm_id))
     if existing:
@@ -440,7 +443,7 @@ def add_tags(osm_type, osm_id):
 
     in_progress = InProgress.query.get((g.user.id, osm_type, osm_id))
     table = []
-    for c in in_progress.candidates:
+    for c in in_progress.candidates['list']:
         item_id = int(c['qid'][1:])
         candidate = ItemCandidate.query.get((item_id, c['osm_id'], c['osm_type']))
         table.append((candidate.item, candidate))
@@ -470,7 +473,7 @@ def add_tags(osm_type, osm_id):
     url_scheme = request.environ.get('wsgi.url_scheme')
     ws_scheme = 'wss' if url_scheme == 'https' else 'ws'
 
-    isa_filter = request.form.getlist('isa') or []
+    isa_filter = in_progress.candidates.get('isa_filter') or []
     isa_labels = [IsA.query.get(isa[1:]).label_best_language(languages, plural=True)
                   for isa in isa_filter]
 
