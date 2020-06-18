@@ -4,7 +4,7 @@ from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA,
-                    ItemIsA, SiteBanner)
+                    ItemIsA, SiteBanner, InProgress)
 from .place import Place, PlaceMatcher
 from .taginfo import get_taginfo
 from .match import check_for_match
@@ -398,22 +398,56 @@ def update_tags(osm_type, osm_id):
 
     return redirect(place.candidates_url())
 
-@app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['POST'])
-def add_tags(osm_type, osm_id):
-    place = Place.get_or_abort(osm_type, osm_id)
-    g.country_code = place.country_code
-
+def add_tags_post(osm_type, osm_id):
     include = request.form.getlist('include')
     items = Item.query.filter(Item.item_id.in_([i[1:] for i in include])).all()
-
-    languages_with_counts = get_place_language_with_counts(place)
-    languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
     hits = matcher.filter_candidates_more(items,
                                           bad=get_bad(items),
                                           ignore_existing=demo_mode())
     table = [(item, match['candidate'])
              for item, match in hits if 'candidate' in match]
+
+    candidates = [{'qid': i.qid, 'osm_type': c.osm_type, 'osm_id': c.osm_id}
+                  for i, c in table]
+
+    existing = InProgress.query.get((g.user.id, osm_type, osm_id))
+    if existing:
+        existing.candidates = candidates
+
+    else:
+        in_progress = InProgress(user_id=g.user.id,
+                                 osm_type=osm_type,
+                                 osm_id=osm_id,
+                                 candidates=candidates)
+
+        database.session.add(in_progress)
+    database.session.commit()
+
+    # switch method from POST to GET
+    return redirect(url_for(request.endpoint, **request.view_args))
+
+@app.route('/add_tags/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
+def add_tags(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+
+    if request.method == 'POST':
+        return add_tags_post(osm_type, osm_id)
+
+    check_still_auth()
+    if not g.user.is_authenticated:
+        return redirect(url_for('login_route', next=request.url))
+
+    in_progress = InProgress.query.get((g.user.id, osm_type, osm_id))
+    table = []
+    for c in in_progress.candidates:
+        item_id = int(c['qid'][1:])
+        candidate = ItemCandidate.query.get((item_id, c['osm_id'], c['osm_type']))
+        table.append((candidate.item, candidate))
+
+    g.country_code = place.country_code
+    languages_with_counts = get_place_language_with_counts(place)
+    languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
     items = []
     add_wikipedia_tags = getattr(g.user, 'wikipedia_tag', False)

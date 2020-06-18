@@ -1351,3 +1351,21 @@ class WikidataItem(Base):
                    entity=entity)
         session.add(item)
         return item
+
+class InProgress(Base):
+    __tablename__ = 'in_progress'
+
+    user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
+    osm_type = Column(osm_type_enum, primary_key=True)
+    osm_id = Column(BigInteger, primary_key=True)
+    candidates = Column(postgresql.JSON)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['osm_type', 'osm_id'],
+            ['place.osm_type', 'place.osm_id']
+        ),
+    )
+
+    user = relationship('User')
+    place = relationship('Place')
