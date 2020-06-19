@@ -89,6 +89,8 @@ def tidy_name(n):
     n = n.replace(' incorporated', ' inc')
     n = n.replace(' cooperative', ' coop')
     n = n.replace(' co-operative', ' coop')
+    n = n.replace(' hotel and country club', ' hotel')
+    n = n.replace(' hotel and spa', ' hotel')
     n = n.replace(' missionary baptist', ' baptist')
     n = n.replace('ss', 's')
     if n.endswith("'s"):

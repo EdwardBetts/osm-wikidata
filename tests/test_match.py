@@ -240,6 +240,9 @@ def test_name_match():
 
     assert match.name_match('Times Furnishing', 'Times Furnishing Company Building')
 
+    assert match.name_match('Bailiffscourt Hotel And Country Club',
+                            'Bailiffscourt Hotel') is not None
+
     osm = 'St Peter & St Paul'
     wd = 'St Peter and St Paul, Bromley'
     assert match.name_match(osm, wd)
