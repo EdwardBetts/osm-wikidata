@@ -1699,7 +1699,7 @@ def stop_job(osm_type, osm_id):
         name = place.name_for_changeset
         jobs.stop_job(place)
         flash(f'job stopping: {name}')
-        return redirect(url_for('list_jobs'))
+        return redirect(url_for('list_active_jobs'))
 
     return render_template('admin/stop_job.html', job=job, place=place)
 
