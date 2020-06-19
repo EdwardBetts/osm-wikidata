@@ -18,6 +18,9 @@ def test_tidy_name():
     assert match.tidy_name(' s ') == 's'
     assert match.tidy_name('Թի Դի Գարդեն'.lower()) == 't`i di garden'
 
+    assert match.tidy_name('four crosses') == 'four cros'
+    assert match.tidy_name('four crosses, powys') == 'four cros, powy'
+
 def test_drop_article():
     assert match.drop_article('the old shop') == 'old shop'
 
@@ -217,7 +220,7 @@ def test_name_match():
     assert match.name_match('Sliabh Liag', 'Sliabh a Liag')
 
     assert match.name_match('Beulah', 'Beulah, Powys')
-    assert match.name_match('Four Crosses', 'Four Crosses, Powys')
+    assert match.name_match('Four Crosses', 'Four Crosses, Powys') is not None
 
     assert match.name_match('The Ship', "'The Ship', Derriford")
     assert match.name_match('Place Bellecour', ' La Place Bellecour')
@@ -226,7 +229,7 @@ def test_name_match():
 
     assert match.name_match('Ті-Ді гарден', 'Թի Դի Գարդեն')
     assert match.name_match('Maria-Hilf-Kirche', 'Mariahilfkirche, Munich')
-    assert match.name_match('Kunkelspass', 'Кункелспас')
+    assert match.name_match('Kunkelspass', 'Кункелспас') is not None
     assert match.name_match('Bethanien-Kirche', 'Bethanienkirche, Berlin')
     assert match.name_match('Tricketts Cross', "Trickett's Cross, Dorset")
     assert match.name_match('Кастелец', 'Кастелець')

@@ -17,6 +17,7 @@ re_number_start = re.compile(r'^(?:House at )?(?:(?:Number|No)s?\.? )?(\d[-\d]*,
 re_article = re.compile(r'^(\W*)(the|le|la|les)[- ]')
 re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
 re_digits = re.compile(r'\d+')
+re_plural = re.compile(r'(?<=.)e?s+\b')
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
@@ -92,21 +93,14 @@ def tidy_name(n):
     n = n.replace(' hotel and country club', ' hotel')
     n = n.replace(' hotel and spa', ' hotel')
     n = n.replace(' missionary baptist', ' baptist')
-    n = n.replace('ss', 's')
+
     if n.endswith("'s"):
         n = n[:-2]
-    if len(n) > 1 and n[-1] == 's':
-        n = n[:-1]
-    if not n.lstrip().startswith('es '):
-        n = (n.replace('es ', ' ')
-              .replace("es' ", '')
-              .replace('es-', '-')
-              .replace('es,', ','))
-    if not n.lstrip().startswith('s '):
-        n = (n.replace('s ', ' ')
-              .replace("s' ", '')
-              .replace('s-', '-')
-              .replace('s,', ','))
+
+    n = re_plural.sub('', n)
+
+    n = n.replace('ss', 's')
+
     n = n.replace('center', 'centre').replace('theater', 'theatre')
     return n
 
