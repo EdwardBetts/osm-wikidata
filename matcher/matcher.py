@@ -529,6 +529,12 @@ def find_item_matches(cur, item, prefix, debug=False):
                 'Q953806' not in instanceof):
             continue  # nearby match OSM bus stop matching non-bus stop
 
+        if ('leisure=park' in matching_tags and
+                item.is_cricket_ground() and
+                (osm_tags.get('designation') == 'common' or
+                'common' in osm_name.lower())):
+            continue
+
         if (name_match and not identifier_match and not address_match and
                 building_only_match):
             if bad_building_match(osm_tags, name_match, item):
