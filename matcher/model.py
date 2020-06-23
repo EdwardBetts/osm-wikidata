@@ -467,7 +467,7 @@ https://www.wikidata.org/wiki/{self.qid}
                 # TODO: download item if it doesn't exist
                 part_of_item = Item.query.get(part_of_id)
                 if part_of_item:
-                    names = part_of_names.names()
+                    names = item.names()
                     if names:
                         part_of_names |= part_of_item.names().keys()
 
