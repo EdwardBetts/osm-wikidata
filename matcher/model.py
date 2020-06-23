@@ -467,9 +467,9 @@ https://www.wikidata.org/wiki/{self.qid}
                 # TODO: download item if it doesn't exist
                 part_of_item = Item.query.get(part_of_id)
                 if part_of_item:
-                    names = item.names()
+                    names = part_of_item.names()
                     if names:
-                        part_of_names |= part_of_item.names().keys()
+                        part_of_names |= names.keys()
 
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
