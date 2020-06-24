@@ -456,6 +456,9 @@ https://www.wikidata.org/wiki/{self.qid}
         else:
             return []
 
+    def is_cricket_ground(self):
+        return any('cricket' in name.lower() for name in self.names())
+
     def names(self):
         part_of_names = set()
         if self.entity and 'claims' in self.entity:
