@@ -863,9 +863,15 @@ def update_search_results(results):
 
         p = Place.query.get(hit['place_id'])
         if p and (p.osm_type != hit['osm_type'] or p.osm_id != hit['osm_id']):
-            db_place_hit = nominatim.reverse(p.osm_type, p.osm_id)
-            p.place_id = db_place_hit['place_id']
             need_commit = True
+            db_place_hit = nominatim.reverse(p.osm_type, p.osm_id)
+            if 'error' in db_place_hit or 'place_id' not in db_place_hit:
+                # place deleted from OSM
+                if p.osm_type == 'node':
+                    database.session.delete(p)
+                # FIXME: mail admin if place isn't a node on OSM
+            else:
+                p.place_id = db_place_hit['place_id']
 
         p = Place.query.filter_by(osm_type=hit['osm_type'],
                                   osm_id=hit['osm_id']).one_or_none()
