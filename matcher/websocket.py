@@ -174,10 +174,11 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
         comment = data['comment']
         changeset = edit.new_changeset(comment)
         r = edit.create_changeset(changeset)
-        changeset_id = r.text.strip()
+        reply = r.text
+        changeset_id = reply.strip()
         if not changeset_id.isdigit():
             mail.open_changeset_error(place, changeset, r)
-            send('changeset-error', msg='error opening changeset')
+            send('changeset-error', msg=reply)
             return
 
         send('open', id=int(changeset_id))

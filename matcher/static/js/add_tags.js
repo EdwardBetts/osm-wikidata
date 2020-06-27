@@ -72,7 +72,8 @@ function onmessage(e) {
         $('#status').text('uploading tags');
         break;
       case 'changeset-error':
-        $('#status').text('error opening changeset');
+        $('#status').text('error opening changeset: ' + data['msg']);
+        $('#status').addClass('alert alert-danger');
         break;
       case 'progress':
         var num = data['num'];
