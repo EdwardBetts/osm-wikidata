@@ -71,7 +71,13 @@ function onmessage(e) {
         $('#notice').hide();
         $('#status').text('uploading tags');
         break;
+      case 'auth-fail':
+        $('#notice').hide();
+        $('#auth-fail').removeClass('d-none');
+        $('#status').text('error opening changeset')
+        break;
       case 'changeset-error':
+        $('#notice').hide();
         $('#status').text('error opening changeset: ' + data['msg']);
         $('#status').addClass('alert alert-danger');
         break;

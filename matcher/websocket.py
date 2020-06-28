@@ -174,14 +174,20 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
         comment = data['comment']
         changeset = edit.new_changeset(comment)
         r = edit.create_changeset(changeset)
-        reply = r.text
-        changeset_id = reply.strip()
-        if not changeset_id.isdigit():
+        reply = r.text.strip()
+
+        if reply == "Couldn't authenticate you":
+            mail.open_changeset_error(place, changeset, r)
+            send('auth-fail')
+            return
+
+        if not reply.isdigit():
             mail.open_changeset_error(place, changeset, r)
             send('changeset-error', msg=reply)
             return
 
-        send('open', id=int(changeset_id))
+        changeset_id = int(reply)
+        send('open', id=changeset_id)
 
         update_count = 0
         change = edit.record_changeset(id=changeset_id,
