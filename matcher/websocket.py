@@ -186,8 +186,8 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
             send('changeset-error', msg=reply)
             return
 
-        changeset_id = int(reply)
-        send('open', id=changeset_id)
+        changeset_id = reply
+        send('open', id=int(changeset_id))
 
         update_count = 0
         change = edit.record_changeset(id=changeset_id,
