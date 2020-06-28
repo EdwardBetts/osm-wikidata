@@ -22,10 +22,7 @@
   {{ place_box(place) }}
 
 {% if table %}
-<div id="notice" class="alert alert-danger" role="alert">
-  <p>Please <strong>check each match carefully</strong> before uploading to OpenStreetMap.</p>
-  <p>If in doubt, <strong>contact the local mapping community</strong> before adding Wikidata tags.</p>
-</div>
+    {% include "local_warning.html" %}
 {% endif %}
 
 {% if add_wikipedia_tags %}
