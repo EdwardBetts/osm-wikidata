@@ -442,6 +442,10 @@ def add_tags(osm_type, osm_id):
         return redirect(url_for('login_route', next=request.url))
 
     in_progress = InProgress.query.get((g.user.id, osm_type, osm_id))
+    if in_progress is None:
+        # FIXME: tell the user than something went wrong with a link back to
+        # the candidates page
+        return redirect(place.candidates_url())
     table = []
     for c in in_progress.candidates['list']:
         item_id = int(c['qid'][1:])
