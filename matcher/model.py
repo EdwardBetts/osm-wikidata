@@ -467,6 +467,8 @@ https://www.wikidata.org/wiki/{self.qid}
                     part_of_id = p361['mainsnak']['datavalue']['value']['numeric-id']
                 except KeyError:
                     continue
+                if part_of_id == self.item_id:
+                    continue  # avoid loop for 'part of' self-reference
                 # TODO: download item if it doesn't exist
                 part_of_item = Item.query.get(part_of_id)
                 if part_of_item:
