@@ -459,22 +459,31 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_cricket_ground(self):
         return any('cricket' in name.lower() for name in self.names())
 
-    def names(self):
+    def get_part_of_names(self):
+        if not self.entity or 'claims' not in self.entity:
+            return set()
+
         part_of_names = set()
-        if self.entity and 'claims' in self.entity:
-            for p361 in self.entity['claims'].get('P361', []):
+        for p361 in self.entity['claims'].get('P361', []):
+            try:
+                part_of_id = p361['mainsnak']['datavalue']['value']['numeric-id']
+            except KeyError:
+                continue
+            if part_of_id == self.item_id:
+                continue  # avoid loop for 'part of' self-reference
+            # TODO: download item if it doesn't exist
+            part_of_item = Item.query.get(part_of_id)
+            if part_of_item:
                 try:
-                    part_of_id = p361['mainsnak']['datavalue']['value']['numeric-id']
-                except KeyError:
-                    continue
-                if part_of_id == self.item_id:
-                    continue  # avoid loop for 'part of' self-reference
-                # TODO: download item if it doesn't exist
-                part_of_item = Item.query.get(part_of_id)
-                if part_of_item:
                     names = part_of_item.names()
-                    if names:
-                        part_of_names |= names.keys()
+                except RecursionError:
+                    names = {}
+                if names:
+                    part_of_names |= names.keys()
+        return part_of_names
+
+    def names(self):
+        part_of_names = self.get_part_of_names()
 
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
