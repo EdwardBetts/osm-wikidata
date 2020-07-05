@@ -474,16 +474,13 @@ https://www.wikidata.org/wiki/{self.qid}
             # TODO: download item if it doesn't exist
             part_of_item = Item.query.get(part_of_id)
             if part_of_item:
-                try:
-                    names = part_of_item.names()
-                except RecursionError:
-                    names = {}
+                names = part_of_item.names(check_part_of=False)
                 if names:
                     part_of_names |= names.keys()
         return part_of_names
 
-    def names(self):
-        part_of_names = self.get_part_of_names()
+    def names(self, check_part_of=True):
+        part_of_names = self.get_part_of_names() if check_part_of else set()
 
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
         for name in self.extract_names or []:
