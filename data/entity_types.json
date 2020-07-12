@@ -660,7 +660,7 @@
 },
 {
     "cats": ["Parks by country", "National Natural Landmarks", "National Historical Parks"],
-    "exclude_cats": ["Business parks", "Science parks", "Cricket grounds"],
+    "exclude_cats": ["Business parks", "Science parks"],
     "tags": ["leisure=park", "landuse=recreation_ground", "leisure=common", "boundary=national_park"],
     "trim": ["park", "gardens", "common", "estate", "national natural landmark", "state park", "national park", "community garden"],
     "area": true,
