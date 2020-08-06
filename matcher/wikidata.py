@@ -617,7 +617,7 @@ def get_point_query(lat, lon, radius):
                                   lon=lon,
                                   radius=float(radius) / 1000.0)
 
-def run_query(query, name=None, return_json=True, timeout=None, send_error_mail=True):
+def run_query(query, name=None, return_json=True, timeout=None, send_error_mail=False):
     attempts = 5
 
     def error_mail(subject, r):

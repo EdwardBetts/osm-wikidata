@@ -471,6 +471,8 @@ class Place(Base):
                 os.remove(f.path)
 
     def clean_up(self):
+        if current_app.config.get('DO_CLEAN_UP') is False:
+            return
         place_id = self.place_id
 
         engine = session.bind
