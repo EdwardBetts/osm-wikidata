@@ -1696,6 +1696,7 @@ def single_item_match(osm_type, osm_id, item_id):
 
 
 admin_pages = [
+    ('admin_site_banner', 'Site banner'),
     ('admin_bad_match', 'Bad match'),
     ('admin_demo_mode', 'Demo mode'),
     ('list_users', 'Users'),
@@ -1710,6 +1711,14 @@ def admin_index():
     assert_user_is_admin()
     return render_template('admin/index.html',
                            admin_pages=admin_pages)
+
+@app.route('/admin/banner')
+@flask_login.login_required
+def admin_site_banner():
+    assert_user_is_admin()
+
+    q = SiteBanner.query.order_by(SiteBanner.start)
+    return render_template('admin/banner.html', q=q)
 
 @app.route('/admin/bad_match', methods=['GET', 'POST'])
 def admin_bad_match():
