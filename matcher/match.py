@@ -422,6 +422,9 @@ def strip_place_name(name, place_name):
         search = f' {word} {place_name}'
         if search in name:
             return name.replace(search, '')
+    if place_name + 's ' in name:
+        return name.replace(place_name + 's ', '')
+
     return name.replace(place_name, '')
 
 def more_place_name_varients(place_names):
