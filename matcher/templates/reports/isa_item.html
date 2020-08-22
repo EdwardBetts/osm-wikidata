@@ -10,7 +10,7 @@
 
   <ul>
     <li><a href="{{ url_for('isa_list_report') }}">IsA list report</li>
-    <li><a href="{{ item.url }}">{{ qid }} on Wikidata</a></li>
+    <li><a href="{{ item.url() }}">{{ qid }} on Wikidata</a></li>
   </ul>
 
   <form method="POST" action="{{ url_for('isa_item_refresh', isa_id=isa_id) }}">
