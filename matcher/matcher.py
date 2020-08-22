@@ -368,6 +368,17 @@ def is_bad_match(item, osm_tags):
 
     return False
 
+def get_within_names(cur, prefix, src_type, src_id):
+    sql = f'''select a.tags
+from {prefix}_polygon as a, {prefix}_{src_type} as b
+where b.osm_id={src_id} and a.osm_id != b.osm_id and st_contains(a.way, b.way);
+'''
+    names = set()
+    for osm_tags, in run_sql(cur, sql):
+        if osm_tags.keys() & {'place', 'tourism'}:
+            names.update(match.get_names(osm_tags).values())
+    return names
+
 def find_item_matches(cur, item, prefix, debug=False):
     if not item or not item.entity:
         return []
@@ -422,7 +433,6 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     candidates = []
     for src_type, src_id, osm_name, osm_tags, dist in rows:
-
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
         if (osm_type, osm_id) in seen:
             continue
@@ -461,10 +471,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                 match.check_for_address_in_extract(osm_tags, item.extract)):
             address_match = True
 
+        within = get_within_names(cur, prefix, src_type, src_id)
         name_match = match.check_for_match(osm_tags,
                                            wikidata_names,
                                            endings,
-                                           place_names=place_names,
+                                           place_names=place_names | within,
                                            trim_house=not is_hamlet)
 
         if 'seamark:name' in name_match and 'man_made=lighthouse' not in item.tags:
