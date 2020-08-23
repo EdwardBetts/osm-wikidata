@@ -431,6 +431,8 @@ def find_item_matches(cur, item, prefix, debug=False):
 
     endings.discard('street')
 
+    check_within = current_app.config.get('HUNT_FOR_MORE_PLACE_NAMES') or False
+
     candidates = []
     for src_type, src_id, osm_name, osm_tags, dist in rows:
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
@@ -471,7 +473,11 @@ def find_item_matches(cur, item, prefix, debug=False):
                 match.check_for_address_in_extract(osm_tags, item.extract)):
             address_match = True
 
-        within = get_within_names(cur, prefix, src_type, src_id)
+        if check_within:
+            within = get_within_names(cur, prefix, src_type, src_id)
+        else:
+            within = set()
+
         name_match = match.check_for_match(osm_tags,
                                            wikidata_names,
                                            endings,
