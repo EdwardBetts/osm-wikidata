@@ -2,7 +2,7 @@ from matcher.view import app
 from matcher import database
 from matcher.error_mail import setup_error_mail
 from flask import request_finished, request
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 import logging
 import termcolor
 import time
