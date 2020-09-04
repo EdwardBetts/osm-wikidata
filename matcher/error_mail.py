@@ -11,6 +11,7 @@ class MatcherSMTPHandler(SMTPHandler):
                 if (record.exc_info and record.exc_info[0])
                 else f'{PROJECT} error: {record.pathname}:{record.lineno:d}')
 
+
 class RequestFormatter(Formatter):
     def format(self, record):
         record.request = request
@@ -18,6 +19,8 @@ class RequestFormatter(Formatter):
 
 
 def setup_error_mail(app):
+    if not app.config.get('ERROR_MAIL'):
+        return
     formatter = RequestFormatter('''
     Message type:       {levelname}
     Location:           {pathname:s}:{lineno:d}
