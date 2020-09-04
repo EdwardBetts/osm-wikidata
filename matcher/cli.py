@@ -2,7 +2,8 @@ from flask import render_template
 from .view import app, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
-                    EditMatchReject, BadMatchFilter)
+                    EditMatchReject, BadMatchFilter, SiteBanner, InProgress,
+                    ItemIsA, IsA, PlaceItem)
 from .place import Place
 from .isa_facets import get_isa_facets
 from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
@@ -276,6 +277,15 @@ def individual_match(place_identifier, qid):
 
     candidates = matcher.run_individual_match(place, item)
     pprint(candidates)
+
+@app.cli.command()
+@click.argument('qid')
+def item_names(qid):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    item = Item.get_by_qid(qid)
+    pprint(item.names())
 
 @app.cli.command()
 @click.argument('since')
@@ -1199,3 +1209,61 @@ def show_all_extract():
                              Extract.extract.ilike('%chain%'))
     for i in q:
         print(json.dumps(i.extract))
+
+@app.cli.command()
+@click.argument('filename')
+def import_place(filename):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    data = json.load(open(filename))
+
+    place_fields = ['place_id', 'osm_type', 'osm_id', 'display_name',
+                    'category', 'type', 'place_rank', 'icon', 'south', 'west',
+                    'north', 'east', 'extratags', 'address', 'namedetails',
+                    'item_count', 'candidate_count', 'state', 'override_name',
+                    'lat', 'lon', 'wikidata_query_timeout', 'wikidata',
+                    'item_types_retrieved', 'index_hide', 'overpass_is_in',
+                    'existing_wikidata']
+
+    item_fields = ['item_id', 'enwiki', 'entity', 'categories', 'query_label',
+                   'extract_names', 'tags', 'extracts']
+
+    isa_fields = ['item_id', 'entity', 'label']
+
+    candidate_fields = ['osm_id', 'osm_type', 'name', 'dist', 'tags', 'planet_table',
+                        'src_id', 'identifier_match', 'address_match', 'name_match']
+
+    place = Place(**{key: data['place'][key] for key in place_fields})
+    geojson = json.dumps(data['place']['geom'])
+    place.geom = func.ST_GeomFromGeoJSON(geojson)
+    database.session.add(place)
+
+    for isa_data in data['isa']:
+        item_id = isa_data['item_id']
+        isa = IsA.query.get(item_id)
+        if isa:
+            for key in isa_fields:
+                setattr(isa, key, isa_data[key])
+        else:
+            isa = IsA(**{key: isa_data[key] for key in isa_fields})
+            database.session.add(isa)
+
+    for item_data in data['items']:
+        item_id = item_data['item_id']
+        assert item_data['ewkt']
+        item = Item(location=item_data['ewkt'],
+                    **{key: item_data[key] for key in item_fields})
+        for isa_id in item_data['isa']:
+            item_isa = ItemIsA(item_id=item_id, isa_id=isa_id)
+            database.session.add(item_isa)
+        place.items.append(item)
+
+        for candidate_data in item_data['candidates']:
+            this = {key: candidate_data[key] for key in candidate_fields}
+            candidate = ItemCandidate(item_id=item_id, **this)
+            geojson = json.dumps(candidate_data['geom'])
+            candidate.geom = func.ST_GeomFromGeoJSON(geojson)
+            database.session.add(candidate)
+
+    database.session.commit()
