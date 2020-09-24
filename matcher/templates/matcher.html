@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css')}}">
 
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='Leaflet.markercluster/MarkerCluster.Default.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/MarkerCluster.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/MarkerCluster.Default.css') }}">
 <style>
 
 body, html {
@@ -80,8 +80,8 @@ body, html {
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
-<script src="{{ url_for('static', filename='Leaflet.markercluster/leaflet.markercluster-src.js') }}"></script>
+<script src="{{ url_for('static', filename='leaflet/leaflet.min.js') }}"></script>
+<script src="{{ url_for('static', filename='leaflet/leaflet.markercluster.min.js') }}"></script>
 
 {% set matcher_done_url = place.matcher_done_url(start) %}
 
@@ -98,8 +98,8 @@ var empty_layers = [];
 <script type="text/javascript" src="{{ url_for('static', filename='js/matcher_map.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/ws.js') }}"></script>
 
-<script src="{{ url_for('static', filename='jquery/jquery.js')}}"></script>
-<script src="{{ url_for('static', filename='bootstrap4/js/bootstrap.js')}}"></script>
+<script src="{{ url_for('static', filename='jquery/jquery.min.js')}}"></script>
+<script src="{{ url_for('static', filename='bootstrap4/js/bootstrap.min.js')}}"></script>
 <script src="{{ url_for('static', filename='js/app.js')}}"></script>
 
   {% block script %}{% endblock %}
