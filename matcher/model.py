@@ -21,7 +21,7 @@ import pattern.en
 
 import re
 
-re_lau_code = re.compile(r'^[A-Z]{2}([^A-Z].+)$')
+re_lau_code = re.compile(r'^[A-Z]{2}([^A-Z].+)$')  # 'LAU (local administrative unit)'
 
 Base = declarative_base()
 Base.query = session.query_property()
