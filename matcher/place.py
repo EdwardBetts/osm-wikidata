@@ -226,7 +226,7 @@ class Place(Base):
 
     @property
     def matcher_allowed(self):
-        '''Are we allowd to run the matcher for this place?'''
+        '''Are we allowed to run the matcher for this place?'''
 
         allow_node = bool(current_app.config.get('ALLOW_NODE_MATCH'))
         if self.osm_type == 'node':

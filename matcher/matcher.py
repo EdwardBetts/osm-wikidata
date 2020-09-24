@@ -58,7 +58,7 @@ def load_entity_types():
     return json.load(open(filename))
 
 def simplify_tags(tags):
-    ''' remove foo=bar if dict cotains foo '''
+    ''' remove foo=bar if dict contains foo '''
     key_only = sorted(t for t in tags if '=' not in t)
     for k in key_only:
         for t in set(tags):
@@ -327,7 +327,7 @@ def is_bad_match(item, osm_tags):
         if ('building=' + building_type in item.tags and
                 'building=house' not in item.tags and
                 'house' in building and building_type not in building):
-            return True  # Wikidata stable shoudn't match OSM house
+            return True  # Wikidata stable shouldn't match OSM house
 
     if ('building=tower' in item.tags and 'amenity=pub' not in item.tags and
             'pub' in amenity and 'man_made' not in osm_tags):

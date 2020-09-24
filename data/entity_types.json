@@ -851,7 +851,7 @@
 {
     "cats": ["Convenience stores"],
     "tags": ["shop=convenience"],
-    "trim": ["convience store", "corner shop"],
+    "trim": ["convenience store", "corner shop"],
     "check_housename": true,
     "dist": 4
 },
