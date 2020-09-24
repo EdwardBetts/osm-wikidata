@@ -260,8 +260,11 @@ class Place(Base):
         if isa_labels:
             isa = ", ".join(isa_labels[:-2] + [' and '.join(isa_labels[-2:])])
             comment = f'Add wikidata tags to {isa} in PLACE.'
-        else:
-            comment = getattr(g.user, 'multi', None) or default_change_comments['multi']
+            # maximum length of changeset comment is 255 characters
+            if len(comment) < 255:
+                return comment.replace('PLACE', self.name_for_change_comment)
+
+        comment = getattr(g.user, 'multi', None) or default_change_comments['multi']
         return comment.replace('PLACE', self.name_for_change_comment)
 
     @property
