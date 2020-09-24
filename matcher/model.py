@@ -423,7 +423,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P836', ['ref:gss'], 'UK Government Statistical Service code'),
             ('P856', ['website', 'contact:website', 'url'], 'website'),
             ('P882', ['nist:fips_code'], 'FIPS 6-4 (US counties)'),
-            ('P883', ['state_code', 'ref', 'nist:fips_code'], 'FIPS 5-2 (code for US states)'),
+            ('P901', ['ref:fips'], 'FIPS 10-4 (countries and regions)'),
             # A UIC id can be a IBNR, but not every IBNR is an UIC id
             ('P954', ['uic_ref'], 'IBNR ID'),
             ('P1216', ['HE_ref'], 'National Heritage List for England number'),
@@ -434,6 +434,8 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P4755', ['ref', 'ref:train', 'ref:crs', 'crs', 'nat_ref'], 'UK railway station code'),
             ('P4803', ['ref', 'ref:train'], 'Amtrak station code'),
             ('P6082', ['nycdoitt:bin'], 'NYC Building Identification Number'),
+            ('P5086', ['ref'], 'FIPS 5-2 alpha code (US states)'),
+            ('P5087', ['ref:fips'], 'FIPS 5-2 numeric code (US states)'),
         ]
 
         tags = defaultdict(list)
