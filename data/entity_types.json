@@ -396,6 +396,7 @@
     "tags": ["aeroway=heliport"],
     "trim": ["airport", "heliport"],
     "area": true,
+    "wikidata": "Q502074",
     "dist": 10
 },
 {
