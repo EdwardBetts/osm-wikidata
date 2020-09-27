@@ -39,6 +39,9 @@ area: {}
                            mail.get_area(place))
     mail.send_mail(subject, body)
 
+def get_cancel_url():
+    return session.get('cancel_match') or url_for('index')
+
 def confirm_matcher(place):
 
     wikidata_chunk_size = 22
@@ -49,7 +52,7 @@ def confirm_matcher(place):
     # recent_search = session.get('recent_search')
     # FIXME: if the user comes from the browse page then cancel should return
     # to the browse page
-    cancel_url = session.get('cancel_match') or url_for('index')
+    cancel_url = get_cancel_url()
 
     overpass_chunk_size = 22
     overpass_chunks = place.get_chunks(chunk_size=overpass_chunk_size)
