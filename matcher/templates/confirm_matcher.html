@@ -4,7 +4,7 @@
 
 {% block style %}
 <style>
-#mapid { height: 100%; }
+#mapid { height: 600px; }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 {% endblock %}
@@ -63,14 +63,27 @@ var chunk_geojson = [{{ place.geojson_chunks(overpass_chunk_size) | join(',') | 
 
   <p>
     area: {{ '{:,.2f}'.format(place.area_in_sq_km) }} km&sup2;<br/>
-    wikidata: {{ place.wikidata }}<br/>
+    {% if place.wikidata %}
+      wikidata: {{ place.wikidata }}<br/>
+    {% endif %}
+  <p>
+
+  <p>
+    <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#advancedOptions" aria-expanded="false" aria-controls="collapseExample">
+      Advanced options
+    </button>
+  </p>
+
+  <div class="collapse" id="advancedOptions">
+  <div class="card card-body">
     wikidata chunk size: <input type="number" class="chunk-size" name="wikidata_chunk_size" id="wikidata-chunk-size" value="{{ wikidata_chunk_size }}"><br/>
     wikidata chunk count: <span id="wikidata-chunk-count">{{ wikidata_chunk_count }}</span><br/>
     overpass chunk size: <input type="number" class="chunk-size" name="overpass_chunk_size" id="overpass-chunk-size" value="{{ overpass_chunk_size }}"><br/>
     overpass chunk count: <span id="overpass-chunk-count">{{ overpass_chunk_count }}</span>
-  </p>
+    <p>IsA filter: <input name="want_isa"></p>
+  </div>
+</div>
 
-  <p>IsA filter: <input name="want_isa"></p>
 
   <h3 class="my-3">Run matcher?</h3>
 
