@@ -1244,7 +1244,6 @@ class Place(Base):
         tags.difference_update(skip)
         tags = matcher.simplify_tags(tags)
         if not(tags):
-            print('no tags, skipping')
             return
 
         ymin, ymax, xmin, xmax = chunk
