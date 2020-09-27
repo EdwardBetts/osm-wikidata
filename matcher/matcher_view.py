@@ -1,7 +1,6 @@
-from flask import Blueprint, abort, redirect, render_template, g, Response, jsonify, request, flash, current_app
-from . import database, matcher, mail, utils
-from .model import Item
-from .place import Place, PlaceMatcher
+from flask import Blueprint, redirect, render_template, g, request, flash, current_app
+from . import database, mail, utils
+from .place import Place
 import re
 
 re_point = re.compile(r'^Point\((-?[0-9.]+) (-?[0-9.]+)\)$')
