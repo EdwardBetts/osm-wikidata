@@ -706,13 +706,7 @@ class Place(Base):
             return self.get_bbox_oql(buildings_special=False)
 
     def candidates_url(self, **kwargs):
-        if g.get('filter'):
-            kwargs['name_filter'] = g.filter
-            endpoint = 'candidates_with_filter'
-        else:
-            endpoint = 'candidates'
-
-        return self.place_url(endpoint, **kwargs)
+        return self.place_url('candidates', **kwargs)
 
     def place_url(self, endpoint, **kwargs):
         return url_for(endpoint,
