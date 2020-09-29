@@ -1190,6 +1190,12 @@ def place_filter(place_identifier, want_isa):
     for msg in update_place(place, want_isa=want_isa.split(',')):
         print(msg)
 
+    app.config['SERVER_NAME'] = 'osm.wikidata.link'
+    ctx = app.test_request_context()
+    ctx.push()  # to make url_for work
+    print()
+    print(place.candidates_url(_external=True))
+
 @app.cli.command()
 @click.argument('place_identifier')
 def candidate_filters(place_identifier):
