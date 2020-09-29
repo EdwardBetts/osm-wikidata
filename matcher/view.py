@@ -40,6 +40,7 @@ import random
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
 
 re_qid = re.compile(r'^(Q\d+)$')
+re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
@@ -960,15 +961,31 @@ def random_city():
     q = city + ', ' + country
     return redirect(url_for('search_results', q=q))
 
+def check_for_place_identifier(q):
+    m = re_place_identifier.match(q)
+    if not m:
+        return
+    osm_type, osm_id = m.groups()
+    p = Place.from_osm(osm_type, int(osm_id))
+    if not p:
+        return
+
+    return p.candidates_url() if p.state == 'ready' else p.matcher_progress_url()
+
 @app.route("/search")
 def search_results():
     q = request.args.get('q') or ''
     if not q:
         return render_template('results_page.html', results=[], q=q)
 
-    m = re_qid.match(q.strip())
+    q = q.strip()
+    m = re_qid.match(q)
     if m:
         return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
+
+    url = check_for_place_identifier(q)
+    if url:
+        return redirect(url)
 
     redirect_on_single = session.get('redirect_on_single', False)
 
