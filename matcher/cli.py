@@ -46,8 +46,6 @@ def get_place(place_identifier):
 
     result = nominatim.lookup_with_params(q=place_identifier)
     hit = result[0]
-    print(hit['display_name'])
-
     return Place.from_osm(hit['osm_type'], hit['osm_id'])
 
 @app.cli.command()
@@ -1179,6 +1177,8 @@ def matcher_update_place(place_identifier):
 @click.argument('want_isa')
 def place_filter(place_identifier, want_isa):
     place = get_place(place_identifier)
+    print(place.display_name)
+    print()
     if place.state == 'ready':
         place.state = 'refresh'
         database.session.commit()
@@ -1190,6 +1190,7 @@ def place_filter(place_identifier, want_isa):
     ctx = app.test_request_context()
     ctx.push()  # to make url_for work
     print()
+    print(place.display_name)
     print(place.candidates_url(_external=True))
 
 @app.cli.command()
