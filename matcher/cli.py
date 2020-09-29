@@ -37,10 +37,18 @@ def get_place(place_identifier):
     database.init_app(app)
 
     if place_identifier.isdigit():
-        return Place.query.get(place_identifier)
-    else:
+        print('referring to a place by place_id is no longer supported')
+        raise click.Abort()
+
+    if any(place_identifier.startswith(start) for start in ('relation/', 'way/')):
         osm_type, osm_id = place_identifier.split('/')
         return Place.from_osm(osm_type, osm_id)
+
+    result = nominatim.lookup_with_params(q=place_identifier)
+    hit = result[0]
+    print(hit['display_name'])
+
+    return Place.from_osm(hit['osm_type'], hit['osm_id'])
 
 @app.cli.command()
 def mail_recent():
@@ -267,10 +275,12 @@ def individual_match(place_identifier, qid):
     database.init_app(app)
 
     if place_identifier.isdigit():
-        place = Place.query.get(place_identifier)
-    else:
-        osm_type, osm_id = place_identifier.split('/')
-        place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+        print('referring to a place by place_id is no longer supported')
+        raise click.Abort()
+
+    osm_type, osm_id = place_identifier.split('/')
+    place = Place.query.filter_by(osm_type=osm_type, osm_id=osm_id).one()
+    assert osm_type in {'relation', 'way'}
 
     item = Item.get_by_qid(qid)
     # entity = wikidata.WikidataItem(qid, item.entity)
