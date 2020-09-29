@@ -55,7 +55,6 @@ really_save = True
 
 navbar_pages = {
     'criteria_page': 'Criteria',
-    'saved_places': 'Places',
     'tag_list': 'Search tags',
     'documentation': 'Documentation',
     'changesets': 'Recent changes',
@@ -89,19 +88,6 @@ def newline_br(eval_ctx, value):
     if eval_ctx.autoescape:
         result = Markup(result)
     return result
-
-@app.context_processor
-def filter_urls():
-    name_filter = g.get('filter')
-    try:
-        if name_filter:
-            url = url_for('saved_with_filter',
-                          name_filter=name_filter.replace(' ', '_'))
-        else:
-            url = url_for('saved_places')
-    except RuntimeError:
-        return {}  # maybe we don't care
-    return dict(url_for_saved=url)
 
 def demo_mode():
     return session.get('demo_mode', False) or request.args.get('demo')
@@ -1072,30 +1058,6 @@ def criteria_page():
                            entity_types=entity_types,
                            cat_counts=cat_counts,
                            taginfo=taginfo)
-
-def get_place_tbody(sort):
-    return render_template('place_tbody.html', existing=get_existing(sort, None))
-
-@app.route('/places')
-def saved_places():
-    abort(404)
-    if 'filter' in request.args:
-        arg_filter = request.args['filter'].strip().replace(' ', '_')
-        if arg_filter:
-            return redirect(url_for('saved_with_filter', name_filter=arg_filter))
-        else:
-            return redirect(url_for('saved_places'))
-
-    sort = request.args.get('sort') or 'name'
-    name_filter = g.get('filter') or None
-
-    if name_filter:
-        place_tbody = render_template('place_tbody.html',
-                                      existing=get_existing(sort, name_filter))
-    else:
-        place_tbody = get_place_tbody(sort)
-
-    return render_template('saved.html', place_tbody=place_tbody, sort_link=sort_link)
 
 @app.route("/documentation")
 def documentation():

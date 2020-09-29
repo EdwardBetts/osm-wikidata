@@ -313,20 +313,6 @@ def match_since(since):
         print()
 
 @app.cli.command()
-def place_page():
-    app.config.from_object('config.default')
-    database.init_app(app)
-
-    with app.test_request_context('/'):
-        sort = 'name'
-        t0 = time()
-        existing = get_existing(sort, None)
-        tbody = render_template('place_tbody.html', existing=existing)
-        seconds = time() - t0
-        print('took: {:.0f} seconds'.format(seconds))
-        # open('place_tbody.html', 'w').write(tbody)
-
-@app.cli.command()
 @click.argument('place_identifier')
 def polygons(place_identifier):
     place = get_place(place_identifier)
