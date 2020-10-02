@@ -273,11 +273,7 @@ var show_on_map;
 map.fitBounds(group.getBounds());
 map.addLayer(group);
 
-function zoom_to_item(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  var qid = this.id.substring(4);
-
+function zoom_to_qid(qid) {
   marker = markers[qid]
   var item = document.getElementById(qid);
   highlight(item, marker);
@@ -299,6 +295,14 @@ function zoom_to_item(e) {
     bounds.extend(marker.getLatLng());
     map.fitBounds(bounds);
   });
+}
+
+function zoom_to_item(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var qid = this.id.substring(4);
+
+  zoom_to_qid(qid);
 }
 
 {% endif %}
