@@ -61,6 +61,15 @@ $(function() {
     var qid = item.attr('id');
     var checkbox = $('input[value=' + qid + ']');
     checkbox.prop('checked', !checkbox.prop('checked'));
+
+    if (checkbox.prop('checked')) {
+        item.addClass('border-success').removeClass('border-danger');
+        label.addClass('alert-success').removeClass('alert-danger');
+    } else {
+        item.addClass('border-danger').removeClass('border-success');
+        label.addClass('alert-danger').removeClass('alert-success');
+    }
+
     checkbox.change();
   });
 
@@ -77,8 +86,6 @@ $(function() {
 
     var item = $(this).closest('.candidate-item');
     var label = item.find('.item-label');
-    console.log('checkbox');
-    console.log(label);
     if (this.checked) {
         item.addClass('border-success').removeClass('border-danger');
         label.addClass('alert-success').removeClass('alert-danger');
