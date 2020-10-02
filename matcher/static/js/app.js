@@ -13,6 +13,13 @@ $(function() {
     $('input:checkbox').change();
   });
 
+  $('#show-all-tags').click(function(e) {
+    e.preventDefault();
+    $('.show-tags-link').text('[hide tags]');
+    $('.tag-list').show();
+  });
+
+
   $('.show-tags-link').click(function(e) {
     var link = $(this);
     var show_all = '[show tags]';
