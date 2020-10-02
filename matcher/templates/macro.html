@@ -60,7 +60,7 @@
             </div>
          {% endfor %}
      {% endif %}
-     <div{% if not show_tags %} class="hide-all-tags"{% endif %} id="candidate-{{ c.key }}">
+     <div class="tag-list{% if not show_tags %} hide-all-tags{% endif %}" id="candidate-{{ c.key }}">
        {% for k, v in c.tags.items() if k != 'way_area' and (show_existing or k != 'wikidata') %}
         {% set tag = k + '=' + v %}
         {% if c.name_match and k in c.name_match %}
