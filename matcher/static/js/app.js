@@ -62,14 +62,6 @@ $(function() {
     var checkbox = $('input[value=' + qid + ']');
     checkbox.prop('checked', !checkbox.prop('checked'));
 
-    if (checkbox.prop('checked')) {
-        item.addClass('border-success').removeClass('border-danger');
-        label.addClass('alert-success').removeClass('alert-danger');
-    } else {
-        item.addClass('border-danger').removeClass('border-success');
-        label.addClass('alert-danger').removeClass('alert-success');
-    }
-
     checkbox.change();
   });
 
