@@ -141,4 +141,8 @@ def pluralize_label(label):
     if label['language'] != 'en':
         return text
 
+    # pattern.en.pluralize has the plural of 'mine' as 'ours'
+    if text == 'mine':
+        return 'mines'
+
     return pattern.en.pluralize(text)
