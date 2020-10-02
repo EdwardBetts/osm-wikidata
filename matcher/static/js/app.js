@@ -55,14 +55,22 @@ $(function() {
     });
   });
 
-  $('.candidate-item').click(function(e) {
-    var item = $(this);
+  $('.item-label').click(function(e) {
+    e.stopPropagation();
+    var label = $(this);
+    var item = $(this).closest('.candidate-item');
     var label = item.find('.item-label');
     var qid = item.attr('id');
     var checkbox = $('input[value=' + qid + ']');
     checkbox.prop('checked', !checkbox.prop('checked'));
 
     checkbox.change();
+  });
+
+  $('.candidate-item').click(function(e) {
+    var item = $(this);
+    var qid = item.attr('id');
+    zoom_to_qid(qid);
   });
 
   $('.candidate-item a').click(function(e) {
@@ -73,7 +81,7 @@ $(function() {
     e.stopPropagation();
   });
 
-  $('.candidate-item :checkbox').change(function(e) {
+  $('.item-label :checkbox').change(function(e) {
     e.stopPropagation();
 
     var item = $(this).closest('.candidate-item');
@@ -87,5 +95,5 @@ $(function() {
     }
   });
 
-  $('input:checkbox').change();
+  $('.item-label :checkbox').change();
 });
