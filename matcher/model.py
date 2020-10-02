@@ -17,7 +17,6 @@ from .overpass import oql_from_tag
 from .utils import capfirst
 from collections import defaultdict
 from time import time
-import pattern.en
 
 import re
 
@@ -99,9 +98,6 @@ class IsA(Base):
         return f'https://www.wikidata.org/wiki/Q{self.item_id}'
 
     def label_best_language(self, languages, plural=False):
-        def plural_if_needed(label, lang='en'):
-            return pattern.en.pluralize(label) if plural and lang == 'en' else label
-
         if not self.entity:
             return
 
@@ -109,9 +105,13 @@ class IsA(Base):
         for lang in languages:
             code = lang if isinstance(lang, str) else lang.wikimedia_language_code
             if code in labels:
-                return plural_if_needed(labels[code]['value'])
+                if plural:
+                    return utils.pluralize_label(labels[code])
+                else:
+                    return labels[code]['value']
+
         if plural and 'en' in labels:
-            return pattern.en.pluralize(labels['en']['value'])
+            return utils.pluralize_label(labels['en'])
 
         return self.entity_label()
 

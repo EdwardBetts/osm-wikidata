@@ -5,6 +5,7 @@ import json
 import math
 import user_agents
 import re
+import pattern.en
 
 metres_per_mile = 1609.344
 feet_per_metre = 3.28084
@@ -134,3 +135,10 @@ def is_in_range(address_range, address):
         return m_number.group(1) in numbers
 
     return False
+
+def pluralize_label(label):
+    text = label['value']
+    if label['language'] != 'en':
+        return text
+
+    return pattern.en.pluralize(text)
