@@ -17,6 +17,7 @@ $(function() {
     var link = $(this);
     var show_all = '[show tags]';
     e.preventDefault();
+    e.stopPropagation();
     $('#candidate-' + link.data('key')).toggle();
     link.text(link.text() == show_all ? '[hide tags]' : show_all);
 
@@ -25,6 +26,7 @@ $(function() {
   $('.bad-match-link').click(function(e) {
     var link = $(this);
     e.preventDefault();
+    e.stopPropagation();
     $('#bad-match-' + link.data('key')).toggle();
   });
 
@@ -52,4 +54,45 @@ $(function() {
         $('#report-link-' + link.data('key')).hide();
     });
   });
+
+  $('.candidate-item').click(function(e) {
+    var item = $(this);
+    var label = item.find('.item-label');
+    var qid = item.attr('id');
+    var checkbox = $('input[value=' + qid + ']');
+    if (checkbox.prop('checked')) {
+        checkbox.prop('checked', false);
+        item.addClass('border-danger').removeClass('border-success');
+        label.addClass('alert-danger').removeClass('alert-success');
+    } else {
+        checkbox.prop('checked', true);
+        item.addClass('border-success').removeClass('border-danger');
+        label.addClass('alert-success').removeClass('alert-danger');
+    }
+  });
+
+  $('.candidate-item a').click(function(e) {
+    e.stopPropagation();
+  });
+
+  $('.candidate-item input').click(function(e) {
+    e.stopPropagation();
+  });
+
+  $('.candidate-item :checkbox').change(function(e) {
+    e.stopPropagation();
+
+    var item = $(this).closest('.candidate-item');
+    var label = item.find('.item-label');
+    console.log('checkbox');
+    console.log(label);
+    if (this.checked) {
+        item.addClass('border-success').removeClass('border-danger');
+        label.addClass('alert-success').removeClass('alert-danger');
+    } else {
+        item.addClass('border-danger').removeClass('border-success');
+        label.addClass('alert-danger').removeClass('alert-success');
+    }
+  });
+
 });
