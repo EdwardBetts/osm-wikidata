@@ -368,7 +368,8 @@ function zoom_to_item(e) {
 
 added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
 
-<a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">view changeset</a>
+<a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">view changeset</a><br/>
+Change comment: "<em>{{ obj.comment }}</em>"
 </li>
 {% endfor %}
 </ul>
