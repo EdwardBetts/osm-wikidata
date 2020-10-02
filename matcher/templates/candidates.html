@@ -232,12 +232,12 @@ const highlightIcon = L.divIcon({
 
 function highlight(item, marker) {
     if (current_highlight) {
-      current_highlight.className = '';
+      $(current_highlight).removeClass('highlight');
     }
     if (current_marker) {
       current_marker.setIcon(icon);
     }
-    item.className = 'highlight';
+    $(item).addClass('highlight');
     marker.setIcon(highlightIcon);
     current_marker = marker;
     current_highlight = item;
