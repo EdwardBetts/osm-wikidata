@@ -7,10 +7,10 @@ $(function() {
   $('.bad-reported').hide();
   $('#oql').hide();
 
-
   $('#uncheck-all').click(function(e) {
     e.preventDefault();
     $('input:checkbox').prop('checked', false);
+    $('input:checkbox').change();
   });
 
   $('.show-tags-link').click(function(e) {
@@ -60,15 +60,8 @@ $(function() {
     var label = item.find('.item-label');
     var qid = item.attr('id');
     var checkbox = $('input[value=' + qid + ']');
-    if (checkbox.prop('checked')) {
-        checkbox.prop('checked', false);
-        item.addClass('border-danger').removeClass('border-success');
-        label.addClass('alert-danger').removeClass('alert-success');
-    } else {
-        checkbox.prop('checked', true);
-        item.addClass('border-success').removeClass('border-danger');
-        label.addClass('alert-success').removeClass('alert-danger');
-    }
+    checkbox.prop('checked', !checkbox.prop('checked'));
+    checkbox.change();
   });
 
   $('.candidate-item a').click(function(e) {
@@ -95,4 +88,5 @@ $(function() {
     }
   });
 
+  $('input:checkbox').change();
 });
