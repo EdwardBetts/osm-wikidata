@@ -702,6 +702,24 @@ def export_place(osm_type, osm_id):
 
     return jsonify(place=place_data, items=item_list, isa=isa_list)
 
+def redirect_to_candidates(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+    if not place:
+        abort(404)
+
+    if place.state in ('ready', 'complete'):
+        return redirect(place.candidates_url())
+    else:
+        return redirect_to_matcher(place)
+
+@app.route('/relation/<int:osm_id>')
+def redirect_from_relation(osm_id):
+    return redirect_to_candidates('relation', osm_id)
+
+@app.route('/way/<int:osm_id>')
+def redirect_from_way(osm_id):
+    return redirect_to_candidates('way', osm_id)
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
