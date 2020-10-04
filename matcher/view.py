@@ -748,8 +748,12 @@ def candidates(osm_type, osm_id):
     languages_with_counts = get_place_language_with_counts(place)
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
 
-    if osm_type == 'relation' and osm_id == 111968:
-        # matcher doesn't handle tram stops properly, so hide them for San Francisco
+    hide_trams = {
+        ('relation', 186579),  # Portland, OR
+        ('relation', 111968),  # San Francisco, CA
+    }  # matcher doesn't handle tram stops properly, so hide them for these places
+
+    if (osm_type, osm_id) in hide_trams:
         items = [item for item in items if not item.is_instance_of('Q2175765')]
 
     good_match = [i for i in items if filtered.get(i.item_id) and
