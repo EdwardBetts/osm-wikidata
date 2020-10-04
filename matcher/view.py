@@ -751,7 +751,7 @@ def candidates(osm_type, osm_id):
             if 'note' not in filtered[item.item_id]:
                 max_dist = picked.get_max_dist()
                 if max_dist < picked.dist:
-                    note = f'distance between OSM and Wikidata is greater than {max_dist}m'
+                    note = f'distance between OSM and Wikidata is greater than {max_dist:,.0f}m'
                     filtered[item.item_id]['note'] = note
         else:
             ticked_items.append(item)
