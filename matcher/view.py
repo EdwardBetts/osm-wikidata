@@ -1,11 +1,11 @@
 from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
                user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
-               jobs, export)
+               export)
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, EditMatchReject, BadMatchFilter, IsA,
+                    Timing, get_bad, Language, EditMatchReject, IsA,
                     ItemIsA, SiteBanner, InProgress)
-from .place import Place, PlaceMatcher
+from .place import Place
 from .taginfo import get_taginfo
 from .match import check_for_match
 from .pager import Pagination, init_pager
@@ -25,6 +25,7 @@ from werkzeug.debug.tbtools import get_current_traceback
 from requests_oauthlib import OAuth1Session
 
 from .matcher_view import matcher_blueprint
+from .admin_view import admin_blueprint
 from .websocket import ws
 
 from flask_sockets import Sockets
@@ -44,6 +45,7 @@ re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
+app.register_blueprint(admin_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
@@ -143,11 +145,6 @@ def dev_login():
     flask_login.login_user(user)
 
     return redirect(dest)
-
-def assert_user_is_admin():
-    user = flask_login.current_user
-    if not (user.is_authenticated and user.is_admin):
-        abort(403)
 
 @app.route('/login/openstreetmap/')
 def login_openstreetmap():
@@ -647,7 +644,7 @@ def export_place(osm_type, osm_id):
     '''
 
     place = Place.get_or_abort(osm_type, osm_id)
-    return jsonify(export.place_for_export(place)
+    return jsonify(export.place_for_export(place))
 
 def redirect_to_candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
@@ -1509,25 +1506,6 @@ def isa_item_refresh(isa_id):
     flash('IsA item refreshed')
     return redirect(url_for('isa_item_report', isa_id=isa_id))
 
-@app.route('/admin/space')
-@flask_login.login_required
-def space_report():
-    rows = database.get_big_table_list()
-    items = [{
-        'place_id': place_id,
-        'size': size,
-        'added': added,
-        'candidates_url': url_for('candidates', osm_type=osm_type, osm_id=osm_id),
-        'display_name': display_name,
-        'state': state,
-        'changesets': changeset_count,
-        'recent': recent,
-    } for place_id, osm_type, osm_id, added, size, display_name, state, changeset_count, recent in rows]
-
-    free_space = utils.get_free_space(app.config)
-
-    return render_template('space.html', items=items, free_space=free_space)
-
 @app.route('/report/old_places')
 @flask_login.login_required
 def old_places():
@@ -1645,121 +1623,3 @@ def single_item_match(osm_type, osm_id, item_id):
                            place=place,
                            dict=dict,
                            candidates=candidates)
-
-
-admin_pages = [
-    ('admin_site_banner', 'Site banner'),
-    ('admin_bad_match', 'Bad match'),
-    ('admin_demo_mode', 'Demo mode'),
-    ('list_users', 'Users'),
-    ('list_active_jobs', 'Active jobs'),
-    ('list_recent_jobs', 'Recent jobs'),
-    ('list_slow_jobs', 'Slowest jobs'),
-]
-
-@app.route('/admin')
-@flask_login.login_required
-def admin_index():
-    assert_user_is_admin()
-    return render_template('admin/index.html',
-                           admin_pages=admin_pages)
-
-@app.route('/admin/banner')
-@flask_login.login_required
-def admin_site_banner():
-    assert_user_is_admin()
-
-    q = SiteBanner.query.order_by(SiteBanner.start)
-    return render_template('admin/banner.html', q=q)
-
-@app.route('/admin/bad_match', methods=['GET', 'POST'])
-def admin_bad_match():
-    if request.method == 'POST':
-        item = BadMatchFilter(wikidata=request.form['wikidata'],
-                              osm=request.form['osm'])
-        database.session.add(item)
-        database.session.commit()
-        return redirect(url_for('admin_bad_match'))
-    q = BadMatchFilter.query.order_by(BadMatchFilter.osm, BadMatchFilter.wikidata)
-    return render_template('admin/bad_match.html', q=q)
-
-@app.route('/admin/demo', methods=['GET', 'POST'])
-@flask_login.login_required
-def admin_demo_mode():
-    demo_mode = session.get('demo_mode', False)
-    if request.method != 'POST':
-        return render_template('admin/demo.html', demo_mode=demo_mode)
-
-    session['demo_mode'] = not demo_mode
-    flash('demo mode ' + ('activated' if demo_mode else 'deactivated'))
-    return redirect(url_for(request.endpoint))
-
-@app.route('/admin/users')
-@flask_login.login_required
-def list_users():
-    assert_user_is_admin()
-    q = User.query.order_by(User.sign_up.desc())
-    return render_template('admin/users.html', users=q)
-
-
-admin_job_lists = [
-    ('list_active_jobs', 'Active jobs'),
-    ('list_recent_jobs', 'Recent jobs'),
-    ('list_slow_jobs', 'Slowest jobs'),
-]
-
-@app.route('/admin/jobs')
-@flask_login.login_required
-def list_active_jobs():
-    assert_user_is_admin()
-    try:
-        job_list = jobs.get_jobs()
-    except ConnectionRefusedError:
-        return render_template('error_page.html',
-                               message='Failed to talk to matcher queue.')
-
-    return render_template('admin/active_jobs.html',
-                           admin_job_lists=admin_job_lists,
-                           items=job_list)
-
-@app.route('/admin/stop/<osm_type>/<int:osm_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def stop_job(osm_type, osm_id):
-    assert_user_is_admin()
-    place = Place.get_or_abort(osm_type, osm_id)
-    job = jobs.get_job(place)
-    job or abort(404)
-
-    if request.method == 'POST':
-        name = place.name_for_changeset
-        jobs.stop_job(place)
-        flash(f'job stopping: {name}')
-        return redirect(url_for('list_active_jobs'))
-
-    return render_template('admin/stop_job.html', job=job, place=place)
-
-@app.route('/admin/jobs/recent')
-@flask_login.login_required
-def list_recent_jobs():
-    assert_user_is_admin()
-    jobs = PlaceMatcher.query.order_by(PlaceMatcher.start.desc()).limit(100)
-
-    return render_template('admin/jobs_list.html',
-                           title='Past jobs',
-                           admin_job_lists=admin_job_lists,
-                           items=jobs)
-
-@app.route('/admin/jobs/slowest')
-@flask_login.login_required
-def list_slow_jobs():
-    assert_user_is_admin()
-    duration = PlaceMatcher.end - PlaceMatcher.start
-    jobs = (PlaceMatcher.query
-                        .filter(PlaceMatcher.end.isnot(None))
-                        .order_by(duration.desc())
-                        .limit(100))
-
-    return render_template('admin/jobs_list.html',
-                           title='Slowest jobs',
-                           admin_job_lists=admin_job_lists,
-                           items=jobs)
