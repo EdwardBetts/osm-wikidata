@@ -1346,7 +1346,10 @@ class Place(Base):
         return out
 
     def refresh_nominatim(self):
-        hit = nominatim.reverse(self.osm_type, self.osm_id)
+        try:
+            hit = nominatim.reverse(self.osm_type, self.osm_id)
+        except nominatim.SearchError:
+            return  # FIXME: mail admin
         self.update_from_nominatim(hit)
         session.commit()
 

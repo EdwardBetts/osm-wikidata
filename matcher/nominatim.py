@@ -84,6 +84,11 @@ def reverse(osm_type, osm_id, polygon_text=1):
         raise SearchError
 
     try:
-        return json.loads(r.text, object_pairs_hook=OrderedDict)
+        hit = json.loads(r.text, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError:
         raise SearchError(r)
+
+    if 'error' in hit:
+        raise SearchError(r)
+
+    return hit
