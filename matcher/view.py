@@ -1,13 +1,11 @@
-from . import (database, nominatim, wikidata, wikidata_api, matcher, commons,
-               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
-               export)
+from . import (database, nominatim, wikidata, wikidata_api, matcher, commons, export,
+               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth)
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
-                    Timing, get_bad, Language, EditMatchReject, IsA,
-                    ItemIsA, SiteBanner, InProgress)
+                    Timing, get_bad, Language, EditMatchReject, InProgress, IsA,
+                    ItemIsA, SiteBanner)
 from .place import Place
 from .taginfo import get_taginfo
-from .match import check_for_match
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
 from .isa_facets import get_isa_facets
@@ -18,7 +16,6 @@ from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func, distinct
 from werkzeug.exceptions import InternalServerError
-from geopy.distance import distance
 from jinja2 import evalcontextfilter, Markup, escape
 from time import time, sleep
 from werkzeug.debug.tbtools import get_current_traceback
@@ -26,13 +23,13 @@ from requests_oauthlib import OAuth1Session
 
 from .matcher_view import matcher_blueprint
 from .admin_view import admin_blueprint
+from .api_view import api_blueprint
 from .websocket import ws
 
 from flask_sockets import Sockets
 
 import flask_login
 import json
-import operator
 import inspect
 import requests
 import re
@@ -46,6 +43,7 @@ re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
 app.register_blueprint(admin_blueprint)
+app.register_blueprint(api_blueprint)
 sockets = Sockets(app)
 sockets.register_blueprint(ws)
 init_pager(app)
@@ -1059,170 +1057,6 @@ def changesets():
     pager = Pagination(page, per_page, q.count())
 
     return render_template('changesets.html', objects=pager.slice(q), pager=pager)
-
-def api_overpass_error(data, error):
-    data['error'] = error
-    data['response'] = 'error'
-    return data
-
-def api_osm_list(existing, found):
-    osm = []
-    osm_lookup = {}
-    for i in existing:
-        index = (i['type'], i['id'])
-        i['existing'] = True
-        i['match'] = False
-        osm.append(i)
-        osm_lookup[index] = i
-    for i in found:
-        index = (i['type'], i['id'])
-        if index in osm_lookup:
-            osm_lookup[index]['match'] = True
-            continue
-        i['match'] = True
-        i['existing'] = False
-        osm.append(i)
-    return osm
-
-def api_get(wikidata_id, entity, radius):
-    qid = f'Q{wikidata_id}'
-    if not entity:
-        abort(404)
-
-    entity.remove_badges()  # don't need badges in API response
-
-    wikidata_names = entity.names
-    entity.trim_location_from_names(wikidata_names)
-    entity.report_broken_wikidata_osm_tags()
-
-    criteria = entity.criteria()
-
-    item = Item.query.get(wikidata_id)
-    if item:  # add criteria from the Item object
-        criteria |= item.criteria
-
-    criteria = wikidata.flatten_criteria(criteria)
-
-    data = {
-        'wikidata': {
-            'item': qid,
-            'labels': entity.labels,
-            'aliases': entity.aliases,
-            'sitelinks': entity.sitelinks,
-        },
-        'search': {
-            'radius': radius,
-            'criteria': sorted(criteria),
-        },
-        'found_matches': False,
-    }
-
-    if not entity.has_coords:
-        return api_overpass_error(data, 'no coordinates')
-
-    lat, lon = entity.coords
-    data['wikidata']['lat'] = lat
-    data['wikidata']['lon'] = lon
-
-    oql = entity.get_oql(criteria, radius)
-
-    try:
-        existing = overpass.get_existing(qid)
-    except overpass.RateLimited:
-        return api_overpass_error(data, 'overpass rate limited')
-    except overpass.Timeout:
-        return api_overpass_error(data, 'overpass timeout')
-
-    found = []
-    if criteria:
-        try:
-            overpass_reply = overpass.item_query(oql, qid, radius)
-        except overpass.RateLimited:
-            return api_overpass_error(data, 'overpass rate limited')
-        except overpass.Timeout:
-            return api_overpass_error(data, 'overpass timeout')
-
-        endings = matcher.get_ending_from_criteria({i.partition(':')[2] for i in criteria})
-        found = [element for element in overpass_reply
-                 if check_for_match(element['tags'], wikidata_names, endings=endings)]
-
-    osm = api_osm_list(existing, found)
-
-    for i in osm:
-        coords = operator.itemgetter('lat', 'lon')(i.get('center', i))
-        i['distance'] = int(distance(coords, (lat, lon)).m)
-
-    data['response'] = 'ok'
-    data['found_matches'] = bool(found)
-    data['osm'] = osm
-
-    return data
-
-@app.route('/api/1/place_items/<osm_type>/<osm_id>')
-def api_place_items(osm_type, osm_id):
-    place = Place.get_by_osm(osm_type, osm_id)
-    items = [{'qid': item.qid, 'label': item.query_label} for item in place.items]
-
-    return jsonify({
-        'osm_type': osm_type,
-        'osm_id': osm_id,
-        'items': items,
-    })
-
-@app.route('/api/1/item/Q<int:wikidata_id>')
-def api_item_match(wikidata_id):
-    '''API call: find matches for Wikidata item
-
-    Optional parameter: radius (in metres)
-    '''
-
-    qid = f'Q{wikidata_id}'
-    entity = wikidata.WikidataItem.retrieve_item(qid)
-    data = api_get(wikidata_id, entity, utils.get_radius())
-
-    response = jsonify(data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-
-@app.route('/api/1/names/Q<int:wikidata_id>')
-def api_item_names(wikidata_id):
-
-    qid = f'Q{wikidata_id}'
-    entity = wikidata.WikidataItem.retrieve_item(qid)
-    api_data = api_get(wikidata_id, entity, utils.get_radius())
-
-    def json_data(**kwargs):
-        response = jsonify(**kwargs)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-
-    if not api_data.get('osm'):
-        return json_data(found=False,
-                         labels=False,
-                         message='item not found in OSM')
-
-    for osm in api_data['osm']:
-        osm['names'] = {k[5:]: v for k, v in osm['tags'].items()
-                        if k.startswith('name:')}
-        osm['name_count'] = len(osm['names'])
-
-    picked = max(api_data['osm'], key=lambda osm: osm['name_count'])
-    osm_type, osm_id = picked['type'], picked['id']
-    url = f'https://www.openstreetmap.org/{osm_type}/{osm_id}'
-
-    data = {}
-    if picked['name_count']:
-        data['names'] = picked['names']
-        data['labels'] = True
-    else:
-        data['message'] = 'no labels found in OSM'
-        data['labels'] = False
-
-    return json_data(found=True,
-                     osm_type=osm_type,
-                     osm_id=osm_id,
-                     osm_url=url,
-                     **data)
 
 @app.route('/browse/')
 def browse_index():
