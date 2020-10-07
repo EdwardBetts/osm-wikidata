@@ -86,6 +86,8 @@ def tidy_name(n):
     n = n.replace(' @ ', ' at ')
     n = n.replace(' roman catholic ', ' rc ')
     n = n.replace(' catholic ', ' rc ')
+    n = n.replace(' nicolas', ' nicholas')
+    n = n.replace(' bartholemew', ' bartholomew')
     n = n.replace(' preparatory school', ' prep school')
     n = n.replace(' incorporated', ' inc')
     n = n.replace(' cooperative', ' coop')
