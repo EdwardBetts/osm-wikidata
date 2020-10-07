@@ -201,12 +201,6 @@ def test_name_match():
     assert match.name_match('John Smith', 'Statue of John Smith')
     assert match.name_match('John Smith', 'Tomb of John Smith')
 
-    name = "St John's Church"
-    assert match.name_match(name, name + ' And Attached Railings')
-
-    assert match.name_match('Church building', 'Church')
-    assert match.name_match('Church', 'Church building')
-
     assert match.name_match('Lake Test', 'Test', ['lake'])
     assert match.name_match('Test', 'Lake Test', ['lake'])
 
@@ -292,19 +286,6 @@ def test_name_match():
 
     assert match.name_match('The Landers', 'Landers Theatre', endings=['theatre'])
 
-    osm = "St. Michael's Church"
-    wikidata = 'Church Of St Michael'
-
-    trim = ['church', 'church of']
-    assert match.name_match(osm, wikidata, endings=trim)
-
-    osm = 'Saint Vitus Catholic Church'
-    wikidata = "St. Vitus's Church, Cleveland"
-    trim = ['church', 'church of', 'catholic church', 'rc church']
-    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
-
-    assert match.name_match(osm, wikidata, endings=trim, place_names=place_names)
-
     osm = 'Main Street Station'
     wikidata = 'Richmond Main Street Station'
     place_names = {'Richmond City', 'Virginia'}
@@ -320,6 +301,36 @@ def test_name_match():
     n1 = 'City of Birmingham Symphony Orchestra'
     n2 = 'CBSO Centre'
     assert match.name_match(n1, n2)
+
+def test_church_names():
+    name = "St John's Church"
+    assert match.name_match(name, name + ' And Attached Railings')
+
+    assert match.name_match('Church building', 'Church')
+    assert match.name_match('Church', 'Church building')
+
+    osm = "St. Michael's Church"
+    wikidata = 'Church Of St Michael'
+
+    trim = ['church', 'church of']
+    assert match.name_match(osm, wikidata, endings=trim)
+
+    osm = 'Saint Vitus Catholic Church'
+    wikidata = "St. Vitus's Church, Cleveland"
+    trim = ['church', 'church of', 'catholic church', 'rc church']
+    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
+
+    assert match.name_match(osm, wikidata, endings=trim, place_names=place_names)
+
+    assert match.name_match("St. Paul's Roman Catholic Church",
+                            "St. Paul's Catholic Church")
+
+    assert match.name_match('St Peter', 'Saint Peter')
+    assert match.name_match('Test Roman Catholic church', 'Test RC church')
+
+    assert match.name_match('Church of Ss Peter and Paul',
+                            "St Peter and St Paul's Church",
+                            endings=['church', 'church of'])
 
 def test_number_in_name():
     # https://www.wikidata.org/wiki/Q88276810
@@ -423,10 +434,6 @@ def test_name_match_trim_to_empty():
 
     assert not match.name_match(osm, wd, endings=endings)
 
-def test_name_match_roman_catholic():
-    assert match.name_match("St. Paul's Roman Catholic Church",
-                            "St. Paul's Catholic Church")
-
 def test_match_name_abbreviation():
     wikidata_names = [
         'Bishop Justus Church of England School',
@@ -435,9 +442,6 @@ def test_match_name_abbreviation():
 
     for wd in wikidata_names:
         assert match.name_match('Bishop Justus CofE School ', wd)
-
-    assert match.name_match('St Peter', 'Saint Peter')
-    assert match.name_match('Test Roman Catholic church', 'Test RC church')
 
     osm = 'Mullard Radio Astronomy Observatory (MRAO)'
     wikidata = 'Mullard Radio Astronomy Observatory'

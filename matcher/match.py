@@ -18,6 +18,9 @@ re_article = re.compile(r'^(\W*)(the|le|la|les)[- ]')
 re_uk_postcode_start = re.compile(r'^[a-z][a-z]\d+[a-z]?$', re.I)
 re_digits = re.compile(r'\d+')
 re_plural = re.compile(r'(?<=.)e?s+\b')
+re_ss = re.compile(r'\bss\b')
+re_st = re.compile(r'\bst\b')
+re_ss_or_st = re.compile(r'\bs[st]\b')
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
@@ -277,6 +280,11 @@ def plural_word_name_in_other_name(n1, n2):
             n1 not in n2 and
             n1[:-1] in n2)
 
+def two_saints(n1, n2):
+    return (all(' and ' in n or ' & ' in n for n in (n1, n2)) and
+           ((re_ss.search(n1) and re_st.search(n2)) or
+           (re_st.search(n1) and re_ss.search(n2))))
+
 def name_match_main(osm, wd, endings=None, debug=False):
     if not wd or not osm:
         return
@@ -287,6 +295,10 @@ def name_match_main(osm, wd, endings=None, debug=False):
         return Match(MatchType.good, 'identical')
 
     osm_lc, wd_lc = osm.lower(), wd.lower()
+
+    if two_saints(osm_lc, wd_lc):
+        osm_lc = re_ss_or_st.sub('', osm_lc)
+        wd_lc = re_ss_or_st.sub('', wd_lc)
 
     historic = ' (historic)'
     if osm_lc.endswith(historic):
