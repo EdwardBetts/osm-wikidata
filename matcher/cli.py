@@ -1194,6 +1194,34 @@ def place_filter(place_identifier, want_isa):
     print(place.candidates_url(_external=True))
 
 @app.cli.command()
+@click.argument('filename')
+@click.argument('want_isa')
+def place_filter_file(filename, want_isa):
+
+    places = []
+    for line in open(filename):
+        place_identifier, _, name = line[:-1].partition(',')
+        places.append((place_identifier, name))
+
+    for place_identifier, name in places:
+        place = get_place(place_identifier)
+        print(f'{name:25s} https://osm.wikidata.link/candidates/{place_identifier}')
+        print()
+        if place.state == 'ready':
+            place.state = 'refresh'
+            database.session.commit()
+
+        for msg in update_place(place, want_isa=want_isa.split(',')):
+            print(msg)
+
+        print(f'{name:25s} https://osm.wikidata.link/candidates/{place_identifier}')
+
+    print()
+    for place_identifier, _ in places:
+        print(f'{name:25s} https://osm.wikidata.link/candidates/{place_identifier}')
+
+
+@app.cli.command()
 @click.argument('place_identifier')
 def candidate_filters(place_identifier):
     place = get_place(place_identifier)
