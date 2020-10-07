@@ -115,7 +115,10 @@
 
     </ul>
 
-    {% set fp_all = item.first_paragraph_all(languages) %}
+    {% if item %}
+      {% set fp_all = item.first_paragraph_all(languages) %}
+    {% endif %}
+
     {% if fp_all %}
       {% for fp in fp_all %}
         <div class="summary mt-0">
