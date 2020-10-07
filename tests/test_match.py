@@ -332,6 +332,14 @@ def test_church_names():
                             "St Peter and St Paul's Church",
                             endings=['church', 'church of'])
 
+    assert match.name_match('Church of Ss Peter and Paul',
+                            "St Peter and St Paul's Church",
+                            endings=['church', 'church of'])
+
+    assert match.name_match('Michaelstow Church',
+                            'Michaelstow DSC 8243',
+                            endings=['church', 'church of'])
+
 def test_number_in_name():
     # https://www.wikidata.org/wiki/Q88276810
     n1 = 'Lake Number Ten'
