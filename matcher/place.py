@@ -139,13 +139,14 @@ class Place(Base):
         if place:
             return place
 
-        hit = nominatim.reverse(osm_type, osm_id)
         try:
-            place = Place.from_nominatim(hit)
-        except KeyError:
-            return None
-        session.add(place)
-        session.commit()
+            hit = nominatim.reverse(osm_type, osm_id)
+        except nominatim.SearchError:
+            return
+        place = Place.from_nominatim(hit)
+        if place:
+            session.add(place)
+            session.commit()
         return place
 
     @property
@@ -237,6 +238,7 @@ class Place(Base):
                 not self.too_complex)
 
     def update_from_nominatim(self, hit):
+        assert 'error' not in hit
         if self.place_id != int(hit['place_id']):
             print((self.place_id, hit['place_id']))
             self.place_id = hit['place_id']
@@ -339,6 +341,7 @@ class Place(Base):
 
     @classmethod
     def from_nominatim(cls, hit):
+        assert 'error' not in hit
         keys = ('place_id', 'osm_type', 'osm_id', 'lat', 'lon', 'display_name',
                 'place_rank', 'category', 'type', 'icon', 'extratags',
                 'namedetails')
