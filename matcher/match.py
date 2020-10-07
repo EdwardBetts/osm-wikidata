@@ -21,6 +21,7 @@ re_plural = re.compile(r'(?<=.)e?s+\b')
 re_ss = re.compile(r'\bss\b')
 re_st = re.compile(r'\bst\b')
 re_ss_or_st = re.compile(r'\bs[st]\b')
+re_dsc = re.compile(r'\bdsc \d+') # image names
 
 re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
 
@@ -295,6 +296,9 @@ def name_match_main(osm, wd, endings=None, debug=False):
         return Match(MatchType.good, 'identical')
 
     osm_lc, wd_lc = osm.lower(), wd.lower()
+
+    if 'dsc' in wd_lc:
+        wd_lc = re_dsc.sub('', wd_lc)
 
     if two_saints(osm_lc, wd_lc):
         osm_lc = re_ss_or_st.sub('', osm_lc)
