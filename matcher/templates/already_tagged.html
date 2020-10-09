@@ -32,10 +32,20 @@
 
   {% set lang = place.most_common_language() %}
   {% for item in items %}
+    {% set fp = item.first_paragraph(languages) %}
     <div class="card my-2">
       <div class="card-body">
       <h5 class="card-title"><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label(lang=lang) }} ({{ item.qid }})</a></h5>
-    {{ (item.first_paragraph() or '') | safe }}
+        {% if fp %}
+          <div class="summary mt-0">
+            <div><em>Summary from {{ fp.lang.label(with_code=False) }}
+              Wikipedia ({{fp.lang.site_name}})</em></div>
+            {{ fp.extract | safe }}
+          </div>
+        {% endif %}
+
+
+
     {# <br>
     <ul>
       <li>Categories:
