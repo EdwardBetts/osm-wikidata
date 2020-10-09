@@ -1217,7 +1217,7 @@ def place_filter_file(filename, want_isa):
         print(f'{name:25s} https://osm.wikidata.link/candidates/{place_identifier}')
 
     print()
-    for place_identifier, _ in places:
+    for place_identifier, name in places:
         print(f'{name:25s} https://osm.wikidata.link/candidates/{place_identifier}')
 
 
