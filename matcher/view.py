@@ -66,7 +66,7 @@ tab_pages = [
     {'route': 'candidates', 'label': 'Match candidates'},
     {'route': 'already_tagged', 'label': 'Already tagged'},
     {'route': 'no_match', 'label': 'No match'},
-    {'route': 'wikidata_page', 'label': 'Wikidata query'},
+#     {'route': 'wikidata_page', 'label': 'Wikidata query'},
 ]
 
 disabled_tab_pages = [
