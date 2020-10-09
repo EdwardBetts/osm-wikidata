@@ -12,9 +12,8 @@
 {% set qid = item.qid %}
 
 <div id="{{ qid }}"
-     class="card my-2
+     class="card my-2 candidate-item
      {% if upload_okay and picked %}
-        candidate-item
         {% if checked %}
           border-success
         {% else %}
