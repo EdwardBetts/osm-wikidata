@@ -192,6 +192,15 @@ function zoom_to_qid(qid) {
           </div>
         {% endif %}
 
+        {% set defunct_cats = item.defunct_cats() %}
+        {% if defunct_cats %}
+          <div class="alert alert-danger">
+          <strong>This item might be defunct.</strong> The English Wikipedia
+          article is in these categories: {{ ', '.join(defunct_cats) }}
+          </div>
+        {% endif %}
+
+
       {#
       <ul>
         {% if item.categories %}
