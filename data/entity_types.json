@@ -150,7 +150,7 @@
     "trim": ["church", "temple", "church centre", "church center", "centre", "center",
              "catholic church", "rc church", "church of", "mission",
              "church and cemetery", "congregation", "the parish church of",
-             "parish church of", "parish", "ce church", "st"],
+             "parish church of", "parish", "parish church", "ce church", "st"],
     "check_housename": true,
     "wikidata": "Q1370598",
     "dist": 0.5

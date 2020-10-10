@@ -95,6 +95,7 @@ def tidy_name(n):
     n = n.replace(' catholic ', ' rc ')
     n = n.replace(' helena', '  helen')
     n = n.replace(' nicolas', ' nicholas')
+    n = n.replace(' mary magdalen', ' mary magdalene')
     n = n.replace(' mary the virgin', ' mary')
     n = n.replace(' blessed virgin mary', ' st mary')
     n = n.replace(' nativity of the blessed virgin mary', ' st mary')

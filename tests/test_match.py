@@ -344,6 +344,11 @@ def test_church_names():
                             'Church of St Edmund and George',
                             endings=['church', 'church of', 'st'])
 
+    assert match.name_match('Parish Church of St Mary',
+                            'St Mary the Virgin',
+                            endings=['parish church', 'church'])
+
+
 def test_number_in_name():
     # https://www.wikidata.org/wiki/Q88276810
     n1 = 'Lake Number Ten'
