@@ -80,6 +80,9 @@ def tidy_name(n):
     # expects to be passed a name in lowercase
     n = unidecode(n).strip().rstrip("'")
     n = n.replace(' no. ', ' number ')
+    n = n.replace(' nr ', ' number ')
+    n = n.replace(' hosp ', ' hospital ')
+    n = n.replace(' rgnl ', ' regional ')
     n = n.replace('saint ', 'st ')
     n = n.replace('mount ', 'mt ')
     n = n.replace(' mountain', ' mtn')
