@@ -1,30 +1,175 @@
+{% from "macro.html" import place_box with context %}
+{% from "navbar.html" import navbar_inner with context %}
 {% extends "base.html" %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
 
+{% block nav %}
+<nav class="navbar fixed-top navbar-toggleable-md navbar-expand-lg navbar-dark bg-primary">
+  {{ navbar_inner() }}
+</nav>
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#page-body {
+  width: 60%;
+  left: 40%;
+  position: relative;
+}
+
+#map {
+  width: 40%;
+
+  top: 56px;
+  bottom: 0px;
+  left: 0px;
+
+  display: block;
+  position: fixed;
+}
+
+.highlight {
+  background: lightblue;
+}
+
+</style>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+var current_highlight;
+var current_marker;
+
+var geojson = {{ place.geojson | safe }};
+var map = L.map('map');
+var mapStyle = {fillOpacity: 0};
+var layer = L.geoJSON(geojson, {'style': mapStyle});
+layer.addTo(map);
+
+{% if not items_without_matches %}
+var bounds = [[{{ place.north }}, {{place.west }}],
+              [{{ place.south}}, {{ place.east}}]];
+map.fitBounds(bounds);
+{% endif %}
+
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+tiles.addTo(map);
+var group = L.featureGroup();
+
+var markers = {};
+var latlon = {};
+
+const pinColour = '#00ccff';
+
+const markerHtmlStyles = `
+  background-color: ${pinColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`;
+
+const icon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${markerHtmlStyles}" />`
+});
+
+const highlightColour = '#ff0000';
+
+const highlightHtmlStyles = `
+  background-color: ${highlightColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`;
+
+const highlightIcon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${highlightHtmlStyles}" />`
+});
+
+function highlight(item, marker) {
+    if (current_highlight) {
+      $(current_highlight).removeClass('highlight');
+    }
+    if (current_marker) {
+      current_marker.setIcon(icon);
+    }
+    $(item).addClass('highlight');
+    marker.setIcon(highlightIcon);
+    current_marker = marker;
+    current_highlight = item;
+}
+
+{% for item in items_without_matches %}
+  marker = L.marker({{ item.get_lat_lon() | list }}, {
+                    'title': {{ item.label_and_qid() | tojson }},
+                    'icon': icon,
+  });
+
+  markers[{{ item.qid | tojson }}] = marker;
+  latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
+
+  marker.addTo(group);
+
+  marker.on('click', (e) => {
+    var item = document.getElementById({{ item.qid | tojson }});
+    item.scrollIntoView();
+    var scrolledY = window.scrollY;
+    if(scrolledY){
+        window.scroll(0, scrolledY - 60);
+    }
+    highlight(item, e.target);
+  });
+{% endfor %}
+
+{% if items_without_matches %}
+map.fitBounds(group.getBounds());
+map.addLayer(group);
+
+function zoom_to_qid(qid) {
+  var marker = markers[qid]
+  var item = document.getElementById(qid);
+  map.setView(marker.getLatLng(), 18);
+  highlight(item, marker);
+}
+
+{% endif %}
+
+</script>
+{% endblock %}
+
 {% block content %}
+  <div id="page-body">
   <div class="container my-2">
   <div class="row">
   <div class="col">
     <h1>{{ place.name }}</h1>
   {% set q = place.display_name %}
 
-    <div class="box">
-      <b>{{ place.display_name }}</b><br>
-      category: {{ place.category }}
-      &mdash;
-      type: {{ place.type }}
-      &mdash;
-      OSM: <a href="https://www.openstreetmap.org/{{ place.osm_type }}/{{ place.osm_id }}">{{ place.osm_type}} {{ place.osm_id }}</a><br>
-    </div>
+  {{ place_box(place) }}
+
+  {% include "flash_msg.html" %}
 
   {% include "tabs.html" with context %}
-
-  {% if overpass_error %}
-    <div>&nbsp;</div>
-    <h4>Overpass API error</h4>
-    <pre>{{ overpass_error }}</pre>
-  {% endif %}
 
   </div>
   </div>
@@ -35,7 +180,8 @@
 
   {% for item in items_without_matches %}
     {% set fp = item.first_paragraph(languages) %}
-    <div class="card my-2">
+    {% set qid = item.qid %}
+    <div id="{{ qid }}" class="card my-2 candidate-item">
       <div class="card-body">
         <h5 class="card-title"><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a></h5>
         {% if fp %}
@@ -62,5 +208,8 @@
 
 </div>
 </div>
+</div>
+</div>
+<div id="map">
 </div>
 {% endblock %}
