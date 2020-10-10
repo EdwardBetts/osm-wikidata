@@ -184,6 +184,15 @@ function zoom_to_qid(qid) {
     <div id="{{ qid }}" class="card my-2 candidate-item">
       <div class="card-body">
         <h5 class="card-title"><a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">{{ item.label() }} ({{ item.qid }})</a></h5>
+
+        {% set isa_list = item.isa %}
+        {% if isa_list %}
+          item type:
+          {% for isa in isa_list %}
+            <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) or isa.qid }}</a>{% if not loop.last %} / {% endif %}
+          {% endfor %}
+        {% endif %}
+
         {% if fp %}
           <div class="summary mt-0">
             <div><em>Summary from {{ fp.lang.label(with_code=False) }}
