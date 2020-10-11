@@ -93,7 +93,8 @@ def tidy_name(n):
     n = n.replace(' @ ', ' at ')
     n = n.replace(' roman catholic ', ' rc ')
     n = n.replace(' catholic ', ' rc ')
-    n = n.replace(' helena', '  helen')
+    n = n.replace(' helena', ' helen')
+    n = n.replace(' laurence', ' lawrence')
     n = n.replace(' holy ascension', 'ascension')
     n = n.replace(' most holy trinity', 'holy trinity')
     n = n.replace(' nicolas', ' nicholas')
@@ -120,9 +121,12 @@ def tidy_name(n):
     n = n.replace(' egelwin the martyr', ' egelwin')
     n = n.replace(' nicholas the confessor', ' nicholas')
     n = n.replace(' edward the confessor', ' edward')
+    n = n.replace(' edward the martyr', ' edward')
+    n = n.replace(' edmund king and martyr', ' edmund')
     n = n.replace(' gregory the great', ' gregory')
     n = n.replace(' james the great', ' james')
     n = n.replace(' james the less', ' james')
+    n = n.replace(' james the apostle', ' james')
     n = n.replace(' bartholemew', ' bartholomew')
     n = n.replace(' preparatory school', ' prep school')
     n = n.replace(' incorporated', ' inc')
@@ -131,6 +135,8 @@ def tidy_name(n):
     n = n.replace(' hotel and country club', ' hotel')
     n = n.replace(' hotel and spa', ' hotel')
     n = n.replace(' missionary baptist', ' baptist')
+    n = n.replace(' thomas a becket', ' thomas becket')
+    n = n.replace(' thomas of canterbury', ' thomas becket')
 
     if n.endswith("'s"):
         n = n[:-2]
