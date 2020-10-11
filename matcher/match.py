@@ -401,6 +401,13 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if wd_tidy2 == osm_tidy2:
         return Match(MatchType.good, 'strip words')
 
+    if endings:
+        osm_terms = set(osm_tidy2.split()) - set(endings)
+        wd_terms = set(wd_tidy2.split()) - set(endings)
+
+        if osm_terms == wd_terms:
+            return Match(MatchType.good, 'matching term sets')
+
     wd_tidy = drop_article(wd_tidy2)
     osm_tidy = drop_article(osm_tidy2)
 

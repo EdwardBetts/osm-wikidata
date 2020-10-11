@@ -348,6 +348,14 @@ def test_church_names():
                             'St Mary the Virgin',
                             endings=['parish church', 'church'])
 
+    assert match.name_match('St John the Evangelist parish church',
+                            'Parish Church of St John, the Evangelist',
+                            endings=['parish church', 'parish', 'church'])
+
+    assert match.name_match('St Mary and St Edmund',
+                            'Church of St Edmund and St Mary',
+                            endings=['parish church', 'parish', 'church', 'church of'])
+
 
 def test_number_in_name():
     # https://www.wikidata.org/wiki/Q88276810
