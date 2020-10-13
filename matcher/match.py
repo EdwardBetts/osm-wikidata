@@ -98,6 +98,7 @@ def tidy_name(n):
     n = n.replace(' holy ascension', 'ascension')
     n = n.replace(' most holy trinity', 'holy trinity')
     n = n.replace(' nicolas', ' nicholas')
+    n = n.replace(' anne', ' ann')
     n = n.replace(' ethelreda', ' etheldreda')
     n = n.replace(' mary magdalene', ' mary magdalen')
     n = n.replace(' mary magdelene', ' mary magdalen')
