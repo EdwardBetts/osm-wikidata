@@ -319,9 +319,10 @@ class Item(Base):
         return session.query(func.ST_Y(self.location),
                              func.ST_X(self.location)).one()
 
-    def get_osm_url(self, zoom=18):
+    def get_osm_url(self, zoom=18, show_marker=False):
         lat, lon = self.get_lat_lon()
-        return f'https://www.openstreetmap.org/#map={zoom}/{lat}/{lon}'
+        marker_params = f'?mlat={lat}&mlon={lon}' if show_marker else ''
+        return f'https://www.openstreetmap.org/{marker_params}#map={zoom}/{lat}/{lon}'
 
     def get_extra_tags(self):
         tags = set()
