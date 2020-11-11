@@ -576,6 +576,23 @@ def test_check_name_matches_address():
     wd_address = '1300 Lafayette East Cooperative'
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
+    tags = {
+        'addr:city': 'Kraków',
+        'addr:country': 'PL',
+        'addr:housenumber': '3',
+        'addr:postcode': '31-134',
+        'addr:street': 'Basztowa',
+        'building': 'apartments',
+    }
+    wd_address = 'Basztowa 3'
+    # assert match.check_name_matches_address(tags, [wd_address]) is not False
+
+    wd_address = '3 Basztowa street in Kraków'
+    assert match.check_name_matches_address(tags, [wd_address]) is True
+
+    wd_address = '4 Basztowa street in Kraków'
+    assert match.check_name_matches_address(tags, [wd_address]) is False
+
 def test_check_name_matches_address_postcode():
     tags = {
         'addr:housenumber': '12',

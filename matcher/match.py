@@ -704,6 +704,14 @@ def check_name_matches_address(osm_tags, wikidata_names):
         if any(name == norm_osm_address for name in norm_number_start):
             return True
 
+        if 'addr:city' in osm_tags:
+            street_in = f" street in {osm_tags['addr:city']}"
+            for name in number_start:
+                if not name.endswith(street_in):
+                    continue
+                if norm_osm_address == normalize_name(name[:-len(street_in)]):
+                    return True
+
         osm_address2 = osm_tags['addr:street'] + ' ' + osm_tags['addr:housenumber']
         norm_osm_address2 = normalize_name(osm_address2)
         if any(name == norm_osm_address2 for name in norm_number_end):
