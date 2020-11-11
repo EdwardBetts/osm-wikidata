@@ -25,6 +25,7 @@ radius_default = 1_000  # in metres, only for nodes
 place_chunk_size = 32
 degrees = '(-?[0-9.]+)'
 re_box = re.compile(rf'^BOX\({degrees} {degrees},{degrees} {degrees}\)$')
+re_geonames_spring = re.compile(r'^\d[0-9A-Z_]{13} Spring$')
 
 base_osm_url = 'https://www.openstreetmap.org'
 
@@ -412,7 +413,8 @@ class Place(Base):
         # Would be nice to include OSM chunk information with each
         # item. Not doing it at this point because it means lots
         # of queries. Easier once the items are loaded into the database.
-        return {k: v for k, v in items.items() if self.covers(v)}
+        return {k: v for k, v in items.items()
+                if self.covers(v) and not re_geonames_spring.match(v['query_label'])}
 
     def items_from_wikidata(self, query_map, want_isa=None):
         if not want_isa:
