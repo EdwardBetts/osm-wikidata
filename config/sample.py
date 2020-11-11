@@ -16,6 +16,8 @@ TEMPLATES_AUTO_RELOAD = True
 PLACE_MIN_AREA = 1      # km^2
 PLACE_MAX_AREA = 90000  # km^2
 
+SHOW_TOP_SAVE_CANDIDATES = False
+
 DB_NAME = '{{ db_name }}'
 DB_USER = '{{ db_user }}'
 DB_PASS = '{{ db_pass }}'
