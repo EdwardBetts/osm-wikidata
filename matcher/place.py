@@ -609,6 +609,7 @@ class Place(Base):
         tags = set()
         for item in self.items:
             tags |= set(item.tags)
+            tags |= item.get_extra_tags()
             tags |= item.disused_tags()
         tags.difference_update(skip_tags)
         return matcher.simplify_tags(tags)
