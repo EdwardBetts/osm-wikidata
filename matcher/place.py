@@ -1240,6 +1240,8 @@ class Place(Base):
         tags = set()
         for item in q:
             tags |= set(item.tags)
+            tags |= item.get_extra_tags()
+            tags |= item.disused_tags()
         tags.difference_update(skip_tags)
         tags.difference_update(skip)
         tags = matcher.simplify_tags(tags)
