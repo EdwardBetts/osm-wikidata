@@ -302,6 +302,10 @@ def test_name_match():
     n2 = 'CBSO Centre'
     assert match.name_match(n1, n2)
 
+    osm = 'Wabasca Indian Reserve #166'
+    wikidata = 'Wabasca 166'
+    assert match.name_match(osm, wikidata, endings={'Indian reserve'})
+
 def test_church_names():
     name = "St John's Church"
     assert match.name_match(name, name + ' And Attached Railings')

@@ -186,7 +186,7 @@ def match_with_words_removed(osm, wd, words):
         return
     wd_char_only = re_strip_non_chars_and_dash.sub('', wd)
     osm_char_only = re_strip_non_chars_and_dash.sub('', osm)
-    words = [re_strip_non_chars.sub('', w) for w in words]
+    words = [re_strip_non_chars.sub('', w).lower() for w in words]
     osm_versions = {osm_char_only.replace(word, '')
                     for word in words} | {osm_char_only}
     wd_versions = {wd_char_only.replace(word, '')
