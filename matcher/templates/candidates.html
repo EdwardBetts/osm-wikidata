@@ -469,7 +469,7 @@ Change comment: "<em>{{ obj.comment }}</em>"
     {% if unsure_items %}
       {% if ticked_items %}
         <h5>Less certain matches</h5>
-        <p>The following matches are less certain, mostly because the OSM and Wikidata locations are two far apart.</p>
+        <p>The following matches are less certain, mostly because the OSM and Wikidata locations are too far apart.</p>
       {% endif %}
       {% for item in unsure_items %}
           {% set picked = filtered[item.item_id]['candidate'] or none %}
