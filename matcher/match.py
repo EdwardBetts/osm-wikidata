@@ -763,6 +763,10 @@ def intials_matches_other_wikidata_name(initials, wikidata_names):
     return any(w != initials and initials_match(initials, w)
                for w in wikidata_names.keys())
 
+def strip_operator(name, operator):
+    start = name.lower().find(operator.lower())
+    return name[:start] + name[start + len(operator):]
+
 def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None, trim_house=True):
     endings = set(endings or [])
     if trim_house:
@@ -772,6 +776,14 @@ def check_for_match(osm_tags, wikidata_names, endings=None, place_names=None, tr
     operator = names['operator'].lower() if 'operator' in names else None
     if not names or not wikidata_names:
         return {}
+
+    if operator:
+        names_strip_operator = {osm_key: strip_operator(o, operator)
+                                for osm_key, o in names.items()
+                                if operator.lower() in o.lower()}
+        names.update({osm_key + ' strip operator': name
+                      for osm_key, name in names_strip_operator.items()
+                      if any(c.isalpha() for c in name)})
 
     if 'addr:city' in osm_tags:
         city = osm_tags['addr:city'].lower()
