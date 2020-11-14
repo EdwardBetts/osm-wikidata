@@ -82,6 +82,7 @@ nwr(around:{radius},{lat},{lon})->.a;
     nwr.a["wikidata"];
     nwr.a["addr:housenumber"];
     nwr.b{name_filter};
+    nwr.b[~"^ref:"~"."];
     {oql_building}
 );
 (._;>;);
@@ -126,6 +127,7 @@ area({area_id}) -> .a;
     nwr(area.a)["wikidata"];
     nwr(area.a)["addr:housenumber"];
     nwr.b{name_filter};
+    nwr.b[~"^ref:"~"."];
     {oql_building}
 );
 (._;>;);
