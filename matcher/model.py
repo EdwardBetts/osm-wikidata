@@ -427,6 +427,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P901', ['ref:fips'], 'FIPS 10-4 (countries and regions)'),
             # A UIC id can be a IBNR, but not every IBNR is an UIC id
             ('P954', ['uic_ref'], 'IBNR ID'),
+            ('P981', ['ref:woonplaatscode'], 'BAG code for Dutch residencies'),
             ('P1216', ['HE_ref'], 'National Heritage List for England number'),
             ('P2253', ['ref:edubase'], 'EDUBase URN'),
             ('P2815', ['esr:user', 'ref', 'ref:train'], 'ESR station code'),
