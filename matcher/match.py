@@ -617,6 +617,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
 
 def normalize_name(name):
     name = re_ordinal_number.sub(lambda m: num2words(int(m.group(1)), to='ordinal'), name)
+    name = name.replace(' bij ', '')  # "at" in Dutch
     return re_strip_non_chars.sub('', name.lower())
 
 def has_address(osm_tags):
