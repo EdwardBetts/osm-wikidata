@@ -437,6 +437,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ('P6082', ['nycdoitt:bin'], 'NYC Building Identification Number'),
             ('P5086', ['ref'], 'FIPS 5-2 alpha code (US states)'),
             ('P5087', ['ref:fips'], 'FIPS 5-2 numeric code (US states)'),
+            ('P5208', ['ref:bag'], 'BAG building ID for Dutch buildings'),
         ]
 
         tags = defaultdict(list)
