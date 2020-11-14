@@ -671,6 +671,13 @@ def check_for_address_in_extract(osm_tags, extract):
     if 'addr:full' in osm_tags and address_in_extract(osm_tags['addr:full']):
         return True
 
+def name_ends_with_housenumber(name):
+    if not name:
+        return False
+
+    terms = name.split()
+    return len(terms) > 1 and terms[-1][0].isdigit()
+
 def check_name_matches_address(osm_tags, wikidata_names):
     if not has_address(osm_tags):
         return
@@ -682,7 +689,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
     number_start = {m.group(1) for m in number_start_iter if m}
 
     # names that end with a number
-    number_end = {name for name in wikidata_names if name and name[-1].isdigit()}
+    number_end = {name for name in wikidata_names if name_ends_with_housenumber(name)}
 
     if not number_start and not number_end:
         return
