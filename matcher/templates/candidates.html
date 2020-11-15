@@ -73,6 +73,12 @@
     </div>
   {% endif %}
 
+  {% set addresses = item.get_street_addresses() %}
+
+  {% if addresses %}
+    <p>Street address: <strong>{{ '; '.join(addresses) }}</strong> (from Wikidata)<p>
+  {% endif %}
+
   {% set identifiers = item.identifier_values() %}
   {% if identifiers %}
     <p>
