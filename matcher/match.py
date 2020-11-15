@@ -671,12 +671,13 @@ def check_for_address_in_extract(osm_tags, extract):
     if 'addr:full' in osm_tags and address_in_extract(osm_tags['addr:full']):
         return True
 
-def name_ends_with_housenumber(name):
-    if not name:
+def name_contains_housenumber(name):
+    '''Name contains housenumber, but not at the start'''
+    if not name or name[0].isdigit():
         return False
 
     terms = name.split()
-    return len(terms) > 1 and terms[-1][0].isdigit()
+    return len(terms) > 1 and any(term[0].isdigit() for term in terms[1:])
 
 def check_name_matches_address(osm_tags, wikidata_names):
     if not has_address(osm_tags):
@@ -689,7 +690,8 @@ def check_name_matches_address(osm_tags, wikidata_names):
     number_start = {m.group(1) for m in number_start_iter if m}
 
     # names that end with a number
-    number_end = {name for name in wikidata_names if name_ends_with_housenumber(name)}
+    number_end = {name for name in wikidata_names
+                  if name_contains_housenumber(name)}
 
     if not number_start and not number_end:
         return
@@ -703,6 +705,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
     norm_number_end = {normalize_name(name) for name in number_end}
 
     postcode = osm_tags.get('addr:postcode')
+    city = osm_tags.get('addr:city')
     if postcode:
         postcode = postcode.lower()
 
@@ -724,6 +727,13 @@ def check_name_matches_address(osm_tags, wikidata_names):
         norm_osm_address2 = normalize_name(osm_address2)
         if any(name == norm_osm_address2 for name in norm_number_end):
             return True
+
+        if city:
+            parts = ['street', 'housenumber', 'city']
+            osm_address3 = ' '.join(osm_tags[f'addr:{part}'] for part in parts)
+            norm_osm_address3 = normalize_name(osm_address3)
+            if any(name == norm_osm_address3 for name in norm_number_end):
+                return True
 
         for i in number_start:
             name, _, postcode_start = i.rpartition(' ')
