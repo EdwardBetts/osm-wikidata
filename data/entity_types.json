@@ -691,9 +691,10 @@
 },
 {
     "cats": ["Mines by country"],
-    "tags": ["man_made=mineshaft", "man_made=mine", "gnis:feature_type=Mine"],
+    "tags": ["man_made=mineshaft", "man_made=mine", "gnis:feature_type=Mine", "industrial=mine", "landuse=quarry"],
     "trim": ["mine"],
     "area": true,
+    "wikidata": "Q820477",
     "dist": 10
 },
 {
