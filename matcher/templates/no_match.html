@@ -201,6 +201,22 @@ function zoom_to_qid(qid) {
           </div>
         {% endif %}
 
+        {% set addresses = item.get_street_addresses() %}
+
+        {% if addresses %}
+          <p>Street address: <strong>{{ '; '.join(addresses) }}</strong> (from Wikidata)<p>
+        {% endif %}
+
+        {% set identifiers = item.identifier_values() %}
+        {% if identifiers %}
+          <p>
+          {% for values, label in item.identifiers() %}
+            {{ label }}: <strong>{{ ', '.join(values) }}</strong>
+            {%- if not loop.last %}; {% endif %}
+          {% endfor %}
+          </p>
+        {% endif %}
+
         {% set defunct_cats = item.defunct_cats() %}
         {% if defunct_cats %}
           <div class="alert alert-danger">
