@@ -393,6 +393,17 @@ https://www.wikidata.org/wiki/{self.qid}
                 for i in self.entity['claims'].get('P31', [])
                 if 'datavalue' in i['mainsnak']]
 
+    def get_street_addresses(self):
+        addresses = []
+        for p6375 in self.entity['claims'].get('P6375', []):
+            try:
+                street_address = p6375['mainsnak']['datavalue']['value']['text']
+            except KeyError:
+                continue
+            addresses.append(street_address)
+
+        return addresses
+
     def identifiers(self):
         ret = set()
         for v in self.get_item_identifiers().values():
