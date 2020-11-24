@@ -622,23 +622,6 @@ def test_check_name_matches_address_postcode():
     assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
 
     tags = {
-        'addr:postcode': '96813',
-        'addr:housenumber': '250',
-        'addr:city': 'Honolulu',
-        'name': 'Hawaii State Art Museum',
-        'building': 'yes',
-        'addr:street': 'South Hotel Street',
-    }
-
-    wikidata_names = [
-        'Hawaii State Art Museum',
-        'No. 1 Capitol District Building',
-        'Armed Services YMCA Building',
-        'Hawaiʻi State Art Museum',
-    ]
-    assert match.check_name_matches_address(tags, wikidata_names) is not False
-
-    tags = {
         'name': '510 Marquette',
         'addr:housenumber': '510',
         'addr:street': 'Marquette Avenue South',
