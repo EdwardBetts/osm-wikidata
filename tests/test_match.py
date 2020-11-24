@@ -175,6 +175,15 @@ def test_name_with_dashes():
 def test_russian_doesnt_match_number():
     assert not match.name_match_main('1', '1-й общественный совет')
 
+def test_ordinal_number_name_match():
+    osm = '3rd Avenue–149th Street'
+    wikidata = '3rd Avenue – 149th Street'
+    assert match.name_match_main(osm, wikidata)
+
+    osm = '3rd Avenue–149th Street'
+    wikidata = 'Third Avenue – 149th Street'
+    assert match.name_match_main(osm, wikidata)
+
 def test_name_match():
     assert not match.name_match('', '')
     assert match.name_match('test', 'test')

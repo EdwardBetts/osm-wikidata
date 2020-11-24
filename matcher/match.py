@@ -23,7 +23,7 @@ re_st = re.compile(r'\bst\b')
 re_ss_or_st = re.compile(r'\bs[st]\b')
 re_dsc = re.compile(r'\bdsc \d+') # image names
 
-re_ordinal_number = re.compile(r'([0-9]+)(?:st|nd|rd|th)\b', re.I)
+re_ordinal_number = re.compile(r'(\d+) ?(?:st|nd|rd|th)\b', re.I)
 
 re_strip_words = re.compile(r'([ -])(?:the|and|a|an|at|of|de|di|le|la|les|von|pw\.)(?=\1)')
 
@@ -334,6 +334,12 @@ def name_match_main(osm, wd, endings=None, debug=False):
     if wd == osm:
         return Match(MatchType.good, 'identical')
 
+    if re_ordinal_number.search(osm):
+        osm = ordinal_number_to_word(osm)
+
+    if re_ordinal_number.search(wd):
+        wd = ordinal_number_to_word(wd)
+
     osm_lc, wd_lc = osm.lower(), wd.lower()
 
     if 'dsc' in wd_lc:
@@ -615,8 +621,11 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
         if match:
             return match
 
+def ordinal_number_to_word(name):
+    return re_ordinal_number.sub(lambda m: num2words(int(m.group(1)), to='ordinal'), name)
+
 def normalize_name(name):
-    name = re_ordinal_number.sub(lambda m: num2words(int(m.group(1)), to='ordinal'), name)
+    name = ordinal_number_to_word(name)
     name = name.replace(' bij ', '')  # "at" in Dutch
     return re_strip_non_chars.sub('', name.lower())
 
