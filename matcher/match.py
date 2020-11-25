@@ -776,6 +776,9 @@ def check_name_matches_address(osm_tags, wikidata_names):
                     normalize_name(name) == osm_address):
                 return True
 
+    if not number_start:
+        return
+
     # if we find a name from wikidata matches the OSM name we can be more relaxed
     # about the address
     name_match = 'name' in osm_tags and any(n == osm_tags['name'] for n in number_start)
