@@ -368,6 +368,15 @@ def is_bad_match(item, osm_tags):
 
     return False
 
+def is_address_node(osm_type, osm_tags):
+    if osm_type != 'node' or 'addr:housename' in osm_tags:
+        return False
+
+    return all(key.startswith('addr:') or
+                   key.startswith('source:') or
+                   key in {'entrance', 'source'}
+               for key in osm_tags.keys())
+
 def get_within_names(cur, prefix, src_type, src_id):
     sql = f'''select a.tags
 from {prefix}_polygon as a, {prefix}_{src_type} as b
@@ -432,6 +441,7 @@ def find_item_matches(cur, item, prefix, debug=False):
     endings.discard('street')
 
     check_within = current_app.config.get('HUNT_FOR_MORE_PLACE_NAMES') or False
+    match_address_nodes = current_app.config.get('MATCH_ADDRESS_NODES') or False
 
     candidates = []
     for src_type, src_id, osm_name, osm_tags, dist in rows:
@@ -448,8 +458,7 @@ def find_item_matches(cur, item, prefix, debug=False):
         if item_is_a_historic_district and 'building' in osm_tags:
             continue  # historic district shouldn't match building
 
-        if (all(key.startswith('addr:') or key == 'entrance' for key in osm_tags.keys()) and
-                osm_type == 'node' and 'addr:housename' not in osm_tags):
+        if not match_address_nodes and is_address_node(osm_type, osm_tags):
             continue  # Don't match address nodes. There are lots of these in New York.
 
         try:
