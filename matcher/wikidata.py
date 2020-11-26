@@ -75,6 +75,7 @@ extra_keys = {
     'Q16970': ['Tag:religion=christian'],       # church
     'Q32815': ['Tag:religion=islam'],           # mosque
     'Q811979': ['Key:building'],                # architectural structure
+    'Q11691': ['Key:building'],                 # stock exchange
     'Q1329623': ['Tag:amenity=arts_centre',     # cultural centre
                  'Tag:amenity=community_centre'],
     'Q856584': ['Tag:amenity=library'],         # library building
