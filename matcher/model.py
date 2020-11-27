@@ -1066,10 +1066,13 @@ class ItemCandidate(Base):
         return utils.display_distance(units, self.dist)
 
     def get_max_dist(self):
+        matching_tags = self.matching_tags()
         if any(tag in {'place', 'aeroway=aerodrome'} or
                (tag != 'place=farm' and tag.startswith('place='))
-               for tag in self.matching_tags()):
+               for tag in matching_tags):
             max_dist = 2000
+        elif 'natural=peak' in matching_tags:
+            max_dist = 1000
         elif self.item.is_nhle:
             max_dist = 100
         else:
