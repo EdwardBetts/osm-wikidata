@@ -1009,6 +1009,25 @@ def filter_station(candidates):
             return
     return match
 
+def filter_building(candidates):
+    '''
+    If the item is primarily a building then pick the building way over a node
+    that represents one of the current uses of the building
+    '''
+
+    if len(candidates) < 2:
+        return
+
+    way = [c for c in candidates if c.osm_type == 'way']
+    node = [c for c in candidates if c.osm_type == 'node']
+
+    if not (len(way) == 1 and len(node) + 1 == len(candidates)):
+        return
+    building = way[0]
+
+    if 'building' in building.tags:
+        return building
+
 def filter_reservoir(candidates):
     if len(candidates) < 2:
         return
@@ -1077,6 +1096,11 @@ def filter_candidates_more(items, bad=None, ignore_existing=False):
         church = filter_churches(candidates)
         if church:
             candidates = [church]
+
+        if item.is_primarily_building():
+            building = filter_building(candidates)
+            if building:
+                candidates = [building]
 
         if item.is_reservoir():
             reservoir = filter_reservoir(candidates)

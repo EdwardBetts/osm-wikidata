@@ -630,6 +630,24 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_reservoir(self):
         return 'Q131681' in self.instanceof()
 
+    def is_primarily_building(self):
+        '''
+        Does this item primarily represent a building,
+        as opposed to the current use of the building?
+        '''
+
+        # FIXME: Using a list of building types is brittle. Much better to walk the
+        # subclass tree and find items that are an instance of architectural structure,
+        # building or a subclass of building.
+
+        instanceof = set(self.instanceof())
+        building_types = {
+            'Q41176',  # building
+            'Q811979',  # architectural structure
+            'Q47012103'  # mixed-use building
+        }
+        return bool(building_types & instanceof)
+
     def is_proposed(self):
         '''is this item a proposed building or structure?'''
 
