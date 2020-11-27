@@ -142,7 +142,8 @@ def tidy_name(n):
     if n.endswith("'s"):
         n = n[:-2]
 
-    n = re_plural.sub('', n)
+    if any(c.isalpha() and c != 's' for c in n):
+        n = re_plural.sub('', n)
 
     n = n.replace('ss', 's')
 
