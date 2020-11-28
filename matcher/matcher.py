@@ -550,6 +550,9 @@ def find_item_matches(cur, item, prefix, debug=False):
                 instanceof == {'Q34442'}):
             continue  # nearby road match
 
+        if osm_tags.get('amenity') == 'parking' and 'amenity=parking' not in item.tags:
+            continue  # parking garage in OSM should only match parking Wikidata item
+
         if (not matching_tags and
                 is_osm_bus_stop(osm_tags) and
                 'Q953806' not in instanceof):
