@@ -22,7 +22,7 @@
 {
     "cats": ["Libraries by country"],
     "tags": ["amenity=library"],
-    "trim": ["library"],
+    "trim": ["library", "branch"],
     "check_housename": true,
     "wikidata": "Q7075",
     "dist": 2
