@@ -513,12 +513,13 @@ https://www.wikidata.org/wiki/{self.qid}
                 if prefix_removed not in d:
                     d[prefix_removed] = sources
 
-        for p6375 in self.entity['claims'].get('P6375', []):
-            try:
-                street_address = p6375['mainsnak']['datavalue']['value']
-            except KeyError:
-                continue
-            d[street_address['text']].append(('P6375', street_address.get('language')))
+        if self.entity:
+            for p6375 in self.entity['claims'].get('P6375', []):
+                try:
+                    street_address = p6375['mainsnak']['datavalue']['value']
+                except KeyError:
+                    continue
+                d[street_address['text']].append(('P6375', street_address.get('language')))
 
         # A terrace of buildings can be illustrated with a photo of a single building.
         # We try to determine if this is the case and avoid using the filename of the
