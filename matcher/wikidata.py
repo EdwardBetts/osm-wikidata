@@ -1414,15 +1414,18 @@ SELECT DISTINCT ?code WHERE {
         return items
 
     def report_broken_wikidata_osm_tags(self):
+        start_allowed = ('Key', 'Tag', 'Role', 'Relation')
         for row in self.osm_keys:
-            if not any(row['tag']['value'].startswith(start) for start in ('Key:', 'Tag')):
-                isa_item_id = wd_uri_to_id(row['item']['value'])
-                isa_qid = 'Q{:d}'.format(isa_item_id)
-                body = f'''
+            value = row['tag']['value']
+            if any(value.startswith(f'{start}:') for start in start_allowed):
+                continue
+            isa_item_id = wd_uri_to_id(row['item']['value'])
+            isa_qid = 'Q{:d}'.format(isa_item_id)
+            body = f'''
 qid: {self.qid}\n
 IsA: https://osm.wikidata.link/reports/isa/{isa_qid}
 row: {repr(row)}\n'''
-                mail.send_mail('broken OSM tag in Wikidata', body)
+            mail.send_mail('broken OSM tag in Wikidata', body)
 
     def find_nrhp_match(self, overpass_reply):
         nrhp = self.nrhp
