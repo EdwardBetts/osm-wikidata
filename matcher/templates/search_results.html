@@ -1,45 +1,28 @@
-<p>Searching for <em>{{ q }}</em> found {{ results | count }} places. Select one to start matching.</p>
+<p>
+Searching for <em>{{ q }}</em> found {{ results | count }} places.
+Select one to start matching.
+</p>
 
-{% set detail = 0 %}
-{% set place_max_area = config.PLACE_MAX_AREA if g.user.is_authenticated else config.PLACE_MAX_AREA_ANON %}
 {% for hit in results %}
-  {% set place = hit.place %}
-  {% set wikidata = hit.place.wikidata if place else None %}
   <div class="box">
-    {% if place and place.matcher_allowed %}
-      <b>
-        <a href="{{ place.next_state_url() }}">{{ hit.display_name }}</a>
-      </b>
-      {% if wikidata and hit.area and hit.area > config.BROWSE_LINK_MIN_AREA %}
-        &ndash; <a href="{{ place.browse_url() }}">browse next level administrative subdivisions</a>
+    {% if hit.matcher_allowed() %}
+      <b><a href="{{ hit.next_state_url() }}">{{ hit.display_name }}</a></b>
+
+      {% if hit.show_browse_link() %}
+        &ndash; <a href="{{ hit.browse_url() }}">browse next level administrative subdivisions</a>
       {% endif %}
+
       <br>
     {% else %}
-       {% if wikidata and ((hit.area and hit.area >= place_max_area) or (place and place.too_complex)) %}
-         <b><a href="{{ place.browse_url() }}">{{ hit.display_name }}</a></b>
+        {% if hit.show_browse_link_instead() %}
+         <b><a href="{{ hit.browse_url() }}">{{ hit.display_name }}</a></b>
          (browse next level administrative subdivisions)
        {% else %}
-         <b>
-         {% if name %}
-           {{ name }}, {{ hit.address.state }}, {{ hit.address.country }}
-         {% else %}
-            {{ hit.display_name }}
-          {% endif %}
-         </b>
+         <b>{{ hit.display_name }}</b>
        {% endif %}
        <br>
-       {% if place and not place.allowed_cat %}
-            [matcher only works with place or boundary]<br>
-        {% elif hit.osm_type in ('way', 'relation') and hit.area %}
-            {% if hit.area >= config.PLACE_MAX_AREA %}
-              [area too large for matcher]<br>
-            {% elif hit.area < config.PLACE_MIN_AREA %}
-              [area too small for matcher]<br>
-            {% endif %}
-            {% if place and place.too_complex %}
-              [place boundary is too complex for matcher]<br>
-            {% endif %}
-        {% endif %}
+       {% set reason = hit.reason_matcher_not_allowed() %}
+       {% if reason %}[{{ reason }}]<br />{% endif %}
     {% endif %}
     category: {{ hit.category }}
     &mdash;
@@ -50,13 +33,7 @@
     {% endif %}
     <br>
     {% if hit.osm_type and hit.osm_id %}
-      OSM: <a href="https://www.openstreetmap.org/{{ hit.osm_type }}/{{ hit.osm_id }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
-    {% endif %}
-    {% if detail %}
-      importance: {{ hit.importance }}<br>
-      <pre>{{ hit.address | pprint }}</pre>
-      <pre>{{ hit.extratags | pprint }}</pre>
-      <pre>{{ hit | pprint }}</pre>
+      OSM: <a href="{{ hit.osm_url }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
     {% endif %}
   </div>
 {% endfor %}

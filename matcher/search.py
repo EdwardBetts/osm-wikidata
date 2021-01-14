@@ -1,10 +1,85 @@
 from . import database, nominatim
 from .place import Place
-from flask import session, url_for
+from flask import session, url_for, g, current_app
 import re
 
 re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
 re_qid = re.compile(r'^(Q\d+)$')
+
+class SearchError(Exception):
+    pass
+
+class Hit:
+    def __init__(self, d):
+        self.osm_type = d['osm_type']
+        self.osm_id = d['osm_id']
+        self.display_name = d['display_name']
+        self.place = d['place']
+        self.category = d['category']
+        self.address = d['address']
+        self.type = d['type']
+        self.area = d.get('area')
+
+    @property
+    def osm_url(self):
+        return f'https://www.openstreetmap.org/{self.osm_type}/{self.osm_id}'
+
+    @property
+    def wikidata(self):
+        if self.place:
+            return self.place.wikidata
+
+    def next_state_url(self):
+        return self.place.next_state_url()
+
+    def browse_url(self):
+        return self.place.browse_url()
+
+    def show_browse_link(self):
+        ''' Should we show the browse link along with the matcher link? '''
+        config = current_app.config
+        return (self.wikidata and
+                self.area and
+                self.area > config.get('BROWSE_LINK_MIN_AREA', 0))
+
+    def matcher_allowed(self):
+        return self.place and self.place.matcher_allowed
+
+    def show_browse_link_instead(self):
+        ''' Should we show the browse link instead of the matcher link? '''
+        config = current_app.config
+
+        place_max_area = (config['PLACE_MAX_AREA']
+                          if g.user.is_authenticated
+                          else config['PLACE_MAX_AREA_ANON'])
+
+        return (self.wikidata and
+                ((self.area and self.area >= place_max_area) or
+                    (self.place and self.place.too_complex)))
+
+    @property
+    def disallowed_cat(self):
+        return self.place and not self.place.allowed_cat
+
+    def reason_matcher_not_allowed(self):
+        config = current_app.config
+
+        if self.place and not self.place.allowed_cat:
+            return 'matcher only works with place or boundary'
+
+        if self.osm_type not in ('way', 'relation') or not self.area:
+            return
+
+        if self.area >= config.PLACE_MAX_AREA:
+            return 'area too large for matcher'
+        elif self.area < config.PLACE_MIN_AREA:
+            return 'area too small for matcher'
+
+        if self.place and self.place.too_complex:
+            return 'place boundary is too complex for matcher'
+
+def convert_hits_to_objects(results):
+    return [Hit(hit) for hit in results]
 
 def update_search_results(results):
     need_commit = False
@@ -88,4 +163,18 @@ def check_for_city_node_in_results(q, results):
         if len(city_results) == 1:
             results[hit_num] = city_results[0]
 
+def run(q):
+    try:
+        results = nominatim.lookup(q)
+        city_of = 'City of '
+        if q.startswith(city_of) and not results:
+            q_trim = q[len(city_of):]
+            results = nominatim.lookup(q_trim)
+            if results:
+                return results
 
+        check_for_city_node_in_results(q, results)
+    except nominatim.SearchError:
+        raise SearchError
+
+    return results

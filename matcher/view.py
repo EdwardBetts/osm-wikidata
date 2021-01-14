@@ -903,16 +903,8 @@ def search_results():
         return redirect(url)
 
     try:
-        results = nominatim.lookup(q)
-        city_of = 'City of '
-        if q.startswith(city_of) and not results:
-            q_trim = q[len(city_of):]
-            results = nominatim.lookup(q_trim)
-            if results:
-                q = q_trim
-
-        search.check_for_city_node_in_results(q, results)
-    except nominatim.SearchError:
+        results = search.run(q)
+    except search.SearchError:
         message = 'nominatim API search error'
         return render_template('error_page.html', message=message)
 
@@ -924,6 +916,8 @@ def search_results():
 
     for hit in results:
         add_hit_place_detail(hit)
+
+    results = search.convert_hits_to_objects(results)
 
     return render_template('results_page.html', results=results, q=q)
 
