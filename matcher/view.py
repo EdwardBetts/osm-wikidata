@@ -1,5 +1,6 @@
 from . import (database, nominatim, wikidata, wikidata_api, matcher, commons, export,
-               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth)
+               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
+               search)
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, InProgress, IsA,
@@ -36,9 +37,6 @@ import re
 import random
 
 _paragraph_re = re.compile(r'(?:\r\n|\r|\n){2,}')
-
-re_qid = re.compile(r'^(Q\d+)$')
-re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
 
 app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
@@ -324,9 +322,6 @@ def add_wikidata_tag():
     flash('wikidata tag saved in OpenStreetMap')
 
     return redirect(url_for('item_page', wikidata_id=wikidata_id[1:]))
-
-def redirect_to_matcher(place):
-    return redirect(place.matcher_progress_url())
 
 @app.route('/wikidata/<osm_type>/<int:osm_id>')
 def wikidata_page(osm_type, osm_id):
@@ -652,7 +647,7 @@ def redirect_to_candidates(osm_type, osm_id):
     if place.state in ('ready', 'complete'):
         return redirect(place.candidates_url())
     else:
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
 @app.route('/relation/<int:osm_id>')
 def redirect_from_relation(osm_id):
@@ -668,7 +663,7 @@ def candidates(osm_type, osm_id):
     g.country_code = place.country_code
 
     if place.state not in ('ready', 'complete'):
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
     demo_mode_active = demo_mode()
 
@@ -782,7 +777,7 @@ def get_place(osm_type, osm_id):
         database.session.commit()
 
     if place.state not in ('ready', 'complete'):
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
     return place
 
@@ -844,7 +839,7 @@ out bb tags;
 def refresh_place(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     if place.state not in ('ready', 'complete'):
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
     if request.method != 'POST':  # confirm
         return render_template('refresh.html', place=place)
@@ -852,7 +847,7 @@ def refresh_place(osm_type, osm_id):
     place.state = 'refresh'
     database.session.commit()
 
-    return redirect_to_matcher(place)
+    return place.redirect_to_matcher()
 
 def get_existing(sort, name_filter):
     q = Place.query.filter(Place.state.isnot(None), Place.osm_type != 'node')
@@ -878,40 +873,6 @@ def sort_link(order):
     args['sort'] = order
     return url_for(request.endpoint, **args)
 
-def update_search_results(results):
-    need_commit = False
-    for hit in results:
-        if not ('osm_type' in hit and 'osm_id' in hit and 'geotext' in hit):
-            continue
-
-        p = Place.query.get(hit['place_id'])
-        if p and (p.osm_type != hit['osm_type'] or p.osm_id != hit['osm_id']):
-            need_commit = True
-            db_place_hit = nominatim.reverse(p.osm_type, p.osm_id)
-            if 'error' in db_place_hit or 'place_id' not in db_place_hit:
-                # place deleted from OSM
-                if p.osm_type == 'node':
-                    database.session.delete(p)
-                # FIXME: mail admin if place isn't a node on OSM
-            else:
-                p.place_id = db_place_hit['place_id']
-
-        p = Place.query.filter_by(osm_type=hit['osm_type'],
-                                  osm_id=hit['osm_id']).one_or_none()
-        if p and p.place_id != hit['place_id']:
-            p.update_from_nominatim(hit)
-            need_commit = True
-        elif not p:
-            p = Place.query.get(hit['place_id'])
-            if p:
-                p.update_from_nominatim(hit)
-            else:
-                p = Place.from_nominatim(hit)
-                database.session.add(p)
-            need_commit = True
-    if need_commit:
-        database.session.commit()
-
 def add_hit_place_detail(hit):
     if not ('osm_type' in hit and 'osm_id' in hit):
         return
@@ -929,51 +890,6 @@ def random_city():
     q = city + ', ' + country
     return redirect(url_for('search_results', q=q))
 
-def check_for_place_identifier(q):
-    q = q.strip()
-    m = re_place_identifier.match(q)
-    if not m:
-        return
-    osm_type, osm_id = m.groups()
-    p = Place.from_osm(osm_type, int(osm_id))
-    if not p:
-        return
-
-    return p.candidates_url() if p.state == 'ready' else p.matcher_progress_url()
-
-def check_for_search_identifier(q):
-    q = q.strip()
-    # if searching for a Wikidata QID then redirect to the item page for that QID
-    m = re_qid.match(q)
-    if m:
-        return url_for('item_page', wikidata_id=m.group(1)[1:])
-
-    return check_for_place_identifier(q)
-
-def handle_redirect_on_single(results):
-    session['redirect_on_single'] = False
-    hits = [hit for hit in results if hit['osm_type'] != 'node']
-    if len(hits) != 1:
-        return
-
-    hit = hits[0]
-    place = Place.get_or_abort(hit['osm_type'], hit['osm_id'])
-    if place:
-        return redirect_to_matcher(place)
-
-def check_for_city_node_in_results(q, results):
-    for hit_num, hit in enumerate(results):
-        if hit['osm_type'] != 'node':
-            continue
-        name_parts = hit['display_name'].split(', ')
-        node, area = name_parts[:2]
-        if area not in (f'{node} City', f'City of {node}'):
-            continue
-        city_q = ', '.join(name_parts[1:])
-        city_results = nominatim.lookup(city_q)
-        if len(city_results) == 1:
-            results[hit_num] = city_results[0]
-
 @app.route("/search")
 def search_results():
     ''' Search for OSM places using the nominatim API and show the results. '''
@@ -982,11 +898,9 @@ def search_results():
         return render_template('results_page.html', results=[], q=q)
 
     q = q.strip()
-    url = check_for_search_identifier(q)
+    url = search.check_for_search_identifier(q)
     if url:
         return redirect(url)
-
-    redirect_on_single = session.get('redirect_on_single', False)
 
     try:
         results = nominatim.lookup(q)
@@ -997,17 +911,16 @@ def search_results():
             if results:
                 q = q_trim
 
-        check_for_city_node_in_results(q, results)
+        search.check_for_city_node_in_results(q, results)
     except nominatim.SearchError:
         message = 'nominatim API search error'
         return render_template('error_page.html', message=message)
 
-    update_search_results(results)
+    search.update_search_results(results)
 
-    if redirect_on_single:
-        redirect = handle_redirect_on_single(results)
-        if redirect:
-            return redirect
+    dest = search.handle_redirect_on_single(results)
+    if dest:
+        return dest
 
     for hit in results:
         add_hit_place_detail(hit)
@@ -1148,13 +1061,13 @@ def matcher_wikidata(item_id):
             q = get_search_string(qid)
             session['redirect_on_single'] = True
             return redirect(url_for('search_results', q=q))
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
     q = get_search_string(qid)
     place = browse.place_from_qid(qid, q=q)
     # search using wikidata query and nominatim
     if place and place.osm_type != 'node':
-        return redirect_to_matcher(place)
+        return place.redirect_to_matcher()
 
     # give up and redirect to search page
     session['redirect_on_single'] = True

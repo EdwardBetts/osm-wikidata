@@ -1,4 +1,4 @@
-from flask import current_app, url_for, g, abort
+from flask import current_app, url_for, g, abort, redirect
 from .model import Base, Item, ItemCandidate, PlaceItem, ItemTag, Changeset, IsA, osm_type_enum, get_bad
 from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
 from sqlalchemy import func, select, cast
@@ -734,6 +734,9 @@ class Place(Base):
 
     def matcher_done_url(self, start):
         return self.place_url('matcher.matcher_done', start=start)
+
+    def redirect_to_matcher(self):
+        return redirect(self.matcher_progress_url())
 
     def item_list(self):
         lang = self.most_common_language() or 'en'
