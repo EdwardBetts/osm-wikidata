@@ -15,10 +15,14 @@ class Hit:
         self.osm_id = d['osm_id']
         self.display_name = d['display_name']
         self.place = d['place']
-        self.category = d['category']
-        self.address = d['address']
-        self.type = d['type']
+        self.category = d['category'].replace('_', ' ')
+        self.type = d['type'].replace('_', ' ')
         self.area = d.get('area')
+        self.matcher_allowed = self.place and self.place.matcher_allowed
+
+    @property
+    def name(self):
+        return self.display_name
 
     @property
     def osm_url(self):
@@ -29,21 +33,28 @@ class Hit:
         if self.place:
             return self.place.wikidata
 
+    @property
+    def ready(self):
+        return self.place and self.place.state == 'ready'
+
+    @property
+    def url(self):
+        return self.place.candidates_url()
+
     def next_state_url(self):
         return self.place.next_state_url()
 
     def browse_url(self):
         return self.place.browse_url()
 
+    def next_level_name(self):
+        terms = self.display_name.split(', ')
+        return ', '.join(terms[1:])
+
     def show_browse_link(self):
         ''' Should we show the browse link along with the matcher link? '''
-        config = current_app.config
-        return (self.wikidata and
-                self.area and
-                self.area > config.get('BROWSE_LINK_MIN_AREA', 0))
-
-    def matcher_allowed(self):
-        return self.place and self.place.matcher_allowed
+        min_area = current_app.config.get('BROWSE_LINK_MIN_AREA', 0)
+        return self.wikidata and self.area and self.area > min_area
 
     def show_browse_link_instead(self):
         ''' Should we show the browse link instead of the matcher link? '''
@@ -62,7 +73,12 @@ class Hit:
         return self.place and not self.place.allowed_cat
 
     def reason_matcher_not_allowed(self):
+        if self.osm_type == 'node':
+            return 'matcher only works with relations and ways, not with nodes'
         config = current_app.config
+
+        if self.matcher_allowed:
+            return
 
         if self.place and not self.place.allowed_cat:
             return 'matcher only works with place or boundary'
@@ -70,9 +86,9 @@ class Hit:
         if self.osm_type not in ('way', 'relation') or not self.area:
             return
 
-        if self.area >= config.PLACE_MAX_AREA:
+        if self.area >= config['PLACE_MAX_AREA']:
             return 'area too large for matcher'
-        elif self.area < config.PLACE_MIN_AREA:
+        elif self.area < config['PLACE_MIN_AREA']:
             return 'area too small for matcher'
 
         if self.place and self.place.too_complex:

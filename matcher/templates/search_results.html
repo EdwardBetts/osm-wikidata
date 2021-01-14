@@ -4,37 +4,46 @@ Select one to start matching.
 </p>
 
 {% for hit in results %}
-  <div class="box">
-    {% if hit.matcher_allowed() %}
-      <b><a href="{{ hit.next_state_url() }}">{{ hit.display_name }}</a></b>
 
-      {% if hit.show_browse_link() %}
-        &ndash; <a href="{{ hit.browse_url() }}">browse next level administrative subdivisions</a>
+  <div class="card my-2">
+    <div class="card-body">
+      <h5 class="card-title">
+        {% if hit.ready %}
+          <a href="{{ hit.url }}">{{ hit.name }}</a>
+        {% else %}
+          {{ hit.name }}
+        {% endif %}
+      </h5>
+      <p class="card-text">
+      {{ hit.osm_type }}
+      {% if hit.osm_type in ('way', 'relation') and hit.area %}
+        &mdash;
+
+        area: {{ '{:,.1f}'.format(hit.area) }} km&sup2;
       {% endif %}
+        &mdash;
+        category: {{ hit.category }}
+        &mdash;
+        type: {{ hit.type }}
+        &mdash;
+        <a href="{{ hit.osm_url }}" target="_blank">view on OpenStreetMap <i class="fa fa-external-link" aria-hidden="true"></i></a>
 
-      <br>
-    {% else %}
-        {% if hit.show_browse_link_instead() %}
-         <b><a href="{{ hit.browse_url() }}">{{ hit.display_name }}</a></b>
-         (browse next level administrative subdivisions)
-       {% else %}
-         <b>{{ hit.display_name }}</b>
-       {% endif %}
-       <br>
-       {% set reason = hit.reason_matcher_not_allowed() %}
-       {% if reason %}[{{ reason }}]<br />{% endif %}
-    {% endif %}
-    category: {{ hit.category }}
-    &mdash;
-    type: {{ hit.type }}
-    {% if hit.osm_type in ('way', 'relation') and hit.area %}
-      &mdash;
-      area: {{ '{:,.1f}'.format(hit.area) }} km&sup2;
-    {% endif %}
-    <br>
-    {% if hit.osm_type and hit.osm_id %}
-      OSM: <a href="{{ hit.osm_url }}">{{ hit.osm_type}} {{ hit.osm_id }}</a><br>
-    {% endif %}
+      {% set reason = hit.reason_matcher_not_allowed() %}
+      {% if reason %}
+        <p>[{{ reason }}]</p>
+        <p>Try searching for <a href="{{ url_for(request.endpoint, q=hit.next_level_name()) }}">{{ hit.next_level_name() }}</a> instead</p>
+        </p>
+      {% endif %}
+      </p>
+      <div>
+      {% if not hit.ready and hit.matcher_allowed %}
+        <a href="{{ hit.next_state_url() }}" class="btn btn-primary">run matcher</a>
+      {% endif %}
+      {% if hit.show_browse_link() %}
+        <a href="{{ hit.browse_url() }}" class="btn btn-primary">browse subdivisions</a>
+      {% endif %}
+      </div>
+    </div>
   </div>
 {% endfor %}
 
