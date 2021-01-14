@@ -961,6 +961,19 @@ def handle_redirect_on_single(results):
     if place:
         return redirect_to_matcher(place)
 
+def check_for_city_node_in_results(q, results):
+    for hit_num, hit in enumerate(results):
+        if hit['osm_type'] != 'node':
+            continue
+        name_parts = hit['display_name'].split(', ')
+        node, area = name_parts[:2]
+        if area not in (f'{node} City', f'City of {node}'):
+            continue
+        city_q = ', '.join(name_parts[1:])
+        city_results = nominatim.lookup(city_q)
+        if len(city_results) == 1:
+            results[hit_num] = city_results[0]
+
 @app.route("/search")
 def search_results():
     ''' Search for OSM places using the nominatim API and show the results. '''
@@ -984,6 +997,7 @@ def search_results():
             if results:
                 q = q_trim
 
+        check_for_city_node_in_results(q, results)
     except nominatim.SearchError:
         message = 'nominatim API search error'
         return render_template('error_page.html', message=message)
