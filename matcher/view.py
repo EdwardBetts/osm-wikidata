@@ -930,6 +930,7 @@ def random_city():
     return redirect(url_for('search_results', q=q))
 
 def check_for_place_identifier(q):
+    q = q.strip()
     m = re_place_identifier.match(q)
     if not m:
         return
@@ -940,18 +941,35 @@ def check_for_place_identifier(q):
 
     return p.candidates_url() if p.state == 'ready' else p.matcher_progress_url()
 
+def check_for_search_identifier(q):
+    q = q.strip()
+    # if searching for a Wikidata QID then redirect to the item page for that QID
+    m = re_qid.match(q)
+    if m:
+        return url_for('item_page', wikidata_id=m.group(1)[1:])
+
+    return check_for_place_identifier(q)
+
+def handle_redirect_on_single(results):
+    session['redirect_on_single'] = False
+    hits = [hit for hit in results if hit['osm_type'] != 'node']
+    if len(hits) != 1:
+        return
+
+    hit = hits[0]
+    place = Place.get_or_abort(hit['osm_type'], hit['osm_id'])
+    if place:
+        return redirect_to_matcher(place)
+
 @app.route("/search")
 def search_results():
+    ''' Search for OSM places using the nominatim API and show the results. '''
     q = request.args.get('q') or ''
     if not q:
         return render_template('results_page.html', results=[], q=q)
 
     q = q.strip()
-    m = re_qid.match(q)
-    if m:
-        return redirect(url_for('item_page', wikidata_id=m.group(1)[1:]))
-
-    url = check_for_place_identifier(q)
+    url = check_for_search_identifier(q)
     if url:
         return redirect(url)
 
@@ -965,6 +983,7 @@ def search_results():
             results = nominatim.lookup(q_trim)
             if results:
                 q = q_trim
+
     except nominatim.SearchError:
         message = 'nominatim API search error'
         return render_template('error_page.html', message=message)
@@ -972,13 +991,9 @@ def search_results():
     update_search_results(results)
 
     if redirect_on_single:
-        session['redirect_on_single'] = False
-        hits = [hit for hit in results if hit['osm_type'] != 'node']
-        if len(hits) == 1:
-            hit = hits[0]
-            place = Place.get_or_abort(hit['osm_type'], hit['osm_id'])
-            if place:
-                return redirect_to_matcher(place)
+        redirect = handle_redirect_on_single(results)
+        if redirect:
+            return redirect
 
     for hit in results:
         add_hit_place_detail(hit)
