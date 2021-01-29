@@ -513,7 +513,7 @@ https://www.wikidata.org/wiki/{self.qid}
                 if prefix_removed not in d:
                     d[prefix_removed] = sources
 
-        if self.entity:
+        if self.entity and 'claims' in self.entity:
             for p6375 in self.entity['claims'].get('P6375', []):
                 try:
                     street_address = p6375['mainsnak']['datavalue']['value']
