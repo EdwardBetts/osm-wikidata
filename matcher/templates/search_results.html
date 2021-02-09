@@ -15,18 +15,18 @@ Select one to start matching.
         {% endif %}
       </h5>
       <p class="card-text">
-      {{ hit.osm_type }}
-      {% if hit.osm_type in ('way', 'relation') and hit.area %}
-        &mdash;
+      <ul class="list-inline">
+        <li class="list-inline-item"><big>{{ hit.osm_type }}</big></li>
 
-        area: {{ '{:,.1f}'.format(hit.area) }} km&sup2;
+      {% if hit.osm_type in ('way', 'relation') and hit.area %}
+        <li class="list-inline-item">area: <big>{{ '{:,.1f}'.format(hit.area) }} km&sup2;</big></li>
       {% endif %}
-        &mdash;
-        category: {{ hit.category }}
-        &mdash;
-        type: {{ hit.type }}
-        &mdash;
+      <li class="list-inline-item">category: <big>{{ hit.category }}</big></li>
+      <li class="list-inline-item">type: <big>{{ hit.type }}</big></li>
+      <li class="list-inline-item">
         <a href="{{ hit.osm_url }}" target="_blank">view on OpenStreetMap <i class="fa fa-external-link" aria-hidden="true"></i></a>
+      </li>
+      </ul>
 
       {% set reason = hit.reason_matcher_not_allowed() %}
       {% if reason %}
