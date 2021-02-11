@@ -207,6 +207,8 @@ def oql_from_tag(tag, filters='area.a'):
 def oql_from_wikidata_tag_or_key(tag_or_key, filters):
     osm_type, _, tag = tag_or_key.partition(':')
     osm_type = osm_type.lower()
+    if osm_type == 'role' or osm_type not in {'key', 'tag'}:
+        return []
     if not {'key': False, 'tag': True}[osm_type] == ('=' in tag):
         return []
 
