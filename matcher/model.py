@@ -1429,3 +1429,17 @@ class InProgress(Base):
 
     user = relationship('User')
     place = relationship('Place')
+
+class PageBanner(Base):
+    __tablename__ = 'page_banner'
+
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
+    filename = Column(String, nullable=False)
+    url = Column(String)
+
+    qid = column_property('Q' + cast(item_id, String))
+
+    @classmethod
+    def get_by_qid(cls, qid):
+        if qid and len(qid) > 1 and qid[0].upper() == 'Q' and qid[1:].isdigit():
+            return cls.query.get(qid[1:])

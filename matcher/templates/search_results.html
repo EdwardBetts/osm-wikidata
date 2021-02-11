@@ -4,8 +4,13 @@ Select one to start matching.
 </p>
 
 {% for hit in results %}
+  {% set banner = hit.banner() %}
 
   <div class="card my-2">
+  {% if banner %}
+    <a href="{{ hit.banner_link() }}"><img src="{{ banner }}" class="card-img-top" /></a>
+  {% endif %}
+
     <div class="card-body">
       <h5 class="card-title">
         {% if hit.ready %}
@@ -31,7 +36,9 @@ Select one to start matching.
       {% set reason = hit.reason_matcher_not_allowed() %}
       {% if reason %}
         <p>[{{ reason }}]</p>
-        <p>Try searching for <a href="{{ url_for(request.endpoint, q=hit.next_level_name()) }}">{{ hit.next_level_name() }}</a> instead</p>
+        {% if 'too large' not in reason %}
+          <p>Try searching for <a href="{{ hit.next_level_name_search() }}">{{ hit.next_level_name() }}</a> instead</p>
+        {% endif %}
         </p>
       {% endif %}
       </p>

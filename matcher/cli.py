@@ -3,7 +3,7 @@ from .view import app, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
                     EditMatchReject, BadMatchFilter, SiteBanner, InProgress,
-                    ItemIsA, IsA, PlaceItem)
+                    ItemIsA, IsA, PlaceItem, PageBanner)
 from .place import Place
 from .isa_facets import get_isa_facets
 from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
@@ -1296,5 +1296,23 @@ def import_place(filename):
             geojson = json.dumps(candidate_data['geom'])
             candidate.geom = func.ST_GeomFromGeoJSON(geojson)
             database.session.add(candidate)
+
+    database.session.commit()
+
+@app.cli.command()
+@click.argument('filename')
+def load_page_banners(filename):
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    seen = set()
+    for d in json.load(open(filename)):
+        qid = d['qid']
+        if qid in seen:
+            continue
+        seen.add(qid)
+        d['item_id'] = int(d.pop('qid')[1:])
+        banner = PageBanner(**d)
+        database.session.add(banner)
 
     database.session.commit()

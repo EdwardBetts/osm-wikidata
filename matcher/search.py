@@ -1,6 +1,7 @@
 from . import database, nominatim
+from .model import PageBanner
 from .place import Place
-from flask import session, url_for, g, current_app
+from flask import session, url_for, g, current_app, request
 import re
 
 re_place_identifier = re.compile(r'^(node|way|relation)/(\d+)$')
@@ -32,6 +33,27 @@ class Hit:
     def wikidata(self):
         if self.place:
             return self.place.wikidata
+
+    def banner(self):
+        if not self.place or not self.place.wikidata:
+            return
+        b = PageBanner.get_by_qid(self.place.wikidata)
+        print('banner:', self.place.wikidata, b)
+        if b:
+            return b.url
+
+    def next_level_name_search(self):
+        return url_for(request.endpoint, q=self.next_level_name())
+
+    def banner_link(self):
+        if self.ready:
+            return self.url
+        if self.show_browse_link():
+            return self.browse_url()
+        if self.matcher_allowed:
+            return self.next_state_url()
+
+        return self.next_level_name_search()
 
     @property
     def ready(self):
