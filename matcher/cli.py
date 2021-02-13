@@ -7,7 +7,7 @@ from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
 from .place import Place
 from .isa_facets import get_isa_facets
 from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
-               wikidata_api, browse)
+               wikidata_api, browse, jobs)
 from datetime import datetime, timedelta
 from tabulate import tabulate
 from sqlalchemy import inspect, func
@@ -1316,3 +1316,20 @@ def load_page_banners(filename):
         database.session.add(banner)
 
     database.session.commit()
+
+@app.cli.command()
+def list_active_jobs():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    job_list = jobs.get_jobs()
+    for job in job_list:
+        url = f'https://www.openstreetmap.org/{job.pop("osm_type")}/{job.pop("osm_id")}'
+        place = job.pop('place')
+        start_display = job.pop('start').strftime('%a, %d %b %Y %H:%M:%S')
+        if place:
+            print(place.name_for_changeset)
+        print(url)
+        print('start:', start_display)
+        print(job)
+        print()
