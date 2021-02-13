@@ -4,16 +4,17 @@ from . import mail, database, model, utils
 
 import humanize
 
+
 def check_free_space(config=None):
-    ''' Check how much disk space is free.
-        E-mail admin if free space is low. '''
+    """Check how much disk space is free.
+    E-mail admin if free space is low."""
 
     if config is None:
         if not has_app_context():
             return
         config = current_app.config
 
-    min_free_space = config.get('MIN_FREE_SPACE')
+    min_free_space = config.get("MIN_FREE_SPACE")
 
     if not min_free_space:  # not configured
         return
@@ -29,17 +30,17 @@ def check_free_space(config=None):
         return  # already sent an alert within the last hour
 
     readable = humanize.naturalsize(free_space)
-    subject = f'Low disk space: {readable} OSM/Wikidata matcher'
+    subject = f"Low disk space: {readable} OSM/Wikidata matcher"
 
-    print(f'low space warning: {readable}')
+    print(f"low space warning: {readable}")
 
-    body = f'''
+    body = f"""
 Warning
 
 The OSM/Wikidata matcher server is low on space.
 
 There is currently {readable} available.
-'''
+"""
 
     mail.send_mail(subject, body, config=config)
 
