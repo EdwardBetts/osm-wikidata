@@ -38,7 +38,6 @@ class Hit:
         if not self.place or not self.place.wikidata:
             return
         b = PageBanner.get_by_qid(self.place.wikidata)
-        print('banner:', self.place.wikidata, b)
         if b:
             return b.url
 
