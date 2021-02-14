@@ -18,7 +18,7 @@ def run_query(titles, params, language_code="en"):
     p = base.copy()
     p.update(params)
 
-    url = "https://{language_code}.wikipedia.org/w/api.php"
+    url = f"https://{language_code}.wikipedia.org/w/api.php"
     r = requests.get(url, params=p, headers=user_agent_headers())
     expect = "application/json; charset=utf-8"
     success = True

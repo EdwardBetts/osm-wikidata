@@ -41,15 +41,15 @@ class JobManager:
     def end_job(self, osm_type, osm_id):
         del self.active_jobs[(osm_type, osm_id)]
 
-    def get_job(self, place_tuple):
-        return self.active_jobs.get(place_tuple)
+    def get_job(self, osm_type, osm_id):
+        return self.active_jobs.get((osm_type, osm_id))
 
     def get_next_job(self):
         return self.task_queue.get()
 
-    def new_job(self, place_tuple, **kwargs):
-        job = MatcherJob(*place_tuple, job_manager=self, **kwargs)
-        self.active_jobs[place_tuple] = job
+    def new_job(self, osm_type, osm_id, **kwargs):
+        job = MatcherJob(osm_type, osm_id, job_manager=self, **kwargs)
+        self.active_jobs[(osm_type, osm_id)] = job
         return job
 
     def iter_jobs(self):

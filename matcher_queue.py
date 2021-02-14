@@ -150,14 +150,16 @@ class RequestHandler(socketserver.BaseRequestHandler):
             return
         if msg.startswith("match"):
             json_msg = json.loads(msg[6:])
-            self.job_thread = job_manager.get_job(msg["osm_type"], msg["osm_id"])
+            self.job_thread = job_manager.get_job(
+                json_msg["osm_type"], json_msg["osm_id"]
+            )
             return self.match_place(json_msg)
         if msg == "jobs":
             self.send_msg({"type": "jobs", "items": job_manager.job_list()})
             return
         if msg.startswith("stop"):
             json_msg = json.loads(msg[5:])
-            job_manager.stop_job(msg["osm_type"], msg["osm_id"])
+            job_manager.stop_job(json_msg["osm_type"], json_msg["osm_id"])
             self.send_msg({"type": "stop", "success": True})
             return
 
