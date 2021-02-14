@@ -5,6 +5,7 @@ import os.path
 import queue
 import re
 import traceback
+import json
 
 from matcher import wikipedia, database, wikidata_api, mail, model
 from matcher.place import Place, PlaceMatcher, bbox_chunk
@@ -42,9 +43,10 @@ def build_item_list(items):
 
 
 class JobManager:
-    def __init__(self):
+    def __init__(self, log_location=False):
         self.active_jobs = {}
         self.task_queue = queue.PriorityQueue()
+        self.log_location = log_location
 
     def end_job(self, osm_type, osm_id):
         del self.active_jobs[(osm_type, osm_id)]
@@ -110,14 +112,29 @@ class MatcherJob(threading.Thread):
         self.user_agent = user_agent
         self.want_isa = set(want_isa) if want_isa else set()
         self._stop_event = threading.Event()
-        # dependency injection
-        self.job_manager = job_manager
+        self.job_manager = job_manager  # dependency injection
+        self.open_log()
 
     def end_job(self):
+        if self.log_file:
+            self.log_file.close()
         self.job_manager.end_job(self.osm_type, self.osm_id)
 
     def stop(self):
         self._stop_event.set()
+
+    def get_log_filename(self):
+        now = datetime.utcfromtimestamp(self.t0).strftime('%Y-%m-%d_%H:%M:%S')
+        return f'{self.osm_type}_{self.osm_id}_{now}.log'
+
+    def open_log(self):
+        log_location = self.job_manager.log_location
+
+        if not log_location:
+            return  # not logging
+
+        self.log_filename = self.get_log_filename()
+        self.log_file = open(os.path.join(log_location, self.log_filename), 'w')
 
     @property
     def stopping(self):
@@ -263,6 +280,10 @@ class MatcherJob(threading.Thread):
         data["type"] = msg_type
         for status_queue in self.subscribers.values():
             status_queue.put(data)
+
+        if not self.log_file:
+            return
+        print(json.dumps(data), file=self.log_file)
 
     def status(self, msg):
         if msg:
