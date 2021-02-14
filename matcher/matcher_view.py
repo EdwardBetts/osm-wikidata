@@ -14,31 +14,22 @@ def announce_matcher_progress(place):
         return
     if g.user.is_authenticated:
         user = g.user.username
-        subject = "matcher: {} (user: {})".format(place.name, user)
+        subject = f"matcher: {place.name} (user: {user})"
     elif utils.is_bot():
         return  # don't announce bots
     else:
         user = "not authenticated"
-        subject = "matcher: {} (no auth)".format(place.name)
+        subject = f"matcher: {place.name} (no auth)"
 
     user_agent = request.headers.get("User-Agent", "[header missing]")
-    template = """
-user: {}
-IP: {}
-agent: {}
-name: {}
-page: {}
-area: {}
+    body = f"""
+user: {user}
+IP: {request.remote_addr}
+agent: {user_agent}
+name: {place.display_name}
+page: {place.candidates_url(_external=True)}
+area: {mail.get_area(place)}
 """
-
-    body = template.format(
-        user,
-        request.remote_addr,
-        user_agent,
-        place.display_name,
-        place.candidates_url(_external=True),
-        mail.get_area(place),
-    )
     mail.send_mail(subject, body)
 
 
