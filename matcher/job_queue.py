@@ -4,6 +4,7 @@ import subprocess
 import os.path
 import queue
 import re
+import traceback
 
 from matcher import wikipedia, database, wikidata_api, mail, model
 from matcher.place import Place, PlaceMatcher, bbox_chunk
@@ -246,6 +247,7 @@ class MatcherJob(threading.Thread):
 
                 info = "matcher queue"
                 mail.send_traceback(info, prefix="matcher queue")
+                traceback.print_exc()
 
         print("end thread:", self.name)
 
