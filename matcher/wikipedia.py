@@ -5,93 +5,103 @@ from . import user_agent_headers, mail
 
 page_size = 50
 extracts_page_size = 20
-query_url = 'https://{}.wikipedia.org/w/api.php'
 
 
-def run_query(titles, params, language_code='en'):
+def run_query(titles, params, language_code="en"):
     base = {
-        'format': 'json',
-        'formatversion': 2,
-        'action': 'query',
-        'continue': '',
-        'titles': '|'.join(titles),
+        "format": "json",
+        "formatversion": 2,
+        "action": "query",
+        "continue": "",
+        "titles": "|".join(titles),
     }
     p = base.copy()
     p.update(params)
 
-    url = query_url.format(language_code)
+    url = "https://{language_code}.wikipedia.org/w/api.php"
     r = requests.get(url, params=p, headers=user_agent_headers())
-    expect = 'application/json; charset=utf-8'
+    expect = "application/json; charset=utf-8"
     success = True
     if r.status_code != 200:
-        print('status code: {r.status_code}'.format(r=r))
+        print(f"status code: {r.status_code}")
         success = False
-    if r.headers['content-type'] != expect:
-        print('content-type: {r.headers[content-type]}'.format(r=r))
+    if r.headers["content-type"] != expect:
+        print(f"content-type: {r.headers['content-type']}")
         success = False
     if not success:
-        mail.error_mail('wikipedia error', p, r)
+        mail.error_mail("wikipedia error", p, r)
     assert success
     json_reply = r.json()
-    return json_reply['query']['pages']
+    return json_reply["query"]["pages"]
 
-def get_cats(titles, language_code='en'):
-    params = {'prop': 'categories', 'cllimit': 'max', 'clshow': '!hidden'}
-    return run_query(titles, params, language_code)
 
-def get_coords(titles, language_code='en'):
-    return run_query(titles, {'prop': 'coordinates'}, language_code)
+def get_cats(titles, language_code="en"):
+    params = {"prop": "categories", "cllimit": "max", "clshow": "!hidden"}
+    # filter out redirects from query result
+    return [
+        {
+            "title": page["title"],
+            "cats": [
+                drop_start(cat["title"], "Category:") for cat in page["categories"]
+            ],
+        }
+        for page in run_query(titles, params, language_code)
+        if "categories" not in page
+    ]
+
+
+def get_coords(titles, language_code="en"):
+    return run_query(titles, {"prop": "coordinates"}, language_code)
+
 
 def page_category_iter(titles):
     for cur in chunk(titles, page_size):
         for page in get_cats(cur):
-            if 'categories' not in page:  # redirects
-                continue
-            cats = [drop_start(cat['title'], 'Category:')
-                    for cat in page['categories']]
-            yield (page['title'], cats)
+            yield (page["title"], page["cats"])
+
 
 def add_enwiki_categories(items):
-    enwiki_to_item = {v['enwiki']: v for v in items.values() if 'enwiki' in v}
+    enwiki_to_item = {v["enwiki"]: v for v in items.values() if "enwiki" in v}
 
     page_cats = page_category_iter(enwiki_to_item.keys())
     for title, cats in page_cats:
-        enwiki_to_item[title]['categories'] = cats
+        enwiki_to_item[title]["categories"] = cats
+
 
 def get_items_with_cats(items):
     assert isinstance(items, dict)
     for cur in chunk(items.keys(), page_size):
         for page in get_cats(cur):
-            if 'categories' not in page:  # redirects
-                continue
-            cats = [drop_start(cat['title'], 'Category:')
-                    for cat in page['categories']]
-            items[page['title']]['cats'] = cats
+            items[page["title"]]["cats"] = page["cats"]
+
 
 def html_names(article):
-    if not article or article.strip() == '':
+    if not article or article.strip() == "":
         return []
     root = lxml.html.fromstring(article)
     # avoid picking pronunciation guide bold text
     # <small title="English pronunciation respelling"><i><b>MAWD</b>-lin</i></small>
-    names = [b.text_content()
-             for b in root.xpath('.//b[not(ancestor::small)][not(ancestor::ul)]')]
+    names = [
+        b.text_content()
+        for b in root.xpath(".//b[not(ancestor::small)][not(ancestor::ul)]")
+    ]
     return [n.strip() for n in names if len(n) > 1]
 
-def extracts_query(titles, language_code='en'):
+
+def extracts_query(titles, language_code="en"):
     params = {
-        'prop': 'extracts',
-        'exlimit': extracts_page_size,
-        'exintro': '1',
+        "prop": "extracts",
+        "exlimit": extracts_page_size,
+        "exintro": "1",
     }
     return run_query(titles, params, language_code)
 
-def get_extracts(titles, code='en'):
+
+def get_extracts(titles, code="en"):
     for cur in chunk(titles, extracts_page_size):
         for page in extracts_query(cur, language_code=code):
-            if 'extract' not in page:
+            if "extract" not in page:
                 continue
-            extract = page['extract'].strip()
+            extract = page["extract"].strip()
             if extract:
-                yield (page['title'], page['extract'])
-
+                yield (page["title"], page["extract"])
