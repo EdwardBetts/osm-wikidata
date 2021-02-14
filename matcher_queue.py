@@ -114,12 +114,8 @@ class RequestHandler(socketserver.BaseRequestHandler):
     def send_msg(self, msg):
         return chat.send_json(self.request, msg)
 
-    def place_from_msg(self, msg):
-        self.osm_type, self.osm_id = msg["osm_type"], msg["osm_id"]
-        self.place_tuple = (self.osm_type, self.osm_id)
-        self.job_thread = job_manager.get_job(self.place_tuple)
-
     def match_place(self, msg):
+        osm_type, osm_id = msg["osm_type"], msg["osm_id"]
         t = threading.current_thread()
         job_need_start = False
         if not self.job_thread:
@@ -129,7 +125,7 @@ class RequestHandler(socketserver.BaseRequestHandler):
             }
 
             kwargs["want_isa"] = set(msg.get("want_isa") or [])
-            self.job_thread = job_manager.new_job(self.place_tuple, **kwargs)
+            self.job_thread = job_manager.new_job(osm_type, osm_id, **kwargs)
 
         status_queue = queue.Queue()
         updates = self.job_thread.subscribe(t.name, status_queue)
@@ -147,9 +143,6 @@ class RequestHandler(socketserver.BaseRequestHandler):
                 self.job_thread.unsubscribe(t.name)
                 break
 
-    def stop_job(self):
-        job_manager.stop_job(self.osm_type, self.osm_id)
-
     def handle_message(self, msg):
         print(f"handle: {msg!r}")
         if msg == "ping":
@@ -157,16 +150,16 @@ class RequestHandler(socketserver.BaseRequestHandler):
             return
         if msg.startswith("match"):
             json_msg = json.loads(msg[6:])
-            self.place_from_msg(json_msg)
+            self.job_thread = job_manager.get_job(msg["osm_type"], msg["osm_id"])
             return self.match_place(json_msg)
         if msg == "jobs":
             self.send_msg({"type": "jobs", "items": job_manager.job_list()})
             return
         if msg.startswith("stop"):
             json_msg = json.loads(msg[5:])
-            self.place_from_msg(json_msg)
-            self.stop_job()
+            job_manager.stop_job(msg["osm_type"], msg["osm_id"])
             self.send_msg({"type": "stop", "success": True})
+            return
 
     def handle(self):
         print("New connection from %s:%s" % self.client_address)
