@@ -15,6 +15,13 @@ from datetime import datetime
 
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
+def overpass_chunk_filename(chunk):
+    return os.path.join(app.config["OVERPASS_DIR"], chunk["filename"])
+
+def error_in_overpass_chunk(filename):
+    if os.path.getsize(filename) > 2000:
+        return False
+    return "<remark> runtime error" in open(filename).read()
 
 def build_item_list(items):
     item_list = []
@@ -140,6 +147,21 @@ class MatcherJob(threading.Thread):
         self.place.refresh_nominatim()
         database.session.commit()
 
+    def check_for_overpass_errors(self, chunks):
+        for chunk in chunks:
+            if not chunk["oql"]:
+                continue  # empty chunk
+            filename = overpass_chunk_filename(chunk)
+            if not error_in_overpass_chunk(filename):
+                continue
+            self.check_for_stop()
+            root = lxml.etree.parse(filename).getroot()
+            remark = root.find(".//remark")
+            self.error("overpass: " + remark.text)
+            mail.send_mail("Overpass error", remark.text)
+            return True  # FIXME report error to admin
+        return False  # no errors
+
     def matcher(self):
         place = self.place
         self.get_items()
@@ -164,22 +186,7 @@ class MatcherJob(threading.Thread):
         overpass_good = self.overpass_request(chunks)
         assert overpass_good
         self.check_for_stop()
-
-        overpass_dir = app.config["OVERPASS_DIR"]
-        for chunk in chunks:
-            self.check_for_stop()
-            if not chunk["oql"]:
-                continue  # empty chunk
-            filename = os.path.join(overpass_dir, chunk["filename"])
-            if (
-                os.path.getsize(filename) > 2000
-                or "<remark> runtime error" not in open(filename).read()
-            ):
-                continue
-            root = lxml.etree.parse(filename).getroot()
-            remark = root.find(".//remark")
-            self.error("overpass: " + remark.text)
-            mail.send_mail("Overpass error", remark.text)
+        if self.check_for_overpass_errors(chunks):
             return  # FIXME report error to admin
 
         if len(chunks) > 1:
