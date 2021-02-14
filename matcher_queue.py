@@ -114,9 +114,6 @@ class RequestHandler(socketserver.BaseRequestHandler):
     def send_msg(self, msg):
         return chat.send_json(self.request, msg)
 
-    def join_job(self):
-        return
-
     def place_from_msg(self, msg):
         self.osm_type, self.osm_id = msg["osm_type"], msg["osm_id"]
         self.place_tuple = (self.osm_type, self.osm_id)
