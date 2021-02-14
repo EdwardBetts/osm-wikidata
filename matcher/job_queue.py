@@ -136,7 +136,7 @@ class MatcherJob(threading.Thread):
         for t in database.get_tables():
             if not t.startswith(self.place.prefix):
                 continue
-            engine.execute("drop table if exists {}".format(t))
+            engine.execute(f"drop table if exists {t}")
         engine.execute("commit")
         database.session.commit()
 
