@@ -148,40 +148,35 @@ class MatcherJob(threading.Thread):
         if self._stop_event.is_set():
             raise MatcherJobStopped
 
-    def prepare_for_refresh(self):
-        self.place.delete_overpass()
-
-        self.place.reset_all_items_to_not_done()
-
+    def drop_database_tables(self):
         engine = database.session.bind
-        for t in database.get_tables():
-            if not t.startswith(self.place.prefix):
-                continue
+        gis_tables = self.place.gis_tables
+        for t in gis_tables & set(database.get_tables()):
             engine.execute(f"drop table if exists {t}")
         engine.execute("commit")
         database.session.commit()
+        # make sure all GIS tables for this place have been removed
+        assert not self.place.gis_tables & set(database.get_tables())
 
-        expect = [self.place.prefix + "_" + t for t in ("line", "point", "polygon")]
-        tables = database.get_tables()
-        assert not any(t in tables for t in expect)
-
+    def prepare_for_refresh(self):
+        self.place.delete_overpass()
+        self.place.reset_all_items_to_not_done()
+        self.drop_database_tables()
         self.place.refresh_nominatim()
         database.session.commit()
 
-    def check_for_overpass_errors(self, chunks):
-        for chunk in chunks:
-            if not chunk["oql"]:
-                continue  # empty chunk
-            filename = overpass_chunk_filename(chunk)
-            if not error_in_overpass_chunk(filename):
-                continue
-            self.check_for_stop()
-            root = lxml.etree.parse(filename).getroot()
-            remark = root.find(".//remark")
-            self.error("overpass: " + remark.text)
-            mail.send_mail("Overpass error", remark.text)
-            return True  # FIXME report error to admin
-        return False  # no errors
+    def overpass_chunk_error(self, chunk):
+        if not chunk["oql"]:
+            return  # empty chunk
+        filename = overpass_chunk_filename(chunk)
+        if not error_in_overpass_chunk(filename):
+            return
+        self.check_for_stop()
+        root = lxml.etree.parse(filename).getroot()
+        remark = root.find(".//remark")
+        self.error("overpass: " + remark.text)
+        mail.send_mail("Overpass error", remark.text)
+        return True  # FIXME report error to admin
 
     def matcher(self):
         place = self.place
@@ -207,7 +202,7 @@ class MatcherJob(threading.Thread):
         overpass_good = self.overpass_request(chunks)
         assert overpass_good
         self.check_for_stop()
-        if self.check_for_overpass_errors(chunks):
+        if any(self.overpass_chunk_error(chunk) for chunk in chunks):
             return  # FIXME report error to admin
 
         if len(chunks) > 1:
