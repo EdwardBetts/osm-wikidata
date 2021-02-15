@@ -460,6 +460,10 @@ class Place(Base):
         return f'osm_{self.place_id}'
 
     @property
+    def gis_tables(self):
+        return {f"{self.prefix}_{t}" for t in ("line", "point", "polygon")}
+
+    @property
     def identifier(self):
         return f'{self.osm_type}/{self.osm_id}'
 
