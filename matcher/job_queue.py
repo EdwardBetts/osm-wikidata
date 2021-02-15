@@ -16,13 +16,17 @@ from datetime import datetime
 
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
+
 def overpass_chunk_filename(chunk):
     return os.path.join(app.config["OVERPASS_DIR"], chunk["filename"])
 
+
 def error_in_overpass_chunk(filename):
-    if os.path.getsize(filename) > 2000:
-        return False
-    return "<remark> runtime error" in open(filename).read()
+    return (
+        os.path.getsize(filename) < 2000
+        and "<remark> runtime error" in open(filename).read()
+    )
+
 
 def build_item_list(items):
     item_list = []
@@ -124,8 +128,8 @@ class MatcherJob(threading.Thread):
         self._stop_event.set()
 
     def get_log_filename(self):
-        now = datetime.utcfromtimestamp(self.t0).strftime('%Y-%m-%d_%H:%M:%S')
-        return f'{self.osm_type}_{self.osm_id}_{now}.log'
+        now = datetime.utcfromtimestamp(self.t0).strftime("%Y-%m-%d_%H:%M:%S")
+        return f"{self.osm_type}_{self.osm_id}_{now}.log"
 
     def open_log(self):
         log_location = self.job_manager.log_location
@@ -134,7 +138,7 @@ class MatcherJob(threading.Thread):
             return  # not logging
 
         self.log_filename = self.get_log_filename()
-        self.log_file = open(os.path.join(log_location, self.log_filename), 'w')
+        self.log_file = open(os.path.join(log_location, self.log_filename), "w")
 
     @property
     def stopping(self):
