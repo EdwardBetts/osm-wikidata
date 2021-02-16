@@ -21,8 +21,7 @@ from matcher.job_queue import JobManager
 app.config.from_object("config.default")
 database.init_app(app)
 
-log_location = app.config['LOG_DIR'] if app.config.get('LOG_MATCHER_REQUESTS') else None
-job_manager = JobManager(log_location=log_location)
+job_manager = JobManager()
 
 
 def wait_for_slot(send_queue):

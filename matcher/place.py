@@ -1629,6 +1629,31 @@ class PlaceMatcher(Base):
         ua = self.user_agent
         return ua and user_agents.parse(ua).is_bot
 
+    @property
+    def log_filename(self):
+        start = self.start.strftime("%Y-%m-%d_%H:%M:%S")
+        return f"{self.osm_type}_{self.osm_id}_{start}.log"
+
+    @property
+    def log_full_filename(self):
+        return os.path.join(utils.log_location(), self.log_filename)
+
+    def log_exists(self):
+        return os.path.exists(self.log_full_filename)
+
+    def read_log(self):
+        filename = self.log_full_filename
+        if os.path.exists(filename):
+            return open(filename).read()
+
+    def open_log_for_writes(self):
+        if not current_app.config.get('LOG_MATCHER_REQUESTS'):
+            return
+
+        filename = self.log_full_filename
+        assert not os.path.exists(filename)
+        return open(filename, 'w')
+
 
 def get_top_existing(limit=39):
     cols = [

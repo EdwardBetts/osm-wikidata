@@ -47,10 +47,9 @@ def build_item_list(items):
 
 
 class JobManager:
-    def __init__(self, log_location=False):
+    def __init__(self):
         self.active_jobs = {}
         self.task_queue = queue.PriorityQueue()
-        self.log_location = log_location
 
     def end_job(self, osm_type, osm_id):
         del self.active_jobs[(osm_type, osm_id)]
@@ -117,7 +116,6 @@ class MatcherJob(threading.Thread):
         self.want_isa = set(want_isa) if want_isa else set()
         self._stop_event = threading.Event()
         self.job_manager = job_manager  # dependency injection
-        self.open_log()
 
     def end_job(self):
         if self.log_file:
@@ -126,19 +124,6 @@ class MatcherJob(threading.Thread):
 
     def stop(self):
         self._stop_event.set()
-
-    def get_log_filename(self):
-        now = datetime.utcfromtimestamp(self.t0).strftime("%Y-%m-%d_%H:%M:%S")
-        return f"{self.osm_type}_{self.osm_id}_{now}.log"
-
-    def open_log(self):
-        log_location = self.job_manager.log_location
-
-        if not log_location:
-            return  # not logging
-
-        self.log_filename = self.get_log_filename()
-        self.log_file = open(os.path.join(log_location, self.log_filename), "w")
 
     @property
     def stopping(self):
@@ -244,6 +229,8 @@ class MatcherJob(threading.Thread):
         )
         database.session.add(run_obj)
         database.session.flush()
+
+        self.log_file = run_obj.open_log_for_writes()
 
         self.prepare_for_refresh()
         self.matcher()
