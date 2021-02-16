@@ -46,7 +46,7 @@ def get_cats(titles, language_code="en"):
             ],
         }
         for page in run_query(titles, params, language_code)
-        if "categories" not in page
+        if "categories" in page
     ]
 
 
