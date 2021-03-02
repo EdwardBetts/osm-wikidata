@@ -122,6 +122,19 @@ def stop_job(osm_type, osm_id):
 
     return render_template('admin/stop_job.html', job=job, place=place)
 
+@admin_blueprint.route('/admin/log/<osm_type>/<int:osm_id>/<start>')
+def view_log(osm_type, osm_id, start):
+    assert_user_is_admin()
+    start = start.replace('_', ' ')
+
+    matcher_run = PlaceMatcher.query.get((start, osm_type, osm_id))
+    log = matcher_run.read_log()
+
+    return render_template('admin/matcher_log.html',
+                           place=matcher_run.place,
+                           log=log,
+                           matcher_run=matcher_run)
+
 @admin_blueprint.route('/admin/jobs/recent')
 @flask_login.login_required
 def list_recent_jobs():

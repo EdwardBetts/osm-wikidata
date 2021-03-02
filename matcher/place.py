@@ -1654,6 +1654,12 @@ class PlaceMatcher(Base):
         assert not os.path.exists(filename)
         return open(filename, 'w')
 
+    def log_url(self, endpoint='admin.view_log'):
+        return url_for(endpoint,
+                       osm_type=self.osm_type,
+                       osm_id=self.osm_id,
+                       start = str(self.start).replace(' ', '_'))
+
 
 def get_top_existing(limit=39):
     cols = [
