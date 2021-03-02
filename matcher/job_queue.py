@@ -116,6 +116,7 @@ class MatcherJob(threading.Thread):
         self.want_isa = set(want_isa) if want_isa else set()
         self._stop_event = threading.Event()
         self.job_manager = job_manager  # dependency injection
+        self.log_file = None
 
     def end_job(self):
         if self.log_file:
