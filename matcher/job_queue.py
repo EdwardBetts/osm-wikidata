@@ -70,7 +70,7 @@ class JobManager:
 
     def stop_job(self, osm_type, osm_id):
         for job in self.iter_jobs():
-            if job.osm_type == self.osm_type and job.osm_id == self.osm_id:
+            if job.osm_type == osm_type and job.osm_id == osm_id:
                 job.stop()
 
     def job_list(self):
