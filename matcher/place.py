@@ -1658,7 +1658,7 @@ class PlaceMatcher(Base):
         return url_for(endpoint,
                        osm_type=self.osm_type,
                        osm_id=self.osm_id,
-                       start = str(self.start).replace(' ', '_'))
+                       start=str(self.start).replace(' ', '_'))
 
 
 def get_top_existing(limit=39):
