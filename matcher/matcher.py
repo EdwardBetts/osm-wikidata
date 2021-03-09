@@ -1,6 +1,6 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from . import match, database, wikidata, embassy, model
+from . import match, database, wikidata, embassy, model, mail
 
 import os.path
 import json
@@ -510,7 +510,11 @@ def find_item_matches(cur, item, prefix, debug=False):
             if country and 'country' in osm_tags:
                 codes = set()
                 for qid in item_countries:
-                    codes.update(wikidata.country_iso_codes_from_qid(qid))
+                    try:
+                        codes.update(wikidata.country_iso_codes_from_qid(qid))
+                    except TypeError:
+                        body = f'diplomatic mission\n\nhttps://www.wikidata.org/wiki/{qid}'
+                        mail.send_mail(f'{qid}: TypeError', body)
 
                 osm_country = osm_tags['country'].upper()
                 if (len(osm_country) in (2, 3) and
