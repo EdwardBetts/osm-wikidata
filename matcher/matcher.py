@@ -510,11 +510,12 @@ def find_item_matches(cur, item, prefix, debug=False):
             if country and 'country' in osm_tags:
                 codes = set()
                 for qid in item_countries:
-                    try:
-                        codes.update(wikidata.country_iso_codes_from_qid(qid))
-                    except TypeError:
-                        body = f'diplomatic mission\n\nhttps://www.wikidata.org/wiki/{qid}'
-                        mail.send_mail(f'{qid}: TypeError', body)
+                    # no ISO code for 'Embassy of South Ossetia, Moscow'
+                    # https://www.wikidata.org/wiki/Q4374094
+
+                    iso_codes = codes.update(wikidata.country_iso_codes_from_qid(qid))
+                    if iso_codes:
+                        codes.update(iso_codes)
 
                 osm_country = osm_tags['country'].upper()
                 if (len(osm_country) in (2, 3) and
