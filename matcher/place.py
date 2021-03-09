@@ -142,6 +142,7 @@ class Place(Base):
     index_hide = Column(Boolean, default=False)
     overpass_is_in = deferred(Column(JSON))
     existing_wikidata = deferred(Column(JSON))
+    language_count = Column(JSON)
 
     area = column_property(func.ST_Area(geom))
     geometry_type = column_property(func.GeometryType(geom))
@@ -1013,13 +1014,19 @@ class Place(Base):
         return sorted(lang_count.items(), key=lambda i: i[1], reverse=True)[:10]
 
     def languages(self):
+        if self.language_count:
+            return self.language_count
+
         wikidata = self.languages_wikidata()
         osm = dict(self.languages_osm())
 
-        return [
+        count = [
             {"code": code, "wikidata": count, "osm": osm.get(code)}
             for code, count in wikidata
         ]
+        self.language_count = count
+        session.commit()
+        return count
 
     def most_common_language(self):
         lang_count = Counter()
