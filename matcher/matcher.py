@@ -185,13 +185,13 @@ def get_existing(cur, prefix):
     existing = defaultdict(list)
     for src_type, src_id, osm_tags in rows:
         (osm_type, osm_id) = get_osm_id_and_type(src_type, src_id)
-        wikidata = osm_tags.get('wikidata')
-        if not wikidata:
+        wikidata_tag = osm_tags.get('wikidata')
+        if not wikidata_tag:
             continue
-        wikidata = wikidata.strip()
-        if wikidata[0] != 'Q' or not wikidata[1:].isdigit():
+        wikidata_tag = wikidata_tag.strip()
+        if wikidata_tag[0] != 'Q' or not wikidata_tag[1:].isdigit():
             continue
-        existing[wikidata].append((osm_type, osm_id))
+        existing[wikidata_tag].append((osm_type, osm_id))
 
     return dict(existing)
 
