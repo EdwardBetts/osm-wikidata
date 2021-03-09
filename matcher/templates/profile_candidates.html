@@ -1,0 +1,35 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+{% from "navbar.html" import navbar_inner with context %}
+{% extends "base.html" %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block nav %}
+<nav class="navbar fixed-top navbar-toggleable-md navbar-expand-lg navbar-dark bg-primary">
+  {{ navbar_inner() }}
+</nav>
+{% endblock %}
+
+{% block content %}
+
+  <div id="page-body">
+    <div class="m-2">
+    <h1>{{ place.name }}</h1>
+  {% set q = place.display_name %}
+
+  {{ place_box(place) }}
+
+  <table class="table">
+    {% for name, seconds, diff in profile %}
+      <tr>
+      <td>{{ name }}</td>
+      <td>{{ '{:.2f}'.format(seconds) }}</td>
+      <td>{{ '{:.2f}'.format(diff) }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+
+  {% include "flash_msg.html" %}
+
+{% endblock %}

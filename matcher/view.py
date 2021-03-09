@@ -657,6 +657,80 @@ def redirect_from_relation(osm_id):
 def redirect_from_way(osm_id):
     return redirect_to_candidates('way', osm_id)
 
+@app.route('/profile/candidates/<osm_type>/<int:osm_id>')
+def profile_candidates(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+
+    t0 = time()
+
+    profile = []
+
+    def record_timing(name):
+        prev = profile[-1][1] if profile else 0
+        t = time() - t0
+        profile.append((name, t, t - prev))
+
+    demo_mode_active = demo_mode()
+
+    if demo_mode_active:
+        items = place.items_with_candidates().all()
+    else:
+        items = place.get_candidate_items()
+        check_still_auth()
+
+    record_timing('get candidate items')
+
+    filter_iter = matcher.filter_candidates_more(items,
+                                                 bad=get_bad(items),
+                                                 ignore_existing=demo_mode_active)
+    filtered = {item.item_id: match for item, match in filter_iter}
+
+    record_timing('filter items')
+
+    languages_with_counts = get_place_language_with_counts(place)
+    languages = [l['lang'] for l in languages_with_counts if l['lang']]
+    record_timing('language')
+
+    hide_trams = {
+        ('relation', 186579),  # Portland, OR
+        ('relation', 111968),  # San Francisco, CA
+    }  # matcher doesn't handle tram stops properly, so hide them for these places
+
+    if (osm_type, osm_id) in hide_trams:
+        items = [item for item in items if not item.is_instance_of('Q2175765')]
+
+    good_match = [i for i in items if filtered.get(i.item_id) and
+                                      'candidate' in filtered[i.item_id] and
+                                      'note' not in filtered[i.item_id]]
+    get_isa_facets(good_match, languages=languages, min_count=3)
+    record_timing('get facets')
+
+    isa_filter = set(request.args.getlist('isa') or [])
+    if isa_filter:
+        items = [item for item in items if item.is_instance_of(isa_filter)]
+
+    unsure_items = []
+    ticked_items = []
+
+    for item in items:
+        picked = filtered[item.item_id].get('candidate')
+        if picked and not picked.checkbox_ticked():
+            unsure_items.append(item)
+            if 'note' not in filtered[item.item_id]:
+                max_dist = picked.get_max_dist()
+                if max_dist < picked.dist:
+                    note = f'distance between OSM and Wikidata is greater than {max_dist:,.0f}m'
+                    filtered[item.item_id]['note'] = note
+        else:
+            ticked_items.append(item)
+
+    record_timing('ticked')
+
+    return render_template('profile_candidates.html',
+                           place=place,
+                           osm_id=osm_id,
+                           profile=profile)
+
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
