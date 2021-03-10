@@ -19,6 +19,8 @@
 
   {{ place_box(place) }}
 
+  {% include "flash_msg.html" %}
+
   <table class="table">
     {% for name, seconds, diff in profile %}
       <tr>
@@ -28,8 +30,5 @@
       </tr>
     {% endfor %}
   </table>
-
-
-  {% include "flash_msg.html" %}
 
 {% endblock %}
