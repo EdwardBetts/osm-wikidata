@@ -919,6 +919,7 @@ def refresh_place(osm_type, osm_id):
         return render_template('refresh.html', place=place)
 
     place.state = 'refresh'
+    place.language_count = None
     database.session.commit()
 
     return place.redirect_to_matcher()
