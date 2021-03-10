@@ -305,6 +305,30 @@ def is_diplomatic_mission(matching_tags, osm_tags):
             return True
     return False
 
+def diplomatic_mission_different_country(item, tags):
+    name = tags.get('name:en') or tags.get('name')
+    osm_country = tags.get('diplomatic:sending_country') or tags.get('country')
+    item_countries = {country['id'] for country in item.get_claim('P137')}
+
+    if name:
+        name_country = embassy.from_name(name)
+        if name_country and name_country['qid'] not in item_countries:
+            return True
+
+    if not osm_country or len(osm_country) not in (2, 3):
+        return False
+
+    codes = set()
+    for qid in item_countries:
+        # no ISO code for 'Embassy of South Ossetia, Moscow'
+        # https://www.wikidata.org/wiki/Q4374094
+
+        iso_codes = wikidata.country_iso_codes_from_qid(qid)
+        if iso_codes:
+            codes.update(iso_codes)
+
+    return not any(iso_code.upper() == osm_country.upper() for iso_code in codes)
+
 def is_building_only_match(matching_tags):
     building_tags = {'building', 'building=yes', 'historic:building'}
     return matching_tags.issubset(building_tags)
@@ -501,30 +525,9 @@ def find_item_matches(cur, item, prefix, debug=False):
 
         matching_tags = find_matching_tags(osm_tags, wikidata_tags)
 
-        if is_diplomatic_mission(matching_tags, osm_tags):
-            name = osm_tags.get('name:en') or osm_tags.get('name')
-            country = (osm_tags.get('diplomatic:sending_country') or
-                    osm_tags.get('country'))
-            item_countries = {country['id'] for country in item.get_claim('P137')}
-
-            if country and 'country' in osm_tags:
-                codes = set()
-                for qid in item_countries:
-                    # no ISO code for 'Embassy of South Ossetia, Moscow'
-                    # https://www.wikidata.org/wiki/Q4374094
-
-                    iso_codes = wikidata.country_iso_codes_from_qid(qid)
-                    if iso_codes:
-                        codes.update(iso_codes)
-
-                osm_country = osm_tags['country'].upper()
-                if (len(osm_country) in (2, 3) and
-                        all(iso_code.upper() != osm_country for iso_code in codes)):
-                    continue
-            elif name:
-                name_country = embassy.from_name(name)
-                if name_country and name_country['qid'] not in item_countries:
-                    continue
+        if (is_diplomatic_mission(matching_tags, osm_tags) and
+                diplomatic_mission_different_country(item, osm_tags)):
+            continue
 
         building_only_match = is_building_only_match(matching_tags)
 
