@@ -672,11 +672,7 @@ def profile_candidates(osm_type, osm_id):
 
     demo_mode_active = demo_mode()
 
-    if demo_mode_active:
-        items = place.items_with_candidates().all()
-    else:
-        items = place.get_candidate_items()
-        check_still_auth()
+    items = place.get_candidate_items()
 
     record_timing('get candidate items')
 
