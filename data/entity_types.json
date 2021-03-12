@@ -417,9 +417,10 @@
 },
 {
     "cats": ["Diplomatic missions by receiving country"],
-    "tags": ["amenity=embassy"],
+    "tags": ["amenity=embassy", "office=diplomatic", "diplomatic=embassy"],
     "trim": ["embassy", "diplomatic mission"],
     "check_housename": true,
+    "wikidata": "Q213283",
     "dist": 4
 },
 {

@@ -296,6 +296,8 @@ def is_osm_bus_stop(tags):
 def is_diplomatic_mission(matching_tags, osm_tags):
     if 'amenity=embassy' in matching_tags:
         return True
+    if osm_tags.get('office') == 'diplomatic':
+        return True
     terms = ['embassy', 'diplomatic', 'consulate', 'ambassador']
     for key, value in osm_tags.items():
         if 'name' not in key or 'old' in key:
