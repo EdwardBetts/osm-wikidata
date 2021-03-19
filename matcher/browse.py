@@ -84,8 +84,9 @@ def get_details(item_id, timing=None, lang=None, sort=None):
 
     if not lang_qids and 'P17' in item.entity['claims']:
         for c in item.entity['claims']['P17']:
-            if 'datavalue' not in c['mainsnak']:
+            if 'datavalue' not in c['mainsnak'] or 'P582' in c['qualifiers']:
                 continue
+
             country_qid = c['mainsnak']['datavalue']['value']['id']
             country_item_id = c['mainsnak']['datavalue']['value']['numeric-id']
             country = WikidataItem.query.get(country_item_id)
