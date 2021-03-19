@@ -3,10 +3,12 @@ from .place import Place
 from .model import WikidataItem, IsA
 from time import time
 
+
 def place_from_qid(qid, q=None, entity=None):
     hit = hit_from_qid(qid, q=None, entity=None)
     if hit:
         return place_from_nominatim(hit)
+
 
 def hit_from_qid(qid, q=None, entity=None):
     if q is None:
@@ -16,25 +18,28 @@ def hit_from_qid(qid, q=None, entity=None):
 
     hits = nominatim.lookup(q=q)
     for hit in hits:
-        hit_qid = hit['extratags'].get('wikidata')
+        hit_qid = hit["extratags"].get("wikidata")
         if hit_qid != qid:
             continue
         return hit
 
+
 def qid_to_search_string(qid, entity):
-    isa = {i['mainsnak']['datavalue']['value']['id']
-           for i in entity.get('claims', {}).get('P31', [])}
+    isa = {
+        i["mainsnak"]["datavalue"]["value"]["id"]
+        for i in entity.get("claims", {}).get("P31", [])
+    }
 
     label = wikidata.entity_label(entity)
 
     country_or_bigger = {
-        'Q5107',     # continent
-        'Q6256',     # country
-        'Q484652',   # international organization
-        'Q855697',   # subcontinent
-        'Q3624078',  # sovereign state
-        'Q1335818',  # supranational organisation
-        'Q4120211',  # regional organization
+        "Q5107",  # continent
+        "Q6256",  # country
+        "Q484652",  # international organization
+        "Q855697",  # subcontinent
+        "Q3624078",  # sovereign state
+        "Q1335818",  # supranational organisation
+        "Q4120211",  # regional organization
     }
 
     if isa & country_or_bigger:
@@ -43,20 +48,22 @@ def qid_to_search_string(qid, entity):
     names = wikidata.up_one_level(qid)
     if not names:
         return label
-    country = names['country_name'] or names['up_country_name']
+    country = names["country_name"] or names["up_country_name"]
 
-    q = names['name']
-    if names['up']:
-        q += ', ' + names['up']
-    if country and country != names['up']:
-        q += ', ' + country
+    q = names["name"]
+    if names["up"]:
+        q += ", " + names["up"]
+    if country and country != names["up"]:
+        q += ", " + country
     return q
 
+
 def place_from_nominatim(hit):
-    if not ('osm_type' in hit and 'osm_id' in hit):
+    if not ("osm_type" in hit and "osm_id" in hit):
         return
-    p = Place.query.filter_by(osm_type=hit['osm_type'],
-                              osm_id=hit['osm_id']).one_or_none()
+    p = Place.query.filter_by(
+        osm_type=hit["osm_type"], osm_id=hit["osm_id"]
+    ).one_or_none()
     if p:
         p.update_from_nominatim(hit)
     else:
@@ -65,10 +72,11 @@ def place_from_nominatim(hit):
     database.session.commit()
     return p
 
+
 def get_details(item_id, timing=None, lang=None, sort=None):
     if timing is None:
         timing = []
-    qid = f'Q{item_id}'
+    qid = f"Q{item_id}"
     place = Place.get_by_wikidata(qid)
     check_lastrevid = []
 
@@ -82,13 +90,13 @@ def get_details(item_id, timing=None, lang=None, sort=None):
 
     lang_qids = wikidata_language.get_lang_qids(item.entity)
 
-    if not lang_qids and 'P17' in item.entity['claims']:
-        for c in item.entity['claims']['P17']:
-            if 'datavalue' not in c['mainsnak'] or 'P582' in c['qualifiers']:
+    if not lang_qids and "P17" in item.entity["claims"]:
+        for c in item.entity["claims"]["P17"]:
+            if "datavalue" not in c["mainsnak"] or "P582" in c["qualifiers"]:
                 continue
 
-            country_qid = c['mainsnak']['datavalue']['value']['id']
-            country_item_id = c['mainsnak']['datavalue']['value']['numeric-id']
+            country_qid = c["mainsnak"]["datavalue"]["value"]["id"]
+            country_item_id = c["mainsnak"]["datavalue"]["value"]["numeric-id"]
             country = WikidataItem.query.get(country_item_id)
             if country:
                 check_lastrevid.append((country_qid, country.rev_id))
@@ -120,20 +128,20 @@ def get_details(item_id, timing=None, lang=None, sort=None):
     languages = wikidata_language.process_language_entities(lang_items)
 
     entity = item.entity
-    timing.append(('get entity done', time()))
+    timing.append(("get entity done", time()))
 
-    if languages and not any(l.get('code') == 'en' for l in languages):
-        languages.append({'code': 'en', 'local': 'English', 'en': 'English'})
+    if languages and not any(l.get("code") == "en" for l in languages):
+        languages.append({"code": "en", "local": "English", "en": "English"})
 
     if not lang and languages:
         for l in languages:
-            if 'code' not in l:
+            if "code" not in l:
                 continue
-            lang = l['code']
+            lang = l["code"]
             break
 
     if not lang:
-        lang = 'en'
+        lang = "en"
 
     if not place:
         place = place_from_qid(qid, entity=entity)
@@ -141,28 +149,29 @@ def get_details(item_id, timing=None, lang=None, sort=None):
     name = wikidata.entity_label(entity, language=lang)
     description = wikidata.entity_description(entity, language=lang)
     rows = wikidata.next_level_places(qid, entity, language=lang)
-    timing.append(('next level places done', time()))
+    timing.append(("next level places done", time()))
 
-    if qid == 'Q21':
-        types = wikidata.next_level_types(['Q48091'])
-        query = (wikidata.next_level_query2
-                    .replace('TYPES', types)
-                    .replace('QID', qid)
-                    .replace('LANGUAGE', lang))
+    if qid == "Q21":
+        types = wikidata.next_level_types(["Q48091"])
+        query = (
+            wikidata.next_level_query2.replace("TYPES", types)
+            .replace("QID", qid)
+            .replace("LANGUAGE", lang)
+        )
         extra_rows = wikidata.next_level_places(qid, entity, language=lang, query=query)
         kwargs = {
-            'extra_type_label': 'Regions of England',
-            'extra_type_places': extra_rows,
+            "extra_type_label": "Regions of England",
+            "extra_type_places": extra_rows,
         }
     else:
         extra_rows = []
         kwargs = {}
 
-    timing.append(('start isa map', time()))
+    timing.append(("start isa map", time()))
     isa_map = {}
     download_isa = set()
     for row in rows + extra_rows:
-        for isa_qid in row['isa']:
+        for isa_qid in row["isa"]:
             if isa_qid in isa_map:
                 continue
             isa_obj = IsA.query.get(isa_qid[1:])
@@ -180,28 +189,31 @@ def get_details(item_id, timing=None, lang=None, sort=None):
         database.session.add(isa_obj)
     if download_isa:
         database.session.commit()
-    timing.append(('isa map done', time()))
+    timing.append(("isa map done", time()))
 
-    if sort and sort in {'area', 'population', 'qid', 'label'}:
+    if sort and sort in {"area", "population", "qid", "label"}:
         rows.sort(key=lambda i: i[sort] if i[sort] else 0)
 
-    former_type = {isa_qid for isa_qid, isa in isa_map.items()
-                   if 'former' in isa.entity_label().lower() or
-                      'historical' in isa.entity_label().lower()}
+    former_type = {
+        isa_qid
+        for isa_qid, isa in isa_map.items()
+        if "former" in isa.entity_label().lower()
+        or "historical" in isa.entity_label().lower()
+    }
 
-    current_places = [row for row in rows if not (set(row['isa']) & former_type)]
-    former_places = [row for row in rows if set(row['isa']) & former_type]
+    current_places = [row for row in rows if not (set(row["isa"]) & former_type)]
+    former_places = [row for row in rows if set(row["isa"]) & former_type]
 
     return {
-        'qid': qid,
-        'item_id': item_id,
-        'place': place,
-        'name': name,
-        'description': description,
-        'entity': entity,
-        'languages': languages,
-        'current_places': current_places,
-        'former_places': former_places,
-        'isa_map': isa_map,
-        **kwargs
+        "qid": qid,
+        "item_id": item_id,
+        "place": place,
+        "name": name,
+        "description": description,
+        "entity": entity,
+        "languages": languages,
+        "current_places": current_places,
+        "former_places": former_places,
+        "isa_map": isa_map,
+        **kwargs,
     }
