@@ -1,5 +1,6 @@
 import requests
 import lxml.html
+import lxml.etree
 from .utils import chunk, drop_start
 from . import user_agent_headers, mail
 
@@ -78,7 +79,10 @@ def get_items_with_cats(items):
 def html_names(article):
     if not article or article.strip() == "":
         return []
-    root = lxml.html.fromstring(article)
+    try:
+        root = lxml.html.fromstring(article)
+    except lxml.etree.ParserError:
+        return []
     # avoid picking pronunciation guide bold text
     # <small title="English pronunciation respelling"><i><b>MAWD</b>-lin</i></small>
     names = [
