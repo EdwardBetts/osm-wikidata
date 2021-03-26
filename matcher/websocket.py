@@ -188,6 +188,10 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
             send("changeset-error", msg=reply)
             return
 
+        # clear the match cache
+        place.match_cache = None
+        database.session.commit()
+
         changeset_id = reply
         send("open", id=int(changeset_id))
 
@@ -214,6 +218,10 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
         send("closing")
         edit.close_changeset(changeset_id)
         send("done")
+
+        # make sure the match cache is cleared
+        place.match_cache = None
+        database.session.commit()
 
     except Exception as e:
         msg = type(e).__name__ + ": " + str(e)

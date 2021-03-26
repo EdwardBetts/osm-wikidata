@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>
+    {% block title %}{% endblock %} OSM ↔ Wikidata
+  </title>
+  <link rel="shortcut icon" href="{{url_for('static', filename='img/favicon.png')}}" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap4/css/bootstrap.css')}}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='fork-awesome/css/fork-awesome.css')}}">
+
+  {% block style %}
+  {% endblock %}
+</head>
+{% from "navbar.html" import navbar with context %}
+
+<body>
+  <div class="container-fluid p-0">
+  {% block nav %}{{ navbar() }}{% endblock %}
+
+  {% if g.banner %}
+<div class="container my-2">
+  <div class="alert alert-{{ g.banner.alert_type }}" role="alert">
+  <h4 class="alert-heading">{{ g.banner.headline }}</h4>
+  {{ g.banner.body }}
+</div>
+</div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+  </div>
+
+  {% block script %}{% endblock %}
+</body>
+</html>

@@ -1051,6 +1051,36 @@ def filter_reservoir(candidates):
     if len(way) == 1 and len(node) + 1 == len(candidates):
         return way[0]
 
+def reduce_candidates(item, candidates):
+    # place = filter_place(candidates)
+    # if place:
+    #     candidates = [place]
+
+    school = filter_schools(candidates)
+    if school:
+        candidates = [school]
+
+    station = filter_station(candidates)
+    if station:
+        candidates = [station]
+
+    church = filter_churches(candidates)
+    if church:
+        candidates = [church]
+
+    if item.is_primarily_building():
+        building = filter_building(candidates)
+        if building:
+            candidates = [building]
+
+    if item.is_reservoir():
+        reservoir = filter_reservoir(candidates)
+        if reservoir:
+            candidates = [reservoir]
+
+    return candidates
+
+
 def filter_candidates_more(items, bad=None, ignore_existing=False):
     osm_count = Counter()
     by_osm = defaultdict(list)
@@ -1061,12 +1091,6 @@ def filter_candidates_more(items, bad=None, ignore_existing=False):
     for item in items:
         for c in item.candidates:
             by_osm[(c.osm_type, c.osm_id)].append(item)
-
-    remove_items = []
-    for osm, item_list in by_osm.items():
-        if len(item_list) == 1:
-            continue
-        defunct = [item for item in item_list if item.defunct_cats]
 
     for item in items:
         for c in item.candidates:
@@ -1094,32 +1118,7 @@ def filter_candidates_more(items, bad=None, ignore_existing=False):
         if done:
             continue
 
-        # place = filter_place(candidates)
-        # if place:
-        #     candidates = [place]
-        # else:
-        school = filter_schools(candidates)
-        if school:
-            candidates = [school]
-
-        station = filter_station(candidates)
-        if station:
-            candidates = [station]
-
-        church = filter_churches(candidates)
-        if church:
-            candidates = [church]
-
-        if item.is_primarily_building():
-            building = filter_building(candidates)
-            if building:
-                candidates = [building]
-
-        if item.is_reservoir():
-            reservoir = filter_reservoir(candidates)
-            if reservoir:
-                candidates = [reservoir]
-
+        candidates = reduce_candidates(item, candidates)
         if len(candidates) != 1:
             yield (item, {'note': 'more than one candidate found'})
             continue

@@ -1,6 +1,6 @@
-from . import (database, nominatim, wikidata, wikidata_api, matcher, commons, export,
-               user_agent_headers, overpass, mail, browse, edit, utils, osm_oauth,
-               search)
+from . import (database, wikidata, wikidata_api, matcher, match, commons,
+               export, user_agent_headers, overpass, mail, browse, edit, utils,
+               osm_oauth, search)
 from .utils import get_int_arg
 from .model import (Item, ItemCandidate, User, Category, Changeset, ItemTag, BadMatch,
                     Timing, get_bad, Language, EditMatchReject, InProgress, IsA,
@@ -9,7 +9,8 @@ from .place import Place
 from .taginfo import get_taginfo
 from .pager import Pagination, init_pager
 from .forms import AccountSettingsForm
-from .isa_facets import get_isa_facets
+from .isa_facets import get_isa_facets, get_isa_facets2
+from collections import Counter
 
 from flask import (Flask, render_template, request, Response, redirect, url_for, g,
                    jsonify, flash, abort, make_response, session)
@@ -501,7 +502,7 @@ def set_top_language(place, top):
 
     flash('language order updated')
     response = make_response(redirect(place.candidates_url()))
-    response.set_cookie(cookie_name, json.dumps(cookie))
+    response.set_cookie(cookie_name, json.dumps(cookie), samesite='Strict')
     return response
 
 @app.route('/languages/<osm_type>/<int:osm_id>')
@@ -524,6 +525,10 @@ def read_language_order():
     cookie_name = 'language_order'
     cookie_json = request.cookies.get(cookie_name)
     return json.loads(cookie_json) if cookie_json else {}
+
+def languages_in_user_order(user_language_order, languages):
+    lookup = {l['code']: l for l in languages}
+    return [lookup[code] for code in user_language_order if code in lookup]
 
 def get_place_language_with_counts(place):
     g.default_languages = place.languages()
@@ -715,7 +720,8 @@ def profile_candidates(osm_type, osm_id):
             if 'note' not in filtered[item.item_id]:
                 max_dist = picked.get_max_dist()
                 if max_dist < picked.dist:
-                    note = f'distance between OSM and Wikidata is greater than {max_dist:,.0f}m'
+                    note = ('distance between OSM and Wikidata is ' +
+                            f'greater than {max_dist:,.0f}m')
                     filtered[item.item_id]['note'] = note
         else:
             ticked_items.append(item)
@@ -729,6 +735,226 @@ def profile_candidates(osm_type, osm_id):
 
 @app.route('/candidates/<osm_type>/<int:osm_id>')
 def candidates(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+    g.country_code = place.country_code
+
+    if place.state not in ('ready', 'complete'):
+        return place.redirect_to_matcher()
+
+    candidates_json_url = url_for('candidates_json', osm_type=osm_type, osm_id=osm_id)
+
+    return render_template('candidates.html',
+                           place=place,
+                           tab_pages=tab_pages,
+                           osm_type=osm_type,
+                           osm_id=osm_id,
+                           candidates_json_url=candidates_json_url)
+
+def language_dict(lang):
+    return {
+        'qid': lang.qid,
+        'wikimedia_language_code': lang.wikimedia_language_code,
+        'label': lang.label(with_code=False),
+        'english_name': lang.english_name(),
+        'self_name': lang.self_name(),
+        'site_name': lang.site_name,
+    }
+
+def identifier_match(key, osm_value, identifiers):
+    if not identifiers or key not in identifiers:
+        return False
+
+    assert osm_value
+
+    values = identifiers[key]
+    values = set(values) | {i.replace(' ', '') for i in values if ' ' in i}
+
+    if osm_value in values:
+        return True
+    if ' ' in osm_value and osm_value.replace(' ', '') in values:
+        return True
+    if key == 'website' and match.any_url_match(osm_value, values):
+        return True
+    if (osm_value.isdigit() and
+            any(v.isdigit() and int(osm_value) == int(v) for v in values)):
+        return True
+
+    return False
+
+def candidate_tags(search_tags, identifiers, candidate):
+    tags = []
+    for k, v in candidate.tags.items():
+        if k == 'way_area':
+            continue
+        tag = k + '=' + v
+        match_found = None
+        if candidate.name_match and k in candidate.name_match:
+            match_found = f'{candidate.name_match_count(k)} name matches'
+        if k in search_tags or tag in search_tags:
+            match_found = 'item type tag matches'
+        if identifier_match(k, v, identifiers):
+            match_found = 'identifier matches'
+        tags.append((k, v, match_found))
+    return tags
+
+@app.route('/candidates/<osm_type>/<int:osm_id>/languages', methods=['POST'])
+def candidate_language_order(osm_type, osm_id):
+    cookie_name = 'language_order'
+    place_identifier = f'{osm_type}/{osm_id}'
+
+    cookie = read_language_order()
+    cookie[place_identifier] = request.json['languages']
+
+    response = jsonify(savd=True)
+    response.set_cookie(cookie_name, json.dumps(cookie), samesite='Strict')
+    return response
+
+@app.route('/candidates/<osm_type>/<int:osm_id>.json')
+def candidates_json(osm_type, osm_id):
+    place = Place.get_or_abort(osm_type, osm_id)
+    g.country_code = place.country_code
+    g.default_languages = place.languages()
+
+    cookie = read_language_order()
+    user_language_order = cookie.get(place.identifier) or []
+
+    cache = place.match_cache
+    if cache:
+        languages = cache.pop('languages')
+        if user_language_order:
+            languages = languages_in_user_order(user_language_order, languages)
+        return jsonify(osm_type=osm_type,
+                       osm_id=osm_id,
+                       languages=languages,
+                       **cache)
+
+    languages = []
+    langs = []
+    for l in g.default_languages:
+        lang = get_wikidata_language(l['code'])
+        if not lang:
+            continue
+        langs.append(lang)
+        l['lang'] = language_dict(lang)
+        languages.append(l)
+
+    osm_count = Counter()
+
+    items = place.get_candidate_items()
+
+    isa_facets = get_isa_facets2(items, languages=langs, min_count=2)
+
+    for item in items:
+        for c in item.candidates:
+            osm_count[(c.osm_type, c.osm_id)] += 1
+
+    item_list = []
+    isa_lookup = {}
+    for item in items:
+        candidates = item.candidates
+        search_tags = item.tags
+        identifiers = item.identifier_values()
+
+        notes = []
+        matched_candidates = matcher.reduce_candidates(item, candidates.all())
+
+        if len(matched_candidates) == 1:
+            matched_candidate = candidates[0]
+            max_dist = matched_candidate.get_max_dist()
+            ticked = matched_candidate.checkbox_ticked()
+            upload_okay = True
+            if not ticked and max_dist < matched_candidate.dist:
+                # FIXME update to respect user setting for distance units
+                notes.append('distance between OSM and Wikidata is ' +
+                             f'greater than {max_dist:,.0f}m')
+        else:
+            max_dist, ticked = None, None
+            upload_okay = False
+            notes.append("more than one candidate found")
+            matched_candidate = None
+
+        lat, lon = item.get_lat_lon()
+
+        isa_list = []
+        isa_super_qids = []
+        for isa in item.isa:
+            if isa.qid not in isa_lookup:
+                isa_lookup[isa.qid] = {'labels': isa.label_and_description_list(langs)}
+
+            isa_list.append(isa.qid)
+
+            try:
+                super_list = [claim['mainsnak']['datavalue']['value']['id']
+                              for claim in isa.entity['claims'].get('P279', [])]
+            except TypeError:
+                super_list = []
+
+            isa_super_qids += [isa.qid] + super_list
+
+        for candidate in candidates:
+            housename = candidate.tags.get('addr:housename')
+            if housename and housename.isdigit():
+                notes.append('number as house name')
+                upload_okay = False
+
+            name = candidate.tags.get('name')
+            if name and name.isdigit():
+                notes.append('number as name')
+                upload_okay = False
+
+            if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
+                notes.append('OSM candidate matches multiple Wikidata items')
+                upload_okay = False
+
+        item_list.append({
+            'labels': item.label_and_description_list(langs),
+            'qid': item.qid,
+            'enwiki': item.enwiki,
+            'lat': lat,
+            'lon': lon,
+            'first_paragraphs': item.first_paragraphs(langs),
+            'street_addresses': item.get_street_addresses(),
+            # 'search_tags': list(item.tags),
+            'isa_list': isa_list,
+            'isa_super_qids': isa_super_qids,
+            'identifiers': [[list(values), label]
+                            for values, label in item.identifiers()],
+            'defunct_cats': item.defunct_cats(),
+            'notes': notes,
+            'ticked': ticked,
+            'upload_okay': upload_okay,
+            'candidates': [{
+                'key': c.key,
+                'is_best': (matched_candidate and c.key == matched_candidate.key),
+                # 'label': c.label_best_language(langs),
+                'names': c.names(),
+                # 'name': c.name,
+                'dist': c.dist,
+                'osm_type': c.osm_type,
+                'osm_id': c.osm_id,
+                'display_distance': c.display_distance(),
+                'identifier_match': c.identifier_match,
+                'name_match': c.name_match,
+                'address_match': c.address_match,
+                'tags': candidate_tags(search_tags, identifiers, c),
+            } for c in candidates],
+        })
+
+    if user_language_order:
+        languages = languages_in_user_order(user_language_order, languages)
+
+    cache = dict(items=item_list,
+                 languages=languages,
+                 isa_facets=isa_facets,
+                 isa=isa_lookup)
+
+    place.match_cache = cache
+    database.session.commit()
+
+    return jsonify(osm_type=osm_type, osm_id=osm_id, **cache)
+
+@app.route('/old/candidates/<osm_type>/<int:osm_id>')
+def old_candidates(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
 
@@ -916,6 +1142,7 @@ def refresh_place(osm_type, osm_id):
 
     place.state = 'refresh'
     place.language_count = None
+    place.match_cache = None
     database.session.commit()
 
     return place.redirect_to_matcher()

@@ -143,6 +143,7 @@ class Place(Base):
     overpass_is_in = deferred(Column(JSON))
     existing_wikidata = deferred(Column(JSON))
     language_count = Column(JSON)
+    match_cache = deferred(Column(JSON))
 
     area = column_property(func.ST_Area(geom))
     geometry_type = column_property(func.GeometryType(geom))

@@ -115,6 +115,22 @@ class IsA(Base):
 
         return self.entity_label()
 
+    def label_and_description_list(self, want_languages):
+        language_codes = {l.wikimedia_language_code for l in want_languages}
+        try:
+            labels = self.entity['labels']
+        except (TypeError, KeyError):
+            return []
+        descriptions = self.entity['descriptions']
+
+        ret = {}
+        for lang, label in labels.items():
+            if lang not in language_codes:
+                continue
+            description = descriptions[lang]['value'] if lang in descriptions else None
+            ret[lang] = {'label': label['value'], 'description': description}
+        return ret
+
     def label_and_description(self, languages):
         try:
             labels = self.entity['labels']
@@ -251,6 +267,22 @@ class Item(Base):
         if not self.entity:
             return
         return self.lang_text('descriptions', lang=lang)
+
+    def label_and_description_list(self, want_languages):
+        language_codes = {l.wikimedia_language_code for l in want_languages}
+        try:
+            labels = self.entity['labels']
+        except (TypeError, KeyError):
+            return []
+        descriptions = self.entity['descriptions']
+
+        ret = {}
+        for lang, label in labels.items():
+            if lang not in language_codes:
+                continue
+            description = descriptions[lang]['value'] if lang in descriptions else None
+            ret[lang] = {'label': label['value'], 'description': description}
+        return ret
 
     def label_and_description(self, languages):
         labels = self.entity['labels']
@@ -787,6 +819,13 @@ https://www.wikidata.org/wiki/{self.qid}
             if extract:
                 return {'lang': lang, 'extract': extract}
 
+    def first_paragraphs(self, languages=None):
+        extracts = ((lang, self.first_paragraph_language(lang.site_name))
+                    for lang in languages)
+
+        return {lang.wikimedia_language_code: extract
+                for lang, extract in extracts if extract}
+
     def first_paragraph_language(self, lang):
         extract = self.extracts.get(lang)
         if not extract:
@@ -798,6 +837,7 @@ https://www.wikidata.org/wiki/{self.qid}
                       '<p>\n<span></span>\n</p>',
                       '<p>\n\n<span></span>\n</p>',
                       '<p>.\n</p>',
+                      '<p><br></p>',
                       '<p class="mw-empty-elt">\n</p>',
                       '<p class="mw-empty-elt">\n\n</p>',
                       '<p class="mw-empty-elt">\n\n\n</p>']
@@ -987,6 +1027,20 @@ class ItemCandidate(Base):
     def wikidata_tag(self):
         return self.tags.get('wikidata') or None
 
+    def names(self):
+        n = {k[5:]: v for k, v in self.tags.items()
+             if k.startswith('name:') and 'name:source' != k}
+
+        for key in 'bridge:name', 'tunnel:name', 'lock_name', 'name':
+            if key in self.tags:
+                n['name'] = self.tags[key]
+                break
+
+        if 'name' not in n:
+            n['name'] = self.label
+
+        return n
+
     def label_best_language(self, languages):
         if not languages:
             return self.label
@@ -997,6 +1051,7 @@ class ItemCandidate(Base):
 
         names = {k[5:]: v for k, v in self.tags.items()
                  if k.startswith('name:') and 'name:source' != k}
+
         if 'name' in self.tags:
             top_lang = g.default_languages[0]['code']
             if top_lang not in names:

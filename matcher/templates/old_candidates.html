@@ -1,0 +1,515 @@
+{% from "macro.html" import place_box, candidate_info with context %}
+{% from "navbar.html" import navbar_inner with context %}
+{% extends "base.html" %}
+
+{% macro refresh_button(place) %}
+<a class="btn btn-info" href="{{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) }}">Refresh cached data about this place</a>
+{% endmacro %}
+
+{% macro candidate_item(item) %}
+{% set picked = filtered[item.item_id]['candidate'] or none %}
+{% set checked = upload_okay and picked and picked.checkbox_ticked() %}
+{% set qid = item.qid %}
+
+<div id="{{ qid }}"
+     class="card my-2 candidate-item
+     {% if upload_okay and picked %}
+        {% if checked %}
+          border-success
+        {% else %}
+          border-danger
+        {% endif %}
+     {% endif %}">
+  <div class="card-body">
+<p>
+  <div id="label-{{ qid }}" {% if upload_okay and picked %} class="item-label alert alert-{% if checked %}success{% else %}danger{% endif %}"{% endif %}>
+  {% if upload_okay %}
+      {% if picked %}
+        {% if checked %}
+            <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
+        {% else %}
+            <input type="checkbox" name="include" value="{{ item.qid }}">
+        {% endif %}
+      {% else %}
+        ✕
+      {% endif %}
+  {% endif %}
+  {% set label_detail = item.label_and_description(languages) %}
+  <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
+    {{- label_detail.label or '[label missing]'}} ({{ item.qid }})</a>
+    {% if label_detail %}
+      {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
+      {% if label_detail.lang != languages.0 %}
+        [{{ label_detail.lang.label(with_code=False) }} label]
+      {% endif %}
+    {% endif %}
+  </div>
+  <div>
+
+  {% set search_tags = item.tags %}
+  {% set isa_list = item.isa %}
+  {% if isa_list %}
+    item type:
+    {% for isa in isa_list %}
+      <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) or isa.qid }}</a>{% if not loop.last %} / {% endif %}
+    {% endfor %}
+  {% else %}
+    search tags: {{ ', '.join(search_tags | sort) }}
+  {% endif %}
+  {% set lat, lon = item.get_lat_lon() %}
+  <a href="#" class="show_on_map btn btn-primary btn-sm" id="map_{{ item.qid }}">show on map</a>
+  </div>
+
+  {% if 'note' in filtered[item.item_id] %}
+    <div><span class="badge badge-danger">{{ filtered[item.item_id]['note'] }}</span></div>
+  {% endif %}
+
+  {% set fp = item.first_paragraph(languages) %}
+  {% if fp %}
+    <div class="summary mt-0">
+      <div><em>Summary from {{ fp.lang.label(with_code=False) }}
+        Wikipedia ({{fp.lang.site_name}})</em></div>
+      {{ fp.extract | safe }}
+    </div>
+  {% endif %}
+
+  {% set addresses = item.get_street_addresses() %}
+
+  {% if addresses %}
+    <p>Street address: <strong>{{ '; '.join(addresses) }}</strong> (from Wikidata)<p>
+  {% endif %}
+
+  {% set identifiers = item.identifier_values() %}
+  {% if identifiers %}
+    <p>
+    {% for values, label in item.identifiers() %}
+      {{ label }}: <strong>{{ ', '.join(values) }}</strong>
+      {%- if not loop.last %}; {% endif %}
+    {% endfor %}
+    </p>
+  {% endif %}
+
+  {% set defunct_cats = item.defunct_cats() %}
+  {% if defunct_cats %}
+    <div class="alert alert-danger">
+    <strong>This item might be defunct.</strong> The English Wikipedia
+    article is in these categories: {{ ', '.join(defunct_cats) }}
+    </div>
+  {% endif %}
+  {# <br>
+  <ul>
+    <li>Categories:
+    {% for cat in item.categories %}
+        <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
+    {% endfor %}
+    </li>
+    <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
+  </ul> #}
+  <ul>
+  {% for c in item.candidates %}
+    {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
+    {% set show_tags = (c == picked) and not checked %}
+    {{ candidate_info(c,
+                      is_picked=(item.candidates.count() > 1 and c == picked),
+                      is_bad=is_bad,
+                      show_tags=show_tags,
+                      identifiers=identifiers,
+                      show_existing=not session.demo_mode) }}
+  {% endfor %}
+  </ul>
+
+</div>
+</div>
+{% endmacro %}
+
+{% block title %}{{ place.display_name }}:{% endblock %}
+
+{% block nav %}
+<nav class="navbar fixed-top navbar-toggleable-md navbar-expand-lg navbar-dark bg-primary">
+  {{ navbar_inner() }}
+</nav>
+{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<style>
+#page-body {
+  width: 60%;
+  left: 40%;
+  position: relative;
+}
+
+#map {
+  width: 40%;
+
+  top: 56px;
+  bottom: 0px;
+  left: 0px;
+
+  display: block;
+  position: fixed;
+}
+
+.highlight {
+  background: lightblue;
+}
+
+</style>
+{% endblock %}
+{% set sentinel = 314159 %}
+{% block script %}
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+var current_highlight;
+var current_marker;
+var sentinel = {{ sentinel }};
+var item_candidate_json_url = {{ url_for('item_candidate_json', item_id=sentinel) | tojson }};
+var geojson = {{ place.geojson | safe }};
+var map = L.map('map');
+var mapStyle = {fillOpacity: 0};
+var layer = L.geoJSON(geojson, {'style': mapStyle});
+layer.addTo(map);
+
+{% if not candidates %}
+var bounds = [[{{ place.north }}, {{place.west }}],
+              [{{ place.south}}, {{ place.east}}]];
+map.fitBounds(bounds);
+{% endif %}
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+tiles.addTo(map);
+var group = L.featureGroup();
+
+var marker;
+var qid;
+var markers = {};
+var latlon = {};
+var osm_layer = null;
+
+function drop_osm_layer() {
+  if(!osm_layer) return;
+  map.removeLayer(osm_layer);
+  osm_layer = null;
+}
+
+const pinColour = '#00ccff';
+
+const markerHtmlStyles = `
+  background-color: ${pinColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`;
+
+const icon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${markerHtmlStyles}" />`
+});
+
+const highlightColour = '#ff0000';
+
+const highlightHtmlStyles = `
+  background-color: ${highlightColour};
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  left: -0.5rem;
+  top: -0.5rem;
+  position: relative;
+  border-radius: 1rem 1rem 0;
+  transform: rotate(45deg);
+  border: 1px solid #FFFFFF`;
+
+const highlightIcon = L.divIcon({
+  className: "my-custom-pin",
+  iconAnchor: [0, 24],
+  labelAnchor: [-6, 0],
+  popupAnchor: [0, -36],
+  html: `<span style="${highlightHtmlStyles}" />`
+});
+
+function highlight(item, marker) {
+    if (current_highlight) {
+      $(current_highlight).removeClass('highlight');
+    }
+    if (current_marker) {
+      current_marker.setIcon(icon);
+    }
+    $(item).addClass('highlight');
+    marker.setIcon(highlightIcon);
+    current_marker = marker;
+    current_highlight = item;
+}
+
+var show_on_map;
+{# FIXME: convert this jinja2 for loop to a loop in javascript #}
+{% for item in candidates %}
+  show_on_map = document.getElementById({{ ('map_' + item.qid) | tojson }});
+  show_on_map.addEventListener("click", zoom_to_item);
+
+  marker = L.marker({{ item.get_lat_lon() | list }}, {
+                    'title': {{ item.label_and_qid() | tojson }},
+                    'icon': icon,
+  });
+  marker.bindTooltip({{ item.label_and_qid() | tojson }});
+  markers[{{ item.qid | tojson }}] = marker;
+  latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
+  marker.addTo(group);
+  marker.on('click', (e) => {
+    drop_osm_layer();
+    var item = document.getElementById({{ item.qid | tojson }});
+    item.scrollIntoView();
+    var scrolledY = window.scrollY;
+    if(scrolledY){
+        window.scroll(0, scrolledY - 60);
+    }
+    highlight(item, e.target);
+  });
+{% endfor %}
+
+{% if candidates %}
+map.fitBounds(group.getBounds());
+map.addLayer(group);
+
+function zoom_to_qid(qid) {
+  marker = markers[qid]
+  var item = document.getElementById(qid);
+  highlight(item, marker);
+
+  var url = item_candidate_json_url.replace('Q' + sentinel, qid);
+
+  $.getJSON(url).done((data) => {
+    drop_osm_layer();
+    if(data.candidates.length == 0) {
+      map.setView(marker.getLatLng(), 18);
+      return;
+    }
+    var mapStyle = {fillOpacity: 0};
+    osm_layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
+    $.each(data.candidates, (index, candidate) => {
+      osm_layer.addData(candidate.geojson);
+    });
+    bounds = osm_layer.getBounds();
+    bounds.extend(marker.getLatLng());
+    map.fitBounds(bounds);
+  });
+}
+
+function zoom_to_item(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var qid = this.id.substring(4);
+
+  zoom_to_qid(qid);
+}
+
+{% endif %}
+
+</script>
+{% endblock %}
+
+{% block content %}
+  <div id="page-body">
+    <div class="m-2">
+    <h1>{{ place.name }}</h1>
+  {% set q = place.display_name %}
+
+  {{ place_box(place) }}
+
+  {% include "flash_msg.html" %}
+
+  {% set run = place.latest_matcher_run() %}
+  {% if run %}
+    <p>Latest matcher run: {{ run.start.strftime('%a, %d %b %Y %H:%S') }}</p>
+  {% endif %}
+
+  {% if place.area_in_sq_km < 1000 and (place.item_count or 0) < 80 %}
+    {% set larger_areas = place.suggest_larger_areas() | list %}
+    {% if larger_areas %}
+      <p>{{ place.name }} is small ({{ '{:,.2f}'.format(place.area_in_sq_km) }} km&sup2;), you might consider a larger enclosing area:</p>
+      <ul>
+        {% for hit in larger_areas %}
+        <li><a href="{{ hit.candidates_url() }}">{{ hit.name }}</a>
+
+    {{ hit.type_label }}
+    {% set admin_level = hit.admin_level %}
+    {% if admin_level %}
+      (admin level: {{ admin_level }})
+    {% endif %}
+    &mdash;
+    area: {{ '{:,.2f}'.format(hit.area_in_sq_km) }} km&sup2;
+    </li>
+
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+
+    {% if upload_okay %}
+      {% include "local_warning.html" %}
+    {% endif %}
+
+
+  {#
+    <form method="POST" action="{{ url_for('update_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
+      <button class="btn btn-primary">update OSM candidate tags</button>
+    </form>
+  #}
+
+  {% include "tabs.html" with context %}
+
+  {% if place.changesets.count() %}
+
+<p>Wikidata tags already added to OSM with this tool.</p>
+
+<ul>
+{% for obj in place.changesets %}
+<li>
+{{ obj.created.strftime('%H:%M %a, %d %b %Y') }}:
+<a href="https://www.openstreetmap.org/user/{{ obj.user.username }}">{{ obj.user.username }}</a>
+
+added tags to {{ '{:,d}'.format(obj.update_count) }} OSM elements
+
+<a href="https://www.openstreetmap.org/changeset/{{ obj.id }}">view changeset</a><br/>
+Change comment: "<em>{{ obj.comment }}</em>"
+</li>
+{% endfor %}
+</ul>
+
+  {% endif %}
+
+  {% if overpass_error %}
+    <div>&nbsp;</div>
+    <h4>Overpass API error</h4>
+    <pre>{{ overpass_error }}</pre>
+  {% else %}
+    <p>
+    {{ '{:,d}'.format(full_count) }} candidates found
+    </p>
+  {% endif %}
+
+  {% if not candidates %}
+  <p>{{ refresh_button(place) }}</p>
+  {% endif %}
+
+  {% if candidates %}
+      {% if isa_facets %}
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Type filter</h5>
+            <div class="card-text">
+      <form>
+        {% for isa in isa_facets %}
+
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="isa" value="{{ isa.qid }}" id="{{ isa.qid }}"{% if isa.qid in isa_filter %} checked="checked"{% endif %}>
+            <label class="form-check-label" for="{{ isa.qid }}">
+              {{ isa.label or '[label missing]' }} ({{ isa.qid }}): <strong>{{ isa.count }}</strong> matches
+              {% if isa.description %}
+                <em> &ndash; {{ isa.description }}</em>
+              {% endif -%}
+            </label>
+          </div>
+
+        {% endfor %}
+        <input type="submit" value="filter candidates" class="btn btn-primary">
+      </form>
+        </div>
+        </div>
+        </div>
+      {% endif %}
+
+    {% if languages_with_counts | length > 1 %}
+      <p>Language order preference.
+      {% set switch_lang_url = url_for('switch_languages',
+                                       osm_type=place.osm_type,
+                                       osm_id=place.osm_id) %}
+      <a href="{{ switch_lang_url }}">edit</a></p>
+      <ol>
+      {% for l in languages_with_counts %}
+        <li>{{ l.lang.label() if l.lang is not none else l.code }}
+            ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
+            {% if not loop.first %}
+              <a href="{{switch_lang_url }}?top={{ l.code }}">[move to top]</a>
+            {% endif %}
+        </li>
+      {% endfor %}
+      </ol>
+    {% endif %}
+
+    <p>{{ refresh_button(place) }}</p>
+
+    {% if filter_okay and not upload_okay %}
+      {% if config.DISABLE_SOCIAL %}
+        <p><a class="btn btn-primary" href="#">login to upload wikidata tags</a></p>
+      {% else %}
+        <p><a class="btn btn-primary" href="{{ url_for('login_route', next=request.script_root + request.full_path.rstrip('?')) }}">login to upload wikidata tags</a></p>
+      {% endif %}
+    {% endif %}
+
+    {% if upload_okay %}
+    <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
+
+      {% for isa in isa_filter %}
+        <input type="hidden" name="isa" value="{{ isa }}"/>
+      {% endfor %}
+
+      {% if config.SHOW_TOP_SAVE_CANDIDATES %}
+        <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+        (Don't worry, there's a confirmation page)
+      {% endif %}
+
+    <p class="mt-3">By default all likely matches are checked.
+	   If you prefer you can <a href="#" id="uncheck-all">uncheck all</a> and tick items as you check them.
+     <a href="#" id="show-all-tags">Show all tags</a> to see more detail for candidate matches.</p>
+    {% endif %}
+
+    <div class="my-3">
+    {% if unsure_items %}
+      {% if ticked_items %}
+        <h5>Less certain matches</h5>
+        <p>The following matches are less certain, mostly because the OSM and Wikidata locations are too far apart.</p>
+      {% endif %}
+      {% for item in unsure_items %}
+          {% set picked = filtered[item.item_id]['candidate'] or none %}
+          {% if picked and not picked.checkbox_ticked() %}
+              {{ candidate_item(item) }}
+          {% endif %}
+      {% endfor %}
+
+      {% if ticked_items %}
+        <h5>More certain matches</h5>
+      {% endif %}
+    {% endif %}
+    {% for item in ticked_items %}
+        {% set picked = filtered[item.item_id]['candidate'] or none %}
+        {% if not picked or picked.checkbox_ticked() %}
+            {{ candidate_item(item) }}
+        {% endif %}
+    {% endfor %}
+
+    </div>
+    {% if upload_okay %}
+      <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+      (Don't worry, there's a confirmation page)
+    </form>
+    {% endif %}
+
+  {% else %}
+
+    <p>Congratulations, this area is processed! No new candidates.</p>
+
+  {% endif %}
+
+</div>
+</div>
+<div id="map">
+</div>
+{% endblock %}

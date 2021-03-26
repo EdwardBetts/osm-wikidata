@@ -1,125 +1,9 @@
 {% from "macro.html" import place_box, candidate_info with context %}
 {% from "navbar.html" import navbar_inner with context %}
-{% extends "base.html" %}
+{% extends "base_no_jquery.html" %}
 
 {% macro refresh_button(place) %}
-<a class="btn btn-info" href="{{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) }}">Refresh cached data about this place</a>
-{% endmacro %}
-
-{% macro candidate_item(item) %}
-{% set picked = filtered[item.item_id]['candidate'] or none %}
-{% set checked = upload_okay and picked and picked.checkbox_ticked() %}
-{% set qid = item.qid %}
-
-<div id="{{ qid }}"
-     class="card my-2 candidate-item
-     {% if upload_okay and picked %}
-        {% if checked %}
-          border-success
-        {% else %}
-          border-danger
-        {% endif %}
-     {% endif %}">
-  <div class="card-body">
-<p>
-  <div id="label-{{ qid }}" {% if upload_okay and picked %} class="item-label alert alert-{% if checked %}success{% else %}danger{% endif %}"{% endif %}>
-  {% if upload_okay %}
-      {% if picked %}
-        {% if checked %}
-            <input type="checkbox" name="include" value="{{ item.qid }}" checked="checked" />
-        {% else %}
-            <input type="checkbox" name="include" value="{{ item.qid }}">
-        {% endif %}
-      {% else %}
-        ✕
-      {% endif %}
-  {% endif %}
-  {% set label_detail = item.label_and_description(languages) %}
-  <a href="{{ url_for('item_page', wikidata_id=item.item_id) }}">
-    {{- label_detail.label or '[label missing]'}} ({{ item.qid }})</a>
-    {% if label_detail %}
-      {% if label_detail.description %}&ndash; {{ label_detail.description }}{% endif %}
-      {% if label_detail.lang != languages.0 %}
-        [{{ label_detail.lang.label(with_code=False) }} label]
-      {% endif %}
-    {% endif %}
-  </div>
-  <div>
-
-  {% set search_tags = item.tags %}
-  {% set isa_list = item.isa %}
-  {% if isa_list %}
-    item type:
-    {% for isa in isa_list %}
-      <a href="{{ isa.url() }}">{{ isa.label_best_language(languages) or isa.qid }}</a>{% if not loop.last %} / {% endif %}
-    {% endfor %}
-  {% else %}
-    search tags: {{ ', '.join(search_tags | sort) }}
-  {% endif %}
-  {% set lat, lon = item.get_lat_lon() %}
-  <a href="#" class="show_on_map btn btn-primary btn-sm" id="map_{{ item.qid }}">show on map</a>
-  </div>
-
-  {% if 'note' in filtered[item.item_id] %}
-    <div><span class="badge badge-danger">{{ filtered[item.item_id]['note'] }}</span></div>
-  {% endif %}
-
-  {% set fp = item.first_paragraph(languages) %}
-  {% if fp %}
-    <div class="summary mt-0">
-      <div><em>Summary from {{ fp.lang.label(with_code=False) }}
-        Wikipedia ({{fp.lang.site_name}})</em></div>
-      {{ fp.extract | safe }}
-    </div>
-  {% endif %}
-
-  {% set addresses = item.get_street_addresses() %}
-
-  {% if addresses %}
-    <p>Street address: <strong>{{ '; '.join(addresses) }}</strong> (from Wikidata)<p>
-  {% endif %}
-
-  {% set identifiers = item.identifier_values() %}
-  {% if identifiers %}
-    <p>
-    {% for values, label in item.identifiers() %}
-      {{ label }}: <strong>{{ ', '.join(values) }}</strong>
-      {%- if not loop.last %}; {% endif %}
-    {% endfor %}
-    </p>
-  {% endif %}
-
-  {% set defunct_cats = item.defunct_cats() %}
-  {% if defunct_cats %}
-    <div class="alert alert-danger">
-    <strong>This item might be defunct.</strong> The English Wikipedia
-    article is in these categories: {{ ', '.join(defunct_cats) }}
-    </div>
-  {% endif %}
-  {# <br>
-  <ul>
-    <li>Categories:
-    {% for cat in item.categories %}
-        <a href="https://en.wikipedia.org/wiki/Category:{{ cat.replace(' ', '_') }}">{{ cat }}</a>{% if not loop.last %},{% endif %}
-    {% endfor %}
-    </li>
-    <li>tags considered: {{ ', '.join(item.tag_list) }}</li>
-  </ul> #}
-  <ul>
-  {% for c in item.candidates %}
-    {% set is_bad = (c.item_id, c.osm_type, c.osm_id) in bad_matches %}
-    {% set show_tags = (c == picked) and not checked %}
-    {{ candidate_info(c,
-                      is_picked=(item.candidates.count() > 1 and c == picked),
-                      is_bad=is_bad,
-                      show_tags=show_tags,
-                      identifiers=identifiers,
-                      show_existing=not session.demo_mode) }}
-  {% endfor %}
-  </ul>
-
-</div>
-</div>
+<a class="btn btn-info" href="{{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) }}">Run matcher again</a>
 {% endmacro %}
 
 {% block title %}{{ place.display_name }}:{% endblock %}
@@ -154,163 +38,37 @@
   background: lightblue;
 }
 
+[v-cloak] > * { display: none }
+[v-cloak]::before > * { content: "loading…" }
+
 </style>
 {% endblock %}
-{% set sentinel = 314159 %}
-{% block script %}
-<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
-<script>
-var current_highlight;
-var current_marker;
-var sentinel = {{ sentinel }};
-var item_candidate_json_url = {{ url_for('item_candidate_json', item_id=sentinel) | tojson }};
-var geojson = {{ place.geojson | safe }};
-var map = L.map('map');
-var mapStyle = {fillOpacity: 0};
-var layer = L.geoJSON(geojson, {'style': mapStyle});
-layer.addTo(map);
 
-{% if not candidates %}
+{% block script %}
+
+<script>
+const candidates_json_url = {{ candidates_json_url | tojson }};
+const show_local_warning = {{ config.LOCAL_WARNING | tojson }};
+const user_is_authenticated = {{ g.user.is_authenticated | tojson }};
+</script>
+
+<script src="https://unpkg.com/axios@latest"></script>
+<script src="https://unpkg.com/vue@latest"></script>
+<script src="https://unpkg.com/sortablejs@latest"></script>
+<script src="https://unpkg.com/vuedraggable@latest"></script>
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/candidates.js') }}"></script>
+<script>
+
+var geojson = {{ place.geojson | safe }};
+add_geojson_layer(geojson);
+
 var bounds = [[{{ place.north }}, {{place.west }}],
               [{{ place.south}}, {{ place.east}}]];
 map.fitBounds(bounds);
-{% endif %}
-var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-tiles.addTo(map);
-var group = L.featureGroup();
 
-var marker;
-var qid;
-var markers = {};
-var latlon = {};
-var osm_layer = null;
-
-function drop_osm_layer() {
-  if(!osm_layer) return;
-  map.removeLayer(osm_layer);
-  osm_layer = null;
-}
-
-const pinColour = '#00ccff';
-
-const markerHtmlStyles = `
-  background-color: ${pinColour};
-  width: 1rem;
-  height: 1rem;
-  display: block;
-  left: -0.5rem;
-  top: -0.5rem;
-  position: relative;
-  border-radius: 1rem 1rem 0;
-  transform: rotate(45deg);
-  border: 1px solid #FFFFFF`;
-
-const icon = L.divIcon({
-  className: "my-custom-pin",
-  iconAnchor: [0, 24],
-  labelAnchor: [-6, 0],
-  popupAnchor: [0, -36],
-  html: `<span style="${markerHtmlStyles}" />`
-});
-
-const highlightColour = '#ff0000';
-
-const highlightHtmlStyles = `
-  background-color: ${highlightColour};
-  width: 1rem;
-  height: 1rem;
-  display: block;
-  left: -0.5rem;
-  top: -0.5rem;
-  position: relative;
-  border-radius: 1rem 1rem 0;
-  transform: rotate(45deg);
-  border: 1px solid #FFFFFF`;
-
-const highlightIcon = L.divIcon({
-  className: "my-custom-pin",
-  iconAnchor: [0, 24],
-  labelAnchor: [-6, 0],
-  popupAnchor: [0, -36],
-  html: `<span style="${highlightHtmlStyles}" />`
-});
-
-function highlight(item, marker) {
-    if (current_highlight) {
-      $(current_highlight).removeClass('highlight');
-    }
-    if (current_marker) {
-      current_marker.setIcon(icon);
-    }
-    $(item).addClass('highlight');
-    marker.setIcon(highlightIcon);
-    current_marker = marker;
-    current_highlight = item;
-}
-
-var show_on_map;
-{# FIXME: convert this jinja2 for loop to a loop in javascript #}
-{% for item in candidates %}
-  show_on_map = document.getElementById({{ ('map_' + item.qid) | tojson }});
-  show_on_map.addEventListener("click", zoom_to_item);
-
-  marker = L.marker({{ item.get_lat_lon() | list }}, {
-                    'title': {{ item.label_and_qid() | tojson }},
-                    'icon': icon,
-  });
-  marker.bindTooltip({{ item.label_and_qid() | tojson }});
-  markers[{{ item.qid | tojson }}] = marker;
-  latlon[{{ item.qid | tojson }}] = {{ item.get_lat_lon() | list }};
-  marker.addTo(group);
-  marker.on('click', (e) => {
-    drop_osm_layer();
-    var item = document.getElementById({{ item.qid | tojson }});
-    item.scrollIntoView();
-    var scrolledY = window.scrollY;
-    if(scrolledY){
-        window.scroll(0, scrolledY - 60);
-    }
-    highlight(item, e.target);
-  });
-{% endfor %}
-
-{% if candidates %}
-map.fitBounds(group.getBounds());
-map.addLayer(group);
-
-function zoom_to_qid(qid) {
-  marker = markers[qid]
-  var item = document.getElementById(qid);
-  highlight(item, marker);
-
-  var url = item_candidate_json_url.replace('Q' + sentinel, qid);
-
-  $.getJSON(url).done((data) => {
-    drop_osm_layer();
-    if(data.candidates.length == 0) {
-      map.setView(marker.getLatLng(), 18);
-      return;
-    }
-    var mapStyle = {fillOpacity: 0};
-    osm_layer = L.geoJSON(null, {'style': mapStyle}).addTo(map);
-    $.each(data.candidates, (index, candidate) => {
-      osm_layer.addData(candidate.geojson);
-    });
-    bounds = osm_layer.getBounds();
-    bounds.extend(marker.getLatLng());
-    map.fitBounds(bounds);
-  });
-}
-
-function zoom_to_item(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  var qid = this.id.substring(4);
-
-  zoom_to_qid(qid);
-}
-
-{% endif %}
+app.refresh_matcher_url = {{ url_for('refresh_place', osm_type=place.osm_type, osm_id=place.osm_id) | tojson }};
+app.login_url = {{ url_for('login_route', next=request.script_root + request.full_path.rstrip('?')) |tojson }};
 
 </script>
 {% endblock %}
@@ -352,16 +110,9 @@ function zoom_to_item(e) {
     {% endif %}
   {% endif %}
 
-    {% if upload_okay %}
-      {% include "local_warning.html" %}
-    {% endif %}
-
-
-  {#
-    <form method="POST" action="{{ url_for('update_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
-      <button class="btn btn-primary">update OSM candidate tags</button>
-    </form>
-  #}
+  {% if g.user.is_authenticated %}
+    {% include "local_warning.html" %}
+  {% endif %}
 
   {% include "tabs.html" with context %}
 
@@ -385,128 +136,198 @@ Change comment: "<em>{{ obj.comment }}</em>"
 
   {% endif %}
 
-  {% if overpass_error %}
-    <div>&nbsp;</div>
-    <h4>Overpass API error</h4>
-    <pre>{{ overpass_error }}</pre>
-  {% else %}
-    <p>
-    {{ '{:,d}'.format(full_count) }} candidates found
-    </p>
-  {% endif %}
+<form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
+{% raw %}
+<div id="app" v-cloak>
+  <p v-if="!matches_loaded">
+    Loading &mldr;
+  </p>
+  <templete v-else>
 
-  {% if not candidates %}
-  <p>{{ refresh_button(place) }}</p>
-  {% endif %}
+  <p>{{ items.length }} candidates found</p>
 
-  {% if candidates %}
-      {% if isa_facets %}
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Type filter</h5>
-            <div class="card-text">
-      <form>
-        {% for isa in isa_facets %}
+  <div class="mb-2">
+    <a class="btn btn-info" :href="refresh_matcher_url">Run matcher again</a>
+  </div>
 
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="isa" value="{{ isa.qid }}" id="{{ isa.qid }}"{% if isa.qid in isa_filter %} checked="checked"{% endif %}>
-            <label class="form-check-label" for="{{ isa.qid }}">
-              {{ isa.label or '[label missing]' }} ({{ isa.qid }}): <strong>{{ isa.count }}</strong> matches
-              {% if isa.description %}
-                <em> &ndash; {{ isa.description }}</em>
-              {% endif -%}
+  <p v-if="!authenticated">
+    <a class="btn btn-primary" :href="login_url">login to upload wikidata tags</a>
+  </p>
+
+  <div v-if="items.length == 0">
+    <p>Congratulations, this area is processed! No new candidates.</p>
+  </div>
+
+  <div v-if="isa_facets.length" class="card">
+    <div class="card-body">
+      <h5 class="card-title">Type filter</h5>
+      <div class="card-text">
+          <div v-for="isa in isa_facets.slice(0, isa_facets_end)" class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="isa"
+                   :value="isa.qid"
+                   :id="isa.qid"
+                   v-model="isa_filter">
+            <label class="form-check-label" :for="isa.qid">
+              {{ isa.label }} ({{ isa.qid }}): <strong>{{ isa.count }}</strong> matches
+                <em v-if="isa.description"> &ndash; {{ isa.description }}</em>
             </label>
           </div>
 
-        {% endfor %}
-        <input type="submit" value="filter candidates" class="btn btn-primary">
-      </form>
-        </div>
-        </div>
-        </div>
-      {% endif %}
+          <p v-if="isa_facets_end < isa_facets.length">
+          show:
+          <a href="#" @click.prevent="isa_facets_pages++">more</a> /
+          <a href="#" @click.prevent="isa_facets_pages = isa_facets.length / isa_facets_per_page">all</a>
+          (another {{ isa_facets.length - isa_facets_end }} available)
+          </p>
 
-    {% if languages_with_counts | length > 1 %}
-      <p>Language order preference.
-      {% set switch_lang_url = url_for('switch_languages',
-                                       osm_type=place.osm_type,
-                                       osm_id=place.osm_id) %}
-      <a href="{{ switch_lang_url }}">edit</a></p>
-      <ol>
-      {% for l in languages_with_counts %}
-        <li>{{ l.lang.label() if l.lang is not none else l.code }}
-            ({{ l.wikidata }} Wikidata labels / {{ l.osm or 'no' }} OSM objects)
-            {% if not loop.first %}
-              <a href="{{switch_lang_url }}?top={{ l.code }}">[move to top]</a>
-            {% endif %}
-        </li>
-      {% endfor %}
-      </ol>
-    {% endif %}
-
-    <p>{{ refresh_button(place) }}</p>
-
-    {% if filter_okay and not upload_okay %}
-      {% if config.DISABLE_SOCIAL %}
-        <p><a class="btn btn-primary" href="#">login to upload wikidata tags</a></p>
-      {% else %}
-        <p><a class="btn btn-primary" href="{{ url_for('login_route', next=request.script_root + request.full_path.rstrip('?')) }}">login to upload wikidata tags</a></p>
-      {% endif %}
-    {% endif %}
-
-    {% if upload_okay %}
-    <form method="POST" action="{{ url_for('add_tags', osm_type=place.osm_type, osm_id=place.osm_id) }}">
-
-      {% for isa in isa_filter %}
-        <input type="hidden" name="isa" value="{{ isa }}"/>
-      {% endfor %}
-
-      {% if config.SHOW_TOP_SAVE_CANDIDATES %}
-        <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
-        (Don't worry, there's a confirmation page)
-      {% endif %}
-
-    <p class="mt-3">By default all likely matches are checked.
-	   If you prefer you can <a href="#" id="uncheck-all">uncheck all</a> and tick items as you check them.
-     <a href="#" id="show-all-tags">Show all tags</a> to see more detail for candidate matches.</p>
-    {% endif %}
-
-    <div class="my-3">
-    {% if unsure_items %}
-      {% if ticked_items %}
-        <h5>Less certain matches</h5>
-        <p>The following matches are less certain, mostly because the OSM and Wikidata locations are too far apart.</p>
-      {% endif %}
-      {% for item in unsure_items %}
-          {% set picked = filtered[item.item_id]['candidate'] or none %}
-          {% if picked and not picked.checkbox_ticked() %}
-              {{ candidate_item(item) }}
-          {% endif %}
-      {% endfor %}
-
-      {% if ticked_items %}
-        <h5>More certain matches</h5>
-      {% endif %}
-    {% endif %}
-    {% for item in ticked_items %}
-        {% set picked = filtered[item.item_id]['candidate'] or none %}
-        {% if not picked or picked.checkbox_ticked() %}
-            {{ candidate_item(item) }}
-        {% endif %}
-    {% endfor %}
-
+      </div>
     </div>
-    {% if upload_okay %}
-      <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
-      (Don't worry, there's a confirmation page)
-    </form>
-    {% endif %}
+  </div>
 
-  {% else %}
+  <div v-if="languages.length > 1">
+    <p>Drag to adjust language order preference.</p>
+    <ul class="list-group">
+      <draggable v-model="languages" @end="user_reorder_language">
+        <transition-group>
+          <li class="list-group-item" v-for="(l, index) in languages" :key="l.code">
+              {{ l.lang.label }} ({{ l.wikidata }} Wikidata labels / {{ l.osm || 'no' }} OSM objects)
+              <a href="#" v-if="index" @click.prevent="move_to_top(index)">[move to top]</a>
+          </li>
+        </transition-group>
+      </draggable>
+    </ul>
+  </div>
 
-    <p>Congratulations, this area is processed! No new candidates.</p>
+  <p v-if="authenticated" class="mt-3">By default all likely matches are checked.
+   If you prefer you can <a href="#" @click.prevent="untick_all">uncheck all</a> and tick items as you check them.
+   <a href="#" @click.prevent="show_all_tags">Show all tags</a> to see more detail for candidate matches.
+  </p>
 
-  {% endif %}
+  <div v-for="start_ticked in [false, true]">
+    <template v-if="!start_ticked && unsure_items.length != 0">
+      <h5>Less certain matches</h5>
+      <p>The following matches are less certain, mostly because the OSM and Wikidata locations are too far apart.</p>
+    </template>
+    <template v-if="start_ticked && unsure_items.length != 0 && ticked_items.length != 0">
+      <h5>More certain matches</h5>
+    </template>
+    <div v-for="item in items" v-if="start_ticked == item.start_ticked">
+      <div :id="item.qid"
+         class="card my-2 candidate-item"
+         v-if="filter_matches_item(item)"
+         v-bind:class="{ highlight: item.qid == current_highlight }"
+         @click="show_on_map(item)">
+        <div class="card-body">
+          <div :id="`label-${item.qid}`"
+               v-bind:class="{
+                              'item-label': item.upload_okay,
+                              'alert': item.upload_okay,
+                              'alert-success': item.upload_okay && item.ticked,
+                              'alert-danger': item.upload_okay && !item.ticked,
+                            }"
+             @click.stop="tick_item(item)">
+            <template v-if="authenticated">
+              <input v-if="item.upload_okay" name="include" :value="item.qid" type="checkbox" v-model="item.ticked" @click.stop />
+              <span v-else>✕</span>
+            </template>
+            <a :href="'/' + item.qid">{{ item.best_langauge ? item.labels[item.best_langauge].label : '[label missing]' }} ({{ item.qid }})</a>
+            <span v-if="item.best_langauge && item.labels[item.best_langauge].description ">&ndash; {{ item.labels[item.best_langauge].description }}</span>
+          </div>
+          <div>item type:
+            <template v-for="(isa_qid, isa_index) in item.isa_list">
+              <template v-if="isa_index != 0"> / </template>
+              <a href="#">{{ isa_lookup[isa_qid].label || isa_qid }}</a>
+            </template>
+
+            <a href="#"
+               class="show_on_map btn btn-primary btn-sm"
+               :data-qid="item.qid"
+               :id="`map_${item.qid}`"
+               @click.prevent.stop="show_on_map(item)"
+               >show on map</a>
+          </div>
+
+          <div v-if="item.notes.length">
+            <span class="badge badge-danger" v-for="note in item.notes">{{ note }}</span>
+          </div>
+
+          <div v-if="item.first_paragraph" class="summary mt-0">
+            <div><em>Summary from
+              {{ language_lookup[item.first_paragraph.language]["label"] }}
+              Wikipedia
+              ({{ language_lookup[item.first_paragraph.language]["site_name"] }})</em></div>
+            <div v-html="item.first_paragraph.extract"></div>
+          </div>
+
+          <p v-if="item.street_addresses.length">Street address:
+              <template v-for="address in item.street_addresses">
+                <br><strong>{{ address }}</strong>
+              </template>
+          </p>
+
+          <p v-for="(identifier, index) in item.identifiers">
+            <span v-if="index">;</span>
+            {{ identifier[1] }}: <strong>{{ identifier[0].join(', ') }}</strong>
+          </p>
+
+          <div v-if="item.defunct_cats.length > 0" class="alert alert-danger">
+          <strong>This item might be defunct.</strong> The English Wikipedia
+          article is in these categories: {{ item.defunct_cats.join(', ') }}
+          </div>
+
+          <ul>
+            <li v-for="c in item.candidates">{{ c.osm_type }}:
+              <a :href="`/detail/${item.qid}/${c.osm_type}/${c.osm_id}`">{{ c.label }}</a>
+              <a :href="`https://www.openstreetmap.org/${c.osm_type}/${c.osm_id}`" @click.stop>(OSM)</a>
+              <span v-if="c.dist > 1">{{ c.display_distance }} from Wikidata</span>
+              <span v-else class="badge badge-success">exact location</span>
+
+              <span v-if="item.candidates.length > 1 && c.is_best" class="badge badge-info">
+                best match
+              </span>
+
+              <span v-if="c.identifier_match" class="badge badge-success">identifier match</span>
+              <span v-if="c.name_match" class="badge badge-success">name match</span>
+              <span v-if="c.address_match" class="badge badge-success">address match</span>
+
+              <a href="#" v-if="c.show_tags" @click.prevent="c.show_tags = false" @click.stop>[hide tags]</a>
+              <a href="#" v-else @click.prevent="c.show_tags = true" @click.stop>[show tags]</a>
+
+              <table v-show="c.show_tags" class="w-auto tag-list table table-bordered table-hover table-sm table-light" :id="`candidate-${c.key}`">
+                 <thead class="thead-dark">
+                   <tr>
+                     <th>key</th>
+                     <th>value</th>
+                     <th></th>
+                    </tr>
+                 </thead>
+                 <tbody>
+                   <tr v-for="row of c.tags" v-bind:class="{ 'table-success': row[2] }">
+                   <td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td>
+                  </tr>
+                 </tbody>
+                </table>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-if="authenticated && items.length > 0">
+  <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+  (Don't worry, there's a confirmation page)
+  </div>
+
+  <p v-if="!authenticated && items.length > 0">
+    <a class="btn btn-primary" :href="login_url">login to upload wikidata tags</a>
+  </p>
+
+  </templete>
+</div>
+{% endraw %}
+</form>
 
 </div>
 </div>
