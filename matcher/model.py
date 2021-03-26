@@ -593,7 +593,8 @@ https://www.wikidata.org/wiki/{self.qid}
 
     def image_filenames(self):
         return [i['mainsnak']['datavalue']['value']
-                for i in self.entity['claims'].get('P18', [])]
+                for i in self.entity['claims'].get('P18', [])
+                if 'datavalue' in i['mainsnak']]
 
     def defunct_cats(self):
         words = {'demolish', 'disestablishment', 'defunct', 'abandon', 'mothballed',
