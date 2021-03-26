@@ -8,6 +8,8 @@ function add_geojson_layer(geojson) {
   layer.addTo(map);
 }
 
+var commons_api_url = 'https://commons.wikimedia.org/w/api.php'
+
 var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 var group = L.featureGroup();
 var osm_layer = null;
@@ -86,6 +88,8 @@ var app = new Vue({
       refresh_matcher_url: null,
       login_url: null,
       authenticated: user_is_authenticated,
+      image_filenames: [],
+      image_to_item: {}
   },
   computed: {
     isa_facets_end: function() {
@@ -235,6 +239,31 @@ var app = new Vue({
               item.candidates.forEach(c => c.show_tags = true);
           });
       },
+      get_images: function() {
+        var chunk_size = 50;
+        var temparray = this.image_filenames.splice(0, chunk_size);
+        if (temparray.length == 0) {
+          return;  // done
+        }
+        var titles = temparray.join('|');
+
+        var params = {
+          action: 'query',
+          prop: 'imageinfo',
+          iiprop: 'url',
+          iiurlwidth: '400',
+          titles: titles,
+          formatversion: '2',
+          format: 'json',
+          origin: '*',
+        };
+        axios.get(commons_api_url, {params: params}).then(response => {
+          response.data.query.pages.forEach(page => {
+            this.image_to_item[page.title].image = page.imageinfo[0].thumburl;
+            this.get_images();
+          });
+        });
+      },
   },
   mounted () {
     axios.get(candidates_json_url)
@@ -255,9 +284,16 @@ var app = new Vue({
                 this.item_lookup[qid] = item;
 
                 this.$set(item, 'ticked', item.ticked);
-                this.$set(item, 'start_ticked', item.ticked);
+                this.$set(item, 'start_ticked', item.ticked || false);
                 this.$set(item, 'notes', item.notes);
                 this.$set(item, 'best_langauge', null);
+                this.$set(item, 'image', null);
+
+                if(item.image_filenames.length > 0) {
+                  var filename = 'File:' + item.image_filenames[0];
+                  this.image_filenames.push(filename);
+                  this.image_to_item[filename] = item;
+                }
 
                 item.candidates.forEach(c => {
                     this.$set(c, 'show_tags', false);
@@ -295,7 +331,7 @@ var app = new Vue({
             if (this.items.length > 0)
                 map.fitBounds(group.getBounds());
             this.matches_loaded = true;
-
+            this.get_images();
          });
   },
 });
