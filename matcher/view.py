@@ -53,6 +53,11 @@ cat_to_ending = None
 osm_api_base = 'https://api.openstreetmap.org/api/0.6'
 really_save = True
 
+hide_trams = {
+    ('relation', 186579),  # Portland, OR
+    ('relation', 111968),  # San Francisco, CA
+}  # matcher doesn't handle tram stops properly, so hide them for these places
+
 navbar_pages = {
     'criteria_page': 'Criteria',
     'tag_list': 'Search tags',
@@ -65,7 +70,6 @@ tab_pages = [
     {'route': 'candidates', 'label': 'Match candidates'},
     {'route': 'already_tagged', 'label': 'Already tagged'},
     {'route': 'no_match', 'label': 'No match'},
-#     {'route': 'wikidata_page', 'label': 'Wikidata query'},
 ]
 
 disabled_tab_pages = [
@@ -692,11 +696,6 @@ def profile_candidates(osm_type, osm_id):
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
     record_timing('language')
 
-    hide_trams = {
-        ('relation', 186579),  # Portland, OR
-        ('relation', 111968),  # San Francisco, CA
-    }  # matcher doesn't handle tram stops properly, so hide them for these places
-
     if (osm_type, osm_id) in hide_trams:
         items = [item for item in items if not item.is_instance_of('Q2175765')]
 
@@ -848,6 +847,9 @@ def candidates_json(osm_type, osm_id):
         for c in item.candidates:
             osm_count[(c.osm_type, c.osm_id)] += 1
 
+    if (osm_type, osm_id) in hide_trams:
+        items = [item for item in items if not item.is_instance_of('Q2175765')]
+
     item_list = []
     isa_lookup = {}
     for item in items:
@@ -981,11 +983,6 @@ def old_candidates(osm_type, osm_id):
 
     languages_with_counts = get_place_language_with_counts(place)
     languages = [l['lang'] for l in languages_with_counts if l['lang']]
-
-    hide_trams = {
-        ('relation', 186579),  # Portland, OR
-        ('relation', 111968),  # San Francisco, CA
-    }  # matcher doesn't handle tram stops properly, so hide them for these places
 
     if (osm_type, osm_id) in hide_trams:
         items = [item for item in items if not item.is_instance_of('Q2175765')]
