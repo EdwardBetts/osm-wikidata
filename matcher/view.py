@@ -920,6 +920,7 @@ def candidates_json(osm_type, osm_id):
             'identifiers': [[list(values), label]
                             for values, label in item.identifiers()],
             'defunct_cats': item.defunct_cats(),
+            'image_filenames': item.image_filenames(),
             'notes': notes,
             'ticked': ticked,
             'upload_okay': upload_okay,
