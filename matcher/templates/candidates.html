@@ -237,11 +237,15 @@ Change comment: "<em>{{ obj.comment }}</em>"
             <a :href="'/' + item.qid">{{ item.best_langauge ? item.labels[item.best_langauge].label : '[label missing]' }} ({{ item.qid }})</a>
             <span v-if="item.best_langauge && item.labels[item.best_langauge].description ">&ndash; {{ item.labels[item.best_langauge].description }}</span>
           </div>
-          <div>item type:
+          <div>
+
+            <span v-if="item.isa_list.length">
+            item type:
             <template v-for="(isa_qid, isa_index) in item.isa_list">
               <template v-if="isa_index != 0"> / </template>
               <a href="#">{{ isa_lookup[isa_qid].label || isa_qid }}</a>
             </template>
+            </span>
 
             <a href="#"
                class="show_on_map btn btn-primary btn-sm"
@@ -249,6 +253,8 @@ Change comment: "<em>{{ obj.comment }}</em>"
                :id="`map_${item.qid}`"
                @click.prevent.stop="show_on_map(item)"
                >show on map</a>
+
+              <a :href="`https://www.wikidata.org/wiki/${ item.qid }`" target="_blank" @click.stop>Wikidata <i class="fa fa-external-link" aria-hidden="true"></i></a>
           </div>
 
           <div v-if="item.notes.length">
@@ -281,8 +287,8 @@ Change comment: "<em>{{ obj.comment }}</em>"
 
           <ul>
             <li v-for="c in item.candidates">{{ c.osm_type }}:
-              <a :href="`/detail/${item.qid}/${c.osm_type}/${c.osm_id}`">{{ c.label }}</a>
-              <a :href="`https://www.openstreetmap.org/${c.osm_type}/${c.osm_id}`" @click.stop>(OSM)</a>
+              <a :href="`/detail/${item.qid}/${c.osm_type}/${c.osm_id}`">{{ c.label }}</a> &bullet;
+              <a :href="`https://www.openstreetmap.org/${c.osm_type}/${c.osm_id}`" target="_blank" @click.stop>[OSM <i class="fa fa-external-link" aria-hidden="true"></i>]</a>
               <span v-if="c.dist > 1">{{ c.display_distance }} from Wikidata</span>
               <span v-else class="badge badge-success">exact location</span>
 
