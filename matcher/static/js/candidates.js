@@ -260,7 +260,7 @@ var app = new Vue({
         axios.get(commons_api_url, {params: params}).then(response => {
           response.data.query.pages.forEach(page => {
             this.image_to_item[page.title].image = page.imageinfo[0].thumburl;
-            this.get_images();
+            window.setTimeout(this.get_images, 2000);
           });
         });
       },
