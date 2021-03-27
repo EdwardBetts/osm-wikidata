@@ -263,9 +263,12 @@ Change comment: "<em>{{ obj.comment }}</em>"
 
           <div v-if="item.first_paragraph" class="summary mt-0">
             <div><em>Summary from
+                <a :href="`https://${item.first_paragraph.language}.wikipedia.org/wiki/${item.sitelinks[item.first_paragraph.language + 'wiki'].title.replace(/ /g, '_')}`" target="_blank" @click.stop>
               {{ language_lookup[item.first_paragraph.language]["label"] }}
               Wikipedia
-              ({{ language_lookup[item.first_paragraph.language]["site_name"] }})</em></div>
+              ({{ language_lookup[item.first_paragraph.language]["site_name"] }})
+              <i class="fa fa-external-link" aria-hidden="true"></i></a>
+              </em></div>
             <div v-html="item.first_paragraph.extract"></div>
           </div>
 
