@@ -926,6 +926,7 @@ def candidates_json(osm_type, osm_id):
             'notes': notes,
             'ticked': ticked,
             'upload_okay': upload_okay,
+            'sitelinks': item.sitelinks(),
             'candidates': [{
                 'key': c.key,
                 'is_best': (matched_candidate and c.key == matched_candidate.key),
