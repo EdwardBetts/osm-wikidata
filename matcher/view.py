@@ -817,6 +817,9 @@ def candidates_json(osm_type, osm_id):
     cookie = read_language_order()
     user_language_order = cookie.get(place.identifier) or []
 
+    bad_matches = get_bad_matches(place)
+    bad_match_items = {i[0] for i in bad_matches}
+
     cache = place.match_cache
     if cache:
         languages = cache.pop('languages')
@@ -858,6 +861,7 @@ def candidates_json(osm_type, osm_id):
         identifiers = item.identifier_values()
 
         notes = []
+
         matched_candidates = matcher.reduce_candidates(item, candidates.all())
 
         if len(matched_candidates) == 1:
@@ -874,6 +878,10 @@ def candidates_json(osm_type, osm_id):
             upload_okay = False
             notes.append("more than one candidate found")
             matched_candidate = None
+
+        if item.item_id in bad_match_items:
+            notes.append('bad match reported')
+            upload_okay = False
 
         lat, lon = item.get_lat_lon()
 
@@ -930,6 +938,7 @@ def candidates_json(osm_type, osm_id):
             'candidates': [{
                 'key': c.key,
                 'is_best': (matched_candidate and c.key == matched_candidate.key),
+                'bad_match_reported': (item.item_id, c.osm_type, c.osm_id) in bad_matches,
                 # 'label': c.label_best_language(langs),
                 'names': c.names(),
                 # 'name': c.name,
@@ -1014,7 +1023,7 @@ def old_candidates(osm_type, osm_id):
         else:
             ticked_items.append(item)
 
-    return render_template('candidates.html',
+    return render_template('old_candidates.html',
                            place=place,
                            osm_id=osm_id,
                            isa_facets=isa_facets,

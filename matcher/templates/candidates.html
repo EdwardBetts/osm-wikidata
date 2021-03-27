@@ -295,6 +295,7 @@ Change comment: "<em>{{ obj.comment }}</em>"
               <span v-if="c.dist > 1">{{ c.display_distance }} from Wikidata</span>
               <span v-else class="badge badge-success">exact location</span>
 
+              <span v-if="c.bad_match_reported" class="badge badge-danger">bad match reported</span>
               <span v-if="item.candidates.length > 1 && c.is_best" class="badge badge-info">
                 best match
               </span>
