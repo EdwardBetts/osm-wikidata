@@ -158,7 +158,7 @@ Change comment: "<em>{{ obj.comment }}</em>"
     <p>Congratulations, this area is processed! No new candidates.</p>
   </div>
 
-  <div v-if="isa_facets.length" class="card">
+  <div v-if="items.length && isa_facets.length" class="card">
     <div class="card-body">
       <h5 class="card-title">Type filter</h5>
       <div class="card-text">
@@ -186,7 +186,7 @@ Change comment: "<em>{{ obj.comment }}</em>"
     </div>
   </div>
 
-  <div v-if="languages.length > 1">
+  <div v-if="items.length && languages.length > 1">
     <p>Drag to adjust language order preference.</p>
     <ul class="list-group">
       <draggable v-model="languages" @end="user_reorder_language">
