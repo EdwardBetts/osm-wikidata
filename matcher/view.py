@@ -947,7 +947,7 @@ def candidates_json(osm_type, osm_id):
                 'osm_id': c.osm_id,
                 'display_distance': c.display_distance(),
                 'identifier_match': c.identifier_match,
-                'name_match': c.name_match,
+                'name_match': c.name_match or None,
                 'address_match': c.address_match,
                 'tags': candidate_tags(search_tags, identifiers, c),
             } for c in candidates],
