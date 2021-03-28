@@ -230,12 +230,14 @@ Change comment: "<em>{{ obj.comment }}</em>"
                               'alert-danger': item.upload_okay && !item.ticked,
                             }"
              @click.stop="tick_item(item)">
+            <h4>
             <template v-if="authenticated">
               <input v-if="item.upload_okay" name="include" :value="item.qid" type="checkbox" v-model="item.ticked" @click.stop />
               <span v-else>✕</span>
             </template>
             <a :href="'/' + item.qid">{{ item.best_langauge ? item.labels[item.best_langauge].label : '[label missing]' }} ({{ item.qid }})</a>
             <span v-if="item.best_langauge && item.labels[item.best_langauge].description ">&ndash; {{ item.labels[item.best_langauge].description }}</span>
+            </h4>
           </div>
           <div>
 
@@ -288,10 +290,18 @@ Change comment: "<em>{{ obj.comment }}</em>"
           article is in these categories: {{ item.defunct_cats.join(', ') }}
           </div>
 
-          <ul>
-            <li v-for="c in item.candidates">{{ c.osm_type }}:
-              <a :href="`/detail/${item.qid}/${c.osm_type}/${c.osm_id}`">{{ c.label }}</a> &bullet;
+          <h5>Matches from OpenStreetMap</h5>
+          <ul class="list-group">
+            <li v-for="c in item.candidates" class="list-group-item">
+
+              <div>
+              <a :href="`/detail/${item.qid}/${c.osm_type}/${c.osm_id}`">{{ c.label }}</a>
+
+              ({{ c.osm_type }})
+
               <a :href="`https://www.openstreetmap.org/${c.osm_type}/${c.osm_id}`" target="_blank" @click.stop>[OSM <i class="fa fa-external-link" aria-hidden="true"></i>]</a>
+              <br/>
+
               <span v-if="c.dist > 1">{{ c.display_distance }} from Wikidata</span>
               <span v-else class="badge badge-success">exact location</span>
 
@@ -303,10 +313,42 @@ Change comment: "<em>{{ obj.comment }}</em>"
               <span v-if="c.identifier_match" class="badge badge-success">identifier match</span>
               <span v-if="c.name_match" class="badge badge-success">name match</span>
               <span v-if="c.address_match" class="badge badge-success">address match</span>
+              </div>
 
-              <a href="#" v-if="c.show_tags" @click.prevent="c.show_tags = false" @click.stop>[hide tags]</a>
-              <a href="#" v-else @click.prevent="c.show_tags = true" @click.stop>[show tags]</a>
+              <div>
+                <a v-if="c.name_match" href="#" class="my-2 btn btn-primary btn-sm" @click.prevent.stop="c.show_name_match = !c.show_name_match">toggle name match detail</a>
+                <a href="#" class="my-2 btn btn-primary btn-sm" @click.prevent.stop="c.show_tags = !c.show_tags">toggle OSM tags</a>
+              </div>
 
+              <div v-show="c.show_name_match">
+                <h6>Name match detail</h6>
+              <table class="w-auto tag-list table table-bordered table-hover table-sm table-light">
+                 <thead class="thead-dark">
+                   <tr>
+                     <th>OSM key</th>
+                     <th>OSM value</th>
+                     <th>Wikimedia value</th>
+                    </tr>
+                 </thead>
+                 <tbody>
+                   <tr v-for="(value, key) in c.name_match">
+                     <td>{{ key }}</td>
+                     <td>{{ c.tag_lookup[key] }}</td>
+                     <td>
+                       <template v-for="i in value">
+                         {{ i[1] }} <span class="badge badge-info">{{ i[0].replace('_', ' ') }} match</span><br/>
+                         source:
+                         <template v-for="(src, index) in i[2]"><template v-if="index != 0">,</template> {{ src[1] }} {{ src[0] }}</template>
+                         <br>
+                       </template>
+                     </td>
+                  </tr>
+                 </tbody>
+              </table>
+              </div>
+
+              <div v-show="c.show_tags">
+                <h6>OpenStreetMap tags</h6>
               <table v-show="c.show_tags" class="w-auto tag-list table table-bordered table-hover table-sm table-light" :id="`candidate-${c.key}`">
                  <thead class="thead-dark">
                    <tr>
@@ -317,10 +359,11 @@ Change comment: "<em>{{ obj.comment }}</em>"
                  </thead>
                  <tbody>
                    <tr v-for="row of c.tags" v-bind:class="{ 'table-success': row[2] }">
-                   <td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td>
+                     <td>{{ row[0] }}</td><td>{{ row[1] }}</td><td>{{ row[2] }}</td>
                   </tr>
                  </tbody>
                 </table>
+              </div>
             </li>
           </ul>
         </div>

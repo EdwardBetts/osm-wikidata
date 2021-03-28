@@ -297,6 +297,9 @@ var app = new Vue({
 
                 item.candidates.forEach(c => {
                     this.$set(c, 'show_tags', false);
+                    this.$set(c, 'show_name_match', false);
+                    this.$set(c, 'tag_lookup', Object.fromEntries(c.tags));
+
                 });
 
                 // no longer needed, using isa_super_qids instead
