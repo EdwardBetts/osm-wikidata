@@ -12,10 +12,10 @@ class SearchError(Exception):
 
 class Hit:
     def __init__(self, d):
-        self.osm_type = d['osm_type']
-        self.osm_id = d['osm_id']
+        self.osm_type = d.get('osm_type')
+        self.osm_id = d.get('osm_id')
         self.display_name = d['display_name']
-        self.place = d['place']
+        self.place = d.get('place')
         self.category = d['category'].replace('_', ' ')
         self.type = d['type'].replace('_', ' ')
         self.area = d.get('area')
@@ -116,7 +116,7 @@ class Hit:
             return 'place boundary is too complex for matcher'
 
 def convert_hits_to_objects(results):
-    return [Hit(hit) for hit in results]
+    return [Hit(hit) for hit in results if 'osm_type' in hit]
 
 def update_search_results(results):
     need_commit = False
@@ -189,7 +189,9 @@ def handle_redirect_on_single(results):
 
 def check_for_city_node_in_results(q, results):
     for hit_num, hit in enumerate(results):
-        if hit['osm_type'] != 'node':
+        if hit.get('osm_type') != 'node':
+            continue
+        if ',' not in hit['display_name']:
             continue
         name_parts = hit['display_name'].split(', ')
         node, area = name_parts[:2]
