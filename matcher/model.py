@@ -426,6 +426,9 @@ https://www.wikidata.org/wiki/{self.qid}
                 if 'datavalue' in i['mainsnak']]
 
     def get_street_addresses(self):
+        if not self.entity or not self.entity.get('claims'):
+            return []
+
         addresses = []
         for p6375 in self.entity['claims'].get('P6375', []):
             try:
