@@ -36,7 +36,7 @@ Select one to start matching.
       {% set reason = hit.reason_matcher_not_allowed() %}
       {% if reason %}
         <p>[{{ reason }}]</p>
-        {% if 'too large' not in reason %}
+        {% if 'too large' not in reason and ',' in hit.display_name %}
           <p>Try searching for <a href="{{ hit.next_level_name_search() }}">{{ hit.next_level_name() }}</a> instead</p>
         {% endif %}
         </p>
