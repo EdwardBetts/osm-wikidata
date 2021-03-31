@@ -173,14 +173,8 @@ class IsA(Base):
 
 class ItemIsA(Base):
     __tablename__ = 'item_isa'
-    item_id = Column(Integer,
-                     ForeignKey('item.item_id'),
-                     primary_key=True,
-                     autoincrement=False)
-    isa_id = Column(Integer,
-                     ForeignKey('isa.item_id'),
-                     primary_key=True,
-                     autoincrement=False)
+    item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
+    isa_id = Column(Integer, ForeignKey('isa.item_id'), primary_key=True)
 
     item = relationship('Item')
     isa = relationship('IsA')
@@ -188,10 +182,7 @@ class ItemIsA(Base):
 class Extract(Base):
     __tablename__ = 'extract'
 
-    item_id = Column(Integer,
-                     ForeignKey('item.item_id'),
-                     primary_key=True,
-                     autoincrement=False)
+    item_id = Column(Integer, ForeignKey('item.item_id'), primary_key=True)
     site = Column(String, primary_key=True)
     extract = Column(String, nullable=False)
 
@@ -1390,10 +1381,7 @@ class Language(Base):
 
 class LanguageLabel(Base):
     __tablename__ = 'language_label'
-    item_id = Column(Integer,
-                     ForeignKey(Language.item_id),
-                     primary_key=True,
-                     autoincrement=False)
+    item_id = Column(Integer, ForeignKey(Language.item_id), primary_key=True)
     wikimedia_language_code = Column(String,
                                      ForeignKey(Language.wikimedia_language_code),
                                      primary_key=True)
