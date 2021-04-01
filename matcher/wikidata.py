@@ -1,10 +1,11 @@
-from flask import render_template_string, render_template
+from flask import render_template_string, render_template, request
 from urllib.parse import unquote
 from collections import defaultdict
 from .utils import drop_start, cache_filename
 from .language import get_language_label
 from .wikidata_api import QueryError, QueryTimeout, get_entity, get_entities
 from . import user_agent_headers, overpass, mail, language, match, matcher, commons
+from time import time
 import requests
 import requests.exceptions
 import os
@@ -964,7 +965,14 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
         query = get_next_level_query(qid, entity, language=language)
 
     rows = []
+    t0 = time()
     r = run_query(query, name=name, return_json=False, send_error_mail=True)
+    query_time = time() - t0
+    if query_time > 2:
+        subject = f'next level places query took {query_time:.1f}'
+        body = f'{request.url}\n\n{query}'
+        mail.send_mail(subject, body)
+
     query_rows = r.json()['results']['bindings']
     if any('isa_list' not in row for row in query_rows):
         mail.error_mail('wikidata browse query error', query, r)
