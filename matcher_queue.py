@@ -81,8 +81,15 @@ def process_queue():
             if not wait_for_slot(send_queue):
                 return
             to_client(send_queue, "run_query", msg)
-            print("run query")
-            r = overpass.run_query(oql)
+            while True:
+                print("run query")
+                try:
+                    r = overpass.run_query(oql)
+                    break
+                except overpass.RateLimited:
+                    print("rate limited")
+                    wait_for_slot(send_queue)
+
             print("query complete")
             with open(filename, "wb") as out:
                 out.write(r.content)
