@@ -30,6 +30,7 @@ from .websocket import ws
 
 from flask_sockets import Sockets
 
+import sqlalchemy.exc
 import flask_login
 import json
 import inspect
@@ -105,7 +106,12 @@ def global_user():
 
 @app.before_request
 def site_banner():
-    g.banner = SiteBanner.query.filter(SiteBanner.end.is_(None)).one_or_none()
+    if '/static/' in request.path:
+        return
+    try:
+        g.banner = SiteBanner.query.filter(SiteBanner.end.is_(None)).one_or_none()
+    except sqlalchemy.exc.SQLAlchemyError:
+        pass
 
 @app.before_request
 def slow_crawl():
