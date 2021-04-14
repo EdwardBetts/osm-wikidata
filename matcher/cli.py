@@ -3,8 +3,8 @@ from .view import app, get_existing
 from .model import (Item, Changeset, get_bad, Base, ItemCandidate, Language,
                     LanguageLabel, OsmCandidate, Extract, ChangesetEdit,
                     EditMatchReject, BadMatchFilter, SiteBanner, InProgress,
-                    ItemIsA, IsA, PlaceItem, PageBanner)
-from .place import Place
+                    ItemIsA, IsA, PlaceItem, PageBanner, User)
+from .place import Place, PlaceMatcher
 from .isa_facets import get_isa_facets
 from . import (database, mail, matcher, nominatim, utils, chat, wikidata, osm_api,
                wikidata_api, browse, jobs)
