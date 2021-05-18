@@ -10,7 +10,10 @@ function add_geojson_layer(geojson) {
 
 var commons_api_url = 'https://commons.wikimedia.org/w/api.php'
 
-var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxNativeZoom: 19,
+  maxZoom: 21
+});
 var group = L.featureGroup();
 var osm_layer = null;
 

@@ -41,7 +41,10 @@ layer = L.geoJSON(chunk_geojson);
 
 layer.addTo(map);
 map.fitBounds(layer.getBounds());
-var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxNativeZoom: 19,
+  maxZoom: 21
+});
 tiles.addTo(map);
 
 function add_pin(item) {
