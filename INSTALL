@@ -64,6 +64,3 @@ The task queue that handles communication with the Overpass API needs to be run
 separately. It is in the project root directory, this will start it:
 
     python3 task_queue.py
-
-Currently in development is an ansible playbook for configuring a server to run
-this software. It should be available soon.
