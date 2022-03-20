@@ -31,7 +31,7 @@ def add_wikipedia_tag(root, m):
     if not lang or root.find(f'.//tag[@k="wikipedia:{lang}"]') is not None:
         return
     value = lang + ":" + m["wiki_title"]
-    existing = root.find(f'.//tag[@k="wikipedia"]')
+    existing = root.find('.//tag[@k="wikipedia"]')
     if existing is not None:
         existing.set("v", value)
         return
