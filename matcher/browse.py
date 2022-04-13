@@ -228,24 +228,24 @@ def get_continents():
     banner_filenames = []
     for row in rows:
         item = {
-            'label': row['continentLabel']['value'],
-            'description': row['continentDescription']['value'],
-            'country_count': row['count']['value'],
-            'qid': wikidata.wd_to_qid(row['continent']),
+            "label": row["continentLabel"]["value"],
+            "description": row["continentDescription"]["value"],
+            "country_count": row["count"]["value"],
+            "qid": wikidata.wd_to_qid(row["continent"]),
         }
         try:
-            filename = commons.commons_uri_to_filename(row['banner']['value'])
-            item['banner'] = filename
+            filename = commons.commons_uri_to_filename(row["banner"]["value"])
+            item["banner"] = filename
             banner_filenames.append(filename)
         except KeyError:
             pass
         items.append(item)
-        row['item'] = item
+        row["item"] = item
     images = commons.image_detail(banner_filenames)
     for item in items:
-        banner = item.get('banner')
+        banner = item.get("banner")
         if not banner:
             continue
-        item['banner_url'] = images[banner]['url']
+        item["banner_url"] = images[banner]["url"]
 
     return items
