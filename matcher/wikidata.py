@@ -986,8 +986,11 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
 
     if not query_rows:
         claims = entity.get('claims', {})
+        # Taiwan Province, People's Republic of China (Q57251)
+        # [no value] for located in the administrative territorial entity (P131)
         located_in = {i['mainsnak']['datavalue']['value']['id']
-                      for i in claims.get('P131', [])}
+                      for i in claims.get('P131', [])
+                      if 'datavalue' in i['mainsnak']}
 
         for located_in_qid in located_in:
             located_in_entity = get_entity(located_in_qid)
