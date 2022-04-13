@@ -200,8 +200,7 @@ def get_details(item_id, timing=None, lang=None, sort=None):
     former_type = {
         isa_qid
         for isa_qid, isa in isa_map.items()
-        if "former" in isa.entity_label().lower()
-        or "historical" in isa.entity_label().lower()
+        if any(term in isa.entity_label().lower() for term in ("historical", "former"))
     }
 
     current_places = [row for row in rows if not (set(row["isa"]) & former_type)]
