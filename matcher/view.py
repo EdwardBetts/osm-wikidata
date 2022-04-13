@@ -1308,31 +1308,7 @@ def changesets():
 
 @app.route('/browse/')
 def browse_index():
-    query = wikidata.continents_with_country_count_query
-    rows = wikidata.run_query(query)
-    items = []
-    banner_filenames = []
-    for row in rows:
-        item = {
-            'label': row['continentLabel']['value'],
-            'description': row['continentDescription']['value'],
-            'country_count': row['count']['value'],
-            'qid': wikidata.wd_to_qid(row['continent']),
-        }
-        try:
-            filename = commons.commons_uri_to_filename(row['banner']['value'])
-            item['banner'] = filename
-            banner_filenames.append(filename)
-        except KeyError:
-            pass
-        items.append(item)
-        row['item'] = item
-    images = commons.image_detail(banner_filenames)
-    for item in items:
-        banner = item.get('banner')
-        if not banner:
-            continue
-        item['banner_url'] = images[banner]['url']
+    items = browse.get_continents()
     return render_template('browse_index.html', items=items)
 
 @app.route('/browse/Q<int:item_id>')

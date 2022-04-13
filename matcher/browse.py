@@ -1,4 +1,4 @@
-from . import database, nominatim, wikidata, wikidata_api, wikidata_language
+from . import database, nominatim, wikidata, wikidata_api, wikidata_language, commons
 from .place import Place
 from .model import WikidataItem, IsA
 from time import time
@@ -219,3 +219,33 @@ def get_details(item_id, timing=None, lang=None, sort=None):
         "isa_map": isa_map,
         **kwargs,
     }
+
+
+def get_continents():
+    query = wikidata.continents_with_country_count_query
+    rows = wikidata.run_query(query)
+    items = []
+    banner_filenames = []
+    for row in rows:
+        item = {
+            'label': row['continentLabel']['value'],
+            'description': row['continentDescription']['value'],
+            'country_count': row['count']['value'],
+            'qid': wikidata.wd_to_qid(row['continent']),
+        }
+        try:
+            filename = commons.commons_uri_to_filename(row['banner']['value'])
+            item['banner'] = filename
+            banner_filenames.append(filename)
+        except KeyError:
+            pass
+        items.append(item)
+        row['item'] = item
+    images = commons.image_detail(banner_filenames)
+    for item in items:
+        banner = item.get('banner')
+        if not banner:
+            continue
+        item['banner_url'] = images[banner]['url']
+
+    return items
