@@ -355,14 +355,11 @@ class Item(Base):
 
     def label_and_qid(self, lang="en"):
         label = self.label(lang=lang)
-        if label:
-            return "{label} ({item.qid})".format(label=label, item=self)
-        else:
-            return self.qid
+        return f"{label} ({self.qid})" if label else self.qid
 
     @property
     def wikidata_uri(self):
-        return "https://www.wikidata.org/wiki/Q{}".format(self.item_id)
+        return f"https://www.wikidata.org/wiki/{self.qid}"
 
     def get_lat_lon(self):
         return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
@@ -631,7 +628,7 @@ https://www.wikidata.org/wiki/{self.qid}
         ).one()
         union = []
         for tag in self.tags:
-            osm_filter = "around:1000,{:f},{:f}".format(lat, lon)
+            osm_filter = f"around:1000,{lat:f},{lon:f}"
             union += oql_from_tag(tag, False, osm_filter)
         return union
 
@@ -1542,7 +1539,7 @@ class WikidataItem(Base):
 
     @classmethod
     def get_and_update(cls, item_id):
-        qid = "Q{}".format(item_id)
+        qid = f"Q{item_id}"
 
         existing = cls.query.get(item_id)
         if existing:
@@ -1577,7 +1574,7 @@ class WikidataItem(Base):
 
     @classmethod
     def get(cls, item_id):
-        qid = "Q{}".format(item_id)
+        qid = f"Q{item_id}"
 
         existing = cls.query.get(item_id)
         if existing:
