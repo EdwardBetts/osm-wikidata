@@ -511,7 +511,7 @@ class Place(Base):
         return items
 
     def covers(self, item):
-        """ Is the given item within the geometry of this place. """
+        """Is the given item within the geometry of this place."""
         q = select([func.ST_Covers(Place.geom, item["location"])]).where(
             Place.place_id == self.place_id
         )
@@ -544,7 +544,7 @@ class Place(Base):
         return os.path.join(overpass_dir, "{}.xml".format(self.place_id))
 
     def is_overpass_filename(self, f):
-        """ Does the overpass filename belongs to this place. """
+        """Does the overpass filename belongs to this place."""
         place_id = str(self.place_id)
         return f == place_id + ".xml" or f.startswith(place_id + "_")
 
@@ -1655,18 +1655,20 @@ class PlaceMatcher(Base):
             return open(filename).read()
 
     def open_log_for_writes(self):
-        if not current_app.config.get('LOG_MATCHER_REQUESTS'):
+        if not current_app.config.get("LOG_MATCHER_REQUESTS"):
             return
 
         filename = self.log_full_filename
         assert not os.path.exists(filename)
-        return open(filename, 'w')
+        return open(filename, "w")
 
-    def log_url(self, endpoint='admin.view_log'):
-        return url_for(endpoint,
-                       osm_type=self.osm_type,
-                       osm_id=self.osm_id,
-                       start=str(self.start).replace(' ', '_'))
+    def log_url(self, endpoint="admin.view_log"):
+        return url_for(
+            endpoint,
+            osm_type=self.osm_type,
+            osm_id=self.osm_id,
+            start=str(self.start).replace(" ", "_"),
+        )
 
 
 def get_top_existing(limit=39):
