@@ -1333,3 +1333,66 @@ def list_active_jobs():
         print('start:', start_display)
         print(job)
         print()
+
+
+browse_cache_dir = "browse_cache"
+
+@app.cli.command()
+def get_continents():
+    app.config.from_object('config.default')
+    items = browse.get_continents()
+    filename = os.path.join(browse_cache_dir, "continents.json")
+    json.dump(items, open(filename, "w"), indent=2)
+
+@app.cli.command()
+def get_browse_cache():
+    app.config.from_object('config.default')
+    database.init_app(app)
+
+    app.config['SERVER_NAME'] = 'osm.wikidata.link'
+    ctx = app.test_request_context()
+    ctx.push()  # to make url_for work
+
+    continent_filename = os.path.join(browse_cache_dir, "continents.json")
+    continents = [item for item in json.load(open(continent_filename))]
+
+    for f in sorted([f for f in os.scandir(browse_cache_dir) if f.name[0] == "Q"], key=lambda f: int(f.name[1:-5])):
+        print(f.name)
+        data = json.load(open(f.path))
+        qid = data["qid"]
+        print(qid, data["name"])
+        del data["entity"]
+        for place in data["current_places"]:
+            print("  ", place["qid"], place["label"])
+            filename = os.path.join(browse_cache_dir, place["qid"] + ".json")
+            if os.path.exists(filename):
+                continue
+            sleep(10)
+            details = browse.get_details(place["item_id"], lang="en")
+            del details["place"]
+            del details["isa_map"]
+
+            json.dump(details, open(filename, "w"), indent=2)
+
+        # pprint(data)
+        print()
+
+        continue
+
+    return
+
+    for item in continents:
+        qid = item["qid"]
+        item_id = int(qid[1:])
+
+        print(item["qid"], item["label"])
+        filename = os.path.join(browse_cache_dir, item["qid"] + ".json")
+        if os.path.exists(filename):
+            continue
+
+        details = browse.get_details(item_id, lang="en")
+        del details["place"]
+        del details["isa_map"]
+        pprint(details)
+
+        json.dump(details, open(filename, "w"), indent=2)
