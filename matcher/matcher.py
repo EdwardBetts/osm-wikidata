@@ -1,6 +1,6 @@
 from flask import current_app
 from collections import Counter, defaultdict
-from . import match, database, wikidata, embassy, model, mail
+from . import match, database, wikidata, embassy, model
 
 import os.path
 import json
