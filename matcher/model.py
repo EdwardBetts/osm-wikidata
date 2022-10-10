@@ -197,8 +197,8 @@ class ItemIsA(Base):
     item_id = Column(Integer, ForeignKey("item.item_id"), primary_key=True)
     isa_id = Column(Integer, ForeignKey("isa.item_id"), primary_key=True)
 
-    item = relationship("Item")
-    isa = relationship("IsA")
+    item = relationship("Item", viewonly=True)
+    isa = relationship("IsA", viewonly=True)
 
 
 class Extract(Base):
@@ -1025,8 +1025,8 @@ class PlaceItem(Base):
         ),
     )
 
-    item = relationship("Item")
-    place = relationship("Place")
+    item = relationship("Item", viewonly=True)
+    place = relationship("Place", viewonly=True)
 
 
 class OsmCandidate(Base):
