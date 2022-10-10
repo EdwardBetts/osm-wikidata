@@ -1,15 +1,19 @@
-from flask import Blueprint, g, request
-from flask_login import current_user
-from .place import Place
-from . import database, edit, mail, chat
-from .model import ItemCandidate, ChangesetEdit
-from lxml import etree
-from sqlalchemy.orm.attributes import flag_modified
-import requests
-import re
+"""Websocket code to make the system more interactive."""
+
 import json
+import re
 import select
 import traceback
+
+import requests
+from flask import Blueprint, g, request
+from flask_login import current_user
+from lxml import etree
+from sqlalchemy.orm.attributes import flag_modified
+
+from . import chat, database, edit, mail
+from .model import ChangesetEdit, ItemCandidate
+from .place import Place
 
 ws = Blueprint("ws", __name__)
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
@@ -23,10 +27,11 @@ PING_SECONDS = 10
 
 
 class VersionMismatch(Exception):
-    pass
+    """The version of the OSM object we're saving doesn't match."""
 
 
-def add_wikipedia_tag(root, m):
+def add_wikipedia_tag(root, m) -> None:
+    """Add a wikipedia tag to the XML of an OSM object."""
     lang = m.get("wiki_lang")
     if not lang or root.find(f'.//tag[@k="wikipedia:{lang}"]') is not None:
         return
