@@ -111,44 +111,83 @@ exception in matcher websocket
         mail.send_traceback(info)
 
 
-def process_match(ws_sock, changeset_id, m):
+def check_if_already_tagged(r, osm) -> bool:
+    """Is this match already tagged? If yes then update database."""
+    if b"wikidata" not in r.content:
+        return False
+    root = etree.fromstring(r.content)
+    existing = root.find('.//tag[@k="wikidata"]')
+    if existing is None:
+        return False
+
+    osm.tags["wikidata"] = existing.get("v")
+    flag_modified(osm, "tags")
+    database.session.commit()
+    return True
+
+
+def get_osm_object(m):
+    """Given a match item retrieve the OSM object."""
     osm_type, osm_id = m["osm_type"], m["osm_id"]
     item_id = m["qid"][1:]
-
-    r = edit.get_existing(osm_type, osm_id)
-    if r.status_code == 410 or r.content == b"":
-        return "deleted"
 
     osm = ItemCandidate.query.filter_by(
         item_id=item_id, osm_type=osm_type, osm_id=osm_id
     ).one_or_none()
 
-    if b"wikidata" in r.content:
-        root = etree.fromstring(r.content)
-        existing = root.find('.//tag[@k="wikidata"]')
-        if existing is not None:
-            osm.tags["wikidata"] = existing.get("v")
-            flag_modified(osm, "tags")
-            database.session.commit()
-            return "already_tagged"
+    return osm
 
-    root = etree.fromstring(r.content)
+
+def build_updated_xml(content, m, changeset_id):
+    """Update the OSM XML with wikidata tag and possibly a wikipedia tag."""
+    root = etree.fromstring(content)
     tag = etree.Element("tag", k="wikidata", v=m["qid"])
     root[0].set("changeset", changeset_id)
     root[0].append(tag)
-
     add_wikipedia_tag(root, m)
-
     element_data = etree.tostring(root)
+
+    return element_data
+
+
+def save_changeset(m, changeset_id):
+
+    osm_type, osm_id = m["osm_type"], m["osm_id"]
+    item_id = m["qid"][1:]
+
+    db_edit = ChangesetEdit(
+        changeset_id=changeset_id, item_id=item_id, osm_id=osm_id, osm_type=osm_type
+    )
+    database.session.add(db_edit)
+    database.session.commit()
+
+
+def edit_failed(r, e, element_data):
+    """Handle a failure to save."""
+    if e.response.status_code == 409 and "Version mismatch" in r.text:
+        raise VersionMismatch
+    mail.error_mail("error saving element", element_data.decode("utf-8"), e.response)
+    database.session.commit()
+
+
+def process_match(ws_sock, changeset_id, m):
+    """Upload an individual match to OSM as part of a changeset."""
+    osm_type, osm_id = m["osm_type"], m["osm_id"]
+
+    r = edit.get_existing(osm_type, osm_id)
+    if r.status_code == 410 or r.content == b"":
+        return "deleted"
+
+    osm = get_osm_object(m)
+    if check_if_already_tagged(r, osm):
+        return "already_tagged"
+
+    element_data = build_updated_xml(r.content, m, changeset_id)
+
     try:
         success = edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 409 and "Version mismatch" in r.text:
-            raise VersionMismatch
-        mail.error_mail(
-            "error saving element", element_data.decode("utf-8"), e.response
-        )
-        database.session.commit()
+        edit_failed(r, e, element_data)
         return "element-error"
 
     if not success:
@@ -157,11 +196,7 @@ def process_match(ws_sock, changeset_id, m):
     osm.tags["wikidata"] = m["qid"]
     flag_modified(osm, "tags")
     # TODO: also update wikipedia tag if appropriate
-    db_edit = ChangesetEdit(
-        changeset_id=changeset_id, item_id=item_id, osm_id=osm_id, osm_type=osm_type
-    )
-    database.session.add(db_edit)
-    database.session.commit()
+    save_changeset(m, changeset_id)
 
     return "saved"
 
