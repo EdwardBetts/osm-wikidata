@@ -1,82 +1,80 @@
+import inspect
+import json
+import random
+import re
+from collections import Counter
+from time import sleep, time
+
+import flask_login
+import requests
+import sqlalchemy.exc
+from flask import (
+    Flask,
+    Response,
+    abort,
+    flash,
+    g,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from flask_sockets import Sockets
+from jinja2 import Markup, escape, evalcontextfilter
+from lxml import etree
+from requests_oauthlib import OAuth1Session
+from sqlalchemy import distinct, func
+from sqlalchemy.orm.attributes import flag_modified
+from werkzeug.debug.tbtools import get_current_traceback
+from werkzeug.exceptions import InternalServerError
+
 from . import (
+    browse,
+    commons,
     database,
+    edit,
+    export,
+    mail,
+    match,
+    matcher,
+    osm_oauth,
+    overpass,
+    search,
+    user_agent_headers,
+    utils,
     wikidata,
     wikidata_api,
-    matcher,
-    match,
-    commons,
-    export,
-    user_agent_headers,
-    overpass,
-    mail,
-    browse,
-    edit,
-    utils,
-    osm_oauth,
-    search,
 )
-from .utils import get_int_arg
+from .admin_view import admin_blueprint
+from .api_view import api_blueprint
+from .forms import AccountSettingsForm
+from .isa_facets import get_isa_facets, get_isa_facets2
+from .matcher_view import matcher_blueprint
 from .model import (
-    Item,
-    ItemCandidate,
-    User,
+    BadMatch,
     Category,
     Changeset,
-    ItemTag,
-    BadMatch,
-    Timing,
-    get_bad,
-    Language,
     EditMatchReject,
     InProgress,
     IsA,
+    Item,
+    ItemCandidate,
     ItemIsA,
+    ItemTag,
+    Language,
     SiteBanner,
+    Timing,
+    User,
+    get_bad,
 )
+from .pager import Pagination, init_pager
 from .place import Place
 from .taginfo import get_taginfo
-from .pager import Pagination, init_pager
-from .forms import AccountSettingsForm
-from .isa_facets import get_isa_facets, get_isa_facets2
-from collections import Counter
-
-from flask import (
-    Flask,
-    render_template,
-    request,
-    Response,
-    redirect,
-    url_for,
-    g,
-    jsonify,
-    flash,
-    abort,
-    make_response,
-    session,
-)
-from lxml import etree
-from sqlalchemy.orm.attributes import flag_modified
-from sqlalchemy import func, distinct
-from werkzeug.exceptions import InternalServerError
-from jinja2 import evalcontextfilter, Markup, escape
-from time import time, sleep
-from werkzeug.debug.tbtools import get_current_traceback
-from requests_oauthlib import OAuth1Session
-
-from .matcher_view import matcher_blueprint
-from .admin_view import admin_blueprint
-from .api_view import api_blueprint
+from .utils import get_int_arg
 from .websocket import ws
-
-from flask_sockets import Sockets
-
-import sqlalchemy.exc
-import flask_login
-import json
-import inspect
-import requests
-import re
-import random
 
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
 
