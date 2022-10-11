@@ -150,13 +150,13 @@ def build_updated_xml(content, m, changeset_id):
     return element_data
 
 
-def save_changeset(m, changeset_id):
-
-    osm_type, osm_id = m["osm_type"], m["osm_id"]
-    item_id = m["qid"][1:]
-
+def save_changeset_edit(m, changeset_id):
+    """Save the details of an individual edit to the database."""
     db_edit = ChangesetEdit(
-        changeset_id=changeset_id, item_id=item_id, osm_id=osm_id, osm_type=osm_type
+        changeset_id=changeset_id,
+        item_id=m["qid"][1:],
+        osm_id=m["osm_id"],
+        osm_type=m["osm_type"],
     )
     database.session.add(db_edit)
     database.session.commit()
@@ -170,7 +170,7 @@ def edit_failed(r, e, element_data):
     database.session.commit()
 
 
-def process_match(ws_sock, changeset_id, m):
+def process_match(changeset_id, m):
     """Upload an individual match to OSM as part of a changeset."""
     osm_type, osm_id = m["osm_type"], m["osm_id"]
 
@@ -196,13 +196,82 @@ def process_match(ws_sock, changeset_id, m):
     osm.tags["wikidata"] = m["qid"]
     flag_modified(osm, "tags")
     # TODO: also update wikipedia tag if appropriate
-    save_changeset(m, changeset_id)
+    save_changeset_edit(m, changeset_id)
 
     return "saved"
 
 
+def handle_match(change, num, m):
+    """Create a changeset."""
+    while True:
+        try:
+            result = process_match(change.id, m)
+        except VersionMismatch:  # FIXME: limit number of attempts
+            continue  # retry
+        else:
+            break
+    if result == "saved":
+        change.update_count += 1
+    database.session.commit()
+    return result
+
+
+def add_tags(ws_sock, osm_type, osm_id):
+    """Add tags or OSM object."""
+
+    def send(msg_type, **kwars):
+        """Send message to socket."""
+        ws_sock.send(json.dumps({"type": msg_type, **kwars}))
+
+    place = Place.get_by_osm(osm_type, osm_id)
+
+    data = json.loads(ws_sock.receive())
+    comment = data["comment"]
+    changeset = edit.new_changeset(comment)
+    r = edit.create_changeset(changeset)
+    reply = r.text.strip()
+
+    if reply == "Couldn't authenticate you":
+        mail.open_changeset_error(place, changeset, r)
+        send("auth-fail")
+        return
+
+    if not reply.isdigit():
+        mail.open_changeset_error(place, changeset, r)
+        send("changeset-error", msg=reply)
+        return
+
+    # clear the match cache
+    place.match_cache = None
+    database.session.commit()
+
+    changeset_id = reply
+    send("open", id=int(changeset_id))
+
+    change = edit.record_changeset(
+        id=changeset_id,
+        place=place,
+        comment=comment,
+        update_count=0,
+    )
+
+    for num, m in enumerate(data["matches"]):
+        send("progress", qid=m["qid"], num=num)
+        result = handle_match(ws_sock, change, num, m)
+        send(result, qid=m["qid"], num=num)
+
+    send("closing")
+    edit.close_changeset(changeset_id)
+    send("done")
+
+    # make sure the match cache is cleared
+    place.match_cache = None
+    database.session.commit()
+
+
 @ws.route("/websocket/add_tags/<osm_type>/<int:osm_id>")
 def ws_add_tags(ws_sock, osm_type, osm_id):
+    """Upload tags for OSM object."""
     g.user = current_user
 
     def send(msg_type, **kwars):
@@ -210,59 +279,7 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
 
     place = None
     try:
-        place = Place.get_by_osm(osm_type, osm_id)
-
-        data = json.loads(ws_sock.receive())
-        comment = data["comment"]
-        changeset = edit.new_changeset(comment)
-        r = edit.create_changeset(changeset)
-        reply = r.text.strip()
-
-        if reply == "Couldn't authenticate you":
-            mail.open_changeset_error(place, changeset, r)
-            send("auth-fail")
-            return
-
-        if not reply.isdigit():
-            mail.open_changeset_error(place, changeset, r)
-            send("changeset-error", msg=reply)
-            return
-
-        # clear the match cache
-        place.match_cache = None
-        database.session.commit()
-
-        changeset_id = reply
-        send("open", id=int(changeset_id))
-
-        update_count = 0
-        change = edit.record_changeset(
-            id=changeset_id, place=place, comment=comment, update_count=update_count
-        )
-
-        for num, m in enumerate(data["matches"]):
-            send("progress", qid=m["qid"], num=num)
-            while True:
-                try:
-                    result = process_match(ws_sock, changeset_id, m)
-                except VersionMismatch:  # FIXME: limit number of attempts
-                    continue  # retry
-                else:
-                    break
-            if result == "saved":
-                update_count += 1
-                change.update_count = update_count
-            database.session.commit()
-            send(result, qid=m["qid"], num=num)
-
-        send("closing")
-        edit.close_changeset(changeset_id)
-        send("done")
-
-        # make sure the match cache is cleared
-        place.match_cache = None
-        database.session.commit()
-
+        add_tags()
     except Exception as e:
         msg = type(e).__name__ + ": " + str(e)
         print(msg)
