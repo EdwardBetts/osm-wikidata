@@ -1,18 +1,18 @@
-import threading
-import lxml.etree
-import subprocess
+import json
 import os.path
 import queue
 import re
+import subprocess
+import threading
 import traceback
-import json
+from datetime import datetime
+from time import time
 
-from matcher import wikipedia, database, wikidata_api, mail, model
+import lxml.etree
+
+from matcher import database, mail, model, wikidata_api, wikipedia
 from matcher.place import Place, PlaceMatcher, bbox_chunk
 from matcher.view import app
-
-from time import time
-from datetime import datetime
 
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
@@ -91,7 +91,7 @@ class MatcherJobStopped(Exception):
 
 
 class MatcherJob(threading.Thread):
-    """ Matcher job within the matcher queue. """
+    """Matcher job within the matcher queue."""
 
     def __init__(
         self,
