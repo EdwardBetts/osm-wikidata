@@ -285,12 +285,17 @@ def parse_status(r):
     try:
         assert lines[0].startswith("Connected as: ")
         assert lines[1].startswith("Current time: ")
-        assert lines[2].startswith(limit)
+        if lines[2].startswith(limit):
+            rate_limit_line = 2
+        else:
+            assert lines[3].startswith(limit)
+            rate_limit_line = 3
+
     except AssertionError:
         raise OverpassError(r)
 
     slots = []
-    for i in range(3, len(lines)):
+    for i in range(rate_limit_line + 1, len(lines)):
         line = lines[i]
         if not line.startswith("Slot available after:"):
             break
@@ -307,7 +312,7 @@ def parse_status(r):
     )
 
     return {
-        "rate_limit": int(lines[2][len(limit) :]),
+        "rate_limit": int(lines[rate_limit_line][len(limit) :]),
         "slots": slots,
         "running": len(lines) - (i + 1),
     }
