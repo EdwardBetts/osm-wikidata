@@ -1,50 +1,51 @@
-from flask import current_app, url_for, g, abort, redirect
-from .model import (
-    Base,
-    Item,
-    ItemCandidate,
-    PlaceItem,
-    ItemTag,
-    Changeset,
-    IsA,
-    osm_type_enum,
-    get_bad,
-)
-from sqlalchemy.types import BigInteger, Float, Integer, JSON, String, DateTime, Boolean
-from sqlalchemy import func, select, cast
-from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column, UniqueConstraint
-from sqlalchemy.orm import (
-    relationship,
-    backref,
-    column_property,
-    object_session,
-    deferred,
-    load_only,
-)
-from sqlalchemy.orm.exc import MultipleResultsFound
-from sqlalchemy.sql.expression import true, false, or_
-from geoalchemy2 import Geography, Geometry
-from sqlalchemy.ext.hybrid import hybrid_property
-from .database import session, get_tables, now_utc
-from . import (
-    wikidata,
-    wikidata_api,
-    matcher,
-    wikipedia,
-    overpass,
-    utils,
-    nominatim,
-    default_change_comments,
-)
-from collections import Counter
-from .overpass import oql_from_tag
-from time import time
-
 import json
-import subprocess
 import os.path
 import re
+import subprocess
+from collections import Counter
+from time import time
+
 import user_agents
+from flask import abort, current_app, g, redirect, url_for
+from geoalchemy2 import Geography, Geometry
+from sqlalchemy import cast, func, select
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import (
+    backref,
+    column_property,
+    deferred,
+    load_only,
+    object_session,
+    relationship,
+)
+from sqlalchemy.orm.exc import MultipleResultsFound
+from sqlalchemy.schema import Column, ForeignKey, ForeignKeyConstraint, UniqueConstraint
+from sqlalchemy.sql.expression import false, or_, true
+from sqlalchemy.types import JSON, BigInteger, Boolean, DateTime, Float, Integer, String
+
+from . import (
+    default_change_comments,
+    matcher,
+    nominatim,
+    overpass,
+    utils,
+    wikidata,
+    wikidata_api,
+    wikipedia,
+)
+from .database import get_tables, now_utc, session
+from .model import (
+    Base,
+    Changeset,
+    IsA,
+    Item,
+    ItemCandidate,
+    ItemTag,
+    PlaceItem,
+    get_bad,
+    osm_type_enum,
+)
+from .overpass import oql_from_tag
 
 radius_default = 1_000  # in metres, only for nodes
 
