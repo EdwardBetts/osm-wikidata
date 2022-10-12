@@ -1,25 +1,20 @@
 #!/usr/bin/python3
 
-import threading
-import socketserver
 import json
 import os.path
-import requests.exceptions
 import queue
-
-from matcher import (
-    database,
-    mail,
-    overpass,
-    space_alert,
-    chat,
-)
+import socketserver
+import threading
 from time import sleep
-from matcher.view import app
+
+import requests.exceptions
+
+from matcher import chat, database, mail, overpass, space_alert
 from matcher.job_queue import JobManager
+from matcher.view import app
 
 app.config.from_object("config.default")
-database.init_app(app)
+database.init_app(app, echo=False)
 
 job_manager = JobManager()
 
@@ -101,7 +96,7 @@ def process_queue():
 
 
 def get_pins(place):
-    """ Build pins from items in database. """
+    """Build pins from items in database."""
     pins = []
     for item in place.items:
         lat, lon = item.coords()
