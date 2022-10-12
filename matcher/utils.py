@@ -1,11 +1,12 @@
-from flask import current_app, request
-from itertools import islice
-import os.path
 import json
 import math
-import user_agents
+import os.path
 import re
+from itertools import islice
+
 import pattern.en
+import user_agents
+from flask import current_app, request
 
 metres_per_mile = 1609.344
 feet_per_metre = 3.28084
@@ -18,6 +19,7 @@ def chunk(it, size):
 
 
 def flatten(l):
+    """Flatten a list."""
     return [item for sublist in l for item in sublist]
 
 
@@ -30,25 +32,30 @@ def remove_start(s, start):
     return s[len(start) :] if s.startswith(start) else s
 
 
-def normalize_url(url):
+def normalize_url(url: str) -> str:
+    """Standardize URLs to help in comparison."""
     for start in "http://", "https://", "www.":
         url = remove_start(url, start)
     return url.rstrip("/")
 
 
-def contains_digit(s):
+def contains_digit(s: str) -> bool:
+    """String contains a digit."""
     return any(c.isdigit() for c in s)
 
 
-def cache_dir():
-    return current_app.config["CACHE_DIR"]
+def cache_dir() -> str:
+    """Get cache dir location."""
+    d: str = current_app.config["CACHE_DIR"]
+    return d
 
 
-def cache_filename(filename):
+def cache_filename(filename: str) -> str:
+    """Get absolute path for cache file."""
     return os.path.join(cache_dir(), filename)
 
 
-def load_from_cache(filename):
+def load_from_cache(filename: str):
     return json.load(open(cache_filename(filename)))
 
 
@@ -72,7 +79,7 @@ def file_missing_or_empty(filename):
 
 
 def is_bot():
-    """ Is the current request from a web robot? """
+    """Is the current request from a web robot?"""
     ua = request.headers.get("User-Agent")
     return ua and user_agents.parse(ua).is_bot
 
@@ -86,7 +93,7 @@ def good_location():
 
 
 def capfirst(value):
-    """ Uppercase first letter of string, leave rest as is. """
+    """Uppercase first letter of string, leave rest as is."""
     return value[0].upper() + value[1:] if value else value
 
 
