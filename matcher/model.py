@@ -1,33 +1,35 @@
 # coding: utf-8
-from flask import g, has_app_context
-from sqlalchemy import func
-from sqlalchemy.schema import ForeignKeyConstraint, ForeignKey, Column
-from sqlalchemy.types import BigInteger, Float, Integer, String, Boolean, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from geoalchemy2 import Geography  # noqa: F401
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.orm import relationship, backref, column_property
-from sqlalchemy.sql.expression import cast
-from .database import session, now_utc
-from flask_login import UserMixin
-from . import (
-    wikidata,
-    wikidata_api,
-    matcher,
-    match,
-    wikipedia,
-    country_units,
-    utils,
-    mail,
-)
-from .overpass import oql_from_tag
-from .utils import capfirst
+
+import re
 from collections import defaultdict
 from time import time
 
-import re
+from flask import g, has_app_context
+from flask_login import UserMixin
+from geoalchemy2 import Geography  # noqa: F401
+from sqlalchemy import func
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import backref, column_property, relationship
+from sqlalchemy.orm.collections import attribute_mapped_collection
+from sqlalchemy.schema import Column, ForeignKey, ForeignKeyConstraint
+from sqlalchemy.sql.expression import cast
+from sqlalchemy.types import BigInteger, Boolean, DateTime, Float, Integer, String, Text
+
+from . import (
+    country_units,
+    mail,
+    match,
+    matcher,
+    utils,
+    wikidata,
+    wikidata_api,
+    wikipedia,
+)
+from .database import now_utc, session
+from .overpass import oql_from_tag
+from .utils import capfirst
 
 re_lau_code = re.compile(r"^[A-Z]{2}([^A-Z].+)$")  # 'LAU (local administrative unit)'
 
