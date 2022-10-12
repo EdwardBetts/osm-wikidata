@@ -448,7 +448,7 @@ class MatcherJob(threading.Thread):
                 self.send("overpass_done")
                 break
             elif msg["type"] == "error":
-                self.error(msg["error"])
+                self.error(msg["msg"])
             else:
                 self.status("from network: " + repr(msg))
         return complete
