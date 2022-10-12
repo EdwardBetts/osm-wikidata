@@ -1025,8 +1025,8 @@ class PlaceItem(Base):
         ),
     )
 
-    item = relationship("Item", viewonly=True)
-    place = relationship("Place", viewonly=True)
+    item = relationship("Item")
+    place = relationship("Place")
 
 
 class OsmCandidate(Base):
