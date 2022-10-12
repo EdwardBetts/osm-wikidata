@@ -1,13 +1,16 @@
 #!/usr/bin/python3
-import re
-import requests
-import os.path
+
 import json
+import os.path
+import re
+from collections import defaultdict
+from time import sleep
+
+import requests
 import simplejson
 from flask import current_app
-from time import sleep
-from . import user_agent_headers, mail
-from collections import defaultdict
+
+from . import mail, user_agent_headers
 
 re_slot_available = re.compile(
     r"^Slot available after: ([^,]+), in (-?\d+) seconds?\.$"
