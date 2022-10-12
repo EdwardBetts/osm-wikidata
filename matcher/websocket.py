@@ -262,7 +262,7 @@ def add_tags(ws_sock, osm_type, osm_id):
 
     for num, m in enumerate(data["matches"]):
         send("progress", qid=m["qid"], num=num)
-        result = handle_match(ws_sock, change, num, m)
+        result = handle_match(change, num, m)
         send(result, qid=m["qid"], num=num)
 
     send("closing")
