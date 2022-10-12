@@ -284,7 +284,7 @@ def ws_add_tags(ws_sock, osm_type, osm_id):
 
     place = None
     try:
-        add_tags()
+        add_tags(ws_sock, osm_type, osm_id)
     except Exception as e:
         msg = type(e).__name__ + ": " + str(e)
         print(msg)
