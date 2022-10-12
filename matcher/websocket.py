@@ -147,7 +147,7 @@ def build_updated_xml(content, m, changeset_id):
     """Update the OSM XML with wikidata tag and possibly a wikipedia tag."""
     root = etree.fromstring(content)
     tag = etree.Element("tag", k="wikidata", v=m["qid"])
-    root[0].set("changeset", changeset_id)
+    root[0].set("changeset", str(changeset_id))
     root[0].append(tag)
     add_wikipedia_tag(root, m)
     element_data = etree.tostring(root)
