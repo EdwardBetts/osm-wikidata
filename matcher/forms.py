@@ -1,7 +1,9 @@
-from flask_wtf import FlaskForm
+"""Collection of web forms."""
 
-from wtforms.fields import StringField, SelectField, BooleanField
+from flask_wtf import FlaskForm
 from wtforms import validators
+from wtforms.fields import BooleanField, SelectField, StringField
+
 from . import default_change_comments, distance_choices
 
 multi_help = "PLACE will be replaced by the name of the place."
@@ -9,6 +11,8 @@ add_wikipedia_tag = "Add wikipedia tags in addition to wikidata tags"
 
 
 class AccountSettingsForm(FlaskForm):
+    """Account settings form."""
+
     single = StringField(
         "Single item change comment",
         [validators.required()],
