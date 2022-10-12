@@ -1,13 +1,18 @@
-import requests
-import lxml.etree
+"""OSM API calls."""
+
 import os.path
-from . import model, utils
 from time import sleep
+
+import lxml.etree
+import requests
+
+from . import model, utils
 
 base = "https://www.openstreetmap.org/api/0.6/"
 
 
-def get_changeset(changeset_id):
+def get_changeset(changeset_id: int) -> lxml.etree.Element:
+    """Get a changeset from OSM."""
     changeset_dir = os.path.join(utils.cache_dir(), "changesets")
     filename = os.path.join(changeset_dir, f"{changeset_id}.xml")
     if os.path.exists(filename):
@@ -21,7 +26,8 @@ def get_changeset(changeset_id):
     return lxml.etree.fromstring(r.content)
 
 
-def parse_osm_change(root):
+def parse_osm_change(root: lxml.etree.Element) -> list[model.ChangesetEdit]:
+    """Parse an OSM changeset."""
     edits = []
     for e in root:
         osm = e[0]
