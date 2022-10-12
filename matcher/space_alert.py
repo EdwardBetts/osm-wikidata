@@ -1,18 +1,20 @@
-from flask import current_app, has_app_context
-from datetime import datetime, timedelta
-from . import mail, database, model, utils
+"""Monitor free space on the server."""
 
+from datetime import datetime, timedelta
+from typing import NoReturn
+
+import flask
 import humanize
 
+from . import database, mail, model, utils
 
-def check_free_space(config=None):
-    """Check how much disk space is free.
-    E-mail admin if free space is low."""
 
+def check_free_space(config: flask.config.Config = None) -> NoReturn:
+    """Check how much disk space is free. E-mail admin if free space is low."""
     if config is None:
-        if not has_app_context():
+        if not flask.has_app_context():
             return
-        config = current_app.config
+        config = flask.current_app.config
 
     min_free_space = config.get("MIN_FREE_SPACE")
 
