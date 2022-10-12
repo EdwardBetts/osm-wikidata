@@ -6,8 +6,9 @@ import select
 import traceback
 
 import requests
-from flask import Blueprint, g, request
+from flask import g, request
 from flask_login import current_user
+from flask_sock import Sock
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -15,7 +16,8 @@ from . import chat, database, edit, mail
 from .model import ChangesetEdit, ItemCandidate
 from .place import Place
 
-ws = Blueprint("ws", __name__)
+sock = Sock()
+
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
 PING_SECONDS = 10
@@ -44,18 +46,21 @@ def add_wikipedia_tag(root, m) -> None:
     root[0].append(tag)
 
 
-@ws.route("/websocket/matcher/<osm_type>/<int:osm_id>")
+@sock.route("/websocket/matcher/<osm_type>/<int:osm_id>")
 def ws_matcher(ws_sock, osm_type, osm_id):
+    """Run matcher for given place."""
     # idea: catch exceptions, then pass to pass to web page as status update
     # also e-mail them
-
     place = None
+
+    def send(msg):
+        return ws_sock.send(msg)
 
     try:
         place = Place.get_by_osm(osm_type, osm_id)
 
         if place.state == "ready":
-            ws_sock.send(json.dumps({"type": "already_done"}))
+            send(json.dumps({"type": "already_done"}))
             return  # FIXME - send error mail
 
         user_agent = request.headers.get("User-Agent")
@@ -71,7 +76,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         }
         chat.send_command(queue_socket, "match", **params)
 
-        while not ws_sock.closed:
+        while ws_sock.connected:
             readable = select.select([queue_socket], [], [], timeout=PING_SECONDS)[0]
             if readable:
                 item = chat.read_line(queue_socket)
@@ -81,8 +86,8 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             if not item:
                 ws_sock.close()
                 break
-            ws_sock.send(item)
-            if ws_sock.closed:
+            send(item)
+            if not ws_sock.connected:
                 break
             reply = ws_sock.receive()
             if reply is None:
@@ -97,7 +102,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         msg = type(e).__name__ + ": " + str(e)
         print(msg)
         print(traceback.format_exc())
-        ws_sock.send(json.dumps({"type": "error", "msg": msg}))
+        send(json.dumps({"type": "error", "msg": msg}))
 
         g.user = current_user
 
@@ -269,7 +274,7 @@ def add_tags(ws_sock, osm_type, osm_id):
     database.session.commit()
 
 
-@ws.route("/websocket/add_tags/<osm_type>/<int:osm_id>")
+@sock.route("/websocket/add_tags/<osm_type>/<int:osm_id>")
 def ws_add_tags(ws_sock, osm_type, osm_id):
     """Upload tags for OSM object."""
     g.user = current_user

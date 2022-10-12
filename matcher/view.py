@@ -22,7 +22,6 @@ from flask import (
     session,
     url_for,
 )
-from flask_sockets import Sockets
 from jinja2 import Markup, escape, evalcontextfilter
 from lxml import etree
 from requests_oauthlib import OAuth1Session
@@ -74,7 +73,7 @@ from .pager import Pagination, init_pager
 from .place import Place
 from .taginfo import get_taginfo
 from .utils import get_int_arg
-from .websocket import ws
+from .websocket import sock
 
 _paragraph_re = re.compile(r"(?:\r\n|\r|\n){2,}")
 
@@ -82,8 +81,7 @@ app = Flask(__name__)
 app.register_blueprint(matcher_blueprint)
 app.register_blueprint(admin_blueprint)
 app.register_blueprint(api_blueprint)
-sockets = Sockets(app)
-sockets.register_blueprint(ws)
+sock.init_app(app)
 init_pager(app)
 login_manager = flask_login.LoginManager(app)
 login_manager.login_view = "login_route"
