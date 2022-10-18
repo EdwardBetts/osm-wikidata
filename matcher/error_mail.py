@@ -1,27 +1,41 @@
-import logging
-from logging.handlers import SMTPHandler
-from logging import Formatter
-from flask import request
+"""Send mail to admins when there is an error."""
 
-PROJECT = 'osm-wikidata'
+import logging
+from logging import Formatter
+from logging.handlers import SMTPHandler
+
+import flask
+
+PROJECT = "osm-wikidata"
+
 
 class MatcherSMTPHandler(SMTPHandler):
-    def getSubject(self, record):  # noqa: N802
-        return (f'{PROJECT} error: {record.exc_info[0].__name__}'
-                if (record.exc_info and record.exc_info[0])
-                else f'{PROJECT} error: {record.pathname}:{record.lineno:d}')
+    """Custom SMTP handler to change subject line."""
+
+    def getSubject(self, record: logging.LogRecord) -> str:  # noqa: N802
+        """Return subject line for error mail."""
+        return (
+            f"{PROJECT} error: {record.exc_info[0].__name__}"
+            if (record.exc_info and record.exc_info[0])
+            else f"{PROJECT} error: {record.pathname}:{record.lineno:d}"
+        )
 
 
 class RequestFormatter(Formatter):
-    def format(self, record):
-        record.request = request
+    """Custom request formatter."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Add request to log record."""
+        record.request = flask.request
         return super().format(record)
 
 
-def setup_error_mail(app):
-    if not app.config.get('ERROR_MAIL'):
+def setup_error_mail(app: flask.Flask) -> None:
+    """Configure logging to catch errors and email them."""
+    if not app.config.get("ERROR_MAIL"):
         return
-    formatter = RequestFormatter('''
+    formatter = RequestFormatter(
+        """
     Message type:       {levelname}
     Location:           {pathname:s}:{lineno:d}
     Module:             {module:s}
@@ -33,12 +47,16 @@ def setup_error_mail(app):
     Message:
 
     {message:s}
-    ''', style='{')
+    """,
+        style="{",
+    )
 
-    mail_handler = MatcherSMTPHandler(app.config['SMTP_HOST'],
-                                      app.config['MAIL_FROM'],
-                                      app.config['ADMINS'],
-                                      app.name + ' error')
+    mail_handler = MatcherSMTPHandler(
+        app.config["SMTP_HOST"],
+        app.config["MAIL_FROM"],
+        app.config["ADMINS"],
+        app.name + " error",
+    )
     mail_handler.setFormatter(formatter)
 
     mail_handler.setLevel(logging.ERROR)
