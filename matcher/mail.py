@@ -1,20 +1,29 @@
-from flask import current_app, g, request, has_request_context
+"""Send email to admins to about errors or other notworthy things."""
+
+import smtplib
+import sys
+import traceback
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 from pprint import pformat
-import smtplib
-import traceback
-import sys
+
+from flask import config, current_app, g, has_request_context, request
+
+from .place import Place
 
 
-def send_mail(subject, body, config=None):
+def send_mail(subject: str, body: str, config: config.Config | None = None) -> None:
+    """Send an email to admins, catch and ignore exceptions."""
     try:
         send_mail_main(subject, body, config=config)
     except smtplib.SMTPDataError:
         pass  # ignore email errors
 
 
-def send_mail_main(subject, body, config=None):
+def send_mail_main(
+    subject: str, body: str, config: config.Config | None = None
+) -> None:
+    """Send an email to admins."""
     if config is None:
         config = current_app.config
 
@@ -33,7 +42,9 @@ def send_mail_main(subject, body, config=None):
     s.quit()
 
 
-def get_username():
+def get_username() -> str:
+    """Get the username for the current user."""
+    user: str
     if hasattr(g, "user"):
         if g.user.is_authenticated:
             user = g.user.username
@@ -45,7 +56,8 @@ def get_username():
     return user
 
 
-def get_area(place):
+def get_area(place: Place) -> str:
+    """Get area of place in human readable format."""
     return f"{place.area_in_sq_km:,.2f} sq km" if place.area else "n/a"
 
 
