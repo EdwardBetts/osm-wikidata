@@ -1,3 +1,6 @@
+from types import TracebackType
+from typing import Tuple, Union
+
 from flask import Flask, request
 
 user_agent = (
@@ -45,7 +48,15 @@ country_units = {
 
 
 class MatcherFlask(Flask):
-    def log_exception(self, exc_info):
+    """Subclass Flask to make changes to error reporting."""
+
+    def log_exception(
+        self,
+        exc_info: Union[
+            Tuple[type, BaseException, TracebackType], Tuple[None, None, None]
+        ],
+    ) -> None:
+        """Add detail to errors."""
         self.logger.error(
             """
 Path:                 %s
@@ -75,5 +86,6 @@ URL:                  %s
         )
 
 
-def user_agent_headers():
+def user_agent_headers() -> dict[str, str]:
+    """User-Agent headers."""
     return {"User-Agent": user_agent}
