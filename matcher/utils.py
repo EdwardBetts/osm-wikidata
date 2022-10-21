@@ -5,7 +5,7 @@ import math
 import os.path
 import re
 from itertools import islice
-from typing import Any, Iterable, Iterator, cast
+from typing import Any, Iterable, Iterator, TypeVar, cast
 
 import flask
 import pattern.en
@@ -15,14 +15,16 @@ metres_per_mile = 1609.344
 feet_per_metre = 3.28084
 feet_per_mile = 5280
 
+T = TypeVar("T")
 
-def chunk(it: Iterable[Any], size: int) -> Iterator[Any]:
+
+def chunk(it: Iterable[T], size: int) -> Iterator[tuple[T, ...]]:
     """Split an iterable into chunks of the given size."""
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
 
-def flatten(top_list: list[list[Any]]) -> list[Any]:
+def flatten(top_list: list[list[T]]) -> list[T]:
     """Flatten a list."""
     return [item for sub_list in top_list for item in sub_list]
 
