@@ -5,13 +5,11 @@ from typing import Any
 
 import requests
 
-from . import utils
+from . import CallParams, utils
 
 commons_start = "http://commons.wikimedia.org/wiki/Special:FilePath/"
 commons_url = "https://www.wikidata.org/w/api.php"
 page_size = 50
-
-CallParams = dict[str, str | int]
 
 
 def commons_uri_to_filename(uri: str) -> str:
