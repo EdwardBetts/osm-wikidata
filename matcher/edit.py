@@ -1,14 +1,19 @@
-from flask import g
-from . import user_agent_headers, database, osm_oauth, mail
-from .model import Changeset
-import requests
+"""Save edits."""
+
 import html
+
+import requests
+from flask import g
+
+from . import database, mail, osm_oauth, user_agent_headers
+from .model import Changeset
 
 really_save = True
 osm_api_base = "https://api.openstreetmap.org/api/0.6"
 
 
-def new_changeset(comment):
+def new_changeset(comment: str) -> str:
+    """XML string for a new changeset with the given comment."""
     return f"""
 <osm>
   <changeset>
@@ -22,7 +27,7 @@ def osm_request(path, **kwargs):
     return osm_oauth.api_put_request(path, **kwargs)
 
 
-def create_changeset(changeset):
+def create_changeset(changeset: str):
     try:
         return osm_request("/changeset/create", data=changeset.encode("utf-8"))
     except requests.exceptions.HTTPError as r:
@@ -31,7 +36,8 @@ def create_changeset(changeset):
         raise
 
 
-def close_changeset(changeset_id):
+def close_changeset(changeset_id: int) -> requests.Response:
+    """Send a request to the OSM API to close a changeset."""
     return osm_request(f"/changeset/{changeset_id}/close")
 
 
@@ -66,6 +72,7 @@ def record_changeset(**kwargs):
     return change
 
 
-def get_existing(osm_type, osm_id):
+def get_existing(osm_type: str, osm_id: int) -> requests.Response:
+    """Get existing OSM object using the OSM API."""
     url = "{}/{}/{}".format(osm_api_base, osm_type, osm_id)
     return requests.get(url, headers=user_agent_headers())
