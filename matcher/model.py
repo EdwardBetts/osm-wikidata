@@ -1619,3 +1619,18 @@ class PageBanner(Base):
     def get_by_qid(cls, qid):
         if qid and len(qid) > 1 and qid[0].upper() == "Q" and qid[1:].isdigit():
             return cls.query.get(qid[1:])
+
+# "Turkish Republic of Northern Cyprus" has no alpha-2 code or alpha-3 code
+# "European Union" has no alpha-3 code
+
+class Embassy(Base):
+    """Embassy item."""
+
+    __tablename__ = "embassy"
+
+    item_id = Column(Integer, primary_key=True, autoincrement=False)
+    alpha2 = Column(String)
+    alpha3 = Column(String)
+    label = Column(String, nullable=False)
+    names = Column(postgresql.ARRAY(String))
+    qid = column_property("Q" + cast(item_id, String))

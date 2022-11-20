@@ -1,57 +1,55 @@
-from flask import render_template
-from .view import app, get_existing
-from .model import (
-    Item,
-    Changeset,
-    get_bad,
-    Base,
-    ItemCandidate,
-    Language,
-    LanguageLabel,
-    OsmCandidate,
-    Extract,
-    ChangesetEdit,
-    EditMatchReject,
-    BadMatchFilter,
-    SiteBanner,
-    InProgress,
-    ItemIsA,
-    IsA,
-    PlaceItem,
-    PageBanner,
-    User,
-)
-from .place import Place, PlaceMatcher
-from .isa_facets import get_isa_facets
+import json
+import os.path
+import re
+import sys
+import unicodedata
+from datetime import datetime, timedelta
+from pprint import pprint
+from time import sleep, time
+
+import click
+import sqlalchemy.exc
+from geoalchemy2 import Geography, Geometry
+from sqlalchemy import func, inspect
+from sqlalchemy.dialects.postgresql.base import CreateEnumType
+from sqlalchemy.schema import CreateIndex, CreateTable
+from sqlalchemy.types import Enum
+from tabulate import tabulate
+
 from . import (
+    browse,
+    chat,
     database,
+    jobs,
     mail,
     matcher,
     nominatim,
-    utils,
-    chat,
-    wikidata,
     osm_api,
+    utils,
+    wikidata,
     wikidata_api,
-    browse,
-    jobs,
 )
-from datetime import datetime, timedelta
-from tabulate import tabulate
-from sqlalchemy import inspect, func
-from geoalchemy2 import Geometry, Geography
-from time import time, sleep
-from pprint import pprint
-from sqlalchemy.types import Enum
-from sqlalchemy.schema import CreateTable, CreateIndex
-from sqlalchemy.dialects.postgresql.base import CreateEnumType
-import unicodedata
-import sqlalchemy.exc
-import os.path
-import re
-import json
-import click
-import sys
+from .isa_facets import get_isa_facets
+from .model import (
+    BadMatchFilter,
+    Base,
+    Changeset,
+    ChangesetEdit,
+    EditMatchReject,
+    Embassy,
+    Extract,
+    IsA,
+    Item,
+    ItemCandidate,
+    ItemIsA,
+    Language,
+    LanguageLabel,
+    OsmCandidate,
+    PageBanner,
+    get_bad,
+)
+from .place import Place
+from .view import app
 
 
 @app.cli.command()
@@ -1617,3 +1615,18 @@ def get_browse_cache():
         pprint(details)
 
         json.dump(details, open(filename, "w"), indent=2)
+
+
+@app.cli.command()
+@click.argument("filename")
+def load_embassy_list(filename):
+    """Load embassy data into database."""
+    app.config.from_object("config.default")
+    database.init_app(app)
+
+    data = json.load(open(filename))
+    for i in data:
+        i["item_id"] = int(i.pop("qid")[1:])
+        e = Embassy(**i)
+        database.session.add(e)
+    database.session.commit()

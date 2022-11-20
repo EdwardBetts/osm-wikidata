@@ -354,7 +354,7 @@ def diplomatic_mission_different_country(item, tags):
 
     if name:
         name_country = embassy.from_name(name)
-        if name_country and name_country["qid"] not in item_countries:
+        if name_country and name_country.qid not in item_countries:
             return True
 
     if not osm_country or len(osm_country) not in (2, 3):
