@@ -1,0 +1,2691 @@
+[
+  {
+    "alpha2": "CA",
+    "alpha3": "CAN",
+    "label": "Canada",
+    "names": [
+      "Canada",
+      "Canadian",
+      "Kanada",
+      "canada"
+    ],
+    "qid": "Q16"
+  },
+  {
+    "alpha2": "JP",
+    "alpha3": "JPN",
+    "label": "Japan",
+    "names": [
+      "Japan",
+      "Japanese",
+      "Japon",
+      "japon"
+    ],
+    "qid": "Q17"
+  },
+  {
+    "alpha2": "NO",
+    "alpha3": "NOR",
+    "label": "Norway",
+    "names": [
+      "Kingdom of Norway",
+      "Norsk",
+      "Noruega",
+      "Norvegian",
+      "Norway",
+      "Norwegian",
+      "Reino de Noruega",
+      "norsk",
+      "Norwegen",
+      "K\u00f6nigreiches Norwegen"
+    ],
+    "qid": "Q20"
+  },
+  {
+    "alpha2": "IE",
+    "alpha3": "IRL",
+    "label": "Ireland",
+    "names": [
+      "Ireland",
+      "Irish",
+      "Irland",
+      "Irlanda",
+      "Republic of Ireland",
+      "Republik Irland",
+      "R\u00e9publique d'Irlande",
+      "the Republic of Ireland"
+    ],
+    "qid": "Q27"
+  },
+  {
+    "alpha2": "HU",
+    "alpha3": "HUN",
+    "label": "Hungary",
+    "names": [
+      "Hongarije",
+      "Hungarian",
+      "Hungary",
+      "Ungheria",
+      "Ungariei"
+    ],
+    "qid": "Q28"
+  },
+  {
+    "alpha2": "ES",
+    "alpha3": "ESP",
+    "label": "Spain",
+    "names": [
+      "Espa\u00f1a",
+      "Espa\u00f1ol",
+      "Kingdom of Spain",
+      "Royaume d'Espagne",
+      "Spain",
+      "Spanien",
+      "Spanish",
+      "\u041a\u0440\u0430\u043b\u0441\u0442\u0432\u043e \u0418\u0441\u043f\u0430\u043d\u0438\u044f",
+      "Espanha"
+    ],
+    "qid": "Q29"
+  },
+  {
+    "alpha2": "US",
+    "alpha3": "USA",
+    "label": "United States of America",
+    "names": [
+      "ASV",
+      "American",
+      "Americana",
+      "Amerika",
+      "Am\u00e9rique",
+      "EUA",
+      "Estados Unidos",
+      "Etats-Unis",
+      "The United States",
+      "U.S",
+      "US",
+      "USA",
+      "United States",
+      "United States Of America",
+      "United States of America",
+      "estados unidos",
+      "the US",
+      "the United States",
+      "u.s.",
+      "\u00c9tats-Unis d'Am\u00e9rique",
+      "\u0421\u0428\u0410",
+      "\u0627\u0644\u0648\u0644\u0627\u064a\u0627\u062a \u0627\u0644\u0645\u062a\u062d\u062f\u0629",
+      "los Estados Unidos de Am\u00e9rica",
+      "Estados Unidos de Am\u00e9rica"
+    ],
+    "qid": "Q30"
+  },
+  {
+    "alpha2": "BE",
+    "alpha3": "BEL",
+    "label": "Belgium",
+    "names": [
+      "Belgian",
+      "Belgica",
+      "Belgie",
+      "Belgien",
+      "Belgique",
+      "Belgische",
+      "Belgium",
+      "B\u00e9lgica",
+      "Kingdom of Belgium",
+      "Reino de B\u00e9lgica"
+    ],
+    "qid": "Q31"
+  },
+  {
+    "alpha2": "LU",
+    "alpha3": "LUX",
+    "label": "Luxembourg",
+    "names": [
+      "Gran Ducado de Luxemburgo",
+      "Gran Ducat de Luxemburg",
+      "Grand Duchy of Luxembourg",
+      "Grand-Duch\u00e9",
+      "Gro\u00dfherzogtum Luxemburg",
+      "Luxembourg",
+      "Luxemburg",
+      "Luxemburgo"
+    ],
+    "qid": "Q32"
+  },
+  {
+    "alpha2": "FI",
+    "alpha3": "FIN",
+    "label": "Finland",
+    "names": [
+      "Finland",
+      "Finlande",
+      "Finlandia",
+      "Finn",
+      "Finnish",
+      "Finnland",
+      "Republic of Finland",
+      "Republik Finnland",
+      "Rep\u00fablica de Finlandia"
+    ],
+    "qid": "Q33"
+  },
+  {
+    "alpha2": "SE",
+    "alpha3": "SWE",
+    "label": "Sweden",
+    "names": [
+      "Kingdom of Sweden",
+      "Reino de Suecia",
+      "Svedese",
+      "Svensk",
+      "Sverige",
+      "Sweden",
+      "Swedish"
+    ],
+    "qid": "Q34"
+  },
+  {
+    "alpha2": "DK",
+    "alpha3": "DNK",
+    "label": "Denmark",
+    "names": [
+      "Danimarca",
+      "Danish",
+      "Danmark",
+      "Dansk",
+      "Danske",
+      "Denmark",
+      "Dinamarca",
+      "Kingdom of Denmark",
+      "Reino de Dinamarca",
+      "dansk",
+      "\u0110an M\u1ea1ch"
+    ],
+    "qid": "Q35"
+  },
+  {
+    "alpha2": "PL",
+    "alpha3": "POL",
+    "label": "Poland",
+    "names": [
+      "Poland",
+      "Polen",
+      "Polish",
+      "Polonia",
+      "Republic Of Poland",
+      "Republic of Poland",
+      "Republica de Polonia",
+      "Rep\u00fablica da Pol\u00f4nia",
+      "Rep\u00fablica de Polonia",
+      "Rep\u00fablica de Pol\u00f2nia"
+    ],
+    "qid": "Q36"
+  },
+  {
+    "alpha2": "LT",
+    "alpha3": "LTU",
+    "label": "Lithuania",
+    "names": [
+      "Lithuania",
+      "Lithuanian",
+      "Lituania",
+      "Republic of Lithuania",
+      "Rep\u00fablica de Lituania"
+    ],
+    "qid": "Q37"
+  },
+  {
+    "alpha2": "IT",
+    "alpha3": "ITA",
+    "label": "Italy",
+    "names": [
+      "Italia",
+      "Italian",
+      "Italian Republic",
+      "Italiana",
+      "Italiane",
+      "Italiano",
+      "Italie",
+      "Italy",
+      "Repubblica Italiana",
+      "Rep\u00fablica Italiana",
+      "Italienischen Republik",
+      "italian",
+      "italiano",
+      "italie"
+    ],
+    "qid": "Q38"
+  },
+  {
+    "alpha2": "CH",
+    "alpha3": "CHE",
+    "label": "Switzerland",
+    "names": [
+      "Conf\u00e9d\u00e9ration Suisse",
+      "Eidgenossenschaft",
+      "Schweizer",
+      "Suisse",
+      "Swiss",
+      "Switzerland"
+    ],
+    "qid": "Q39"
+  },
+  {
+    "alpha2": "AT",
+    "alpha3": "AUT",
+    "label": "Austria",
+    "names": [
+      "Austria",
+      "Austriaco",
+      "Austrian",
+      "Osztr\u00e1k",
+      "Republic of Austria",
+      "Republik \u00d6sterreich",
+      "Rep\u00fablica de Austria",
+      "\u00d6sterreich"
+    ],
+    "qid": "Q40"
+  },
+  {
+    "alpha2": "GR",
+    "alpha3": "GRC",
+    "label": "Greece",
+    "names": [
+      "Grec",
+      "Greece",
+      "Greek",
+      "Hellenic Republic",
+      "Rep\u00fablica Hel\u00e9nica"
+    ],
+    "qid": "Q41"
+  },
+  {
+    "alpha2": "TR",
+    "alpha3": "TUR",
+    "label": "Turkey",
+    "names": [
+      "Republic of Turkey",
+      "Rep\u00fablica da Turquia",
+      "Rep\u00fablica de Turqu\u00eda",
+      "Turc",
+      "Turco",
+      "Turk",
+      "Turkey",
+      "Turkish",
+      "Turquia",
+      "T\u00fcrk",
+      "T\u00fcrkiye Cumhuriyeti",
+      "Turciei",
+      "turkey"
+    ],
+    "qid": "Q43"
+  },
+  {
+    "alpha2": "PT",
+    "alpha3": "PRT",
+    "label": "Portugal",
+    "names": [
+      "PORTUGUESA",
+      "Portugal",
+      "Portuguese",
+      "Portuguese Republic",
+      "Rep\u00fablica Portuguesa"
+    ],
+    "qid": "Q45"
+  },
+  {
+    "alpha2": "NL",
+    "alpha3": "NLD",
+    "label": "Netherlands",
+    "names": [
+      "Dutch",
+      "Holanda",
+      "Hollanda",
+      "Nederland",
+      "Netherlands",
+      "The Netherlands",
+      "los Paises Bajos",
+      "los Pa\u00edses Bajos",
+      "the Netherlands",
+      "Pays-Bas",
+      "Royaume des Pays-Bas"
+    ],
+    "qid": "Q55"
+  },
+  {
+    "alpha2": "UY",
+    "alpha3": "URY",
+    "label": "Uruguay",
+    "names": [
+      "Rep\u00fablica Oriental del Uruguay",
+      "Uruguay",
+      "Uruguayan"
+    ],
+    "qid": "Q77"
+  },
+  {
+    "alpha2": "EG",
+    "alpha3": "EGY",
+    "label": "Egypt",
+    "names": [
+      "Arab Republic of Egypt",
+      "EGYPTE",
+      "Egipto",
+      "Egypt",
+      "Egypte",
+      "Egyptian",
+      "Repubblica Araba d'Egitto",
+      "Republic of Egypt",
+      "egypt",
+      "\u0410\u0440\u0430\u0431\u0441\u043a\u0430 \u0440\u0435\u043f\u0443\u0431\u043b\u0438\u043a\u0430 \u0415\u0433\u0438\u043f\u0435\u0442",
+      "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0645\u0635\u0631 \u0627\u0644\u0639\u0631\u0628\u064a\u0629"
+    ],
+    "qid": "Q79"
+  },
+  {
+    "alpha2": "MX",
+    "alpha3": "MEX",
+    "label": "Mexico",
+    "names": [
+      "MEXICO",
+      "Mexican",
+      "Mexico",
+      "M\u00e9xico",
+      "United Mexican States",
+      "mexicano",
+      "Los Estados Unidos M\u00e9xicanos",
+      "the United States of Mexico",
+      "Estados Unidos Mexicanos"
+    ],
+    "qid": "Q96"
+  },
+  {
+    "alpha2": "KE",
+    "alpha3": "KEN",
+    "label": "Kenya",
+    "names": [
+      "Kenia",
+      "Kenya",
+      "Kenyan",
+      "Republic of Kenya",
+      "Republik Kenia"
+    ],
+    "qid": "Q114"
+  },
+  {
+    "alpha2": "ET",
+    "alpha3": "ETH",
+    "label": "Ethiopia",
+    "names": [
+      "Ethiopia",
+      "Ethiopian",
+      "Ethiopie",
+      "Etiopia",
+      "Federal Democratic Republic of Ethiopia"
+    ],
+    "qid": "Q115"
+  },
+  {
+    "alpha2": "GH",
+    "alpha3": "GHA",
+    "label": "Ghana",
+    "names": [
+      "Ghana",
+      "Ghanaian",
+      "Republic of Ghana"
+    ],
+    "qid": "Q117"
+  },
+  {
+    "alpha2": "FR",
+    "alpha3": "FRA",
+    "label": "France",
+    "names": [
+      "FRANCE",
+      "FRANCIA",
+      "France",
+      "Francese",
+      "Francia",
+      "Frankreich",
+      "Frankrijk",
+      "Fran\u00e7a",
+      "Fran\u00e7ais",
+      "French",
+      "Republic of France",
+      "Republique Francaise",
+      "Rep\u00fablica Francesa",
+      "fra",
+      "france",
+      "francese",
+      "fran\u00e7aise",
+      "la France"
+    ],
+    "qid": "Q142"
+  },
+  {
+    "alpha2": "GB",
+    "alpha3": "GBR",
+    "label": "United Kingdom",
+    "names": [
+      "Brit",
+      "Britain",
+      "British",
+      "Brittiska",
+      "Great Britain",
+      "Gro\u00dfbritannien",
+      "UK",
+      "United Kingdom",
+      "\u0412\u0435\u043b\u0438\u043a\u0430 \u0411\u0440\u0438\u0442\u0430\u043d\u0438\u0458\u0430"
+    ],
+    "qid": "Q145"
+  },
+  {
+    "alpha2": "CN",
+    "alpha3": "CHN",
+    "label": "People's Republic of China",
+    "names": [
+      "China",
+      "Chine",
+      "Chine Populaire",
+      "Chinese",
+      "Chino",
+      "Cinese",
+      "K\u00ednai",
+      "PRC",
+      "People's Republic of China",
+      "VR China",
+      "china",
+      "chinese",
+      "\u041a\u041d\u0420",
+      "\u0627\u0644\u0635\u064a\u0646",
+      "People\u2019s Republic of China",
+      "Peoples Republic of China",
+      "People of Republic of China",
+      "People Republic of China",
+      "Peoples' Republic of China"
+    ],
+    "qid": "Q148"
+  },
+  {
+    "alpha2": "BR",
+    "alpha3": "BRA",
+    "label": "Brazil",
+    "names": [
+      "Brasil",
+      "Brasileira",
+      "Brazil",
+      "Brazilian",
+      "Federative Republic of Brazil",
+      "Rep\u00fablica Federativa de Brasil",
+      "Rep\u00fablica Federativa del Brasil",
+      "Bresil"
+    ],
+    "qid": "Q155"
+  },
+  {
+    "alpha2": "RU",
+    "alpha3": "RUS",
+    "label": "Russia",
+    "names": [
+      "Federaci\u00f3n Rusa",
+      "Federazione Russa",
+      "Rus",
+      "Rusia",
+      "Russe",
+      "Russia",
+      "Russian",
+      "Russian Federation",
+      "Russian federation",
+      "Russische F\u00f6deration",
+      "Russo",
+      "russia",
+      "\u0420\u0443\u0441\u043a\u0438"
+    ],
+    "qid": "Q159"
+  },
+  {
+    "alpha2": "DE",
+    "alpha3": "DEU",
+    "label": "Germany",
+    "names": [
+      "Bondsrepubliek Duitsland",
+      "Bundesrepublik Deutschland",
+      "Deutsche",
+      "Deutschland",
+      "Federal Republic of Germany",
+      "German",
+      "Germany",
+      "Rep\u00fablica Federal da Alemanha",
+      "Rep\u00fablica Federal de Alemania",
+      "R\u00e9publique f\u00e9d\u00e9rale d'Allemagne",
+      "\u0413\u0435\u0440\u043c\u0430\u043d\u0438\u044f",
+      "\u0424\u0420\u0413"
+    ],
+    "qid": "Q183"
+  },
+  {
+    "alpha2": "BY",
+    "alpha3": "BLR",
+    "label": "Belarus",
+    "names": [
+      "Belarus",
+      "Belarusian",
+      "B\u00e9larus",
+      "Republic of Belarus",
+      "Wei\u00dfru\u00dfland",
+      "\u0411\u0435\u043b\u0430\u0440\u0443\u0441\u044c",
+      "\u0420\u0435\u043f\u0443\u0431\u043b\u0438\u043a\u0430 \u0411\u0435\u043b\u0430\u0440\u0443\u0441"
+    ],
+    "qid": "Q184"
+  },
+  {
+    "alpha2": "IS",
+    "alpha3": "ISL",
+    "label": "Iceland",
+    "names": [
+      "Iceland",
+      "Republic of Iceland"
+    ],
+    "qid": "Q189"
+  },
+  {
+    "alpha2": "EE",
+    "alpha3": "EST",
+    "label": "Estonia",
+    "names": [
+      "Estland",
+      "Estonia",
+      "Estonian",
+      "Republic of Estonia",
+      "Republik Estland",
+      "Rep\u00fablica de Estonia",
+      "R\u00e9publique d\u2019Estonie"
+    ],
+    "qid": "Q191"
+  },
+  {
+    "alpha2": "LV",
+    "alpha3": "LVA",
+    "label": "Latvia",
+    "names": [
+      "Latvia",
+      "Latvian",
+      "Letonia",
+      "Lettland",
+      "Letlands",
+      "Republic of Latvia",
+      "republic of Latvia",
+      "Repubblica di Lettonia"
+    ],
+    "qid": "Q211"
+  },
+  {
+    "alpha2": "UA",
+    "alpha3": "UKR",
+    "label": "Ukraine",
+    "names": [
+      "UCRAINA",
+      "Ucraina",
+      "Ukraine",
+      "Ukrainian",
+      "the Ukraine"
+    ],
+    "qid": "Q212"
+  },
+  {
+    "alpha2": "CZ",
+    "alpha3": "CZE",
+    "label": "Czech Republic",
+    "names": [
+      "CZECH REPUBLIC",
+      "Ceca",
+      "Czech",
+      "Czech Republic",
+      "Rep\u00fablica Checa"
+    ],
+    "qid": "Q213"
+  },
+  {
+    "alpha2": "SK",
+    "alpha3": "SVK",
+    "label": "Slovakia",
+    "names": [
+      "Rep\u00fablica Eslovaca",
+      "R\u00e9publique Slovaque",
+      "Slovak",
+      "Slovakia"
+    ],
+    "qid": "Q214"
+  },
+  {
+    "alpha2": "SI",
+    "alpha3": "SVN",
+    "label": "Slovenia",
+    "names": [
+      "Republic of Slovenia",
+      "Republik Slowenien",
+      "Slovenia",
+      "Slovenian"
+    ],
+    "qid": "Q215"
+  },
+  {
+    "alpha2": "MD",
+    "alpha3": "MDA",
+    "label": "Moldova",
+    "names": [
+      "Moldavia",
+      "Moldavie",
+      "Moldova",
+      "Republic of Moldova",
+      "Republica Moldova",
+      "Republik Moldau",
+      "\u041c\u043e\u043b\u0434\u043e\u0432\u0430"
+    ],
+    "qid": "Q217"
+  },
+  {
+    "alpha2": "RO",
+    "alpha3": "ROU",
+    "label": "Romania",
+    "names": [
+      "Romania",
+      "Romanian",
+      "Romenia",
+      "Rumania",
+      "Ruman\u00eda",
+      "Rom\u00e2niei"
+    ],
+    "qid": "Q218"
+  },
+  {
+    "alpha2": "BG",
+    "alpha3": "BGR",
+    "label": "Bulgaria",
+    "names": [
+      "Bulgaria",
+      "Bulgarian",
+      "Bulgarie",
+      "Bulgarien",
+      "Republic of Bulgaria",
+      "Rep\u00fablica de Bulgaria",
+      "\u0411\u044a\u043b\u0433\u0430\u0440\u0438\u044f"
+    ],
+    "qid": "Q219"
+  },
+  {
+    "alpha2": "MK",
+    "alpha3": "MKD",
+    "label": "Macedonia",
+    "names": [
+      "Macedonia",
+      "Macedonian",
+      "Mac\u00e9doine",
+      "Makedonien",
+      "Republic of Macedonia",
+      "The former Yugoslav Republic of Macedonia",
+      "the former Yugoslav Republic of Macedonia"
+    ],
+    "qid": "Q221"
+  },
+  {
+    "alpha2": "AL",
+    "alpha3": "ALB",
+    "label": "Albania",
+    "names": [
+      "Albania",
+      "Albanian",
+      "Albanie",
+      "Republic of Albania",
+      "Republik Albanien",
+      "Shqip\u00ebris\u00eb",
+      "\u0410\u043b\u0431\u0430\u043d\u0456\u044f"
+    ],
+    "qid": "Q222"
+  },
+  {
+    "alpha2": "HR",
+    "alpha3": "HRV",
+    "label": "Croatia",
+    "names": [
+      "Croacia",
+      "Croatia",
+      "Croatian",
+      "Republic of Croatia",
+      "Republik Kroatien"
+    ],
+    "qid": "Q224"
+  },
+  {
+    "alpha2": "BA",
+    "alpha3": "BIH",
+    "label": "Bosnia and Herzegovina",
+    "names": [
+      "Bosnia",
+      "Bosnia and Herzegovina",
+      "Republik Bosnien und Herzegowina",
+      "Bosnien und Herzegowina"
+    ],
+    "qid": "Q225"
+  },
+  {
+    "alpha2": "AZ",
+    "alpha3": "AZE",
+    "label": "Azerbaijan",
+    "names": [
+      "Azerbaijan",
+      "Republic of Azerbaijan"
+    ],
+    "qid": "Q227"
+  },
+  {
+    "alpha2": "AD",
+    "alpha3": "AND",
+    "label": "Andorra",
+    "names": [
+      "Principality of Andorra"
+    ],
+    "qid": "Q228"
+  },
+  {
+    "alpha2": "CY",
+    "alpha3": "CYP",
+    "label": "Cyprus",
+    "names": [
+      "Cypriot",
+      "Cyprus",
+      "Republic of Cyprus",
+      "Zypern"
+    ],
+    "qid": "Q229"
+  },
+  {
+    "alpha2": "GE",
+    "alpha3": "GEO",
+    "label": "Georgia",
+    "names": [
+      "Georgia",
+      "Georgian"
+    ],
+    "qid": "Q230"
+  },
+  {
+    "alpha2": "KZ",
+    "alpha3": "KAZ",
+    "label": "Kazakhstan",
+    "names": [
+      "Kazakhstan",
+      "Kazakstan",
+      "REPUBLIC OF KAZAKHSTAN",
+      "Republic of Kazakhstan",
+      "Rep\u00fablica de Kazajist\u00e1n"
+    ],
+    "qid": "Q232"
+  },
+  {
+    "alpha2": "MT",
+    "alpha3": "MLT",
+    "label": "Malta",
+    "names": [
+      "Malta",
+      "M\u00e1ltai",
+      "Republic of Malta",
+      "Rep\u00fablica de Malta"
+    ],
+    "qid": "Q233"
+  },
+  {
+    "alpha2": "MC",
+    "alpha3": "MCO",
+    "label": "Monaco",
+    "names": [
+      "Monaco",
+      "Principado de M\u00f3naco",
+      "Principality of Monaco",
+      "Principaut\u00e9 de Monaco"
+    ],
+    "qid": "Q235"
+  },
+  {
+    "alpha2": "ME",
+    "alpha3": "MNE",
+    "label": "Montenegro",
+    "names": [
+      "Montenegro"
+    ],
+    "qid": "Q236"
+  },
+  {
+    "alpha2": "VA",
+    "alpha3": "VAT",
+    "label": "Vatican City",
+    "names": [
+      "Estado de la Ciudad del Vaticano",
+      "Vatican",
+      "Vatican City",
+      "Vatikan",
+      "the Vatican",
+      "Apostolic Nunciature",
+      "Holy See",
+      "Apostoliska nuntiaturen",
+      "Nunciatura Apost\u00f3lica",
+      "Nunziatura Apostolica",
+      "\u0410\u043f\u043e\u0441\u0442\u043e\u043b\u044c\u0441\u043a\u0430\u044f \u041d\u0443\u043d\u0446\u0438\u0430\u0442\u0443\u0440\u0430",
+      "Apostolische Nuntiatur",
+      "Apostolische Nuntiatur",
+      "Apostolic Delegation"
+    ],
+    "qid": "Q237"
+  },
+  {
+    "alpha2": "SM",
+    "alpha3": "SMR",
+    "label": "San Marino",
+    "names": [
+      "R\u00e9publique de Saint-Marin",
+      "San Marino"
+    ],
+    "qid": "Q238"
+  },
+  {
+    "alpha2": "CU",
+    "alpha3": "CUB",
+    "label": "Cuba",
+    "names": [
+      "CUBA",
+      "Cuba",
+      "Cuban",
+      "Kuba",
+      "Republic of Cuba",
+      "Republica de Cuba",
+      "Rep\u00fablica de Cuba"
+    ],
+    "qid": "Q241"
+  },
+  {
+    "alpha2": "BZ",
+    "alpha3": "BLZ",
+    "label": "Belize",
+    "names": [
+      "Belize"
+    ],
+    "qid": "Q242"
+  },
+  {
+    "alpha2": "BB",
+    "alpha3": "BRB",
+    "label": "Barbados",
+    "names": [
+      "Barbadian",
+      "Barbados"
+    ],
+    "qid": "Q244"
+  },
+  {
+    "alpha2": "ID",
+    "alpha3": "IDN",
+    "label": "Indonesia",
+    "names": [
+      "INDONESIAN",
+      "Indonesia",
+      "Indonesian",
+      "Indon\u00e9z",
+      "Republic Of Indonesia",
+      "Republic of Indonesia",
+      "Republik Indonesia",
+      "Rep\u00fablica de Indonesia"
+    ],
+    "qid": "Q252"
+  },
+  {
+    "alpha2": "ZA",
+    "alpha3": "ZAF",
+    "label": "South Africa",
+    "names": [
+      "RSA",
+      "Republic of South Africa",
+      "Rep\u00fablica de Sud\u00e1frica",
+      "South Africa",
+      "South African",
+      "Sudafrica",
+      "south african",
+      "\u042e\u0410\u0420"
+    ],
+    "qid": "Q258"
+  },
+  {
+    "alpha2": "DZ",
+    "alpha3": "DZA",
+    "label": "Algeria",
+    "names": [
+      "Algeria",
+      "Algerian",
+      "Alg\u00e9riai",
+      "People\u2019s Democratic Republic of Algeria"
+    ],
+    "qid": "Q262"
+  },
+  {
+    "alpha2": "UZ",
+    "alpha3": "UZB",
+    "label": "Uzbekistan",
+    "names": [
+      "Repubblica dell'Uzbekistan",
+      "Republic of Uzbekistan",
+      "Uzbekistan",
+      "Uzbekistani"
+    ],
+    "qid": "Q265"
+  },
+  {
+    "alpha2": "CL",
+    "alpha3": "CHL",
+    "label": "Chile",
+    "names": [
+      "Chile",
+      "Chilean",
+      "Chilei",
+      "Republic of Chile",
+      "Republik Chile",
+      "Rep\u00fablica de Chile"
+    ],
+    "qid": "Q298"
+  },
+  {
+    "alpha2": "SG",
+    "alpha3": "SGP",
+    "label": "Singapore",
+    "names": [
+      "Republic of Singapore",
+      "Singapore",
+      "Singaporean"
+    ],
+    "qid": "Q334"
+  },
+  {
+    "alpha2": "LI",
+    "alpha3": "LIE",
+    "label": "Liechtenstein",
+    "names": [
+      "Liechtenstein",
+      "Principality of Liechtenstein"
+    ],
+    "qid": "Q347"
+  },
+  {
+    "alpha2": "BH",
+    "alpha3": "BHR",
+    "label": "Bahrain",
+    "names": [
+      "Bahrain",
+      "Bahraini",
+      "Bahrein",
+      "Kingdom of Bahrain",
+      "kingdom of Bahrain",
+      "\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0628\u062d\u0631\u064a\u0646"
+    ],
+    "qid": "Q398"
+  },
+  {
+    "alpha2": "AM",
+    "alpha3": "ARM",
+    "label": "Armenia",
+    "names": [
+      "Armenia",
+      "Armenian",
+      "Republic of Armenia"
+    ],
+    "qid": "Q399"
+  },
+  {
+    "alpha2": "RS",
+    "alpha3": "SRB",
+    "label": "Serbia",
+    "names": [
+      "Republic of Serbia",
+      "Rep\u00fablica de Serbia",
+      "Serbia",
+      "Serbian"
+    ],
+    "qid": "Q403"
+  },
+  {
+    "alpha2": "AU",
+    "alpha3": "AUS",
+    "label": "Australia",
+    "names": [
+      "Australia",
+      "Australian",
+      "Australie",
+      "Commonwealth of Australia"
+    ],
+    "qid": "Q408"
+  },
+  {
+    "alpha2": "AR",
+    "alpha3": "ARG",
+    "label": "Argentina",
+    "names": [
+      "Argentina",
+      "Argentine",
+      "Argentine Republic",
+      "Argentinian",
+      "Argentino",
+      "Rep\u00fablica Argentina",
+      "argentina",
+      "Republik Argentinien",
+      "Argentinien"
+    ],
+    "qid": "Q414"
+  },
+  {
+    "alpha2": "PE",
+    "alpha3": "PER",
+    "label": "Peru",
+    "names": [
+      "Peru",
+      "Peruvian",
+      "Republic of Peru",
+      "Rep\u00fablica del Per\u00fa"
+    ],
+    "qid": "Q419"
+  },
+  {
+    "alpha2": "KP",
+    "alpha3": "PRK",
+    "label": "North Korea",
+    "names": [
+      "Democratic People's Republic of Korea",
+      "North Korea",
+      "Rep\u00fablica Popular Democr\u00e1tica de Corea",
+      "\u041a\u041d\u0414\u0420",
+      "\uacf5\ud654\uad6d",
+      "People\u2019s Democratic Republic of Korea",
+      "Democratic People\u2019s Republic of Korea",
+      "People's Democratic Republic of Korea"
+    ],
+    "qid": "Q423"
+  },
+  {
+    "alpha2": "KH",
+    "alpha3": "KHM",
+    "label": "Cambodia",
+    "names": [
+      "Cambodia",
+      "Cambodian",
+      "Kingdom of Cambodia",
+      "cambodia"
+    ],
+    "qid": "Q424"
+  },
+  {
+    "alpha2": "EU",
+    "label": "European Union",
+    "names": [
+      "EU",
+      "European Union",
+      "Union Europea",
+      "European Commission",
+      "Europ\u00e4ischen Kommission",
+      "la Uni\u00f3n Europea",
+      "Uni\u00f3n Europea"
+    ],
+    "qid": "Q458"
+  },
+  {
+    "alpha2": "TL",
+    "alpha3": "TLS",
+    "label": "East Timor",
+    "names": [
+      "Democratic Republic of Timor-Leste",
+      "East Timor",
+      "Timor Leste",
+      "Timor-Leste"
+    ],
+    "qid": "Q574"
+  },
+  {
+    "alpha2": "TD",
+    "alpha3": "TCD",
+    "label": "Chad",
+    "names": [
+      "Chad",
+      "Chadian",
+      "Republic of Chad",
+      "Tchad",
+      "Tschad"
+    ],
+    "qid": "Q657"
+  },
+  {
+    "alpha2": "NZ",
+    "alpha3": "NZL",
+    "label": "New Zealand",
+    "names": [
+      "New Zealand"
+    ],
+    "qid": "Q664"
+  },
+  {
+    "alpha2": "IN",
+    "alpha3": "IND",
+    "label": "India",
+    "names": [
+      "India",
+      "Indiai",
+      "Indian",
+      "Indien",
+      "Republic of India",
+      "\u0130ndian"
+    ],
+    "qid": "Q668"
+  },
+  {
+    "alpha2": "TV",
+    "alpha3": "TUV",
+    "label": "Tuvalu",
+    "names": [
+      "Tuvalu"
+    ],
+    "qid": "Q672"
+  },
+  {
+    "alpha2": "TO",
+    "alpha3": "TON",
+    "label": "Tonga",
+    "names": [
+      "Kingdom of Tonga",
+      "Tonga"
+    ],
+    "qid": "Q678"
+  },
+  {
+    "alpha2": "WS",
+    "alpha3": "WSM",
+    "label": "Samoa",
+    "names": [
+      "Independent State of Samoa",
+      "Samoa"
+    ],
+    "qid": "Q683"
+  },
+  {
+    "alpha2": "SB",
+    "alpha3": "SLB",
+    "label": "Solomon Islands",
+    "names": [
+      "Solomon Islands"
+    ],
+    "qid": "Q685"
+  },
+  {
+    "alpha2": "VU",
+    "alpha3": "VUT",
+    "label": "Vanuatu",
+    "names": [
+      "Republic of Vanuatu"
+    ],
+    "qid": "Q686"
+  },
+  {
+    "alpha2": "PG",
+    "alpha3": "PNG",
+    "label": "Papua New Guinea",
+    "names": [
+      "Independent State of Papua New Guinea",
+      "Papua New Guinea",
+      "Papua New Guinean",
+      "Papua New guinea"
+    ],
+    "qid": "Q691"
+  },
+  {
+    "alpha2": "PW",
+    "alpha3": "PLW",
+    "label": "Palau",
+    "names": [
+      "Republic of Palau"
+    ],
+    "qid": "Q695"
+  },
+  {
+    "alpha2": "NR",
+    "alpha3": "NRU",
+    "label": "Nauru",
+    "names": [
+      "Republic of Nauru"
+    ],
+    "qid": "Q697"
+  },
+  {
+    "alpha2": "FM",
+    "alpha3": "FSM",
+    "label": "Federated States of Micronesia",
+    "names": [
+      "Federated States of Micronesia"
+    ],
+    "qid": "Q702"
+  },
+  {
+    "alpha2": "MH",
+    "alpha3": "MHL",
+    "label": "Marshall Islands",
+    "names": [
+      "Marshall Islands",
+      "Republic of the Marshall Islands"
+    ],
+    "qid": "Q709"
+  },
+  {
+    "alpha2": "KI",
+    "alpha3": "KIR",
+    "label": "Kiribati",
+    "names": [
+      "Republic of Kiribati"
+    ],
+    "qid": "Q710"
+  },
+  {
+    "alpha2": "MN",
+    "alpha3": "MNG",
+    "label": "Mongolia",
+    "names": [
+      "Mongolia",
+      "Mongolian"
+    ],
+    "qid": "Q711"
+  },
+  {
+    "alpha2": "FJ",
+    "alpha3": "FJI",
+    "label": "Fiji",
+    "names": [
+      "Fiji",
+      "Republic of Fiji"
+    ],
+    "qid": "Q712"
+  },
+  {
+    "alpha2": "VE",
+    "alpha3": "VEN",
+    "label": "Venezuela",
+    "names": [
+      "Bolivarian Republic of Venezuela",
+      "Venezuela",
+      "Venezuelan",
+      "V\u00e9n\u00e9zuela",
+      "V\u00e9n\u00e9zu\u00e9la",
+      "la Rep\u00fablica Bolivariana de Venezuela"
+    ],
+    "qid": "Q717"
+  },
+  {
+    "alpha2": "SR",
+    "alpha3": "SUR",
+    "label": "Suriname",
+    "names": [
+      "Republic of Suriname",
+      "Suriname"
+    ],
+    "qid": "Q730"
+  },
+  {
+    "alpha2": "PY",
+    "alpha3": "PRY",
+    "label": "Paraguay",
+    "names": [
+      "Paraguay",
+      "Republic of Paraguay",
+      "Rep\u00fablica del Paraguay"
+    ],
+    "qid": "Q733"
+  },
+  {
+    "alpha2": "GY",
+    "alpha3": "GUY",
+    "label": "Guyana",
+    "names": [
+      "Co-operative Republic of Guyana",
+      "Guiana",
+      "Guyana",
+      "Guyanese",
+      "Republic of Guyana",
+      "republic of Guyana"
+    ],
+    "qid": "Q734"
+  },
+  {
+    "alpha2": "EC",
+    "alpha3": "ECU",
+    "label": "Ecuador",
+    "names": [
+      "Ecuador",
+      "Ecuadorian",
+      "Republic of Ecuador",
+      "Republik Ecuador",
+      "Rep\u00fablica del Ecuador",
+      "l'Equador"
+    ],
+    "qid": "Q736"
+  },
+  {
+    "alpha2": "CO",
+    "alpha3": "COL",
+    "label": "Colombia",
+    "names": [
+      "COLOMBIA",
+      "Colombia",
+      "Colombian",
+      "Colombiano",
+      "Republic of Colombia",
+      "Republica de Colombia",
+      "Rep\u00fablica de Colombia"
+    ],
+    "qid": "Q739"
+  },
+  {
+    "alpha2": "BO",
+    "alpha3": "BOL",
+    "label": "Bolivia",
+    "names": [
+      "Bolivia",
+      "Bolivian",
+      "Estado Plurinacional de Bolivia",
+      "Plurinational State of Bolivia"
+    ],
+    "qid": "Q750"
+  },
+  {
+    "alpha2": "TT",
+    "alpha3": "TTO",
+    "label": "Trinidad and Tobago",
+    "names": [
+      "Republic of Trinidad and Tobago",
+      "Rep\u00fablica de Trinidad y Tobago",
+      "Trinidad and Tobago"
+    ],
+    "qid": "Q754"
+  },
+  {
+    "alpha2": "VC",
+    "alpha3": "VCT",
+    "label": "Saint Vincent and the Grenadines",
+    "names": [
+      "Saint Vincent",
+      "Saint Vincent and the Grenadines",
+      "St. Vincent"
+    ],
+    "qid": "Q757"
+  },
+  {
+    "alpha2": "LC",
+    "alpha3": "LCA",
+    "label": "Saint Lucia",
+    "names": [
+      "Saint Lucia"
+    ],
+    "qid": "Q760"
+  },
+  {
+    "alpha2": "KN",
+    "alpha3": "KNA",
+    "label": "Saint Kitts and Nevis",
+    "names": [
+      "Saint Kitts and Nevis"
+    ],
+    "qid": "Q763"
+  },
+  {
+    "alpha2": "JM",
+    "alpha3": "JAM",
+    "label": "Jamaica",
+    "names": [
+      "Jamaica",
+      "Jamaican"
+    ],
+    "qid": "Q766"
+  },
+  {
+    "alpha2": "GD",
+    "alpha3": "GRD",
+    "label": "Grenada",
+    "names": [
+      "Grenada"
+    ],
+    "qid": "Q769"
+  },
+  {
+    "alpha2": "GT",
+    "alpha3": "GTM",
+    "label": "Guatemala",
+    "names": [
+      "Guatemala",
+      "Guatemalan",
+      "Republik Guatemala",
+      "Rep\u00fablica de Guatemala"
+    ],
+    "qid": "Q774"
+  },
+  {
+    "alpha2": "BS",
+    "alpha3": "BHS",
+    "label": "Bahamas",
+    "names": [
+      "Bahamas",
+      "Bahamian",
+      "Commonwealth of the Bahamas",
+      "the Bahamas"
+    ],
+    "qid": "Q778"
+  },
+  {
+    "alpha2": "AG",
+    "alpha3": "ATG",
+    "label": "Antigua and Barbuda",
+    "names": [
+      "Antigua and Barbuda"
+    ],
+    "qid": "Q781"
+  },
+  {
+    "alpha2": "HN",
+    "alpha3": "HND",
+    "label": "Honduras",
+    "names": [
+      "Honduran",
+      "Honduras",
+      "Republic of Honduras",
+      "Rep\u00fablica de Honduras"
+    ],
+    "qid": "Q783"
+  },
+  {
+    "alpha2": "DM",
+    "alpha3": "DMA",
+    "label": "Dominica",
+    "names": [
+      "the Commonwealth of Dominica"
+    ],
+    "qid": "Q784"
+  },
+  {
+    "alpha2": "DO",
+    "alpha3": "DOM",
+    "label": "Dominican Republic",
+    "names": [
+      "Dominican Republic",
+      "Dominicana",
+      "Rep\u00fablica Dominicana"
+    ],
+    "qid": "Q786"
+  },
+  {
+    "alpha2": "HT",
+    "alpha3": "HTI",
+    "label": "Haiti",
+    "names": [
+      "Haiti",
+      "Haitian",
+      "Ha\u00efti",
+      "Rep\u00fablica de Hait\u00ed",
+      "R\u00e9publique d'Ha\u00efti"
+    ],
+    "qid": "Q790"
+  },
+  {
+    "alpha2": "SV",
+    "alpha3": "SLV",
+    "label": "El Salvador",
+    "names": [
+      "El Salvador",
+      "Republic of El Salvador",
+      "Rep\u00fablica de El Salvador",
+      "Salvador",
+      "Salvadoran",
+      "\u042d\u043b\u044c-\u0421\u0430\u043b\u044c\u0432\u0430\u0434\u043e\u0440"
+    ],
+    "qid": "Q792"
+  },
+  {
+    "alpha2": "IR",
+    "alpha3": "IRN",
+    "label": "Iran",
+    "names": [
+      "Iran",
+      "Iranian",
+      "Islamic Republic Of Iran",
+      "Islamic Republic of Iran",
+      "Republic of Iran",
+      "Rep\u00fablica Isl\u00e1mica de Ir\u00e1n",
+      "R\u00e9publique Islamique d'Iran",
+      "iran",
+      "\u0130ran",
+      "\u0627\u0644\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0627\u0633\u0644\u0627\u0645\u064a\u0629 \u0627\u0644\u0627\u064a\u0631\u0627\u0646\u064a\u0629"
+    ],
+    "qid": "Q794"
+  },
+  {
+    "alpha2": "IQ",
+    "alpha3": "IRQ",
+    "label": "Iraq",
+    "names": [
+      "Irak",
+      "Iraq",
+      "Iraqi",
+      "Republic Of Iraq",
+      "Republic of Iraq",
+      "Rep\u00fablica de Irak",
+      "iraq",
+      "\u0130raq",
+      "\u0627\u0644\u0639\u0631\u0627\u0642"
+    ],
+    "qid": "Q796"
+  },
+  {
+    "alpha2": "CR",
+    "alpha3": "CRI",
+    "label": "Costa Rica",
+    "names": [
+      "Costa Rica",
+      "Costa Rican",
+      "Republic of Costa Rica",
+      "Republik Costa Rica"
+    ],
+    "qid": "Q800"
+  },
+  {
+    "alpha2": "IL",
+    "alpha3": "ISR",
+    "label": "Israel",
+    "names": [
+      "Israel",
+      "Israeli",
+      "Israelin",
+      "State of Israel"
+    ],
+    "qid": "Q801"
+  },
+  {
+    "alpha2": "PA",
+    "alpha3": "PAN",
+    "label": "Panama",
+    "names": [
+      "Panama",
+      "Panamanian",
+      "Panam\u00e1",
+      "Republic of Panama",
+      "Rep\u00fablica de Panam\u00e1"
+    ],
+    "qid": "Q804"
+  },
+  {
+    "alpha2": "YE",
+    "alpha3": "YEM",
+    "label": "Yemen",
+    "names": [
+      "Jemeni",
+      "Republic of Yemen",
+      "Yemen",
+      "\u0627\u0644\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u064a\u0645\u0646\u064a\u0629"
+    ],
+    "qid": "Q805"
+  },
+  {
+    "alpha2": "JO",
+    "alpha3": "JOR",
+    "label": "Jordan",
+    "names": [
+      "Hashemite Kingdom of Jordan",
+      "Jordan",
+      "Jordanian",
+      "jordan"
+    ],
+    "qid": "Q810"
+  },
+  {
+    "alpha2": "NI",
+    "alpha3": "NIC",
+    "label": "Nicaragua",
+    "names": [
+      "Nicaragua",
+      "Nicaraguan",
+      "Rep\u00fablica de Nicaragua"
+    ],
+    "qid": "Q811"
+  },
+  {
+    "alpha2": "KG",
+    "alpha3": "KGZ",
+    "label": "Kyrgyzstan",
+    "names": [
+      "Kyrgyz",
+      "Kyrgyzstan"
+    ],
+    "qid": "Q813"
+  },
+  {
+    "alpha2": "KW",
+    "alpha3": "KWT",
+    "label": "Kuwait",
+    "names": [
+      "KUWAIT",
+      "Koweit",
+      "Kuwait",
+      "Kuweit",
+      "State of Kuwait",
+      "state of Kuwait",
+      "\u062f\u0648\u0644\u0629 \u0627\u0644\u0643\u0648\u064a\u062a",
+      "\u06a9\u0648\u06cc\u062a"
+    ],
+    "qid": "Q817"
+  },
+  {
+    "alpha2": "LA",
+    "alpha3": "LAO",
+    "label": "Laos",
+    "names": [
+      "Lao",
+      "Lao People's Democratic Republic",
+      "Laos"
+    ],
+    "qid": "Q819"
+  },
+  {
+    "alpha2": "LB",
+    "alpha3": "LBN",
+    "label": "Lebanon",
+    "names": [
+      "Lebanese",
+      "Lebanese Republic",
+      "Lebanon",
+      "Libano",
+      "Republic of Lebanon"
+    ],
+    "qid": "Q822"
+  },
+  {
+    "alpha2": "MV",
+    "alpha3": "MDV",
+    "label": "Maldives",
+    "names": [
+      "Maldives",
+      "Republic of Maldives"
+    ],
+    "qid": "Q826"
+  },
+  {
+    "alpha2": "MY",
+    "alpha3": "MYS",
+    "label": "Malaysia",
+    "names": [
+      "Malasia",
+      "Malaysia",
+      "Malaysian"
+    ],
+    "qid": "Q833"
+  },
+  {
+    "alpha2": "MM",
+    "alpha3": "MMR",
+    "label": "Myanmar",
+    "names": [
+      "Myanmar",
+      "Republic Of The Union Of Myanmar",
+      "Republic of the Union of Myanmar",
+      "Union von Myanmar",
+      "republic of the union of Myanmar"
+    ],
+    "qid": "Q836"
+  },
+  {
+    "alpha2": "NP",
+    "alpha3": "NPL",
+    "label": "Nepal",
+    "names": [
+      "Federal Democratic Republic of Nepal",
+      "NEPAL",
+      "Nepal",
+      "Rep\u00fablica Federal Democr\u00e1tica de Nepal"
+    ],
+    "qid": "Q837"
+  },
+  {
+    "alpha2": "OM",
+    "alpha3": "OMN",
+    "label": "Oman",
+    "names": [
+      "Oman",
+      "Om\u00e1ni Szult\u00e1ns\u00e1g",
+      "Sultanat d'Oman",
+      "Sultanate of Oman"
+    ],
+    "qid": "Q842"
+  },
+  {
+    "alpha2": "PK",
+    "alpha3": "PAK",
+    "label": "Pakistan",
+    "names": [
+      "Islamic Republic of Pakistan",
+      "PAKISTAN",
+      "Pakistan",
+      "r\u00e9publique islamique du Pakistan"
+    ],
+    "qid": "Q843"
+  },
+  {
+    "alpha2": "QA",
+    "alpha3": "QAT",
+    "label": "Qatar",
+    "names": [
+      "Estado de Catar",
+      "Katar",
+      "Qatar",
+      "Qatari",
+      "State Of Qatar",
+      "State of Qatar",
+      "\u062f\u0648\u0644\u0629 \u0642\u0637\u0631"
+    ],
+    "qid": "Q846"
+  },
+  {
+    "alpha2": "SA",
+    "alpha3": "SAU",
+    "label": "Saudi Arabia",
+    "names": [
+      "Arabia Saud\u00ed",
+      "Arabie Saoudite",
+      "Saudi",
+      "Saudi Arabia",
+      "Saudita",
+      "Saudite",
+      "saudi",
+      "the Kingdom of Saudi Arabia",
+      "\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0647",
+      "\u0627\u0644\u0645\u0645\u0644\u0643\u0629",
+      "\u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0639\u0631\u0628\u064a\u0629",
+      "\u0633\u0639\u0648\u062f\u064a"
+    ],
+    "qid": "Q851"
+  },
+  {
+    "alpha2": "LK",
+    "alpha3": "LKA",
+    "label": "Sri Lanka",
+    "names": [
+      "Democratic Socialist Republic of Sri Lanka",
+      "Sri Lanka",
+      "Sri Lankan"
+    ],
+    "qid": "Q854"
+  },
+  {
+    "alpha2": "SY",
+    "alpha3": "SYR",
+    "label": "Syria",
+    "names": [
+      "Syria",
+      "Syrian",
+      "Syrie"
+    ],
+    "qid": "Q858"
+  },
+  {
+    "alpha2": "TJ",
+    "alpha3": "TJK",
+    "label": "Tajikistan",
+    "names": [
+      "Republic of Tajikistan",
+      "Tajikistan"
+    ],
+    "qid": "Q863"
+  },
+  {
+    "alpha2": "TW",
+    "alpha3": "TWN",
+    "label": "Taiwan",
+    "names": [
+      "Republic of China",
+      "Taiwan",
+      "Taiwanese",
+      "republic of china",
+      "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0635\u064a\u0646",
+      "Taipei",
+      "Taipeh Vertretung"
+    ],
+    "qid": "Q865"
+  },
+  {
+    "alpha2": "TH",
+    "alpha3": "THA",
+    "label": "Thailand",
+    "names": [
+      "Kingdom of Thailand",
+      "Reino de Tailandia",
+      "Tailandia",
+      "Thai",
+      "Thaif\u00f6ldi Kir\u00e1lys\u00e1g",
+      "Thailand",
+      "Thailandese",
+      "Tha\u00eflande",
+      "thailand"
+    ],
+    "qid": "Q869"
+  },
+  {
+    "alpha2": "TM",
+    "alpha3": "TKM",
+    "label": "Turkmenistan",
+    "names": [
+      "Turkmen",
+      "Turkmenistan"
+    ],
+    "qid": "Q874"
+  },
+  {
+    "alpha2": "AE",
+    "alpha3": "ARE",
+    "label": "United Arab Emirates",
+    "names": [
+      "Emirates",
+      "Emirati",
+      "Emiratos \u00c1rabes Unidos",
+      "F\u00f6renade Arabemiraten",
+      "The United Arab Emirates",
+      "UAE",
+      "United Arab Emirates",
+      "the UAE",
+      "the United Arab Emirates",
+      "\u041e\u0410\u042d",
+      "\u062f\u0648\u0644\u0629 \u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062a \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0645\u062a\u062d\u062f\u0629"
+    ],
+    "qid": "Q878"
+  },
+  {
+    "alpha2": "VN",
+    "alpha3": "VNM",
+    "label": "Vietnam",
+    "names": [
+      "Socialist Republic of Vietnam",
+      "Viet",
+      "Vietnam",
+      "Vietnamese",
+      "Vi\u1ec7t Nam"
+    ],
+    "qid": "Q881"
+  },
+  {
+    "alpha2": "KR",
+    "alpha3": "KOR",
+    "label": "South Korea",
+    "names": [
+      "Korea Republic",
+      "Koreai K\u00f6zt\u00e1rsas\u00e1g",
+      "ROK",
+      "Rep. Korea",
+      "Republic Of Korea",
+      "Republic of Korea",
+      "Republica de Corea",
+      "Republik Korea",
+      "Rep\u00fablica de Corea",
+      "South Korea",
+      "South Korean",
+      "republic of Korea",
+      "republic of korea"
+    ],
+    "qid": "Q884"
+  },
+  {
+    "alpha2": "AF",
+    "alpha3": "AFG",
+    "label": "Afghanistan",
+    "names": [
+      "Afghan",
+      "Afghanistan",
+      "Islamic Republic of Afghanistan",
+      "Rep\u00fablica Isl\u00e1mica de Afganist\u00e1n",
+      "islamic republic of Afghanistan",
+      "\u0410\u0444\u0433\u0430\u043d\u0456\u0441\u0442\u0430\u043d"
+    ],
+    "qid": "Q889"
+  },
+  {
+    "alpha2": "BD",
+    "alpha3": "BGD",
+    "label": "Bangladesh",
+    "names": [
+      "Bangladesh",
+      "Bangladeshi"
+    ],
+    "qid": "Q902"
+  },
+  {
+    "alpha2": "ML",
+    "alpha3": "MLI",
+    "label": "Mali",
+    "names": [
+      "Mali",
+      "Malian",
+      "Republic of Mali",
+      "mali"
+    ],
+    "qid": "Q912"
+  },
+  {
+    "alpha2": "AO",
+    "alpha3": "AGO",
+    "label": "Angola",
+    "names": [
+      "Angola",
+      "Angolai",
+      "Republic of Angola",
+      "Republic of angola"
+    ],
+    "qid": "Q916"
+  },
+  {
+    "alpha2": "BT",
+    "alpha3": "BTN",
+    "label": "Bhutan",
+    "names": [
+      "Bhutan",
+      "Kingdom of Bhutan",
+      "K\u00f6nigreich Bhutan"
+    ],
+    "qid": "Q917"
+  },
+  {
+    "alpha2": "BN",
+    "alpha3": "BRN",
+    "label": "Brunei",
+    "names": [
+      "Brunei",
+      "Nation of Brunei, the Abode of Peace"
+    ],
+    "qid": "Q921"
+  },
+  {
+    "alpha2": "TZ",
+    "alpha3": "TZA",
+    "label": "Tanzania",
+    "names": [
+      "Tansania",
+      "Tanzania",
+      "Tanzanian",
+      "United Republic Of Tanzania",
+      "United Republic of Tanzania"
+    ],
+    "qid": "Q924"
+  },
+  {
+    "alpha2": "PH",
+    "alpha3": "PHL",
+    "label": "Philippines",
+    "names": [
+      "Filipina",
+      "F\u00fcl\u00f6p-szigeteki",
+      "Philippine",
+      "Philippines",
+      "Republic of the Philippines",
+      "Rep\u00fablica de Filipinas",
+      "The Philippines",
+      "philippine",
+      "the Philippines"
+    ],
+    "qid": "Q928"
+  },
+  {
+    "alpha2": "CF",
+    "alpha3": "CAF",
+    "label": "Central African Republic",
+    "names": [
+      "Centrafrique",
+      "Central African Republic",
+      "R\u00e9publique Centrafricaine"
+    ],
+    "qid": "Q929"
+  },
+  {
+    "alpha2": "TG",
+    "alpha3": "TGO",
+    "label": "Togo",
+    "names": [
+      "R\u00e9publique Togolaise",
+      "Togo",
+      "Togolese"
+    ],
+    "qid": "Q945"
+  },
+  {
+    "alpha2": "TN",
+    "alpha3": "TUN",
+    "label": "Tunisia",
+    "names": [
+      "Republic of Tunisia",
+      "Tunisia",
+      "Tunisian",
+      "Tunisie"
+    ],
+    "qid": "Q948"
+  },
+  {
+    "alpha2": "ZM",
+    "alpha3": "ZMB",
+    "label": "Zambia",
+    "names": [
+      "Republic of Zambia",
+      "Zambia",
+      "republic of Zambia"
+    ],
+    "qid": "Q953"
+  },
+  {
+    "alpha2": "ZW",
+    "alpha3": "ZWE",
+    "label": "Zimbabwe",
+    "names": [
+      "Republic of Zimbabwe",
+      "Simbabwe",
+      "Zimbabwe",
+      "Zimbabw\u00e9"
+    ],
+    "qid": "Q954"
+  },
+  {
+    "alpha2": "SS",
+    "alpha3": "SSD",
+    "label": "South Sudan",
+    "names": [
+      "Republic of South Sudan",
+      "South Sudan",
+      "Southern Sudan"
+    ],
+    "qid": "Q958"
+  },
+  {
+    "alpha2": "BJ",
+    "alpha3": "BEN",
+    "label": "Benin",
+    "names": [
+      "Benin",
+      "B\u00e9nin",
+      "Republic of Benin",
+      "la R\u00e9publique du B\u00e9nin"
+    ],
+    "qid": "Q962"
+  },
+  {
+    "alpha2": "BW",
+    "alpha3": "BWA",
+    "label": "Botswana",
+    "names": [
+      "Botswana",
+      "Republic of Botswana"
+    ],
+    "qid": "Q963"
+  },
+  {
+    "alpha2": "BF",
+    "alpha3": "BFA",
+    "label": "Burkina Faso",
+    "names": [
+      "Burkina Faso"
+    ],
+    "qid": "Q965"
+  },
+  {
+    "alpha2": "BI",
+    "alpha3": "BDI",
+    "label": "Burundi",
+    "names": [
+      "Burundi",
+      "Republic of Burundi"
+    ],
+    "qid": "Q967"
+  },
+  {
+    "alpha2": "KM",
+    "alpha3": "COM",
+    "label": "Comoros",
+    "names": [
+      "Comores",
+      "Comoros",
+      "Union of the Comoros"
+    ],
+    "qid": "Q970"
+  },
+  {
+    "alpha2": "CG",
+    "alpha3": "COG",
+    "label": "Republic of the Congo",
+    "names": [
+      "Congo Brazzaville",
+      "Congo-Brazzaville",
+      "Kongo-Brazzaville",
+      "Republic of Congo",
+      "Republic of the Congo",
+      "R\u00e9publique du Congo",
+      "republic of Congo"
+    ],
+    "qid": "Q971"
+  },
+  {
+    "alpha2": "CD",
+    "alpha3": "COD",
+    "label": "Democratic Republic of the Congo",
+    "names": [
+      "DRC",
+      "Democratic Republic Of Congo",
+      "Democratic Republic of Congo",
+      "Democratic Republic of the Congo",
+      "R\u00e9publique D\u00e9mocratique du Congo",
+      "R\u00e9publique d\u00e9mocratique du Congo",
+      "Zaire",
+      "r\u00e9publique d\u00e9mocratique du Congo",
+      "\u0627\u0644\u0643\u0648\u0646\u063a\u0648"
+    ],
+    "qid": "Q974"
+  },
+  {
+    "alpha2": "DJ",
+    "alpha3": "DJI",
+    "label": "Djibouti",
+    "names": [
+      "Djibouti",
+      "Republic of Djibouti"
+    ],
+    "qid": "Q977"
+  },
+  {
+    "alpha2": "GQ",
+    "alpha3": "GNQ",
+    "label": "Equatorial Guinea",
+    "names": [
+      "Equatorial Guinea",
+      "Republic of Equatorial Guinea",
+      "Rep\u00fablica de Guinea Ecuatorial",
+      "Guinea Ecuatorial"
+    ],
+    "qid": "Q983"
+  },
+  {
+    "alpha2": "ER",
+    "alpha3": "ERI",
+    "label": "Eritrea",
+    "names": [
+      "Eritrea",
+      "Eritrean"
+    ],
+    "qid": "Q986"
+  },
+  {
+    "alpha2": "GA",
+    "alpha3": "GAB",
+    "label": "Gabon",
+    "names": [
+      "Gabon",
+      "Gabonese Republic"
+    ],
+    "qid": "Q1000"
+  },
+  {
+    "alpha2": "GM",
+    "alpha3": "GMB",
+    "label": "The Gambia",
+    "names": [
+      "Gambia",
+      "Gambian",
+      "Republic of The Gambia",
+      "The Gambia",
+      "the Gambia"
+    ],
+    "qid": "Q1005"
+  },
+  {
+    "alpha2": "GN",
+    "alpha3": "GIN",
+    "label": "Guinea",
+    "names": [
+      "Guinea",
+      "Guinean",
+      "Republic of Guinea",
+      "Rep\u00fablica de Guinea",
+      "guinea"
+    ],
+    "qid": "Q1006"
+  },
+  {
+    "alpha2": "GW",
+    "alpha3": "GNB",
+    "label": "Guinea-Bissau",
+    "names": [
+      "Guin\u00e9e Bissau",
+      "Guinea Bissau",
+      "Republic of Guinea-Bissau",
+      "Rep\u00fablica de Guinea Bissau",
+      "Guinea-Bissau"
+    ],
+    "qid": "Q1007"
+  },
+  {
+    "alpha2": "CI",
+    "alpha3": "CIV",
+    "label": "Ivory Coast",
+    "names": [
+      "Cote d'Ivoire",
+      "C\u00f4te d'Ivoire",
+      "C\u00f4te d\u2019Ivoire",
+      "Ivory Coast",
+      "Republic of C\u00f4te d'Ivoire",
+      "R\u00e9publique de C\u00f4te d'Ivoire",
+      "R\u00e9publique de c\u00f4te d'ivoire",
+      "R\u00e9publique de C\u00f4te d'Ivoire"
+    ],
+    "qid": "Q1008"
+  },
+  {
+    "alpha2": "CM",
+    "alpha3": "CMR",
+    "label": "Cameroon",
+    "names": [
+      "Cameroon",
+      "Cameroun",
+      "Republic of Cameroon",
+      "Rep\u00fablica de Camer\u00fan"
+    ],
+    "qid": "Q1009"
+  },
+  {
+    "alpha2": "CV",
+    "alpha3": "CPV",
+    "label": "Cape Verde",
+    "names": [
+      "Cabo Verde",
+      "Cape Verde",
+      "Republic of Cape Verde",
+      "Republik Kap Verde"
+    ],
+    "qid": "Q1011"
+  },
+  {
+    "alpha2": "LS",
+    "alpha3": "LSO",
+    "label": "Lesotho",
+    "names": [
+      "Kingdom of Lesotho",
+      "Lesotho"
+    ],
+    "qid": "Q1013"
+  },
+  {
+    "alpha2": "LR",
+    "alpha3": "LBR",
+    "label": "Liberia",
+    "names": [
+      "Liberia",
+      "Liberian",
+      "Lib\u00e9ria",
+      "Republic of Liberia"
+    ],
+    "qid": "Q1014"
+  },
+  {
+    "alpha2": "LY",
+    "alpha3": "LBY",
+    "label": "Libya",
+    "names": [
+      "Libya",
+      "Libyan",
+      "Libyen",
+      "State of Libya",
+      "\u0627\u0644\u0644\u064a\u0628\u064a\u0629",
+      "Libye"
+    ],
+    "qid": "Q1016"
+  },
+  {
+    "alpha2": "MG",
+    "alpha3": "MDG",
+    "label": "Madagascar",
+    "names": [
+      "Madagascar",
+      "Madagaskar",
+      "Republic of Madagascar"
+    ],
+    "qid": "Q1019"
+  },
+  {
+    "alpha2": "MW",
+    "alpha3": "MWI",
+    "label": "Malawi",
+    "names": [
+      "Malawi",
+      "Republic of Malawi"
+    ],
+    "qid": "Q1020"
+  },
+  {
+    "alpha2": "MR",
+    "alpha3": "MRT",
+    "label": "Mauritania",
+    "names": [
+      "Islamic Republic of Mauritania",
+      "Mauritania",
+      "Mauritanie",
+      "\u0627\u0644\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0625\u0633\u0644\u0627\u0645\u064a\u0629 \u0627\u0644\u0645\u0648\u0631\u064a\u062a\u0627\u0646\u064a\u0629"
+    ],
+    "qid": "Q1025"
+  },
+  {
+    "alpha2": "MU",
+    "alpha3": "MUS",
+    "label": "Mauritius",
+    "names": [
+      "Maurice",
+      "Mauritius",
+      "Republic of Mauritius",
+      "\u00cele Maurice"
+    ],
+    "qid": "Q1027"
+  },
+  {
+    "alpha2": "MA",
+    "alpha3": "MAR",
+    "label": "Morocco",
+    "names": [
+      "Kingdom Of Morocco",
+      "Kingdom of Morocco",
+      "Maroc",
+      "Marocco",
+      "Marokk\u00f3i",
+      "Marruecos",
+      "Moroccan",
+      "Morocco",
+      "Reino de Marruecos",
+      "Royaume du Maroc",
+      "\u0627\u0644\u0645\u063a\u0631\u0628",
+      "United Kingdom of Morocco"
+    ],
+    "qid": "Q1028"
+  },
+  {
+    "alpha2": "MZ",
+    "alpha3": "MOZ",
+    "label": "Mozambique",
+    "names": [
+      "Mozambique",
+      "Mo\u00e7ambique",
+      "Republic of Mozambique"
+    ],
+    "qid": "Q1029"
+  },
+  {
+    "alpha2": "NA",
+    "alpha3": "NAM",
+    "label": "Namibia",
+    "names": [
+      "Namibia",
+      "Namibie",
+      "Republic of Namibia",
+      "Republik Namibia",
+      "R\u00e9publique de Namibie"
+    ],
+    "qid": "Q1030"
+  },
+  {
+    "alpha2": "NE",
+    "alpha3": "NER",
+    "label": "Niger",
+    "names": [
+      "Niger",
+      "Republic of Niger",
+      "Republic of the Niger"
+    ],
+    "qid": "Q1032"
+  },
+  {
+    "alpha2": "NG",
+    "alpha3": "NGA",
+    "label": "Nigeria",
+    "names": [
+      "Federal Republic of Nigeria",
+      "NIGERIA",
+      "Nigeria",
+      "Nigerian",
+      "Nig\u00e9ria"
+    ],
+    "qid": "Q1033"
+  },
+  {
+    "alpha2": "UG",
+    "alpha3": "UGA",
+    "label": "Uganda",
+    "names": [
+      "Republic of Uganda",
+      "Uganda"
+    ],
+    "qid": "Q1036"
+  },
+  {
+    "alpha2": "RW",
+    "alpha3": "RWA",
+    "label": "Rwanda",
+    "names": [
+      "Republic of Rwanda",
+      "Rwanda",
+      "R\u00e9publique Rwandaise"
+    ],
+    "qid": "Q1037"
+  },
+  {
+    "alpha2": "ST",
+    "alpha3": "STP",
+    "label": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+    "names": [
+      "Democratic Republic of S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+      "Sao Tome and Principe"
+    ],
+    "qid": "Q1039"
+  },
+  {
+    "alpha2": "SN",
+    "alpha3": "SEN",
+    "label": "Senegal",
+    "names": [
+      "Republic of Senegal",
+      "Senegal",
+      "Senegalese",
+      "S\u00e9n\u00e9gal",
+      "la R\u00e9publique du S\u00e9n\u00e9gal",
+      "senegal"
+    ],
+    "qid": "Q1041"
+  },
+  {
+    "alpha2": "SC",
+    "alpha3": "SYC",
+    "label": "Seychelles",
+    "names": [
+      "Republic of Seychelles",
+      "Republik Seychellen",
+      "Seychelles"
+    ],
+    "qid": "Q1042"
+  },
+  {
+    "alpha2": "SL",
+    "alpha3": "SLE",
+    "label": "Sierra Leone",
+    "names": [
+      "Republic of Sierra Leone",
+      "Sierra Leone"
+    ],
+    "qid": "Q1044"
+  },
+  {
+    "alpha2": "SO",
+    "alpha3": "SOM",
+    "label": "Somalia",
+    "names": [
+      "Federal Republic of Somalia",
+      "Somali",
+      "Somalia",
+      "Somalian",
+      "Somalie"
+    ],
+    "qid": "Q1045"
+  },
+  {
+    "alpha2": "SD",
+    "alpha3": "SDN",
+    "label": "Sudan",
+    "names": [
+      "Republic of Sudan",
+      "Republic of the Sudan",
+      "Republik Sudan",
+      "Rep\u00fablica de Sud\u00e1n",
+      "Sudan",
+      "Sudanese",
+      "the Sudan",
+      "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0633\u0648\u062f\u0627\u0646"
+    ],
+    "qid": "Q1049"
+  },
+  {
+    "alpha2": "SZ",
+    "alpha3": "SWZ",
+    "label": "Swaziland",
+    "names": [
+      "Kingdom of Eswatini",
+      "Kingdom of Swaziland",
+      "Swaziland"
+    ],
+    "qid": "Q1050"
+  },
+  {
+    "alpha2": "UN",
+    "label": "United Nations",
+    "names": [
+      "Na\u00e7\u00f5es Unidas",
+      "ONU",
+      "UN",
+      "UNO",
+      "Un",
+      "United Nations",
+      "Naciones Unidas"
+    ],
+    "qid": "Q1065"
+  },
+  {
+    "alpha2": "PR",
+    "alpha3": "PRI",
+    "label": "Puerto Rico",
+    "names": [
+      "Puerto Rico",
+      "puerto rico"
+    ],
+    "qid": "Q1183"
+  },
+  {
+    "alpha2": "XK",
+    "label": "Kosovo",
+    "names": [
+      "Kosovo",
+      "Republic of Kosovo",
+      "Republik Kosovo"
+    ],
+    "qid": "Q1246"
+  },
+  {
+    "alpha2": "FO",
+    "alpha3": "FRO",
+    "label": "Faroe Islands",
+    "names": [
+      "Faroe"
+    ],
+    "qid": "Q4628"
+  },
+  {
+    "alpha2": "HK",
+    "alpha3": "HKG",
+    "label": "Hong Kong",
+    "names": [
+      "Hong Kong"
+    ],
+    "qid": "Q8646"
+  },
+  {
+    "alpha2": "FK",
+    "alpha3": "FLK",
+    "label": "Falkland Islands",
+    "names": [
+      "Falkland"
+    ],
+    "qid": "Q9648"
+  },
+  {
+    "alpha2": "AW",
+    "alpha3": "ABW",
+    "label": "Aruba",
+    "names": [
+      "Aruba"
+    ],
+    "qid": "Q21203"
+  },
+  {
+    "label": "Turkish Republic of Northern Cyprus",
+    "names": [
+      "Turkish Republic of Northern Cyprus",
+      "Northern Cyprus",
+      "Republic of Northern Cyprus"
+    ],
+    "qid": "Q23681"
+  },
+  {
+    "alpha2": "CW",
+    "alpha3": "CUW",
+    "label": "Cura\u00e7ao",
+    "names": [
+      "Cura\u00e7ao"
+    ],
+    "qid": "Q25279"
+  },
+  {
+    "alpha2": "CK",
+    "alpha3": "COK",
+    "label": "Cook Islands",
+    "names": [
+      "Cook Islands",
+      "the Cook Islands"
+    ],
+    "qid": "Q26988"
+  },
+  {
+    "alpha2": "GS",
+    "alpha3": "SGS",
+    "label": "South Georgia and the South Sandwich Islands",
+    "names": [
+      "de Georgia"
+    ],
+    "qid": "Q35086"
+  },
+  {
+    "alpha2": "PS",
+    "alpha3": "PSE",
+    "label": "State of Palestine",
+    "names": [
+      "Estado de Palestina",
+      "Palestina",
+      "Palestine",
+      "Palestinian",
+      "Pal\u00e4stina",
+      "State of Palestine",
+      "palestina",
+      "state of Palestine",
+      "\u00c9tat de Palestine",
+      "States of Palestine"
+    ],
+    "qid": "Q219060"
+  }
+]
