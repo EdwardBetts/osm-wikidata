@@ -3,6 +3,7 @@ import os.path
 import re
 import sys
 import unicodedata
+import warnings
 from datetime import datetime, timedelta
 from pprint import pprint
 from time import sleep, time
@@ -77,8 +78,8 @@ def get_place(place_identifier):
     return Place.from_osm(hit["osm_type"], hit["osm_id"])
 
 
-@app.cli.command()
-def mail_recent():
+def mail_recent_main():
+    """Mail list of recent requests."""
     app.config.from_object("config.default")
     database.init_app(app)
 
@@ -119,6 +120,14 @@ https://www.openstreetmap.org/changeset/{change.id}
         mail.send_mail(subject.format(q.count(), total_items), body)
 
     ctx.pop()
+
+
+@app.cli.command()
+def mail_recent() -> None:
+    """Mail list of recent requests, while ignoring warnings."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=sqlalchemy.exc.SAWarning)
+        return mail_recent_main()
 
 
 @app.cli.command()
