@@ -1,10 +1,11 @@
-from flask import current_app
-from collections import Counter, defaultdict
-from . import match, database, wikidata, embassy, model
-
-import os.path
 import json
+import os.path
 import re
+from collections import Counter, defaultdict
+
+from flask import current_app
+
+from . import database, embassy, match, model, wikidata
 
 cat_to_ending = {}
 patterns = {}
