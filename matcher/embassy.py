@@ -892,7 +892,7 @@ countries = {
 def from_name(name):
     """Look for an embassy by name."""
     reverse_map = {}
-    for i in model.Embassy:
+    for i in model.Embassy.query:
         for name in i.names:
             reverse_map[name] = i
             reverse_map[name.lower()] = i
