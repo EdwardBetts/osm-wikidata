@@ -87,7 +87,6 @@ body, html {
 
 <script>
 var ws_scheme = {{ ws_scheme | tojson }};
-var replay_log = {{ replay_log | tojson }};
 var osm_type = {{ place.osm_type | tojson }};
 var osm_id = {{ place.osm_id | tojson }};
 var chunk_geojson = [{{ place.geojson_chunks() | join(',') | safe }}];
