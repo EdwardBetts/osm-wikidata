@@ -1,7 +1,12 @@
+from typing import Any
+
 from . import wikidata_api
 
+LangType = dict[str, Any]
 
-def languages_from_entity(entity):
+
+def languages_from_entity(entity: wikidata_api.EntityType) -> list[LangType]:
+    """Languages that are used in the country of this geographic entity."""
     languages = languages_from_country_entity(entity)
     if languages or "P17" not in entity["claims"]:
         return languages
@@ -9,12 +14,16 @@ def languages_from_entity(entity):
     for c in entity["claims"]["P17"]:
         country_qid = c["mainsnak"]["datavalue"]["value"]["id"]
         country_entity = wikidata_api.get_entity(country_qid)
+        assert country_entity
         languages = languages_from_country_entity(country_entity)
         if languages:
             return languages
 
+    return []
 
-def get_lang_qids(entity):
+
+def get_lang_qids(entity: wikidata_api.EntityType) -> list[str]:
+    """Retrieve language QIDs from country entity."""
     if "P37" not in entity["claims"]:
         return []
 
@@ -35,7 +44,8 @@ def get_lang_qids(entity):
     return lang_qids
 
 
-def languages_from_country_entity(entity):
+def languages_from_country_entity(entity: wikidata_api.EntityType) -> list[LangType]:
+    """Get list of languages from country."""
     lang_qids = get_lang_qids(entity)
 
     if not lang_qids:
@@ -45,11 +55,13 @@ def languages_from_country_entity(entity):
     return process_language_entities(entities)
 
 
-def process_language_entities(entities):
+def process_language_entities(
+    entities: list[wikidata_api.EntityType],
+) -> list[LangType]:
     languages = []
     for lang in entities:
         claims = lang["claims"]
-        l = {
+        i = {
             "en": lang["labels"]["en"]["value"],
         }
         if "P424" not in claims:
@@ -58,11 +70,11 @@ def process_language_entities(entities):
         if "datavalue" not in mainsnak:
             continue
         p424 = mainsnak["datavalue"]["value"]
-        l["code"] = p424
+        i["code"] = p424
         if p424 not in lang["labels"]:
             continue
-        l["local"] = lang["labels"][p424]["value"]
+        i["local"] = lang["labels"][p424]["value"]
 
-        languages.append(l)
+        languages.append(i)
 
     return languages
