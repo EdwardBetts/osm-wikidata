@@ -1,12 +1,17 @@
+import time
+from typing import Any
+
 import requests
 import requests.exceptions
-import time
 import simplejson.errors
+
+from . import mail, user_agent_headers
 from .utils import chunk
-from . import user_agent_headers, mail
 
 wikidata_url = "https://www.wikidata.org/w/api.php"
 page_size = 50
+
+EntityType = dict[str, Any]
 
 
 class TooManyEntities(Exception):
@@ -14,19 +19,24 @@ class TooManyEntities(Exception):
 
 
 class QueryError(Exception):
-    def __init__(self, query, r):
+    """Query error."""
+
+    def __init__(self, query: str, r: requests.Response) -> None:
+        """Init."""
         self.query = query
         self.r = r
 
 
 class QueryTimeout(QueryError):
-    def __init__(self, query, r):
-        self.query = query
-        self.r = r
+    """Query timeout error."""
 
 
-def api_call(params):
-    call_params = {
+CallParams = dict[str, str | int]
+
+
+def api_call(params: CallParams) -> requests.Response:
+    """Call the wikidata API."""
+    call_params: CallParams = {
         "format": "json",
         "formatversion": 2,
         **params,
@@ -58,20 +68,24 @@ def entity_iter(ids, debug=False, attempts=5):
             yield qid, entity
 
 
-def get_entity(qid):
+def get_entity(qid: str) -> EntityType | None:
     json_data = api_call({"action": "wbgetentities", "ids": qid}).json()
 
     try:
-        entity = list(json_data["entities"].values())[0]
+        entity: EntityType = list(json_data["entities"].values())[0]
     except KeyError:
-        return
+        return None
     if "missing" not in entity:
         return entity
 
+    return None
 
-def get_lastrevid(qid):
-    params = {"action": "query", "prop": "info", "titles": qid}
-    return api_call(params).json()["query"]["pages"][0]["lastrevid"]
+
+def get_lastrevid(qid: str) -> int:
+    """Get the lastrevid for the given QID."""
+    params: CallParams = {"action": "query", "prop": "info", "titles": qid}
+    lastrevid: int = api_call(params).json()["query"]["pages"][0]["lastrevid"]
+    return lastrevid
 
 
 def get_lastrevids(qid_list):
@@ -85,12 +99,12 @@ def get_lastrevids(qid_list):
     return {page["title"]: page["lastrevid"] for page in json_data["query"]["pages"]}
 
 
-def get_entities(ids, attempts=5):
+def get_entities(ids: list[str], attempts: int = 5) -> list[EntityType]:
     if not ids:
         return []
     if len(ids) > 50:
         raise TooManyEntities
-    params = {"action": "wbgetentities", "ids": "|".join(ids)}
+    params: CallParams = {"action": "wbgetentities", "ids": "|".join(ids)}
     for attempt in range(attempts):
         try:  # retry if we get a ChunkedEncodingError
             r = api_call(params)
@@ -102,3 +116,5 @@ def get_entities(ids, attempts=5):
         except requests.exceptions.ChunkedEncodingError:
             if attempt == attempts - 1:
                 raise QueryError(params, r)
+
+    return []
