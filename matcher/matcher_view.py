@@ -45,7 +45,6 @@ def matcher_progress(osm_type, osm_id):
     is_refresh = place.state == "refresh"
 
     announce_matcher_progress(place)
-    replay_log = place.state == "ready" and bool(utils.find_log_file(place))
 
     url_scheme = request.environ.get("wsgi.url_scheme")
     ws_scheme = "wss" if url_scheme == "https" else "ws"
@@ -55,7 +54,6 @@ def matcher_progress(osm_type, osm_id):
         place=place,
         is_refresh=is_refresh,
         ws_scheme=ws_scheme,
-        replay_log=replay_log,
     )
 
 
