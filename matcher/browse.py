@@ -1,16 +1,31 @@
-from . import database, nominatim, wikidata, wikidata_api, wikidata_language, commons
-from .place import Place
-from .model import WikidataItem, IsA
+"""Support functions for browse interface."""
+
 from time import time
+from typing import Any, TypedDict
+
+from . import commons, database, nominatim, wikidata, wikidata_api, wikidata_language
+from .model import IsA, WikidataItem
+from .place import Place
 
 
-def place_from_qid(qid, q=None, entity=None):
+class Entity(TypedDict):
+    """Wikidata Entity."""
+
+    claims: dict[str, Any]
+
+
+def place_from_qid(
+    qid: str, q: str | None = None, entity: Entity | None = None
+) -> Place | None:
+    """Look up via QID and return place."""
     hit = hit_from_qid(qid, q=None, entity=None)
-    if hit:
-        return place_from_nominatim(hit)
+    return place_from_nominatim(hit) if hit else None
 
 
-def hit_from_qid(qid, q=None, entity=None):
+def hit_from_qid(
+    qid: str, q: str | None = None, entity: Entity | None = None
+) -> Place | None:
+    """Run nominatim search and get hit with matching QID."""
     if q is None:
         if entity is None:
             entity = wikidata_api.get_entity(qid)
@@ -23,8 +38,11 @@ def hit_from_qid(qid, q=None, entity=None):
             continue
         return hit
 
+    return None
 
-def qid_to_search_string(qid, entity):
+
+def qid_to_search_string(qid: str, entity: Entity) -> str:
+    """Build a search string."""
     isa = {
         i["mainsnak"]["datavalue"]["value"]["id"]
         for i in entity.get("claims", {}).get("P31", [])
@@ -58,7 +76,8 @@ def qid_to_search_string(qid, entity):
     return q
 
 
-def place_from_nominatim(hit):
+def place_from_nominatim(hit) -> Place | None:
+    """Get place object from nominatim hit."""
     if not ("osm_type" in hit and "osm_id" in hit):
         return
     p = Place.query.filter_by(
@@ -73,9 +92,13 @@ def place_from_nominatim(hit):
     return p
 
 
-def get_details(item_id, timing=None, lang=None, sort=None):
-    if timing is None:
-        timing = []
+def get_details(
+    item_id: int,
+    timing: list[tuple[str, int]],
+    lang: str | None = None,
+    sort: str | None = None,
+):
+    """Get data for browse page."""
     qid = f"Q{item_id}"
     place = Place.get_by_wikidata(qid)
     check_lastrevid = []
@@ -133,14 +156,14 @@ def get_details(item_id, timing=None, lang=None, sort=None):
     entity = item.entity
     timing.append(("get entity done", time()))
 
-    if languages and not any(l.get("code") == "en" for l in languages):
+    if languages and not any(lang.get("code") == "en" for lang in languages):
         languages.append({"code": "en", "local": "English", "en": "English"})
 
     if not lang and languages:
-        for l in languages:
-            if "code" not in l:
+        for lang_dict in languages:
+            if "code" not in lang_dict:
                 continue
-            lang = l["code"]
+            lang = lang_dict["code"]
             break
 
     if not lang:
@@ -221,31 +244,60 @@ def get_details(item_id, timing=None, lang=None, sort=None):
     }
 
 
-def get_continents():
-    query = wikidata.continents_with_country_count_query
-    rows = wikidata.run_query(query)
+class Continent(TypedDict):
+    """Dict to represent a continent."""
+
+    label: str
+    description: str
+    country_count: int
+    qid: str
+    banner: str | None
+    banner_url: str | None
+
+
+def row_to_continent_dict(row: dict[str, Any]) -> Continent:
+    """Convert a WDQS row into a contient item."""
+    item = {
+        "label": row["continentLabel"]["value"],
+        "description": row["continentDescription"]["value"],
+        "country_count": row["count"]["value"],
+        "qid": wikidata.wd_to_qid(row["continent"]),
+    }
+    return item
+
+
+def get_banner_images(items: list[Continent]) -> None:
+    """Add banner URL to items."""
+    banner_filenames = [item["banner"] for item in items if item.get("banner")]
+    images = commons.image_detail(banner_filenames)
+    for item in items:
+        banner = item.get("banner")
+        item["banner_url"] = images[banner]["url"] if banner else None
+
+
+def rows_to_item_list(rows: list[dict[str, Any]]) -> list[Continent]:
+    """List of WDQS rows to item list."""
     items = []
-    banner_filenames = []
     for row in rows:
-        item = {
-            "label": row["continentLabel"]["value"],
-            "description": row["continentDescription"]["value"],
-            "country_count": row["count"]["value"],
-            "qid": wikidata.wd_to_qid(row["continent"]),
-        }
+        item = row_to_continent_dict(row)
+        item["banner"] = None
         try:
             filename = commons.commons_uri_to_filename(row["banner"]["value"])
             item["banner"] = filename
-            banner_filenames.append(filename)
         except KeyError:
             pass
         items.append(item)
         row["item"] = item
-    images = commons.image_detail(banner_filenames)
-    for item in items:
-        banner = item.get("banner")
-        if not banner:
-            continue
-        item["banner_url"] = images[banner]["url"]
+
+    return items
+
+
+def get_continents() -> list[Continent]:
+    """Return details of the continents."""
+    query = wikidata.continents_with_country_count_query
+    rows = wikidata.run_query(query)
+    items = rows_to_item_list(rows)
+
+    get_banner_images(items)
 
     return items
