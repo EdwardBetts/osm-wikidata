@@ -36,6 +36,10 @@ def send_mail_main(
     msg["From"] = mail_from
     msg["Date"] = formatdate()
     msg["Message-ID"] = make_msgid()
+    extra_mail_headers: list[tuple[str, str]] = config.get("MAIL_HEADERS", [])
+    for key, value in extra_mail_headers:
+        assert key not in msg
+        msg[key] = value
 
     s = smtplib.SMTP(config["SMTP_HOST"])
     s.sendmail(mail_from, [mail_to], msg.as_string())
