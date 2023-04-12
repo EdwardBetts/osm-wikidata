@@ -15,12 +15,12 @@ class AccountSettingsForm(FlaskForm):
 
     single = StringField(
         "Single item change comment",
-        [validators.required()],
+        [validators.InputRequired()],
         default=default_change_comments["single"],
     )
     multi = StringField(
         "Multiple items change comment",
-        [validators.required()],
+        [validators.InputRequired()],
         description=multi_help,
         default=default_change_comments["multi"],
     )
