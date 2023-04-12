@@ -1,7 +1,7 @@
 """Wikimedia Commons API call."""
 
 import urllib.parse
-from typing import Any
+from typing import Any, Iterable
 
 import requests
 
@@ -43,7 +43,7 @@ def image_detail_params(thumbheight: int | None, thumbwidth: int | None) -> Call
     return params
 
 
-def api_image_detail_call(params: CallParams, cur: list[str]) -> requests.Response:
+def api_image_detail_call(params: CallParams, cur: Iterable[str]) -> requests.Response:
     """Image details API call."""
     call_params = params.copy()
     call_params["titles"] = "|".join(f"File:{f}" for f in cur)
