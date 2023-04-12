@@ -1,16 +1,18 @@
-from flask import render_template_string, render_template, request
-from urllib.parse import unquote
+import json
+import os
+import re
 from collections import defaultdict
-from .utils import drop_start, cache_filename
-from .language import get_language_label
-from .wikidata_api import QueryError, QueryTimeout, get_entity, get_entities
-from . import user_agent_headers, overpass, mail, language, match, matcher, commons
 from time import time
+from urllib.parse import unquote
+
 import requests
 import requests.exceptions
-import os
-import json
-import re
+from flask import render_template, render_template_string, request
+
+from . import commons, language, mail, match, matcher, overpass, user_agent_headers
+from .language import get_language_label
+from .utils import cache_filename, drop_start
+from .wikidata_api import QueryError, QueryTimeout, get_entities, get_entity
 
 report_missing_values = False
 wd_entity = "http://www.wikidata.org/entity/Q"
