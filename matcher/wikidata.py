@@ -991,6 +991,7 @@ def isa_list(types):
 
 
 def get_next_level_query(qid, entity, language="en", name=None):
+    """Return text of SPARQL query for next admin level."""
     claims = entity.get("claims", {})
 
     isa = {i["mainsnak"]["datavalue"]["value"]["id"] for i in claims.get("P31", [])}
