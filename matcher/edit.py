@@ -23,11 +23,13 @@ def new_changeset(comment: str) -> str:
 </osm>"""
 
 
-def osm_request(path, **kwargs):
+def osm_request(path: str, **kwargs: dict):
+    """Make an authenticated request to the OSM API."""
     return osm_oauth.api_put_request(path, **kwargs)
 
 
 def create_changeset(changeset: str):
+    """Call the OSM API method to create a new changeset."""
     try:
         return osm_request("/changeset/create", data=changeset.encode("utf-8"))
     except requests.exceptions.HTTPError as r:
@@ -41,7 +43,8 @@ def close_changeset(changeset_id: int) -> requests.Response:
     return osm_request(f"/changeset/{changeset_id}/close")
 
 
-def save_element(osm_type, osm_id, element_data):
+def save_element(osm_type, osm_id, element_data) -> requests.Response | None:
+    """Update an OSM object and check for errors."""
     osm_path = f"/{osm_type}/{osm_id}"
     r = osm_request(osm_path, data=element_data)
     reply = r.text.strip()
@@ -62,8 +65,11 @@ error:
 
     mail.send_mail(subject, body)
 
+    return None
 
-def record_changeset(**kwargs):
+
+def record_changeset(**kwargs: dict) -> Changeset:
+    """Save a changeset in the database."""
     change = Changeset(created=database.now_utc(), user=g.user, **kwargs)
 
     database.session.add(change)
