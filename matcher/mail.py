@@ -1,11 +1,11 @@
 """Send email to admins to about errors or other notworthy things."""
 
+import pprint
 import smtplib
 import sys
 import traceback
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
-from pprint import pformat
 
 from flask import config, current_app, g, has_request_context, request
 
@@ -152,7 +152,7 @@ def send_traceback(info, prefix="osm-wikidata"):
 
 def datavalue_missing(field, entity):
     qid = entity["title"]
-    body = f"https://www.wikidata.org/wiki/{qid}\n\n{pformat(entity)}"
+    body = f"https://www.wikidata.org/wiki/{qid}\n\n{pprint.pformat(entity)}"
 
     subject = f"{qid}: datavalue missing in {field}"
     send_mail(subject, body)
