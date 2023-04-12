@@ -24,12 +24,13 @@ from flask import (
     session,
     url_for,
 )
-from jinja2 import Markup, escape, evalcontextfilter
+import jinja2
+from jinja2.utils import markupsafe
+from markupsafe import escape
 from lxml import etree
 from requests_oauthlib import OAuth1Session
 from sqlalchemy import distinct, func
 from sqlalchemy.orm.attributes import flag_modified
-from werkzeug.debug.tbtools import get_current_traceback
 from werkzeug.exceptions import InternalServerError
 
 from . import (
@@ -123,14 +124,14 @@ def set_url_args(**new_args):
 
 
 @app.template_filter()
-@evalcontextfilter
+@jinja2.pass_eval_context
 def newline_br(eval_ctx, value):
     result = "\n\n".join(
         "<p>%s</p>" % p.replace("\n", "<br>\n")
         for p in _paragraph_re.split(escape(value))
     )
     if eval_ctx.autoescape:
-        result = Markup(result)
+        result = markupsafe.Markup(result)
     return result
 
 
