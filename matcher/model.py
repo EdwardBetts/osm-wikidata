@@ -1,9 +1,11 @@
-# coding: utf-8
+"""Database models."""
 
 import re
 from collections import defaultdict
 from time import time
+from typing import Any
 
+import sqlalchemy
 from flask import g, has_app_context
 from flask_login import UserMixin
 from geoalchemy2 import Geography  # noqa: F401
@@ -33,7 +35,7 @@ from .utils import capfirst
 
 re_lau_code = re.compile(r"^[A-Z]{2}([^A-Z].+)$")  # 'LAU (local administrative unit)'
 
-Base = declarative_base()
+Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
 Base.query = session.query_property()
 
 osm_api_base = "https://api.openstreetmap.org/api/0.6"
@@ -66,6 +68,8 @@ disused_prefix_key = {
 
 
 class SiteBanner(Base):
+    """Banner to show on the top of each page on the site."""
+
     __tablename__ = "site_banner"
     id = Column(Integer, primary_key=True)
     headline = Column(String, nullable=False)
@@ -76,6 +80,8 @@ class SiteBanner(Base):
 
 
 class User(Base, UserMixin):
+    """User account."""
+
     __tablename__ = "user"
     id = Column(Integer, primary_key=True)
     username = Column(String)
@@ -115,10 +121,12 @@ class IsA(Base):
     qid = column_property("Q" + cast(item_id, String))
     label = Column(String)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """IsA repr method."""
         return f"<matcher.model.IsA object: {self.qid}>"
 
-    def url(self):
+    def url(self) -> str:
+        """Wikidata URL."""
         return f"https://www.wikidata.org/wiki/Q{self.item_id}"
 
     def label_best_language(self, languages, plural=False):
@@ -140,7 +148,7 @@ class IsA(Base):
         return self.entity_label()
 
     def label_and_description_list(self, want_languages):
-        language_codes = {l.wikimedia_language_code for l in want_languages}
+        language_codes = {lang.wikimedia_language_code for lang in want_languages}
         try:
             labels = self.entity["labels"]
         except (TypeError, KeyError):
@@ -183,7 +191,8 @@ class IsA(Base):
         elif labels:
             return list(labels.values())[0]["value"]
 
-    def label_and_qid(self):
+    def label_and_qid(self) -> str:
+        """Return a formatted string with the Label and QID."""
         if self.entity and "labels" not in self.entity:
             subject = f"missing labels: {self.qid}"
             body = f"Wikidata entity is missing labels\n\n{self.url}"
@@ -193,6 +202,7 @@ class IsA(Base):
             return f"{self.entity_label()} ({self.qid})"
 
     def labels(self):
+        """Entity labels."""
         return self.entity["labels"]
 
 
@@ -251,19 +261,24 @@ class Item(Base):
     extracts = association_proxy("wiki_extracts", "extract")
 
     @property
-    def extract(self):
+    def extract(self) -> str | None:
+        """Item extract from enwiki, if available."""
         return self.extracts.get("enwiki")
 
     @extract.setter
-    def extract(self, value):
+    def extract(self, value) -> None:
+        """Set enwiki extract."""
         self.extracts["enwiki"] = value
 
     @property
-    def labels(self):
+    def labels(self) -> dict[str, str] | None:
+        """Return dict of item labels."""
         if not self.entity:
             return None
 
-        return {l["language"]: l["value"] for l in self.entity["labels"].values()}
+        return {
+            lang["language"]: lang["value"] for lang in self.entity["labels"].values()
+        }
 
     def lang_text(self, field_name, lang="en"):
         field_values = self.entity.get(field_name)
@@ -290,7 +305,7 @@ class Item(Base):
         return self.lang_text("descriptions", lang=lang)
 
     def label_and_description_list(self, want_languages):
-        language_codes = {l.wikimedia_language_code for l in want_languages}
+        language_codes = {lang.wikimedia_language_code for lang in want_languages}
         try:
             labels = self.entity["labels"]
         except (TypeError, KeyError):
@@ -646,7 +661,8 @@ https://www.wikidata.org/wiki/{self.qid}
             if "datavalue" in i["mainsnak"]
         ]
 
-    def defunct_cats(self):
+    def defunct_cats(self) -> list[str]:
+        """Which defunt categories does this item belong to."""
         words = {
             "demolish",
             "disestablishment",
@@ -690,7 +706,8 @@ https://www.wikidata.org/wiki/{self.qid}
             found += [item_cat for i in words if i in lc_item_cat]
         return found
 
-    def get_claim(self, pid):
+    def get_claim(self, pid: str) -> list[Any]:
+        """Get a claim from the item entity."""
         return [
             i["mainsnak"]["datavalue"]["value"]
             for i in self.entity["claims"].get(pid, [])
@@ -717,10 +734,12 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_shopping_street(self):
         return any(cat.startswith("Shopping street ") for cat in self.categories or [])
 
-    def is_farm_house(self):
+    def is_farm_house(self) -> bool:
+        """Is this item a farm house."""
         return "Q489357" in self.instanceof()
 
-    def is_mountain_range(self):
+    def is_mountain_range(self) -> bool:
+        """Is this item a mountain range."""
         return "Q46831" in self.instanceof()
 
     def is_farmhouse(self):
@@ -1085,7 +1104,8 @@ class ItemCandidate(Base):
     #         return self.candidate.tags
     #
     @property
-    def key(self):
+    def key(self) -> str:
+        """Genereate a unique key for this item candidate."""
         return f"Q{self.item_id}-{self.osm_type:s}-{self.osm_id:d}"
 
     def get_match(self):
@@ -1123,10 +1143,12 @@ class ItemCandidate(Base):
             setattr(self, k, v)
 
     @property
-    def wikidata_tag(self):
+    def wikidata_tag(self) -> str | None:
+        """Get any existing wikidata tag for this OSM object."""
         return self.tags.get("wikidata") or None
 
-    def names(self):
+    def names(self) -> dict[str, str]:
+        """Collect names from various tags and return as a dict."""
         n = {
             k[5:]: v
             for k, v in self.tags.items()
@@ -1203,7 +1225,8 @@ class ItemCandidate(Base):
         return f"{self.osm_type}/{self.osm_id}"
 
     @property
-    def url(self):
+    def url(self) -> str:
+        """OSM API URL for this OSM object."""
         return f"{osm_api_base}/{self.osm_type}/{self.osm_id}"
 
     def name_match_count(self, osm_key):
