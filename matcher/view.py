@@ -1,3 +1,5 @@
+"""Various views for the OSM Wikidata matcher."""
+
 import inspect
 import json
 import random
