@@ -6,6 +6,7 @@ import random
 import re
 from collections import Counter
 from time import sleep, time
+from typing import Any
 
 import flask_login
 import jinja2
@@ -928,6 +929,17 @@ def candidate_language_order(osm_type, osm_id):
     return response
 
 
+def cache_has_missing_sitelink(cache: dict[str, Any]) -> bool:
+    """Have we cached a bad value for first paragraph."""
+    for item in cache["items"]:
+        if any(
+            lang + "wiki" not in item["sitelinks"]
+            for lang in item["first_paragraphs"].keys()
+        ):
+            return True
+    return False
+
+
 @app.route("/candidates/<osm_type>/<int:osm_id>.json")
 def candidates_json(osm_type, osm_id):
     place = Place.get_or_abort(osm_type, osm_id)
@@ -941,7 +953,7 @@ def candidates_json(osm_type, osm_id):
     bad_match_items = {i[0] for i in bad_matches}
 
     cache = place.match_cache
-    if cache:
+    if cache and not cache_has_missing_sitelink(cache):
         languages = cache.pop("languages")
         if user_language_order:
             languages = languages_in_user_order(user_language_order, languages)
@@ -1037,6 +1049,13 @@ def candidates_json(osm_type, osm_id):
                 notes.append("OSM candidate matches multiple Wikidata items")
                 upload_okay = False
 
+        sitelinks = item.sitelinks()
+        first_paragraphs = {
+            lang: paragraph
+            for lang, paragraph in item.first_paragraphs(langs).items()
+            if lang + "wiki" in sitelinks
+        }
+
         item_list.append(
             {
                 "labels": item.label_and_description_list(langs),
@@ -1044,7 +1063,7 @@ def candidates_json(osm_type, osm_id):
                 "enwiki": item.enwiki,
                 "lat": lat,
                 "lon": lon,
-                "first_paragraphs": item.first_paragraphs(langs),
+                "first_paragraphs": first_paragraphs,
                 "street_addresses": item.get_street_addresses(),
                 # 'search_tags': list(item.tags),
                 "isa_list": isa_list,
@@ -1057,7 +1076,7 @@ def candidates_json(osm_type, osm_id):
                 "notes": notes,
                 "ticked": ticked,
                 "upload_okay": upload_okay,
-                "sitelinks": item.sitelinks(),
+                "sitelinks": sitelinks,
                 "candidates": [
                     {
                         "key": c.key,
