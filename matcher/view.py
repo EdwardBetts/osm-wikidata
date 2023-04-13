@@ -8,6 +8,7 @@ from collections import Counter
 from time import sleep, time
 
 import flask_login
+import jinja2
 import requests
 import sqlalchemy.exc
 from flask import (
@@ -24,10 +25,9 @@ from flask import (
     session,
     url_for,
 )
-import jinja2
 from jinja2.utils import markupsafe
-from markupsafe import escape
 from lxml import etree
+from markupsafe import escape
 from requests_oauthlib import OAuth1Session
 from sqlalchemy import distinct, func
 from sqlalchemy.orm.attributes import flag_modified
