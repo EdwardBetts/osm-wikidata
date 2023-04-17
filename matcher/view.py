@@ -1494,22 +1494,40 @@ def browse_index():
 
 @app.route("/browse/Q<int:item_id>")
 def browse_page(item_id):
+    """Page showing list of subregions."""
     timing = [("start", time())]
     timing.append(("get place done", time()))
 
     lang = request.args.get("lang")
     sort = request.args.get("sort")
-    details = browse.get_details(item_id, timing, lang, sort)
+    browse_details = browse.BrowseDetail(item_id, timing, lang, sort)
+    browse_details.details()
 
     timing.append(("start get banner", time()))
-    banner = wikidata.page_banner_from_entity(details["entity"])
+    banner = wikidata.page_banner_from_entity(browse_details.entity)
     timing.append(("get banner done", time()))
 
     start = timing[0][1]
     timing = [(name, t - start) for name, t in timing]
 
     database.session.commit()
-    return render_template("browse.html", banner=banner, timing=timing, **details)
+    return render_template(
+        "browse.html",
+        banner=banner,
+        timing=timing,
+        qid=browse_details.qid,
+        isa_map=browse_details.isa_map,
+        item_id=browse_details.item_id,
+        place=browse_details.place,
+        name=browse_details.name,
+        description=browse_details.description,
+        languages=browse_details.languages,
+        entity=browse_details.entity,
+        current_places=browse_details.current_places,
+        former_places=browse_details.former_places,
+        extra_type_label=browse_details.extra_type_label,
+        extra_rows=browse_details.extra_rows,
+    )
 
 
 @app.route("/matcher/Q<int:item_id>")
