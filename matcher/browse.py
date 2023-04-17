@@ -99,6 +99,8 @@ def place_from_nominatim(hit) -> Place | None:
 
 
 class BrowseDetail:
+    """Details for browse page."""
+
     def __init__(
         self,
         item_id: int,
@@ -106,6 +108,7 @@ class BrowseDetail:
         lang: str | None = None,
         sort: str | None = None,
     ):
+        """Object constructor."""
         self.item_id = item_id
         self.timing = timing
         self.lang = lang
@@ -120,7 +123,8 @@ class BrowseDetail:
         return f"Q{self.item_id}"
 
     @property
-    def entity(self) -> dict[str, Any]:
+    def entity(self) -> Entity:
+        """Wikidata item entity dict."""
         return self.item.entity
 
     def place(self) -> Place:
@@ -141,20 +145,33 @@ class BrowseDetail:
         return wikidata.entity_description(self.entity, language=self.lang)
 
     def get_extra_rows(self):
-        if self.qid != "Q21":  # England
+        """Is there a second type of subregion we want to show on the browse page."""
+        if self.qid == "Q21":  # England
+            # Q48091 = region of England
+            types = wikidata.next_level_types(["Q48091"])
+            query = (
+                wikidata.next_level_query2.replace("TYPES", types)
+                .replace("QID", self.qid)
+                .replace("LANGUAGE", self.lang)
+            )
+            self.extra_rows = wikidata.next_level_places(
+                self.qid, self.entity, language=self.lang, query=query
+            )
+            self.extra_type_label = "Regions of England"
             return
 
-        # Q48091 = region of England
-        types = wikidata.next_level_types(["Q48091"])
-        query = (
-            wikidata.next_level_query2.replace("TYPES", types)
-            .replace("QID", self.qid)
-            .replace("LANGUAGE", self.lang)
-        )
-        self.extra_rows = wikidata.next_level_places(
-            self.qid, self.entity, language=self.lang, query=query
-        )
-        self.extra_type_label = "Regions of England"
+        has_geographic_region = any("Q82794" in row["isa"] for row in self.rows)
+        if has_geographic_region:
+            self.extra_type_label = "Geographic regions"
+            rows = []
+
+            for row in self.rows:
+                if "Q82794" not in row["isa"]:
+                    rows.append(row)
+                else:
+                    self.extra_rows.append(row)
+
+            self.rows = rows
 
     def build_isa_map(self, rows):
         self.isa_map = {}
@@ -215,32 +232,35 @@ class BrowseDetail:
             self.items[lang_qid] = lang_item
 
     def update_items(self):
-        if self.check_lastrevid:
-            check_qids = [check_qid for check_qid, rev_id in self.check_lastrevid]
-            cur_rev_ids = wikidata_api.get_lastrevids(check_qids)
-            for check_qid, rev_id in self.check_lastrevid:
-                if cur_rev_ids[check_qid] > rev_id:
-                    self.items[check_qid].update()
+        if not self.check_lastrevid:
+            return
+        check_qids = [check_qid for check_qid, rev_id in self.check_lastrevid]
+        cur_rev_ids = wikidata_api.get_lastrevids(check_qids)
+        for check_qid, rev_id in self.check_lastrevid:
+            if cur_rev_ids[check_qid] > rev_id:
+                self.items[check_qid].update()
 
-    def sort_rows(self):
+    def sort_rows(self) -> None:
+        """Sort rows in the specified order."""
         if self.sort and self.sort in {"area", "population", "qid", "label"}:
             self.rows.sort(key=lambda i: i[self.sort] if i[self.sort] else 0)
 
-    def add_english(self):
+    def add_english(self) -> None:
+        """We always want to include English as a language option."""
         if self.languages and not any(
             lang.get("code") == "en" for lang in self.languages
         ):
             self.languages.append({"code": "en", "local": "English", "en": "English"})
 
-    def get_former_type(self, isa_map):
-        former_type = {
+    def get_former_type(self, isa_map) -> set[str]:
+        """Which types represent historical entities."""
+        return {
             isa_qid
             for isa_qid, isa in isa_map.items()
             if any(
                 term in isa.entity_label().lower() for term in ("historical", "former")
             )
         }
-        return former_type
 
     def add_code_to_lang(self):
         if not self.lang and self.languages:
@@ -293,26 +313,6 @@ class BrowseDetail:
         self.timing.append(("next level places done", time()))
 
         self.get_extra_rows()
-
-        # Q82794 = geographic region
-
-        has_geographic_region = any("Q82794" in row["isa"] for row in self.rows)
-
-        if has_geographic_region:
-            assert self.qid != "Q21"  # England
-            self.extra_type_label = "Geographic regions"
-            rows = []
-
-            for row in self.rows:
-                if "Q82794" not in row["isa"]:
-                    rows.append(row)
-                else:
-                    self.extra_rows.append(row)
-
-            self.rows = rows
-
-        # for row in self.rows:
-        #     print(row["isa"])
 
         self.timing.append(("start isa map", time()))
         self.build_isa_map(self.rows + self.extra_rows)
