@@ -2,9 +2,11 @@
 
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from time import time
 from typing import Any, TypedDict
+
+import flask
 
 from . import (
     commons,
@@ -17,8 +19,6 @@ from . import (
 )
 from .model import IsA, WikidataItem
 from .place import Place
-
-cache_ttl = timedelta(days=1)
 
 
 class Entity(TypedDict):
@@ -305,7 +305,7 @@ class BrowseDetail:
             with open(filename) as f:
                 json_data = json.load(f)
                 timestamp = datetime.fromisoformat(json_data["timestamp"])
-                if now - timestamp < cache_ttl:
+                if now - timestamp < flask.current_app.config.get("BROWSE_CACHE_TTL"):
                     self.rows = json_data["rows"]
         if not self.rows:
             self.rows = wikidata.next_level_places(

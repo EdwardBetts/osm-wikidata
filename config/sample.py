@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 SECRET_KEY = "{{ secret_key }}"
 ADMIN_NAME = "{{ admin_name }}"
 ADMIN_EMAIL = "{{ admin_email }}"
@@ -50,3 +52,6 @@ SOCIAL_AUTH_AUTHENTICATION_BACKENDS = (
 
 SOCIAL_AUTH_OPENSTREETMAP_KEY = "{{ osm_key }}"
 SOCIAL_AUTH_OPENSTREETMAP_SECRET = "{{ osm_secret }}"
+
+
+BROWSE_CACHE_TTL = timedelta(days=1)
