@@ -1,11 +1,24 @@
 """Support functions for browse interface."""
 
+import json
+import os
+from datetime import datetime, timedelta
 from time import time
 from typing import Any, TypedDict
 
-from . import commons, database, nominatim, wikidata, wikidata_api, wikidata_language
+from . import (
+    commons,
+    database,
+    nominatim,
+    utils,
+    wikidata,
+    wikidata_api,
+    wikidata_language,
+)
 from .model import IsA, WikidataItem
 from .place import Place
+
+cache_ttl = timedelta(days=1)
 
 
 class Entity(TypedDict):
@@ -127,6 +140,7 @@ class BrowseDetail:
         """Wikidata item entity dict."""
         return self.item.entity
 
+    @property
     def place(self) -> Place:
         """Place for top-level item."""
         place = Place.get_by_wikidata(self.qid)
@@ -173,19 +187,8 @@ class BrowseDetail:
 
             self.rows = rows
 
-    def build_isa_map(self, rows):
-        self.isa_map = {}
-        download_isa = set()
-        for row in rows:
-            for isa_qid in row["isa"]:
-                if isa_qid in self.isa_map:
-                    continue
-                isa_obj = IsA.query.get(isa_qid[1:])
-                self.isa_map[isa_qid] = isa_obj
-                if isa_obj and isa_obj.entity:
-                    continue
-                download_isa.add(isa_qid)
-
+    def download_missing_isa(self, download_isa):
+        """Download any IsA object that aren't in the database already."""
         for isa_qid, entity in wikidata_api.entity_iter(download_isa):
             if self.isa_map[isa_qid]:
                 self.isa_map[isa_qid].entity = entity
@@ -193,8 +196,24 @@ class BrowseDetail:
             isa_obj = IsA(item_id=isa_qid[1:], entity=entity)
             self.isa_map[isa_qid] = isa_obj
             database.session.add(isa_obj)
+        database.session.commit()
+
+    def build_isa_map(self, rows):
+        """Build a map of IsA item QIDs to Wikidata objects."""
+        self.isa_map: dict[str, IsA] = {}
+        download_isa: set[str] = set()
+        for row in rows:
+            for isa_qid in row["isa"]:
+                if isa_qid in self.isa_map:
+                    continue
+                isa_obj = IsA.query.get(isa_qid[1:])
+                if isa_obj and isa_obj.entity:
+                    self.isa_map[isa_qid] = isa_obj
+                else:
+                    download_isa.add(isa_qid)
+
         if download_isa:
-            database.session.commit()
+            self.download_missing_isa(download_isa)
 
     def get_lang_qids_from_country(self):
         # P17 = country
@@ -274,9 +293,31 @@ class BrowseDetail:
         lang_items = (self.items[lang_qid].entity for lang_qid in self.lang_qids)
         self.languages = wikidata_language.process_language_entities(lang_items)
 
+    def get_rows_with_cache(self):
+        """Call Wikidata Query service to get next-level rows, cache the results."""
+        cache_path = utils.cache_dir()
+
+        now = datetime.utcnow()
+
+        filename = os.path.join(cache_path, f"{self.qid}_{self.lang}")
+        self.rows = []
+        if os.path.exists(filename):
+            with open(filename) as f:
+                json_data = json.load(f)
+                timestamp = datetime.fromisoformat(json_data["timestamp"])
+                if now - timestamp < cache_ttl:
+                    self.rows = json_data["rows"]
+        if not self.rows:
+            self.rows = wikidata.next_level_places(
+                self.qid, self.entity, language=self.lang
+            )
+            with open(filename, "w") as f:
+                json.dump(
+                    {"timestamp": now.isoformat(), "rows": self.rows}, f, indent=2
+                )
+
     def details(self):
         """Return details for browse page."""
-        self.place = Place.get_by_wikidata(self.qid)
         self.check_lastrevid = []
 
         # top level item
@@ -304,12 +345,8 @@ class BrowseDetail:
         if not self.lang:
             self.lang = "en"
 
-        if not self.place:
-            self.place = place_from_qid(self.qid, entity=self.entity)
+        self.get_rows_with_cache()
 
-        self.rows = wikidata.next_level_places(
-            self.qid, self.entity, language=self.lang
-        )
         self.timing.append(("next level places done", time()))
 
         self.get_extra_rows()
