@@ -581,7 +581,11 @@ next_level_type_map = {
         "Q643815",  # (non-)metropolitan county of England
         "Q180673",
     ],  # ceremonial county of England
-    "Q1136601": ["Q1115575"],  # civil parish
+    "Q1136601": [
+        "Q1115575",  # civil parish
+        "Q1195098",  # ward
+        "Q589282",  # ward or electoral division of the United Kingdom
+    ],
     "Q1187580": ["Q1115575"],  # civil parish
 }
 
