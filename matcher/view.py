@@ -310,28 +310,6 @@ def requests_exception(e):
     return "OSM token request failed."
 
 
-@app.errorhandler(wikidata_api.QueryError)
-def query_error(e):
-    tb = get_current_traceback()
-    return render_template("show_query_error.html", e=e, tb=tb), 500
-
-
-# @app.errorhandler(InternalServerError)
-# def exception_handler(e):
-#     tb = get_current_traceback()
-#     last_frame = tb.frames[-1]
-#     last_frame_args = inspect.getargs(last_frame.code)
-#     return (
-#         render_template(
-#             "show_error.html",
-#             tb=tb,
-#             last_frame=last_frame,
-#             last_frame_args=last_frame_args,
-#         ),
-#         500,
-#     )
-
-
 def get_osm_object(osm_type, osm_id, attempts=5):
     url = "{}/{}/{}".format(osm_api_base, osm_type, osm_id)
     for attempt in range(attempts):
