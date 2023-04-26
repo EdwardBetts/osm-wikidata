@@ -307,14 +307,13 @@ class BrowseDetail:
                 timestamp = datetime.fromisoformat(json_data["timestamp"])
                 if now - timestamp < flask.current_app.config.get("BROWSE_CACHE_TTL"):
                     self.rows = json_data["rows"]
-        if not self.rows:
-            self.rows = wikidata.next_level_places(
-                self.qid, self.entity, language=self.lang
-            )
-            with open(filename, "w") as f:
-                json.dump(
-                    {"timestamp": now.isoformat(), "rows": self.rows}, f, indent=2
-                )
+                    return
+
+        self.rows = wikidata.next_level_places(
+            self.qid, self.entity, language=self.lang
+        )
+        with open(filename, "w") as f:
+            json.dump({"timestamp": now.isoformat(), "rows": self.rows}, f, indent=2)
 
     def details(self):
         """Return details for browse page."""
