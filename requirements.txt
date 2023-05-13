@@ -15,3 +15,4 @@ termcolor
 ua-parser
 unidecode
 user-agents
+pattern

@@ -30,6 +30,7 @@ Python requirements:
     simplejson
     ua-parser
     user-agents
+    pattern
 
 The front-end libraries need to be installed in the matcher/static directory.
 This list is the expected directory name, and the software required:
