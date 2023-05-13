@@ -1,6 +1,5 @@
 cssmin
 dogpile.cache
-dupky
 Flask
 flask_sockets
 Flask-Assets
