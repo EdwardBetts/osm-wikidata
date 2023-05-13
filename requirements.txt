@@ -1,5 +1,4 @@
 Flask
-flask_sockets
 flask-login
 GeoAlchemy2
 geopy

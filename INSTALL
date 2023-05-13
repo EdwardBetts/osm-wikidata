@@ -20,7 +20,6 @@ Python requirements:
     flask-login
     gevent
     websockets
-    flask_sockets
     gunicorn
     humanize
     unidecode
