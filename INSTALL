@@ -18,7 +18,6 @@ Python requirements:
     geopy
     Flask
     flask-login
-    python-Social-Auth
     gevent
     websockets
     flask_sockets
@@ -26,17 +25,11 @@ Python requirements:
     humanize
     unidecode
     termcolor
-    dogpile.cache
-    pylibmc
     lxml
     requests
     simplejson
     ua-parser
     user-agents
-    Flask-Assets
-    webassets
-    jsmin
-    cssmin
 
 The front-end libraries need to be installed in the matcher/static directory.
 This list is the expected directory name, and the software required:

@@ -9,7 +9,6 @@ DATA_DIR = "{{ data_dir }}"
 CACHE_DIR = "{{ cache_dir }}"
 OVERPASS_DIR = "{{ overpass_dir }}"
 LOG_DIR = "{{ log_dir }}"
-WEBASSET_CACHE = "{{ webasset_cache_dir }}"
 
 DB_URL = "postgresql://{{ db_user }}:{{ db_pass }}@localhost/{{ db_name }}"
 

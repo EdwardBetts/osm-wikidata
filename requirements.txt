@@ -1,19 +1,13 @@
-cssmin
-dogpile.cache
 Flask
 flask_sockets
-Flask-Assets
 flask-login
 GeoAlchemy2
 geopy
 gevent
 gunicorn
 humanize
-jsmin
 lxml
 psycopg2
-pylibmc
-python-Social-Auth
 requests
 simplejson
 sqlalchemy
@@ -21,5 +15,3 @@ termcolor
 ua-parser
 unidecode
 user-agents
-webassets
-websockets
