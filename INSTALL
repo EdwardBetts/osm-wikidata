@@ -50,7 +50,7 @@ The database can be created with this command:
 
 The system is designed to be served from gunicorn. It can be started like this:
 
-    gunicorn -k flask_sockets.worker autoapp:app -t 6000
+    gunicorn --worker-class gevent  autoapp:app -t 60000
 
 The task queue that handles communication with the Overpass API needs to be run
 separately. It is in the project root directory, this will start it:
