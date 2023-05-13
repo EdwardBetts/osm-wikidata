@@ -15,3 +15,5 @@ ua-parser
 unidecode
 user-agents
 pattern
+num2words
+Flask-WTF
