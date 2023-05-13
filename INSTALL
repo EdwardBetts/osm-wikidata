@@ -32,6 +32,7 @@ Python requirements:
     pattern
     num2words
     Flask-WTF
+    flask-sock
 
 The front-end libraries need to be installed in the matcher/static directory.
 This list is the expected directory name, and the software required:
