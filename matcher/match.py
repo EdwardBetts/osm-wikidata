@@ -805,7 +805,19 @@ def check_name_matches_address(osm_tags, wikidata_names):
     number_end = {name for name in wikidata_names if name_contains_housenumber(name)}
 
     if not number_start and not number_end:
-        return
+        return None
+
+    if all(
+        "addr:" + part in osm_tags
+        for part in ("street", "housenumber", "postcode", "city")
+    ):
+        a = {
+            part: osm_tags["addr:" + part]
+            for part in ("street", "housenumber", "postcode", "city")
+        }
+        addr = f'{a["street"]} {a["housenumber"]}, {a["postcode"]} {a["city"]}'
+        if addr in wikidata_names:
+            return True
 
     strip_comma = [name[: name.rfind(",")] for name in set(number_start) if "," in name]
     number_start.update(n for n in strip_comma if not n.isdigit())
