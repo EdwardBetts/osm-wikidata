@@ -1,16 +1,24 @@
-from flask import current_app
-from collections import OrderedDict
-from . import user_agent_headers
+"""Nominatim geocode."""
 
 import json
+import typing
+from collections import OrderedDict
+
 import requests
+from flask import current_app
+
+from . import user_agent_headers
 
 
 class SearchError(Exception):
-    pass
+    """Search error."""
 
 
-def lookup_with_params(**kwargs):
+Hit = dict[str, typing.Any]
+
+
+def lookup_with_params(**kwargs: str | int) -> list[Hit]:
+    """Nominatim geocode with parameters."""
     url = "http://nominatim.openstreetmap.org/search"
 
     params = {
@@ -29,21 +37,25 @@ def lookup_with_params(**kwargs):
         raise SearchError
 
     try:
-        return json.loads(r.text, object_pairs_hook=OrderedDict)
+        hits: list[Hit] = json.loads(r.text, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError:
         raise SearchError(r)
 
+    return hits
 
-def lookup(q):
+
+def lookup(q: str) -> list[Hit]:
+    """Do nominatim lookup with given query."""
     return lookup_with_params(q=q)
 
 
-def get_us_county(county, state):
+def get_us_county(county: str, state: str) -> Hit | None:
+    """Look for US county in nominatim."""
     if " " not in county and "county" not in county:
         county += " county"
-    results = lookup(q="{}, {}".format(county, state))
+    results: list[Hit] = lookup(q="{}, {}".format(county, state))
 
-    def pred(hit):
+    def pred(hit: Hit) -> typing.TypeGuard[Hit]:
         return (
             "osm_type" in hit
             and hit["osm_type"] != "node"
@@ -53,7 +65,8 @@ def get_us_county(county, state):
     return next(filter(pred, results), None)
 
 
-def get_us_city(name, state):
+def get_us_city(name: str, state: str) -> Hit | None:
+    """Lookup US city via Nominatim."""
     results = lookup_with_params(city=name, state=state)
     if len(results) != 1:
         results = [
@@ -61,22 +74,23 @@ def get_us_city(name, state):
         ]
         if len(results) != 1:
             print("more than one")
-            return
+            return None
     hit = results[0]
     if hit["type"] not in ("administrative", "city"):
         print("not a city")
-        return
+        return None
     if hit["osm_type"] == "node":
         print("node")
-        return
+        return None
     if not hit["display_name"].startswith(name):
         print("wrong name")
-        return
+        return None
     assert "osm_type" in hit and "osm_id" in hit and "geotext" in hit
     return hit
 
 
-def reverse(osm_type, osm_id, polygon_text=1):
+def reverse(osm_type: str, osm_id: int, polygon_text: int = 1) -> dict[str, typing.Any]:
+    """Reverse geocode using nominatim."""
     url = "https://nominatim.openstreetmap.org/reverse"
 
     params = {
@@ -95,7 +109,7 @@ def reverse(osm_type, osm_id, polygon_text=1):
         raise SearchError
 
     try:
-        hit = json.loads(r.text, object_pairs_hook=OrderedDict)
+        hit: dict[str, typing.Any] = json.loads(r.text, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError:
         raise SearchError(r)
 
