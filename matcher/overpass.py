@@ -93,7 +93,7 @@ def name_only(t):
     )
 
 
-def get_name_filter(tags):
+def get_name_filter(tags: list[str]) -> str:
     return (
         "[name]"
         if all(name_only(t) for t in tags)
@@ -101,7 +101,9 @@ def get_name_filter(tags):
     )
 
 
-def oql_for_point(lat, lon, radius, tags, buildings):
+def oql_for_point(
+    lat: float, lon: float, radius: float, tags: list[str], buildings: bool
+) -> str:
     union = []
 
     for key, values in sorted(group_tags(tags).items()):
