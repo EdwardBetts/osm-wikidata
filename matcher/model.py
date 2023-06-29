@@ -1646,8 +1646,10 @@ class PageBanner(Base):
         if qid and len(qid) > 1 and qid[0].upper() == "Q" and qid[1:].isdigit():
             return cls.query.get(qid[1:])
 
+
 # "Turkish Republic of Northern Cyprus" has no alpha-2 code or alpha-3 code
 # "European Union" has no alpha-3 code
+
 
 class Embassy(Base):
     """Embassy item."""
