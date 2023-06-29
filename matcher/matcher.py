@@ -1,22 +1,39 @@
+"""Matcher functions."""
+
+import collections
 import json
 import os.path
 import re
+import typing
 from collections import Counter, defaultdict
 
 from flask import current_app
 
 from . import database, embassy, match, model, wikidata
 
+
+class EntityType(typing.TypedDict):
+    """Entity type."""
+
+    cats: list[str]
+    tags: list[str]
+    trim: list[str]
+    dist: int
+    wikidata: str
+    check_housename: bool
+
+
 cat_to_ending = {}
-patterns = {}
-entity_types = {}
+patterns: dict[str, re.Pattern[str]] = {}
+entity_types: list[EntityType] = []
 default_max_dist = 4
 extract_name_good_enough = True
 
 re_farmhouse = re.compile("^(.*) farm ?house$", re.I)
 
 
-def get_pattern(key):
+def get_pattern(key: str) -> re.Pattern[str]:
+    """Generate pattern for given key with cache."""
     if key in patterns:
         return patterns[key]
     return patterns.setdefault(key, re.compile(r"\b" + re.escape(key) + r"\b", re.I))
@@ -61,14 +78,15 @@ def categories_to_tags_map(categories):
     return ret
 
 
-def load_entity_types():
+def load_entity_types() -> list[EntityType]:
+    """Load entity types from JSON file."""
     data_dir = current_app.config["DATA_DIR"]
     filename = os.path.join(data_dir, "entity_types.json")
-    return json.load(open(filename))
+    return typing.cast(list[EntityType], json.load(open(filename)))
 
 
-def simplify_tags(tags):
-    """remove foo=bar if dict contains foo"""
+def simplify_tags(tags: list[str]) -> list[str]:
+    """Remove foo=bar if dict contains foo."""
     key_only = sorted(t for t in tags if "=" not in t)
     for k in key_only:
         for t in set(tags):
@@ -77,8 +95,8 @@ def simplify_tags(tags):
     return tags
 
 
-def tag_and_key_if_possible(tags):
-    """remove foo if dict contains foo=bar"""
+def tag_and_key_if_possible(tags: list[str]) -> list[str]:
+    """Remove foo if dict contains foo=bar."""
     key_only = sorted(t for t in tags if "=" not in t)
     for k in key_only:
         for t in set(tags):
@@ -89,8 +107,9 @@ def tag_and_key_if_possible(tags):
     return tags
 
 
-def build_cat_map():
-    cat_to_entity = {}
+def build_cat_map() -> dict[str, EntityType]:
+    """Build a map from lowercase category name to entity type."""
+    cat_to_entity: dict[str, EntityType] = {}
     for i in load_entity_types():
         for c in i["cats"]:
             lc_cat = c.lower()
@@ -100,7 +119,8 @@ def build_cat_map():
     return cat_to_entity
 
 
-def get_ending_from_criteria(tags):
+def get_ending_from_criteria(tags: collections.abc.Collection[str]) -> set[str]:
+    """Get endings to trim from tags."""
     global entity_types
 
     if not entity_types:
@@ -116,7 +136,8 @@ def get_ending_from_criteria(tags):
     return endings
 
 
-def could_be_building(tags, instanceof):
+def could_be_building(tags: set[str], instanceof: list[str]) -> bool:
+    """Check if the the thing with these tags is a building."""
     place_tags = {
         "place",
         "place=neighbourhood",
@@ -151,7 +172,8 @@ def could_be_building(tags, instanceof):
     return any(t.get("check_housename") and tags & set(t["tags"]) for t in entity_types)
 
 
-def get_max_dist_from_criteria(tags):
+def get_max_dist_from_criteria(tags: collections.abc.Collection[str]) -> int | None:
+    """Look at the entity types for the given tag criteria and find max distance."""
     global entity_types
 
     if not entity_types:
@@ -167,8 +189,8 @@ def get_max_dist_from_criteria(tags):
     return max(max_dists) if max_dists else None
 
 
-def hstore_query(tags):
-    """hstore query for use with osm2pgsql database"""
+def hstore_query(tags: list[str]) -> str:
+    """Hstore query for use with osm2pgsql database."""
     cond = []
     for tag in tags:
         if "=" not in tag:
@@ -184,7 +206,10 @@ def hstore_query(tags):
     return " or\n ".join(cond)
 
 
-def nearby_nodes_sql(item, prefix, max_dist=10, limit=50):
+def nearby_nodes_sql(
+    item: model.Item, prefix: str, max_dist: int = 10, limit: int = 50
+) -> str:
+    """Generate SQL to find nearby nodes."""
     point = f"ST_TRANSFORM(ST_GeomFromEWKT('{item.ewkt}'), 3857)"
     sql = (
         f"select 'point', osm_id, name, tags, "
@@ -195,12 +220,13 @@ def nearby_nodes_sql(item, prefix, max_dist=10, limit=50):
     return sql
 
 
-def existing_sql(prefix):
+def existing_sql(prefix: str) -> str:
+    """Generate SQL to search for existing wikidata tags."""
     sql_list = []
     for obj_type in "point", "line", "polygon":
         obj_sql = f"select '{obj_type}', osm_id, tags from {prefix}_{obj_type} "
         sql_list.append(obj_sql)
-    return "select * from (" + " union ".join(sql_list) + f") a where tags ? 'wikidata'"
+    return f"select * from ({' union '.join(sql_list)}) a where tags ? 'wikidata'"
 
 
 def get_existing(cur, prefix):
@@ -327,7 +353,8 @@ def bad_building_match(osm_tags, name_match, item):
     return True
 
 
-def is_osm_bus_stop(tags):
+def is_osm_bus_stop(tags: dict[str, str]) -> bool:
+    """Tags represent a bus stop."""
     return tags.get("highway") == "bus_stop" or (
         tags.get("bus") == "yes" and tags.get("public_transport") == "stop_position"
     )
@@ -456,7 +483,8 @@ def is_bad_match(item, osm_tags):
     return False
 
 
-def is_address_node(osm_type, osm_tags):
+def is_address_node(osm_type: str, osm_tags: dict[str, str]) -> bool:
+    """Check if a given OSM object is an address node."""
     if osm_type != "node" or "addr:housename" in osm_tags:
         return False
 
@@ -1130,14 +1158,18 @@ def filter_schools(candidates):
     return match
 
 
-def filter_churches(candidates):
-    if len(candidates) < 2:
-        return
-    if all("amenity=place_of_worship" not in c.matching_tags() for c in candidates):
-        return
+def filter_churches(
+    candidates: list[model.ItemCandidate],
+) -> model.ItemCandidate | None:
+    """Use the one thing tagged amenity=place_of_worship.
 
-    # use the one thing tagged amenity=place_of_worship
-    # check everything else is tagged religion=christian
+    check everything else is tagged religion=christian
+    """
+
+    if len(candidates) < 2:
+        return None
+    if all("amenity=place_of_worship" not in c.matching_tags() for c in candidates):
+        return None
 
     match = None
     for c in candidates:
@@ -1151,7 +1183,9 @@ def filter_churches(candidates):
     return match
 
 
-def filter_station(candidates):
+def filter_station(
+    candidates: list[model.ItemCandidate],
+) -> model.ItemCandidate | None:
     if len(candidates) < 2:
         return
 
@@ -1179,12 +1213,12 @@ def filter_station(candidates):
     return match
 
 
-def filter_building(candidates):
-    """
-    If the item is primarily a building then pick the building way over a node
-    that represents one of the current uses of the building
-    """
+def filter_building(candidates: list[model.ItemCandidate]) -> model.ItemCandidate:
+    """Prefer building way over node.
 
+    If the item is primarily a building then pick the building way over a node
+    that represents one of the current uses of the building.
+    """
     if len(candidates) < 2:
         return
 
@@ -1199,18 +1233,21 @@ def filter_building(candidates):
         return building
 
 
-def filter_reservoir(candidates):
+def filter_reservoir(
+    candidates: list[model.ItemCandidate],
+) -> model.ItemCandidate | None:
     if len(candidates) < 2:
-        return
+        return None
 
     way = [c for c in candidates if c.osm_type == "way"]
     node = [c for c in candidates if c.osm_type == "node"]
 
-    if len(way) == 1 and len(node) + 1 == len(candidates):
-        return way[0]
+    return way[0] if len(way) == 1 and len(node) + 1 == len(candidates) else None
 
 
-def reduce_candidates(item, candidates):
+def reduce_candidates(
+    item: model.Item, candidates: list[model.ItemCandidate]
+) -> list[model.ItemCandidate]:
     # place = filter_place(candidates)
     # if place:
     #     candidates = [place]
