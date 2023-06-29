@@ -512,6 +512,7 @@ https://www.wikidata.org/wiki/{self.qid}
             ),
             ("P649", ["ref:nrhp"], "NRHP reference number"),
             ("P722", ["uic_ref"], "UIC station code"),
+            ("P757", ["ref:whc"], "World Heritage Site ID"),
             ("P782", ["ref"], "LAU (local administrative unit)"),
             ("P836", ["ref:gss"], "UK Government Statistical Service code"),
             ("P856", ["website", "contact:website", "url"], "website"),
