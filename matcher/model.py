@@ -260,6 +260,13 @@ class Item(Base):
     )
     extracts = association_proxy("wiki_extracts", "extract")
 
+    places = relationship(
+        "Place",
+        secondary="place_item",
+        lazy="dynamic",
+        back_populates="items",
+    )
+
     @property
     def extract(self) -> str | None:
         """Item extract from enwiki, if available."""
@@ -1049,8 +1056,8 @@ class PlaceItem(Base):
         ),
     )
 
-    item = relationship("Item")
-    place = relationship("Place")
+    item = relationship("Item", viewonly=True)
+    place = relationship("Place", viewonly=True)
 
 
 class OsmCandidate(Base):

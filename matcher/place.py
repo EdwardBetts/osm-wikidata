@@ -170,7 +170,7 @@ class Place(Base):
         "Item",
         secondary="place_item",
         lazy="dynamic",
-        backref=backref("places", lazy="dynamic"),
+        back_populates="places",
     )
 
     __table_args__ = (UniqueConstraint("osm_type", "osm_id"),)
