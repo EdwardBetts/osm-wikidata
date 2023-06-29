@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import collections
 import re
 from collections import defaultdict
 from enum import Enum
@@ -755,33 +756,34 @@ def check_identifier(osm_tags, item_identifiers):
 re_range_start = re.compile(r"\d+ ?([-–+&]|and) ?$")
 
 
-def check_for_address_in_extract(osm_tags, extract):
+def check_for_address_in_extract(osm_tags: dict[str, str], extract: str) -> bool:
+    """Extract contains an address that matches OSM."""
     if not extract or not has_address(osm_tags):
-        return
+        return False
 
-    def address_in_extract(address):
+    def address_in_extract(address: str) -> bool:
         address = re_abbr.sub(
             lambda m: "(" + m.group(1) + "|" + abbr[m.group(1).lower()] + r"\.?)",
             re.escape(address),
         )
-        # address = re_directions.sub(lambda m: '(' + m.group(1) + '|' + m.group(1)[0] + ')', address)
+        # address = re_directions.sub(lambda m: '(' + m.group(1) + '|'
+        # + m.group(1)[0] + ')', address)
 
         m = re.search(r"\b" + address, extract, re.I)
         if not m:
             m = re.search(r"\b" + address, extract.replace(",", ""), re.I)
-        return bool(m) and not re_range_start.search(extract[: m.start()])
+        return not re_range_start.search(extract[: m.start()]) if m else False
 
     if "addr:housenumber" in osm_tags and "addr:street" in osm_tags:
         address = osm_tags["addr:housenumber"] + " " + osm_tags["addr:street"]
         if address_in_extract(address):
             return True
 
-    if "addr:full" in osm_tags and address_in_extract(osm_tags["addr:full"]):
-        return True
+    return "addr:full" in osm_tags and address_in_extract(osm_tags["addr:full"])
 
 
-def name_contains_housenumber(name):
-    """Name contains housenumber, but not at the start"""
+def name_contains_housenumber(name: str) -> bool:
+    """Name contains housenumber, but not at the start."""
     if not name or name[0].isdigit():
         return False
 
@@ -789,9 +791,11 @@ def name_contains_housenumber(name):
     return len(terms) > 1 and any(term[0].isdigit() for term in terms[1:])
 
 
-def check_name_matches_address(osm_tags, wikidata_names):
+def check_name_matches_address(
+    osm_tags: dict[str, str], wikidata_names: collections.abc.Collection[str]
+) -> bool | None:
     if not has_address(osm_tags):
-        return
+        return None
 
     # names that start with a number
     number_start_iter = (
@@ -872,13 +876,13 @@ def check_name_matches_address(osm_tags, wikidata_names):
             name.startswith(norm_osm_address) or norm_osm_address.startswith(name)
             for name in norm_number_start
         ):
-            return  # not sure
+            return None  # not sure
 
         m = re_address_common_end.match(norm_osm_address)
         if m:
             short = m.group(1)
             if any(name.startswith(short) for name in norm_number_start):
-                return
+                return None
 
     if "addr:full" in osm_tags:
         osm_address = normalize_name(osm_tags["addr:full"])
@@ -895,7 +899,7 @@ def check_name_matches_address(osm_tags, wikidata_names):
                 return True
 
     if not number_start:
-        return
+        return None
 
     # if we find a name from wikidata matches the OSM name we can be more relaxed
     # about the address
