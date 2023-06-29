@@ -1,3 +1,5 @@
+"""Place model."""
+
 import json
 import os.path
 import re
@@ -76,9 +78,11 @@ skip_tags = {
 }
 
 
-def drop_building_tag(tags):
-    # building is a very generic tag so remove it if we have more
-    # specific search criteria
+def drop_building_tag(tags: list[str]) -> None:
+    """Drop builing tags.
+
+    Building is a very generic tag so remove it if we have more specific search criteria
+    """
     if "building" in tags or "building=yes" in tags:
         without_buildings = [t for t in tags if t not in ("building", "building=yes")]
         if without_buildings:
@@ -86,7 +90,11 @@ def drop_building_tag(tags):
             tags.discard("building=yes")
 
 
-def bbox_chunk(bbox, n):
+BBox = tuple[float, float, float, float]
+
+
+def bbox_chunk(bbox: BBox, n: int) -> list[BBox]:
+    """Split bounding box into chunks."""
     n = max(1, n)
     (south, north, west, east) = bbox
     ns = (north - south) / n
@@ -112,6 +120,8 @@ def envelope(bbox):
 
 
 class Place(Base):
+    """Place model."""
+
     __tablename__ = "place"
     place_id = Column(BigInteger, primary_key=True, autoincrement=False)
     osm_type = Column(osm_type_enum, nullable=False)
@@ -166,15 +176,17 @@ class Place(Base):
     __table_args__ = (UniqueConstraint("osm_type", "osm_id"),)
 
     @property
-    def osm_url(self):
+    def osm_url(self) -> str:
+        """OSM URL."""
         return f"{base_osm_url}/{self.osm_type}/{self.osm_id}"
 
     @classmethod
-    def get_by_osm(cls, osm_type, osm_id):
+    def get_by_osm(cls, osm_type: str, osm_id: int):
+        """Get place by OSM type and ID."""
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     @classmethod
-    def from_osm(cls, osm_type, osm_id):
+    def from_osm(cls, osm_type: str, osm_id: int):
         place = cls.get_by_osm(osm_type, osm_id)
         if place:
             return place
