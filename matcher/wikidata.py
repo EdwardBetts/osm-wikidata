@@ -1,6 +1,9 @@
+"""Functions for interacting with Wikidata."""
+
 import json
 import os
 import re
+import typing
 from collections import defaultdict
 from time import time
 from urllib.parse import unquote
@@ -574,14 +577,14 @@ SELECT ?startLabel ?itemLabel ?country1 ?country1Label ?country2 ?country2Label 
 """
 
 next_level_type_map = {
-    "Q48091": [
+    "Q48091": [  # region of England
         "Q1136601",  # unitary authority of England
         "Q211690",  # London borough
         "Q1002812",  # metropolitan borough
         "Q643815",  # (non-)metropolitan county of England
         "Q180673",
     ],  # ceremonial county of England
-    "Q1136601": [
+    "Q1136601": [  # unitary authority area in England
         "Q1115575",  # civil parish
         "Q1195098",  # ward
         "Q589282",  # ward or electoral division of the United Kingdom
@@ -622,7 +625,12 @@ GROUP BY ?item ?itemLabel ?countryLabel
 """
 
 continents_with_country_count_query = """
-SELECT ?continent ?continentLabel ?continentDescription ?banner (COUNT(?country) AS ?count) WHERE {
+SELECT ?continent
+       ?continentLabel
+       ?continentDescription
+       ?banner
+       (COUNT(?country) AS ?count)
+WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
   ?country wdt:P30 ?continent .
   ?country wdt:P31 wd:Q6256 .
@@ -635,7 +643,16 @@ ORDER BY ?continentLabel
 wikidata_query_api_url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql"
 
 
-def get_query(q, south, north, west, east):
+class Entity(typing.TypedDict):
+    """Wikidata Entity."""
+
+    labels: dict[str, typing.Any]
+    descriptions: dict[str, typing.Any]
+    claims: dict[str, typing.Any]
+
+
+def get_query(q: str, south: float, north: float, west: float, east: float) -> str:
+    """Pass coordinates to bounding box query."""
     return render_template_string(q, south=south, north=north, west=west, east=east)
 
 
@@ -651,7 +668,9 @@ def query_map(prefix, **kwargs):
     }
 
 
-def bbox_query_map(south, north, west, east, **kwargs):
+def bbox_query_map(
+    south: float, north: float, west: float, east: float, **kwargs
+) -> str:
     return query_map("bbox", south=south, north=north, west=west, east=east, **kwargs)
 
 
@@ -733,19 +752,19 @@ def flatten_criteria(items):
     return {i for i in items if not any(i.startswith(s) for s in start)}
 
 
-def wd_uri_to_id(value):
+def wd_uri_to_id(value: str) -> int:
+    """Given a Wikidata URI return the item ID."""
     return int(drop_start(value, wd_entity))
 
 
-def wd_to_qid(wd):
+def wd_to_qid(wd: dict[str, str]) -> str | None:
+    """Extract QID from dict return by Wikidata API."""
     # expecting {'type': 'url', 'value': 'https://www.wikidata.org/wiki/Q30'}
-    if wd["type"] == "uri":
-        return wd_uri_to_qid(wd["value"])
+    return wd_uri_to_qid(wd["value"]) if wd["type"] == "uri" else None
 
 
-def wd_uri_to_qid(value):
-    if not value.startswith(wd_entity):
-        print(repr(value))
+def wd_uri_to_qid(value: str) -> str:
+    """Given a Wikidata URI return the item QID."""
     assert value.startswith(wd_entity)
     return value[len(wd_entity) - 1 :]
 
@@ -766,7 +785,8 @@ def parse_enwiki_query(rows):
     }
 
 
-def drop_tag_prefix(v):
+def drop_tag_prefix(v: str) -> str | None:
+    """Remove 'Tag:' or 'Key:' from the start of a string."""
     if v.startswith("Key:") and "=" not in v:
         return v[4:]
     if v.startswith("Tag:") and "=" in v:
@@ -794,7 +814,7 @@ def parse_item_tag_query(rows, items):
         items[qid]["tags"].add(tag_or_key)
 
 
-def page_banner_from_entity(entity, **kwargs):
+def page_banner_from_entity(entity: Entity, **kwargs):
     property_key = "P948"
     if property_key not in entity["claims"]:
         return
@@ -808,7 +828,8 @@ def page_banner_from_entity(entity, **kwargs):
         return
 
 
-def entity_label(entity, language=None):
+def entity_label(entity: Entity, language=None) -> str:
+    """Get a label from the entity."""
     if language and language in entity["labels"]:
         return entity["labels"][language]["value"]
     if "en" in entity["labels"]:
@@ -818,14 +839,15 @@ def entity_label(entity, language=None):
     return list(entity["labels"].values())[0]["value"]
 
 
-def entity_description(entity, language=None):
+def entity_description(entity: Entity, language: str | None = None) -> str | None:
+    """Get description from entity with given language with fallback to English."""
     if language and language in entity["descriptions"]:
         return entity["descriptions"][language]["value"]
     if "en" in entity["descriptions"]:
         return entity["descriptions"]["en"]["value"]
 
 
-def names_from_entity(entity, skip_lang=None):
+def names_from_entity(entity: Entity, skip_lang=None):
     if not entity or "labels" not in entity:
         return
     if skip_lang is None:
@@ -996,7 +1018,9 @@ def isa_list(types):
     return " union ".join("{ ?item wdt:P31 wd:" + t + " }" for t in types)
 
 
-def get_next_level_query(qid, entity, language="en", name=None):
+def get_next_level_query(
+    qid: str, entity: Entity, language: str = "en", name: str | None = None
+) -> str:
     """Return text of SPARQL query for next admin level."""
     claims = entity.get("claims", {})
 
@@ -1024,6 +1048,7 @@ def get_next_level_query(qid, entity, language="en", name=None):
         query = next_level_query2.replace("TYPES", types)
     elif "P150" in claims:  # P150 = contains administrative territorial entity
         places = [i["mainsnak"]["datavalue"]["value"]["id"] for i in claims["P150"]]
+        print(places)
         query_places = " ".join(f"(wd:{qid})" for qid in places)
         query = next_level_query3.replace("PLACES", query_places)
     elif "Q82794" in isa and "P527" in claims:
@@ -1036,11 +1061,8 @@ def get_next_level_query(qid, entity, language="en", name=None):
     return query.replace("QID", qid).replace("LANGUAGE", language)
 
 
-def next_level_places(qid, entity, language=None, query=None, name=None):
-    if not query:
-        query = get_next_level_query(qid, entity, language=language)
-
-    rows = []
+def run_next_level_query(query: str, name: str) -> requests.Response:
+    """Call the Wikidata Query Service and mail admin for queries that take too long."""
     t0 = time()
     r = run_query(query, name=name, return_json=False, send_error_mail=True)
     query_time = time() - t0
@@ -1048,6 +1070,75 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
         subject = f"next level places query took {query_time:.1f}"
         body = f"{request.url}\n\n{query}"
         mail.send_mail(subject, body)
+
+    return r
+
+
+def get_isa_list_from_row(row: dict[str, dict[str, str]]) -> list[str]:
+    """WDQS rows that contain IsA URIs in the isa_list field."""
+    isa_list = []
+    for url in row["isa_list"]["value"].split(" "):
+        if not url:
+            continue
+        isa_qid = wd_uri_to_qid(url)
+        if isa_qid not in isa_list:
+            isa_list.append(isa_qid)
+    return isa_list
+
+
+def get_population_from_row(row: dict[str, dict[str, str]]) -> str:
+    """Read population from WDQS row."""
+    pop = row.get("pop")
+    # https://www.wikidata.org/wiki/Q896427 has 'unknown value' for population
+    if pop:
+        try:
+            pop_value = int(pop["value"])
+        except ValueError:
+            pop_value = None
+    else:
+        pop_value = None
+
+    return pop_value
+
+
+def process_next_level_places(
+    query_rows: dict[str, dict[str, typing.Any]]
+) -> list[dict[str, typing.Any]]:
+    """Process a list of rows from the WDQS into our own format."""
+    rows = []
+    for row in query_rows:
+        item_id = wd_uri_to_id(row["item"]["value"])
+        i = {
+            "population": get_population_from_row(row),
+            "area": (
+                int(float(row["area"]["value"]) / 1e6) if row.get("area") else None
+            ),
+            "label": row["itemLabel"]["value"],
+            "description": (
+                row["itemDescription"]["value"] if "itemDescription" in row else None
+            ),
+            "start": row["startLabel"]["value"],
+            "item_id": item_id,
+            "qid": "Q{:d}".format(item_id),
+            "isa": get_isa_list_from_row(row),
+        }
+        rows.append(i)
+
+    return rows
+
+
+def next_level_places(
+    qid: str,
+    entity: Entity,
+    language: str | None = None,
+    query: str = None,
+    name: str = None,
+) -> list[dict[str, typing.Any]]:
+    """Look up the next level places for the given QID."""
+    if not query:
+        query = get_next_level_query(qid, entity, language=language)
+
+    r = run_next_level_query(query, name)
 
     query_rows = r.json()["results"]["bindings"]
     if any("isa_list" not in row for row in query_rows):
@@ -1080,51 +1171,18 @@ def next_level_places(qid, entity, language=None, query=None, name=None):
             located_in_rows = r.json()["results"]["bindings"]
             query_rows += located_in_rows
 
-    for row in query_rows:
-        item_id = wd_uri_to_id(row["item"]["value"])
-        qid = "Q{:d}".format(item_id)
-        isa_list = []
-        for url in row["isa_list"]["value"].split(" "):
-            if not url:
-                continue
-            isa_qid = wd_uri_to_qid(url)
-            if isa_qid not in isa_list:
-                isa_list.append(isa_qid)
-        pop = row.get("pop")
-        # https://www.wikidata.org/wiki/Q896427 has 'unknown value' for population
-        if pop:
-            try:
-                pop_value = int(pop["value"])
-            except ValueError:
-                pop_value = None
-        else:
-            pop_value = None
-        i = {
-            "population": pop_value,
-            "area": (
-                int(float(row["area"]["value"]) / 1e6) if row.get("area") else None
-            ),
-            "label": row["itemLabel"]["value"],
-            "description": (
-                row["itemDescription"]["value"] if "itemDescription" in row else None
-            ),
-            "start": row["startLabel"]["value"],
-            "item_id": item_id,
-            "qid": qid,
-            "isa": isa_list,
-        }
-        rows.append(i)
-
-    return rows
+    return process_next_level_places(query_rows)
 
 
-def query_for_items(query, items):
+def query_for_items(query: str, items: list[str]) -> str:
+    """Fill in template with QIDs."""
     assert items
     query_items = " ".join(f"wd:{qid}" for qid in items)
     return query.replace("ITEMS", query_items)
 
 
-def get_item_labels(items):
+def get_item_labels(items: list[str]) -> list[dict[str, typing.Any]]:
+    """Run query to get labels for given items."""
     query = query_for_items(item_labels_query, items)
     rows = []
     for row in run_query(query):
@@ -1140,11 +1198,9 @@ def get_item_labels(items):
     return rows
 
 
-def row_qid_and_label(row, name):
+def row_qid_and_label(row: dict[str, typing.Any], name: str) -> str | None:
     qid = wd_to_qid(row[name])
-    if not qid:
-        return
-    return {"qid": qid, "label": row[name + "Label"]["value"]}
+    return {"qid": qid, "label": row[name + "Label"]["value"]} if qid else None
 
 
 def get_isa(items, name=None):
