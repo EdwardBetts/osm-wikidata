@@ -1,8 +1,9 @@
-#!/usr/bin/python3
+"""Overpass functions."""
 
 import json
 import os.path
 import re
+import typing
 from collections import defaultdict
 from time import sleep
 
@@ -47,24 +48,29 @@ name_only_key = [
 ]
 
 
-def endpoint():
+def endpoint() -> str:
+    """Overpass endpoint URL."""
     return current_app.config["OVERPASS_URL"] + "/api/interpreter"
 
 
 class RateLimited(Exception):
-    pass
+    """Rate limited."""
 
 
 class Timeout(Exception):
-    pass
+    """Timeout error."""
 
 
 class OverpassError(Exception):
-    def __init__(self, r):
+    """Overpass error."""
+
+    def __init__(self, r: requests.models.Response):
+        """Make an error object."""
         self.r = r
 
 
-def run_query(oql, error_on_rate_limit=True):
+def run_query(oql: str, error_on_rate_limit: str = True) -> requests.models.Response:
+    """Run overpass query."""
     r = requests.post(
         endpoint(), data=oql.encode("utf-8"), headers=user_agent_headers()
     )
@@ -76,7 +82,8 @@ def run_query(oql, error_on_rate_limit=True):
     return r
 
 
-def get_elements(oql):
+def get_elements(oql: str) -> list[typing.Any]:
+    """Call overpass query and return elements."""
     return run_query(oql).json()["elements"]
 
 
@@ -433,7 +440,6 @@ def run_query_persistent(oql, attempts=3, via_web=True):
             sleep(seconds)
             continue
         if len(r.content) < 2000 and b"<remark> runtime error:" in r.content:
-
             msg = "runtime error"
             mail.error_mail(msg, oql, r, via_web=via_web)
             print(msg)
