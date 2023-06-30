@@ -811,7 +811,7 @@ https://www.wikidata.org/wiki/{self.qid}
             for cat in cats
         )
 
-    def is_a_station(self):
+    def is_a_station(self) -> bool:
         stations = {
             "Q55488",  # railway station
             "Q928830",  # metro station
@@ -833,7 +833,7 @@ https://www.wikidata.org/wiki/{self.qid}
             for item_cat in (self.categories or [])
         )
 
-    def is_a_stadium(self):
+    def is_a_stadium(self) -> bool:
         isa = {
             "Q483110",  # stadium
             "Q641226",  # arena
@@ -856,7 +856,7 @@ https://www.wikidata.org/wiki/{self.qid}
             for item_cat in (self.categories or [])
         )
 
-    def is_a_school(self):
+    def is_a_school(self) -> bool:
         return "amenity=school" in self.tags
 
     def skip_item_during_match(self):
