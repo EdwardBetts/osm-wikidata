@@ -7,6 +7,7 @@ import re
 import typing
 from collections import Counter, defaultdict
 
+import psycopg2
 from flask import current_app
 
 from . import database, embassy, match, model, wikidata
@@ -18,10 +19,15 @@ class EntityType(typing.TypedDict):
     cats: list[str]
     tags: list[str]
     trim: list[str]
+    exclude_tags: list[str]
     dist: int
     wikidata: str
     check_housename: bool
 
+
+CandidatesList = list[model.ItemCandidate]
+CandidateDict = dict[str, typing.Any]
+DbCursor = psycopg2.extensions.cursor
 
 cat_to_ending = {}
 patterns: dict[str, re.Pattern[str]] = {}
@@ -39,7 +45,11 @@ def get_pattern(key: str) -> re.Pattern[str]:
     return patterns.setdefault(key, re.compile(r"\b" + re.escape(key) + r"\b", re.I))
 
 
-def categories_to_tags(categories, cat_to_entity=None):
+def categories_to_tags(
+    categories: collections.abc.Collection[str],
+    cat_to_entity: dict[str, EntityType] | None = None,
+) -> list[str]:
+    """Return a list of tags based on the given categories."""
     if cat_to_entity is None:
         cat_to_entity = build_cat_map()
     tags = set()
@@ -50,6 +60,7 @@ def categories_to_tags(categories, cat_to_entity=None):
                 continue
             exclude = value.get("exclude_cats")
             if exclude:
+                assert isinstance(exclude, list)
                 pattern = re.compile(
                     r"\b(" + "|".join(re.escape(e) for e in exclude) + r")\b", re.I
                 )
@@ -59,9 +70,10 @@ def categories_to_tags(categories, cat_to_entity=None):
     return sorted(tags)
 
 
-def categories_to_tags_map(categories):
+def categories_to_tags_map(categories: list[str]) -> defaultdict[str, set[str]]:
+    """Build mapping from category name to collection of tags."""
     cat_to_entity = build_cat_map()
-    ret = defaultdict(set)
+    ret: defaultdict[str, set[str]] = defaultdict(set)
     for cat in categories:
         lc_cat = cat.lower()
         for key, value in cat_to_entity.items():
@@ -69,6 +81,7 @@ def categories_to_tags_map(categories):
                 continue
             exclude = value.get("exclude_cats")
             if exclude:
+                assert isinstance(exclude, list)
                 pattern = re.compile(
                     r"\b(" + "|".join(re.escape(e) for e in exclude) + r")\b", re.I
                 )
@@ -229,7 +242,7 @@ def existing_sql(prefix: str) -> str:
     return f"select * from ({' union '.join(sql_list)}) a where tags ? 'wikidata'"
 
 
-def get_existing(cur, prefix):
+def get_existing(cur: DbCursor, prefix: str) -> dict[str, tuple[str, int]]:
     sql = existing_sql(prefix)
     cur.execute(sql)
     rows = cur.fetchall()
@@ -247,13 +260,15 @@ def get_existing(cur, prefix):
     return dict(existing)
 
 
-def item_match_sql(item, prefix, ignore_tags=None, limit=50):
+def item_match_sql(
+    item: model.Item, prefix: str, ignore_tags: set[str] | None = None, limit: int = 50
+) -> str | None:
     point = "ST_TRANSFORM(ST_GeomFromEWKT('{}'), 3857)".format(item.ewkt)
     item_max_dist = get_max_dist_from_criteria(item.tags) or default_max_dist
 
     tags = item.calculate_tags(ignore_tags=ignore_tags)
     if not tags:
-        return
+        return None
 
     hstore = hstore_query(tags)
     assert hstore
@@ -275,7 +290,10 @@ def item_match_sql(item, prefix, ignore_tags=None, limit=50):
     return sql
 
 
-def run_sql(cur, sql, debug=False):
+def run_sql(
+    cur: DbCursor, sql: str, debug: bool = False
+) -> list[tuple[typing.Any, ...]]:
+    """Run SQL and return all rows."""
     if debug:
         print(sql)
 
@@ -283,7 +301,10 @@ def run_sql(cur, sql, debug=False):
     return cur.fetchall()
 
 
-def find_nrhp_match(nrhp_numbers, rows):
+def find_nrhp_match(
+    nrhp_numbers: collections.abc.Collection[str],
+    rows: list[tuple[str, int, str, dict[str, str], float]],
+) -> list[dict[str, typing.Any]] | None:
     nrhp_numbers = set(nrhp_numbers)
     nrhp_match = []
     for src_type, src_id, osm_name, osm_tags, dist in rows:
@@ -303,8 +324,7 @@ def find_nrhp_match(nrhp_numbers, rows):
         }
         nrhp_match.append(candidate)
 
-    if len(nrhp_match) == 1:
-        return nrhp_match
+    return nrhp_match if len(nrhp_match) == 1 else None
 
 
 def find_matching_tags(osm, wikidata):
@@ -319,7 +339,7 @@ def find_matching_tags(osm, wikidata):
     return tag_and_key_if_possible(matching)
 
 
-def bad_building_match(osm_tags, name_match, item):
+def bad_building_match(osm_tags: dict[str, str], name_match, item: model.Item) -> bool:
     if "amenity" in osm_tags:
         amenity = set(osm_tags["amenity"].split(";"))
         if "parking" in amenity:
@@ -360,7 +380,8 @@ def is_osm_bus_stop(tags: dict[str, str]) -> bool:
     )
 
 
-def is_diplomatic_mission(matching_tags, osm_tags):
+def is_diplomatic_mission(matching_tags: set[str], osm_tags: dict[str, str]) -> bool:
+    """Match represents a diplomatic mission."""
     if "amenity=embassy" in matching_tags:
         return True
     if osm_tags.get("office") == "diplomatic":
@@ -375,7 +396,9 @@ def is_diplomatic_mission(matching_tags, osm_tags):
     return False
 
 
-def diplomatic_mission_different_country(item, tags):
+def diplomatic_mission_different_country(
+    item: model.Item, tags: dict[str, str]
+) -> bool:
     name = tags.get("name:en") or tags.get("name")
     osm_country = tags.get("diplomatic:sending_country") or tags.get("country")
     item_countries = {country["id"] for country in item.get_claim("P137")}
@@ -400,12 +423,14 @@ def diplomatic_mission_different_country(item, tags):
     return not any(iso_code.upper() == osm_country.upper() for iso_code in codes)
 
 
-def is_building_only_match(matching_tags):
+def is_building_only_match(matching_tags: set[str]) -> bool:
+    """Check if the given tags represent a building."""
     building_tags = {"building", "building=yes", "historic:building"}
     return matching_tags.issubset(building_tags)
 
 
-def is_bad_match(item, osm_tags):
+def is_bad_match(item: model.Item, osm_tags: dict[str, str]) -> bool:
+    """Check for bad match."""
     for bad_match_filter in model.BadMatchFilter.query:
         if bad_match_filter.check(item.tags, osm_tags):
             return True
@@ -496,19 +521,22 @@ def is_address_node(osm_type: str, osm_tags: dict[str, str]) -> bool:
     )
 
 
-def get_within_names(cur, prefix, src_type, src_id):
+def get_within_names(cur: DbCursor, prefix, src_type, src_id) -> set[str]:
     sql = f"""select a.tags
 from {prefix}_polygon as a, {prefix}_{src_type} as b
 where b.osm_id={src_id} and a.osm_id != b.osm_id and st_contains(a.way, b.way);
 """
-    names = set()
+    names: set[str] = set()
     for (osm_tags,) in run_sql(cur, sql):
         if osm_tags.keys() & {"place", "tourism"}:
             names.update(match.get_names(osm_tags).values())
     return names
 
 
-def find_item_matches(cur, item, prefix, debug=False):
+def find_item_matches(
+    cur: psycopg2.extensions.cursor, item: model.Item, prefix: str, debug: bool = False
+) -> list[CandidateDict]:
+    """Check database to find list of OSM candidate matches."""
     if not item or not item.entity:
         return []
     wikidata_names = item.names()
@@ -810,11 +838,13 @@ def find_item_matches(cur, item, prefix, debug=False):
     return candidates
 
 
-def prefer_tag_match_over_building_only_match(candidates):
+def prefer_tag_match_over_building_only_match(
+    candidates: list[CandidateDict],
+) -> list[CandidateDict]:
     if len(candidates) == 1:
         return candidates
-    more_good = []
-    less_good = []
+    more_good: list[CandidateDict] = []
+    less_good: list[CandidateDict] = []
     for c in candidates:
         good = c["name_match"] and not is_building_only_match(c["matching_tags"])
         (more_good if good else less_good).append(c)
@@ -993,17 +1023,19 @@ def check_item_candidate(candidate):
     }
 
 
-def run_individual_match(place, item):
+def run_individual_match(prefix: str, item: model.Item) -> list[CandidateDict]:
+    """Run matcher for individual item."""
     conn = database.session.bind.raw_connection()
     cur = conn.cursor()
 
-    candidates = find_item_matches(cur, item, place.prefix, debug=False)
+    candidates = find_item_matches(cur, item, prefix, debug=False)
     conn.close()
 
     return candidates
 
 
-def get_osm_id_and_type(source_type, source_id):
+def get_osm_id_and_type(source_type: str, source_id: int) -> tuple[str, int]:
+    """Given database table name and src ID, return OSM type and id."""
     if source_type == "point":
         return ("node", source_id)
     if source_id > 0:
@@ -1011,7 +1043,8 @@ def get_osm_id_and_type(source_type, source_id):
     return ("relation", -source_id)
 
 
-def planet_table_id(osm):
+def planet_table_id(osm: dict[str, typing.Any]) -> tuple[str, int]:
+    """Get planet table and ID from OSM object."""
     osm_id = int(osm["id"])
     if osm["type"] == "node":
         return ("point", osm_id)
@@ -1019,7 +1052,7 @@ def planet_table_id(osm):
     return (table, osm_id if osm["type"] == "way" else -osm_id)
 
 
-def get_biggest_polygon(item):
+def get_biggest_polygon(item: dict[str, typing.Any]) -> int:
     biggest = None
     biggest_size = None
     for osm in item["candidates"]:
@@ -1032,7 +1065,8 @@ def get_biggest_polygon(item):
             biggest_size = area
             biggest = osm
 
-    return -osm["id"] if osm["type"] == "relation" else osm["id"]
+    ret: int = -osm["id"] if osm["type"] == "relation" else osm["id"]
+    return ret
 
 
 def all_in_one(item, conn, prefix):
@@ -1137,11 +1171,11 @@ def filter_place(candidates):
         return place_node
 
 
-def filter_schools(candidates):
+def filter_schools(candidates: CandidatesList) -> model.ItemCandidate | None:
     if len(candidates) < 2:
-        return
+        return None
     if all("amenity=school" not in c.matching_tags() for c in candidates):
-        return
+        return None
 
     # use the one thing tagged amenity=school
     # check everything else is tagged building=school
@@ -1154,7 +1188,7 @@ def filter_schools(candidates):
                 return
             match = c
         elif tags != ["building=school"]:
-            return
+            return None
     return match
 
 
@@ -1176,10 +1210,10 @@ def filter_churches(
         tags = c.matching_tags()
         if "amenity=place_of_worship" in tags:
             if match:
-                return
+                return None
             match = c
         elif tags != ["religion=christian"]:
-            return
+            return None
     return match
 
 
@@ -1187,7 +1221,7 @@ def filter_station(
     candidates: list[model.ItemCandidate],
 ) -> model.ItemCandidate | None:
     if len(candidates) < 2:
-        return
+        return None
 
     station = [c for c in candidates if "railway=station" in c.matching_tags()]
     tram_stop = [c for c in candidates if "railway=tram_stop" in c.matching_tags()]
@@ -1196,7 +1230,7 @@ def filter_station(
         return station[0]
 
     if all("public_transport=station" not in c.matching_tags() for c in candidates):
-        return
+        return None
 
     # use the one thing tagged public_transport=station
     # check everything else is tagged public_transport=platform
@@ -1206,31 +1240,32 @@ def filter_station(
         tags = c.matching_tags()
         if "public_transport=station" in tags:
             if match:  # multiple stations
-                return
+                return None
             match = c
         elif "railway=tram_stop" not in tags:
-            return
+            return None
     return match
 
 
-def filter_building(candidates: list[model.ItemCandidate]) -> model.ItemCandidate:
+def filter_building(
+    candidates: list[model.ItemCandidate],
+) -> model.ItemCandidate | None:
     """Prefer building way over node.
 
     If the item is primarily a building then pick the building way over a node
     that represents one of the current uses of the building.
     """
     if len(candidates) < 2:
-        return
+        return None
 
     way = [c for c in candidates if c.osm_type == "way"]
     node = [c for c in candidates if c.osm_type == "node"]
 
     if not (len(way) == 1 and len(node) + 1 == len(candidates)):
-        return
+        return None
     building = way[0]
 
-    if "building" in building.tags:
-        return building
+    return building if "building" in building.tags else None
 
 
 def filter_reservoir(
@@ -1245,9 +1280,7 @@ def filter_reservoir(
     return way[0] if len(way) == 1 and len(node) + 1 == len(candidates) else None
 
 
-def reduce_candidates(
-    item: model.Item, candidates: list[model.ItemCandidate]
-) -> list[model.ItemCandidate]:
+def reduce_candidates(item: model.Item, candidates: CandidatesList) -> CandidatesList:
     # place = filter_place(candidates)
     # if place:
     #     candidates = [place]
@@ -1332,7 +1365,9 @@ def filter_candidates_more(items, bad=None, ignore_existing=False):
         yield (item, {"candidate": candidate})
 
 
-def prefer_key_over_building(candidates, key):
+def prefer_key_over_building(
+    candidates: list[CandidateDict], key: str
+) -> list[CandidateDict]:
     if len(candidates) == 1:
         return candidates
 
@@ -1355,14 +1390,14 @@ def image_only_match(m):
     return len(m) == 1 and len(m[0][2]) == 1 and m[0][2][0][0] == "image"
 
 
-def prefer_proper_name_match(candidates):
+def prefer_proper_name_match(candidates: list[CandidateDict]) -> list[CandidateDict]:
     if len(candidates) == 1:
         return candidates
 
-    def candidate_name_match(c):
-        """
-        does this candidate match contain a name match, as opposed to matching on
-        operator or addr:housename.
+    def candidate_name_match(c: CandidateDict) -> bool:
+        """Candidate match contains a name match.
+
+        As opposed to matching on operator or addr:housename.
         """
         nm = c.get("name_match")
         return nm and (
@@ -1388,7 +1423,8 @@ def prefer_proper_name_match(candidates):
     return [best_match] if best_match else candidates
 
 
-def prefer_railway_station(candidates):
+def prefer_railway_station(candidates: list[CandidateDict]) -> list[CandidateDict]:
+    """Pick railway station from candidates."""
     if len(candidates) == 1:
         return candidates
     station = [c for c in candidates if "railway=station" in c["matching_tags"]]
@@ -1412,7 +1448,7 @@ def prefer_railway_station(candidates):
     return station if other + 1 == len(candidates) else candidates
 
 
-def filter_distant(candidates):
+def filter_distant(candidates: list[CandidateDict]) -> list[CandidateDict]:
     if any(c["tags"].keys() & {"place", "admin_level"} for c in candidates):
         return candidates
     if len(candidates) < 2:

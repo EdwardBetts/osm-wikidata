@@ -373,7 +373,7 @@ def individual_match(place_identifier, qid):
     item = Item.get_by_qid(qid)
     # entity = wikidata.WikidataItem(qid, item.entity)
 
-    candidates = matcher.run_individual_match(place, item)
+    candidates = matcher.run_individual_match(place.prefix, item)
     pprint(candidates)
 
 
