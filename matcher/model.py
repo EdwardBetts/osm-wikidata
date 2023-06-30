@@ -760,6 +760,9 @@ https://www.wikidata.org/wiki/{self.qid}
     def is_reservoir(self) -> bool:
         return "Q131681" in self.instanceof()
 
+    def is_stolperstein(self) -> bool:
+        return "Q26703203" in self.instanceof()
+
     def is_primarily_building(self) -> bool:
         """Item primarily represents a building.
 

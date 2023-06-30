@@ -521,6 +521,14 @@ def is_address_node(osm_type: str, osm_tags: dict[str, str]) -> bool:
     )
 
 
+def osm_is_stolperstein(osm_tags: dict[str, str]) -> bool:
+    """OSM object is a Stolperstein."""
+    return (
+        osm_tags["memorial:type"] == "stolperstein"
+        or osm_tags["memorial"] == "stolperstein"
+    )
+
+
 def get_within_names(cur: DbCursor, prefix, src_type, src_id) -> set[str]:
     sql = f"""select a.tags
 from {prefix}_polygon as a, {prefix}_{src_type} as b
@@ -583,6 +591,7 @@ def find_item_matches(
     place_names = item.place_names()
     instanceof = set(item.instanceof())
     is_hamlet = item.is_hamlet()
+    item_is_stolperstein = item.is_stolperstein()
     if is_hamlet:
         endings.discard("house")
 
@@ -611,6 +620,9 @@ def find_item_matches(
 
         if not match_address_nodes and is_address_node(osm_type, osm_tags):
             continue  # Don't match address nodes. There are lots of these in New York.
+
+        if item_is_stolperstein and not osm_is_stolperstein(osm_tags):
+            continue
 
         try:
             admin_level = (
