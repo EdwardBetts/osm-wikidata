@@ -473,7 +473,8 @@ https://www.wikidata.org/wiki/{self.qid}
             if "datavalue" in i["mainsnak"]
         ]
 
-    def get_street_addresses(self):
+    def get_street_addresses(self) -> list[str]:
+        """Street addresses for item."""
         if not self.entity or not self.entity.get("claims"):
             return []
 
@@ -594,7 +595,7 @@ https://www.wikidata.org/wiki/{self.qid}
                     part_of_names |= names.keys()
         return part_of_names
 
-    def names(self, check_part_of=True):
+    def names(self, check_part_of: bool = True):
         part_of_names = self.get_part_of_names() if check_part_of else set()
 
         d = wikidata.names_from_entity(self.entity) or defaultdict(list)
@@ -750,21 +751,20 @@ https://www.wikidata.org/wiki/{self.qid}
         """Is this item a mountain range."""
         return "Q46831" in self.instanceof()
 
-    def is_farmhouse(self):
+    def is_farmhouse(self) -> bool:
         return "Q489357" in self.instanceof()
 
-    def is_church_building(self):
+    def is_church_building(self) -> bool:
         return "Q16970" in self.instanceof()
 
-    def is_reservoir(self):
+    def is_reservoir(self) -> bool:
         return "Q131681" in self.instanceof()
 
-    def is_primarily_building(self):
-        """
-        Does this item primarily represent a building,
-        as opposed to the current use of the building?
-        """
+    def is_primarily_building(self) -> bool:
+        """Item primarily represents a building.
 
+        As opposed to the current use of the building.
+        """
         # FIXME: Using a list of building types is brittle. Much better to walk the
         # subclass tree and find items that are an instance of architectural structure,
         # building or a subclass of building.
@@ -777,7 +777,7 @@ https://www.wikidata.org/wiki/{self.qid}
         }
         return bool(building_types & instanceof)
 
-    def is_proposed(self):
+    def is_proposed(self) -> bool:
         """is this item a proposed building or structure?"""
 
         cats = self.categories or []
@@ -1130,7 +1130,7 @@ class ItemCandidate(Base):
     def languages(self):
         return {key[5:] for key in self.tags.keys() if key.startswith("name:")}
 
-    def matching_tags(self):
+    def matching_tags(self) -> list[str]:
         tags = []
 
         for tag_or_key in self.item.tags:
