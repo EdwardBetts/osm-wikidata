@@ -1,3 +1,5 @@
+"""Look for an embassy by name."""
+
 import re
 
 from . import model
@@ -889,9 +891,9 @@ countries = {
 }
 
 
-def from_name(name):
+def from_name(name: str) -> model.Embassy | None:
     """Look for an embassy by name."""
-    reverse_map = {}
+    reverse_map: dict[str, model.Embassy] = {}
     for i in model.Embassy.query:
         for name in i.names:
             reverse_map[name] = i
@@ -906,6 +908,7 @@ def from_name(name):
 
     m = re_name.search(name)
     if not m:
-        return
-    lc_match = m.group(1).lower()
-    return reverse_map[m] if m in reverse_map else reverse_map[lc_match]
+        return None
+    match = m.group(1)
+    lc_match = match.lower()
+    return reverse_map[match] if match in reverse_map else reverse_map[lc_match]
