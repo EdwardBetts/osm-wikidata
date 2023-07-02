@@ -55,7 +55,10 @@ var bounds = [[{{ place.north }}, {{place.west }}],
 map.fitBounds(bounds);
 {% endif %}
 
-var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+var tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxNativeZoom: 19,
+  maxZoom: 21
+});
 tiles.addTo(map);
 var group = L.featureGroup();
 

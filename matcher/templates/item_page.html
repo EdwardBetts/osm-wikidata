@@ -22,7 +22,10 @@
     var lon = {{ '{:.4f}'.format(lon) }};
     var map = L.map('mapid').setView([lat, lon], 18);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxNativeZoom: 19,
+  maxZoom: 21
+}).addTo(map);
     var marker = L.marker([lat, lon]).addTo(map);
 
     var item_candidate_json_url = {{ url_for('item_candidate_json',
