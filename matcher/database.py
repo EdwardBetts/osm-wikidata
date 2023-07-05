@@ -1,28 +1,37 @@
-from sqlalchemy import create_engine, text, func
-from sqlalchemy.orm import scoped_session, sessionmaker
+import typing
+
+import Flask
+import sqlalchemy
+from sqlalchemy import DATETIME, create_engine, func, text
 from sqlalchemy.engine import reflection
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-session = scoped_session(sessionmaker())
+session: sqlalchemy.orm.scoping.scoped_session = scoped_session(sessionmaker())
 
 
-def init_db(db_url):
+def init_db(db_url: str) -> None:
+    """Initial database with the given URL."""
     session.configure(bind=get_engine(db_url))
 
 
-def get_engine(db_url, echo=False):
+def get_engine(db_url: str, echo: bool = False) -> sqlalchemy.engine.base.Engine:
+    """Create an engine with the given URL."""
     return create_engine(db_url, pool_recycle=3600, echo=echo)
 
 
-def get_tables():
-    return reflection.Inspector.from_engine(session.bind).get_table_names()
+def get_tables() -> list[str]:
+    """Get list of table names."""
+    names: list[str] = reflection.Inspector.from_engine(session.bind).get_table_names()
+    return names
 
 
-def init_app(app, echo=False):
+def init_app(app: Flask, echo: bool = False) -> None:
+    """Intialise application."""
     db_url = app.config["DB_URL"]
     session.configure(bind=get_engine(db_url, echo=echo))
 
     @app.teardown_appcontext
-    def shutdown_session(exception=None):
+    def shutdown_session(exception: Exception | None = None) -> None:
         session.remove()
 
 
@@ -64,5 +73,9 @@ group by place.place_id, place.added, display_name, state, size order by size de
     return engine.execute(text(sql_big_polygon_tables))
 
 
-def now_utc():
-    return func.timezone("utc", func.now())
+DateTimeFunc = sqlalchemy.sql.functions.Function[DATETIME]
+
+
+def now_utc() -> DateTimeFunc:
+    """Database function to return the current time in the UTC timezone."""
+    return typing.cast(DateTimeFunc, func.timezone("utc", func.now(), type_=DATETIME))
