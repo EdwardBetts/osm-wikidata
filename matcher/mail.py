@@ -4,15 +4,20 @@ import pprint
 import smtplib
 import sys
 import traceback
+import typing
 from email.mime.text import MIMEText
 from email.utils import formatdate, make_msgid
 
-from flask import config, current_app, g, has_request_context, request
+import flask
+import requests
+from flask import current_app, g, has_request_context, request
 
 from .place import Place
 
 
-def send_mail(subject: str, body: str, config: config.Config | None = None) -> None:
+def send_mail(
+    subject: str, body: str, config: flask.config.Config | None = None
+) -> None:
     """Send an email to admins, catch and ignore exceptions."""
     try:
         send_mail_main(subject, body, config=config)
@@ -21,7 +26,7 @@ def send_mail(subject: str, body: str, config: config.Config | None = None) -> N
 
 
 def send_mail_main(
-    subject: str, body: str, config: config.Config | None = None
+    subject: str, body: str, config: flask.config.Config | None = None
 ) -> None:
     """Send an email to admins."""
     if config is None:
@@ -65,7 +70,10 @@ def get_area(place: Place) -> str:
     return f"{place.area_in_sq_km:,.2f} sq km" if place.area else "n/a"
 
 
-def error_mail(subject, data, r, via_web=True):
+def error_mail(
+    subject: str, data: typing.Any, r: requests.models.Response, via_web: bool = True
+) -> None:
+    """Send error mail."""
     body = f"""
 remote URL: {r.url}
 status code: {r.status_code}
