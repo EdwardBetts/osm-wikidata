@@ -656,7 +656,7 @@ def get_query(q: str, south: float, north: float, west: float, east: float) -> s
     return render_template_string(q, south=south, north=north, west=west, east=east)
 
 
-def query_map(prefix, **kwargs):
+def query_map(prefix: str, **kwargs) -> dict[str, str]:
     if kwargs.get("want_isa"):
         queries = ("item_tag", "hq_item_tag")
     else:
@@ -700,7 +700,13 @@ def get_point_query(lat, lon, radius):
     )
 
 
-def run_query(query, name=None, return_json=True, timeout=None, send_error_mail=False):
+def run_query(
+    query: str,
+    name: str | None = None,
+    return_json: bool = True,
+    timeout: int = None,
+    send_error_mail: bool = False,
+) -> requests.models.Response | list[typing.Any]:
     attempts = 5
 
     def error_mail(subject, r):
@@ -769,7 +775,8 @@ def wd_uri_to_qid(value: str) -> str:
     return value[len(wd_entity) - 1 :]
 
 
-def enwiki_url_to_title(url):
+def enwiki_url_to_title(url: str) -> str:
+    """Convert from English Wikipedia URL to article title."""
     return unquote(drop_start(url, enwiki)).replace("_", " ")
 
 
