@@ -1,4 +1,5 @@
 import time
+import typing
 from typing import Any
 
 import requests
@@ -15,13 +16,18 @@ EntityType = dict[str, Any]
 
 
 class TooManyEntities(Exception):
+    """Too many entities."""
+
     pass
+
+
+CallParams = typing.Mapping[str, str | int]
 
 
 class QueryError(Exception):
     """Query error."""
 
-    def __init__(self, query: str, r: requests.Response) -> None:
+    def __init__(self, query: CallParams, r: requests.Response) -> None:
         """Init."""
         self.query = query
         self.r = r
@@ -29,9 +35,6 @@ class QueryError(Exception):
 
 class QueryTimeout(QueryError):
     """Query timeout error."""
-
-
-CallParams = dict[str, str | int]
 
 
 def api_call(params: CallParams) -> requests.Response:
@@ -46,14 +49,16 @@ def api_call(params: CallParams) -> requests.Response:
     return r
 
 
-def entity_iter(ids, debug=False, attempts=5):
+def entity_iter(
+    ids: set[str], debug: bool = False, attempts: int = 5
+) -> typing.Iterator[tuple[str, dict[str, typing.Any]]]:
     for num, cur in enumerate(chunk(ids, page_size)):
         if debug:
             print(f"entity_iter: {num * page_size}/{len(ids)}")
-        ids = "|".join(cur)
+        str_ids = "|".join(cur)
         for attempt in range(attempts):
             try:
-                r = api_call({"action": "wbgetentities", "ids": ids})
+                r = api_call({"action": "wbgetentities", "ids": str_ids})
                 break
             except requests.exceptions.ChunkedEncodingError:
                 if attempt == attempts - 1:
@@ -88,10 +93,14 @@ def get_lastrevid(qid: str) -> int:
     return lastrevid
 
 
-def get_lastrevids(qid_list):
+def get_lastrevids(qid_list: list[str]) -> dict[str, int]:
     if not qid_list:
         return {}
-    params = {"action": "query", "prop": "info", "titles": "|".join(qid_list)}
+    params: typing.Mapping[str, str] = {
+        "action": "query",
+        "prop": "info",
+        "titles": "|".join(qid_list),
+    }
     r = api_call(params)
     json_data = r.json()
     if "query" not in json_data:
