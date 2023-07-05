@@ -1,15 +1,26 @@
-import requests
-import lxml.html
+import collections
+import typing
+
 import lxml.etree
+import lxml.html
+import requests
+
+from . import mail, user_agent_headers
 from .utils import chunk, drop_start
-from . import user_agent_headers, mail
 
 page_size = 50
 extracts_page_size = 20
 
 
-def run_query(titles, params, language_code="en"):
-    base = {
+Pages = list[dict[str, typing.Any]]
+
+
+def run_query(
+    titles: collections.abc.Collection[str],
+    params: dict[str, typing.Any],
+    language_code: str = "en",
+) -> Pages:
+    base: dict[str, str | int] = {
         "format": "json",
         "formatversion": 2,
         "action": "query",
@@ -33,10 +44,17 @@ def run_query(titles, params, language_code="en"):
         mail.error_mail("wikipedia error", p, r)
     assert success
     json_reply = r.json()
-    return json_reply["query"]["pages"]
+    return typing.cast(Pages, json_reply["query"]["pages"])
 
 
-def get_cats(titles, language_code="en"):
+class TitleAndCat(typing.TypedDict):
+    title: str
+    cats: list[str]
+
+
+def get_cats(
+    titles: collections.abc.Collection[str], language_code: str = "en"
+) -> list[TitleAndCat]:
     params = {"prop": "categories", "cllimit": "max", "clshow": "!hidden"}
     # filter out redirects from query result
     return [
@@ -51,11 +69,11 @@ def get_cats(titles, language_code="en"):
     ]
 
 
-def get_coords(titles, language_code="en"):
+def get_coords(titles: list[str], language_code: str = "en") -> Pages:
     return run_query(titles, {"prop": "coordinates"}, language_code)
 
 
-def page_category_iter(titles):
+def page_category_iter(titles: list[str]) -> typing.Iterator[tuple[str, list[str]]]:
     for cur in chunk(titles, page_size):
         for page in get_cats(cur):
             yield (page["title"], page["cats"])
@@ -76,7 +94,7 @@ def get_items_with_cats(items):
             items[page["title"]]["cats"] = page["cats"]
 
 
-def html_names(article):
+def html_names(article: str) -> list[str]:
     if not article or article.strip() == "":
         return []
     try:
@@ -92,7 +110,9 @@ def html_names(article):
     return [n.strip() for n in names if len(n) > 1]
 
 
-def extracts_query(titles, language_code="en"):
+def extracts_query(
+    titles: collections.abc.Collection[str], language_code: str = "en"
+) -> Pages:
     params = {
         "prop": "extracts",
         "exlimit": extracts_page_size,
@@ -101,7 +121,9 @@ def extracts_query(titles, language_code="en"):
     return run_query(titles, params, language_code)
 
 
-def get_extracts(titles, code="en"):
+def get_extracts(
+    titles: collections.abc.Collection[str], code: str = "en"
+) -> typing.Iterator[tuple[str, str]]:
     for cur in chunk(titles, extracts_page_size):
         for page in extracts_query(cur, language_code=code):
             if "extract" not in page:
