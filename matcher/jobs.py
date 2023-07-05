@@ -1,5 +1,8 @@
-from . import chat
+"""Jobs."""
+
 from datetime import datetime
+
+from . import chat
 from .place import Place
 
 
@@ -36,6 +39,7 @@ def get_job(place):
 
 
 def get_jobs():
+    """Get jobs from matcher queue."""
     reply = matcher_queue_request("jobs")
     assert reply["type"] == "jobs"
 
@@ -50,7 +54,8 @@ def get_jobs():
     return job_list
 
 
-def stop_job(place):
+def stop_job(place: Place) -> None:
+    """Send stop job request to matcher queue."""
     reply = matcher_queue_request("stop", osm_type=place.osm_type, osm_id=place.osm_id)
 
     assert reply["type"] == "stop" and reply["success"]
