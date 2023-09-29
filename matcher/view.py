@@ -1,8 +1,11 @@
 """Various views for the OSM Wikidata matcher."""
 
+import inspect
 import json
 import random
 import re
+import sys
+import traceback
 from collections import Counter
 from time import sleep, time
 from typing import Any
@@ -11,6 +14,7 @@ import flask_login
 import jinja2
 import requests
 import sqlalchemy.exc
+import werkzeug
 from flask import (
     Flask,
     Response,
@@ -31,6 +35,7 @@ from markupsafe import escape
 from requests_oauthlib import OAuth1Session
 from sqlalchemy import distinct, func
 from sqlalchemy.orm.attributes import flag_modified
+from werkzeug.debug.tbtools import DebugTraceback
 
 from . import (
     browse,
@@ -297,17 +302,35 @@ def oauth_callback():
     return redirect(next_page)
 
 
-def reraise(tp, value, tb=None):
-    if value.__traceback__ is not tb:
-        raise value.with_traceback(tb)
-    raise value
+@app.errorhandler(werkzeug.exceptions.InternalServerError)
+def exception_handler(
+    e: werkzeug.exceptions.InternalServerError,
+) -> str | tuple[str, int]:
+    """Handle exception."""
+    if request.endpoint == "social.auth":
+        return "OSM token request failed."
+    exec_type, exc_value, current_traceback = sys.exc_info()
+    assert exc_value
+    tb = DebugTraceback(exc_value)
 
+    summary = tb.render_traceback_html(include_title=False)
+    exc_lines = "".join(tb._te.format_exception_only())
 
-@app.errorhandler(requests.exceptions.HTTPError)
-def requests_exception(e):
-    if request.endpoint != "social.auth":
-        raise e
-    return "OSM token request failed."
+    last_frame = list(traceback.walk_tb(current_traceback))[-1][0]
+    last_frame_args = inspect.getargs(last_frame.f_code)
+
+    return (
+        render_template(
+            "show_error.html",
+            plaintext=tb.render_traceback_text(),
+            exception=exc_lines,
+            exception_type=tb._te.exc_type.__name__,
+            summary=summary,
+            last_frame=last_frame,
+            last_frame_args=last_frame_args,
+        ),
+        500,
+    )
 
 
 def get_osm_object(osm_type, osm_id, attempts=5):
