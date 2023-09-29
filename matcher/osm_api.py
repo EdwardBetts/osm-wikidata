@@ -11,7 +11,7 @@ from . import model, utils
 base = "https://www.openstreetmap.org/api/0.6/"
 
 
-def get_changeset(changeset_id: int) -> lxml.etree.Element:
+def get_changeset(changeset_id: int) -> lxml.etree._Element:
     """Get a changeset from OSM."""
     changeset_dir = os.path.join(utils.cache_dir(), "changesets")
     filename = os.path.join(changeset_dir, f"{changeset_id}.xml")
@@ -26,16 +26,21 @@ def get_changeset(changeset_id: int) -> lxml.etree.Element:
     return lxml.etree.fromstring(r.content)
 
 
-def parse_osm_change(root: lxml.etree.Element) -> list[model.ChangesetEdit]:
+def parse_osm_change(root: lxml.etree._Element) -> list[model.ChangesetEdit]:
     """Parse an OSM changeset."""
     edits = []
     for e in root:
         osm = e[0]
-        qid = osm.find('tag[@k="wikidata"]').get("v")
+        wikidata_tag = osm.find('tag[@k="wikidata"]')
+        assert wikidata_tag is not None
+        qid = wikidata_tag.get("v")
+        changeset_id = osm.get("changeset")
+        osm_id = osm.get("id")
+        assert qid and changeset_id and osm_id
         edit = model.ChangesetEdit(
-            changeset_id=int(osm.get("changeset")),
+            changeset_id=int(changeset_id),
             osm_type=osm.tag,
-            osm_id=int(osm.get("id")),
+            osm_id=int(osm_id),
             saved=osm.get("timestamp"),
             item_id=int(qid[1:]),
         )
