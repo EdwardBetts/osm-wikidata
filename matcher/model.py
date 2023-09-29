@@ -1,5 +1,6 @@
 """Database models."""
 
+import collections
 import re
 from collections import defaultdict
 from time import time
@@ -429,7 +430,10 @@ class Item(Base):
                 tags |= {prefix + ":" + i for prefix in prefixes}
         return tags
 
-    def calculate_tags(self, ignore_tags=None):
+    def calculate_tags(
+        self, ignore_tags: collections.abc.Collection[str] | None = None
+    ) -> set[str]:
+        """Calculate the expected tags for this item."""
         ignore_tags = set(ignore_tags or [])
 
         # Ignore some overly generic tags from Wikidata objects:
