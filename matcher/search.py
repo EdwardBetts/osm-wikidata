@@ -31,7 +31,7 @@ class Hit:
 
     @property
     def osm_url(self):
-        return f"https://www.openstreetmap.org/{self.osm_type}/{self.osm_id}"
+        return f"https://api.openstreetmap.org/{self.osm_type}/{self.osm_id}"
 
     @property
     def wikidata(self):

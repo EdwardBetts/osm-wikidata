@@ -56,7 +56,7 @@ degrees = "(-?[0-9.]+)"
 re_box = re.compile(rf"^BOX\({degrees} {degrees},{degrees} {degrees}\)$")
 re_geonames_spring = re.compile(r"^\d[0-9A-Z_]{13} Spring$")
 
-base_osm_url = "https://www.openstreetmap.org"
+base_osm_url = "https://api.openstreetmap.org"
 
 overpass_types = {"way": "way", "relation": "rel", "node": "node"}
 
