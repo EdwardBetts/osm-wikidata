@@ -430,7 +430,7 @@ class Place(Base):
         (n["south"], n["north"], n["west"], n["east"]) = bbox
         n["geom"] = hit["geotext"]
         n["address"] = [dict(name=n, type=t) for t, n in hit["address"].items()]
-        if "extratags" in hit:
+        if hit.get("extratags"):
             n["wikidata"] = hit["extratags"].get("wikidata")
         return cls(**n)
 
