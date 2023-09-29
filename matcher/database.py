@@ -1,6 +1,6 @@
 import typing
 
-import Flask
+import flask
 import sqlalchemy
 from sqlalchemy import DATETIME, create_engine, func, text
 from sqlalchemy.engine import reflection
@@ -25,7 +25,7 @@ def get_tables() -> list[str]:
     return names
 
 
-def init_app(app: Flask, echo: bool = False) -> None:
+def init_app(app: flask.Flask, echo: bool = False) -> None:
     """Intialise application."""
     db_url = app.config["DB_URL"]
     session.configure(bind=get_engine(db_url, echo=echo))
