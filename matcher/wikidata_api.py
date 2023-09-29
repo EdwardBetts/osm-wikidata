@@ -1,18 +1,15 @@
 import time
 import typing
-from typing import Any
 
 import requests
 import requests.exceptions
 import simplejson.errors
 
-from . import mail, user_agent_headers
+from . import Entity, mail, user_agent_headers
 from .utils import chunk
 
 wikidata_url = "https://www.wikidata.org/w/api.php"
 page_size = 50
-
-EntityType = dict[str, Any]
 
 
 class TooManyEntities(Exception):
@@ -73,11 +70,11 @@ def entity_iter(
             yield qid, entity
 
 
-def get_entity(qid: str) -> EntityType | None:
+def get_entity(qid: str) -> Entity | None:
     json_data = api_call({"action": "wbgetentities", "ids": qid}).json()
 
     try:
-        entity: EntityType = list(json_data["entities"].values())[0]
+        entity: Entity = list(json_data["entities"].values())[0]
     except KeyError:
         return None
     if "missing" not in entity:
@@ -108,7 +105,7 @@ def get_lastrevids(qid_list: list[str]) -> dict[str, int]:
     return {page["title"]: page["lastrevid"] for page in json_data["query"]["pages"]}
 
 
-def get_entities(ids: list[str], attempts: int = 5) -> list[EntityType]:
+def get_entities(ids: list[str], attempts: int = 5) -> list[Entity]:
     if not ids:
         return []
     if len(ids) > 50:

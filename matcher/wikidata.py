@@ -12,7 +12,16 @@ import requests
 import requests.exceptions
 from flask import render_template, render_template_string, request
 
-from . import commons, language, mail, match, matcher, overpass, user_agent_headers
+from . import (
+    Entity,
+    commons,
+    language,
+    mail,
+    match,
+    matcher,
+    overpass,
+    user_agent_headers,
+)
 from .language import get_language_label
 from .utils import cache_filename, drop_start
 from .wikidata_api import QueryError, QueryTimeout, get_entities, get_entity
@@ -643,14 +652,6 @@ ORDER BY ?continentLabel
 wikidata_query_api_url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql"
 
 
-class Entity(typing.TypedDict):
-    """Wikidata Entity."""
-
-    labels: dict[str, typing.Any]
-    descriptions: dict[str, typing.Any]
-    claims: dict[str, typing.Any]
-
-
 def get_query(q: str, south: float, north: float, west: float, east: float) -> str:
     """Pass coordinates to bounding box query."""
     return render_template_string(q, south=south, north=north, west=west, east=east)
@@ -979,15 +980,15 @@ def get_location_hierarchy(qid, name=None):
     ]
 
 
-def up_one_level(qid, name=None):
+def up_one_level(qid: str, name: str | None = None) -> dict[str, str | None] | None:
     query = up_one_level_query.replace("QID", qid)
     try:
         rows = run_query(query, name=name, timeout=2)
     except requests.Timeout:
-        return
+        return None
 
     if not rows:
-        return
+        return None
 
     skip = {
         "Q180673",  # ceremonial county of England

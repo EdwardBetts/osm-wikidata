@@ -1,9 +1,18 @@
-from types import TracebackType
-from typing import Tuple, Union
+import types
+import typing
 
 from flask import Flask, request
 
 CallParams = dict[str, str | int]
+
+
+class Entity(typing.TypedDict):
+    """Wikidata Entity."""
+
+    labels: dict[str, typing.Any]
+    descriptions: dict[str, typing.Any]
+    claims: dict[str, typing.Any]
+
 
 user_agent = (
     "osm-wikidata/0.1 (https://github.com/EdwardBetts/osm-wikidata; edward@4angle.com)"
@@ -54,9 +63,8 @@ class MatcherFlask(Flask):
 
     def log_exception(
         self,
-        exc_info: Union[
-            Tuple[type, BaseException, TracebackType], Tuple[None, None, None]
-        ],
+        exc_info: tuple[type, BaseException, types.TracebackType]
+        | tuple[None, None, None],
     ) -> None:
         """Add detail to errors."""
         self.logger.error(

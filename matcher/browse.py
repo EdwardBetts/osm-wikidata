@@ -2,6 +2,7 @@
 
 import json
 import os
+import typing
 from datetime import datetime
 from time import time
 from typing import Any, TypedDict
@@ -9,6 +10,7 @@ from typing import Any, TypedDict
 import flask
 
 from . import (
+    Entity,
     commons,
     database,
     nominatim,
@@ -21,12 +23,6 @@ from .model import IsA, WikidataItem
 from .place import Place
 
 
-class Entity(TypedDict):
-    """Wikidata Entity."""
-
-    claims: dict[str, Any]
-
-
 def place_via_nominatim(
     qid: str, q: str | None = None, entity: Entity | None = None
 ) -> Place | None:
@@ -37,21 +33,24 @@ def place_via_nominatim(
 
 def hit_from_qid(
     qid: str, q: str | None = None, entity: Entity | None = None
-) -> Place | None:
+) -> dict[str, typing.Any] | None:
     """Run nominatim search and get hit with matching QID."""
     if q is None:
         if entity is None:
             entity = wikidata_api.get_entity(qid)
+        assert entity
         q = qid_to_search_string(qid, entity)
 
     hits = nominatim.lookup(q=q)
-    for hit in hits:
-        hit_qid = hit["extratags"].get("wikidata")
-        if hit_qid != qid:
-            continue
-        return hit
 
-    return None
+    return next(
+        (
+            hit
+            for hit in hits
+            if hit.get("extratags") and hit["extratags"].get("wikidata") == qid
+        ),
+        None,
+    )
 
 
 def get_isa_from_entity(entity: Entity) -> set[str]:
@@ -88,6 +87,7 @@ def qid_to_search_string(qid: str, entity: Entity) -> str:
     country = names["country_name"] or names["up_country_name"]
 
     q = names["name"]
+    assert q
     if names["up"]:
         q += ", " + names["up"]
     if country and country != names["up"]:
@@ -95,10 +95,10 @@ def qid_to_search_string(qid: str, entity: Entity) -> str:
     return q
 
 
-def place_from_nominatim(hit) -> Place | None:
+def place_from_nominatim(hit: dict[str, typing.Any]) -> Place | None:
     """Get place object from nominatim hit."""
     if not ("osm_type" in hit and "osm_id" in hit):
-        return
+        return None
     p = Place.query.filter_by(
         osm_type=hit["osm_type"], osm_id=hit["osm_id"]
     ).one_or_none()
@@ -108,6 +108,7 @@ def place_from_nominatim(hit) -> Place | None:
         p = Place.from_nominatim(hit)
         database.session.add(p)
     database.session.commit()
+    assert isinstance(p, Place) or p is None
     return p
 
 
