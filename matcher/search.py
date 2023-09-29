@@ -1,4 +1,5 @@
 import re
+import typing
 
 from flask import current_app, g, request, session, url_for
 
@@ -11,11 +12,21 @@ re_qid = re.compile(r"^(Q\d+)$")
 
 
 class SearchError(Exception):
-    pass
+    """Search error."""
 
 
 class Hit:
-    def __init__(self, d):
+    """Search hit."""
+
+    osm_type: str | None
+    osm_id: int | None
+    display_name: str
+    place: Place | None
+    category: str
+    type: str
+
+    def __init__(self, d: dict[str, typing.Any]):
+        """Init."""
         self.osm_type = d.get("osm_type")
         self.osm_id = d.get("osm_id")
         self.display_name = d["display_name"]
@@ -26,11 +37,13 @@ class Hit:
         self.matcher_allowed = self.place and self.place.matcher_allowed
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """Name of object."""
         return self.display_name
 
     @property
-    def osm_url(self):
+    def osm_url(self) -> str:
+        """OSM api URL."""
         return f"https://api.openstreetmap.org/{self.osm_type}/{self.osm_id}"
 
     @property
@@ -59,20 +72,24 @@ class Hit:
         return self.next_level_name_search()
 
     @property
-    def ready(self):
-        return self.place and self.place.state == "ready"
+    def ready(self) -> bool:
+        """Place is ready."""
+        return bool(self.place and self.place.state == "ready")
 
     @property
-    def url(self):
+    def url(self) -> str:
+        assert self.place
         return self.place.candidates_url()
 
-    def next_state_url(self):
+    def next_state_url(self) -> str:
+        assert self.place
         return self.place.next_state_url()
 
-    def browse_url(self):
+    def browse_url(self) -> str:
+        assert self.place
         return self.place.browse_url()
 
-    def next_level_name(self):
+    def next_level_name(self) -> str:
         terms = self.display_name.split(", ")
         return ", ".join(terms[1:])
 
