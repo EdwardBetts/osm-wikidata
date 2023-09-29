@@ -314,8 +314,10 @@ class Place(Base):
         bbox = hit["boundingbox"]
         assert all(i is not None for i in bbox)
         (self.south, self.north, self.west, self.east) = bbox
-        self.address = [dict(name=n, type=t) for t, n in hit["address"].items()]
-        self.wikidata = hit["extratags"].get("wikidata")
+        self.address = [{"name": n, "type": t} for t, n in hit["address"].items()]
+        self.wikidata = (
+            hit["extratags"].get("wikidata") if hit.get("extratags") else None
+        )
         self.geom = hit["geotext"]
 
     def change_comment(self, item_count, isa_labels=None):
