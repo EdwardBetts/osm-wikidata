@@ -27,7 +27,7 @@ class Entity(TypedDict):
     claims: dict[str, Any]
 
 
-def place_from_qid(
+def place_via_nominatim(
     qid: str, q: str | None = None, entity: Entity | None = None
 ) -> Place | None:
     """Look up via QID and return place."""
@@ -143,10 +143,9 @@ class BrowseDetail:
     @property
     def place(self) -> Place:
         """Place for top-level item."""
-        place = Place.get_by_wikidata(self.qid)
-        if place:
-            return place
-        return place_from_qid(self.qid, entity=self.entity)
+        return Place.get_by_wikidata(self.qid) or place_via_nominatim(
+            self.qid, entity=self.entity
+        )
 
     @property
     def name(self) -> str:
