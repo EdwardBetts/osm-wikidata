@@ -50,7 +50,7 @@ name_only_key = [
 
 def endpoint() -> str:
     """Overpass endpoint URL."""
-    return current_app.config["OVERPASS_URL"] + "/api/interpreter"
+    return typing.cast(str, current_app.config["OVERPASS_URL"]) + "/api/interpreter"
 
 
 class RateLimited(Exception):
@@ -69,7 +69,7 @@ class OverpassError(Exception):
         self.r = r
 
 
-def run_query(oql: str, error_on_rate_limit: str = True) -> requests.models.Response:
+def run_query(oql: str, error_on_rate_limit: bool = True) -> requests.models.Response:
     """Run overpass query."""
     r = requests.post(
         endpoint(), data=oql.encode("utf-8"), headers=user_agent_headers()
@@ -82,18 +82,23 @@ def run_query(oql: str, error_on_rate_limit: str = True) -> requests.models.Resp
     return r
 
 
-def get_elements(oql: str) -> list[typing.Any]:
+ElementsList = list[dict[str, typing.Any]]
+
+
+def get_elements(oql: str) -> ElementsList:
     """Call overpass query and return elements."""
-    return run_query(oql).json()["elements"]
+    return typing.cast(ElementsList, run_query(oql).json()["elements"])
 
 
-def name_only(t):
+def name_only(t: str) -> bool:
+    """Tag is name only."""
     return t in name_only_tag or (
         "=" in t and any(t.startswith(key + "=") for key in name_only_key)
     )
 
 
 def get_name_filter(tags: list[str]) -> str:
+    """Return OQL name filter for the given tags."""
     return (
         "[name]"
         if all(name_only(t) for t in tags)
@@ -104,6 +109,7 @@ def get_name_filter(tags: list[str]) -> str:
 def oql_for_point(
     lat: float, lon: float, radius: float, tags: list[str], buildings: bool
 ) -> str:
+    """OQL to search for candidates around a given point."""
     union = []
 
     for key, values in sorted(group_tags(tags).items()):
@@ -144,7 +150,15 @@ out;"""
     )
 
 
-def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True):
+def oql_for_area(
+    overpass_type: str,
+    osm_id: int,
+    tags: list[str],
+    bbox: str,
+    buildings: bool,
+    include_self: bool = True,
+) -> str:
+    """OQL to search for candidates within a given polygon."""
     union = []
 
     for key, values in sorted(group_tags(tags).items()):
@@ -160,7 +174,10 @@ def oql_for_area(overpass_type, osm_id, tags, bbox, buildings, include_self=True
     name_filter = get_name_filter(tags)
 
     if buildings:
-        oql_building = f'nwr(area.a)["building"][~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
+        oql_building = (
+            'nwr(area.a)["building"]'
+            + f'[~"^(addr:housenumber|.*name.*)$"~"{buildings}",i];'
+        )
     else:
         oql_building = ""
 
@@ -192,8 +209,8 @@ out;"""
     )
 
 
-def group_tags(tags):
-    """given a list of keys and tags return a dict group by key"""
+def group_tags(tags: list[str]) -> dict[str, list[str]]:
+    """Given a list of keys and tags return a dict group by key."""
     ret = defaultdict(list)
     for tag_or_key in tags:
         if "=" in tag_or_key:
@@ -204,7 +221,7 @@ def group_tags(tags):
     return dict(ret)
 
 
-def oql_element_filter(key, values, filters="area.a"):
+def oql_element_filter(key: str, values: list[str], filters: str = "area.a") -> str:
     # optimisation: we only expect route, type or site on relations
     relation_only = key in {"site", "type", "route"}
 
@@ -220,7 +237,7 @@ def oql_element_filter(key, values, filters="area.a"):
     return "{}({})[{}];".format(t, filters, tag.replace("␣", " "))
 
 
-def oql_point_element_filter(key, values, filters=""):
+def oql_point_element_filter(key: str, values: list[str], filters: str = "") -> str:
     # optimisation: we only expect route, type or site on relations
     relation_only = key in {"site", "type", "route"}
 
@@ -236,7 +253,7 @@ def oql_point_element_filter(key, values, filters=""):
     return "{}{}[{}];".format(t, filters, tag.replace("␣", " "))
 
 
-def oql_from_tag(tag, filters="area.a"):
+def oql_from_tag(tag: str, filters: str = "area.a") -> list[str]:
     if tag == "highway":
         return []
     # optimisation: we only expect route, type or site on relations
@@ -263,7 +280,7 @@ def oql_from_tag(tag, filters="area.a"):
     # return ['\n    {}(area.a)[{}]{};'.format(t, tag, name_filter) for ('node', 'way', 'rel')]
 
 
-def oql_from_wikidata_tag_or_key(tag_or_key, filters):
+def oql_from_wikidata_tag_or_key(tag_or_key: str, filters: str) -> list[str]:
     osm_type, _, tag = tag_or_key.partition(":")
     osm_type = osm_type.lower()
     if osm_type == "role" or osm_type not in {"key", "tag"}:
@@ -290,7 +307,16 @@ def oql_from_wikidata_tag_or_key(tag_or_key, filters):
     ]
 
 
-def parse_status(r):
+class OverpassStatus(typing.TypedDict):
+    """Overpass status."""
+
+    rate_limit: int
+    slots: list[int]
+    running: int
+
+
+def parse_status(r: requests.models.Response) -> OverpassStatus:
+    """Parse status response from Overpass."""
     lines = r.text.splitlines()
     limit = "Rate limit: "
 
@@ -330,18 +356,21 @@ def parse_status(r):
     }
 
 
-def status_url():
-    return current_app.config["OVERPASS_URL"] + "/api/status"
+def status_url() -> str:
+    """Get the Overpass status URL."""
+    return typing.cast(str, current_app.config["OVERPASS_URL"]) + "/api/status"
 
 
-def get_status(url=None):
+def get_status(url: str | None = None) -> OverpassStatus:
+    """Get Overpass status."""
     r = requests.get(url or status_url(), timeout=10)
     if "502 Bad Gateway" in r.text:
         raise OverpassError(r)
     return parse_status(r)
 
 
-def wait_for_slot(status=None, url=None):
+def wait_for_slot(status: OverpassStatus | None = None, url: str | None = None) -> None:
+    """Wait for an Overpass slot."""
     if status is None:
         status = get_status(url=url)
     slots = status["slots"]
@@ -350,23 +379,25 @@ def wait_for_slot(status=None, url=None):
         sleep(slots[0] + 1)
 
 
-def item_filename(wikidata_id, radius):
+def item_filename(wikidata_id: str, radius: int) -> str:
     assert wikidata_id[0] == "Q"
     overpass_dir = current_app.config["OVERPASS_DIR"]
     return os.path.join(overpass_dir, "{}_{}.json".format(wikidata_id, radius))
 
 
-def existing_item_filename(wikidata_id):
+def existing_item_filename(wikidata_id: str) -> str:
     assert wikidata_id[0] == "Q"
     overpass_dir = current_app.config["OVERPASS_DIR"]
     return os.path.join(overpass_dir, "{}_existing.json".format(wikidata_id))
 
 
-def item_query(oql, wikidata_id, radius=1000, refresh=False):
+def item_query(
+    oql: str, wikidata_id: str, radius: int = 1000, refresh: bool = False
+) -> ElementsList:
     filename = item_filename(wikidata_id, radius)
 
     if not refresh and os.path.exists(filename):
-        return json.load(open(filename))["elements"]
+        return typing.cast(ElementsList, json.load(open(filename))["elements"])
 
     r = run_query(oql)
 
@@ -381,14 +412,14 @@ def item_query(oql, wikidata_id, radius=1000, refresh=False):
         raise
 
     json.dump(data, open(filename, "w"))
-    return data["elements"]
+    return typing.cast(ElementsList, data["elements"])
 
 
-def get_existing(wikidata_id, refresh=False):
+def get_existing(wikidata_id: str, refresh: bool = False) -> ElementsList:
     filename = existing_item_filename(wikidata_id)
 
     if not refresh and os.path.exists(filename):
-        return json.load(open(filename))["elements"]
+        return typing.cast(ElementsList, json.load(open(filename))["elements"])
 
     oql = """
 [timeout:300][out:json];
@@ -411,7 +442,7 @@ out qt center tags;
         raise
 
     json.dump(data, open(filename, "w"))
-    return data["elements"]
+    return typing.cast(ElementsList, data["elements"])
 
 
 def get_tags(elements):
@@ -431,7 +462,9 @@ out qt tags;
     return get_elements(oql)
 
 
-def run_query_persistent(oql, attempts=3, via_web=True):
+def run_query_persistent(
+    oql: str, attempts: int = 3, via_web: bool = True
+) -> requests.models.Response | None:
     for attempt in range(attempts):
         wait_for_slot()
         print("calling overpass")
@@ -446,7 +479,7 @@ def run_query_persistent(oql, attempts=3, via_web=True):
             mail.error_mail(msg, oql, r, via_web=via_web)
             print(msg)
             if b"<remark> runtime error: Query run out of memory" in r.content:
-                return
+                return None
             continue  # retry
 
         if len(r.content) < 2000 and b"<title>504 Gateway" in r.content:
@@ -458,7 +491,7 @@ def run_query_persistent(oql, attempts=3, via_web=True):
         return r
 
 
-def items_as_xml(items):
+def items_as_xml(items) -> bytes:
     assert items
     union = ""
     for item, osm in items:
@@ -469,7 +502,7 @@ def items_as_xml(items):
     return run_query(oql).content
 
 
-def is_in(osm_type, osm_id):
+def is_in(osm_type: str, osm_id: int) -> ElementsList:
     oql = f"""
 [out:json][timeout:25];
 {osm_type}({osm_id});
@@ -481,7 +514,7 @@ out bb tags qt;"""
     return get_elements(oql)
 
 
-def is_in_lat_lon(lat, lon):
+def is_in_lat_lon(lat: float, lon: float) -> ElementsList | None:
     oql = f"""
 [out:json][timeout:25];
 is_in({lat},{lon})->.a;
