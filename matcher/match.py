@@ -2,6 +2,7 @@
 
 import collections
 import re
+import typing
 from collections import defaultdict
 from enum import Enum
 from typing import Any, Collection, cast
@@ -10,6 +11,8 @@ from num2words import num2words
 from unidecode import unidecode
 
 from .utils import any_upper, normalize_url
+
+OsmTags = dict[str, str]
 
 re_strip_non_chars = re.compile(r"[^-@\w]", re.U)
 re_strip_non_chars_and_dash = re.compile(r"[^@\w]", re.U)
@@ -87,13 +90,14 @@ def no_alpha(s: str) -> bool:
 class NameMatch(object):
     """Object that represents a OSM <-> Wikidata match."""
 
-    def __init__(self, match_type: MatchType, debug=None) -> None:
+    def __init__(self, match_type: MatchType, debug: str | None = None) -> None:
+        """Init."""
         self.match_type = match_type
         self.debug = debug
-        self.wikidata_name = None
-        self.wikidata_source = None
-        self.osm_name = None
-        self.osm_key = None
+        self.wikidata_name: str | None = None
+        self.wikidata_source: str | None = None
+        self.osm_name: str | None = None
+        self.osm_key: str | None = None
 
 
 def tidy_name(n: str) -> str:
@@ -254,13 +258,13 @@ def match_with_words_removed(osm: str, wd: str, words: list[str]) -> NameMatch |
     return best_match
 
 
-def strip_non_chars_match(osm, wd, strip_dash=False):
+def strip_non_chars_match(osm: str, wd: str, strip_dash: bool = False) -> bool:
     pattern = re_strip_non_chars_and_dash if strip_dash else re_strip_non_chars
 
     wc_stripped = pattern.sub("", wd)
     osm_stripped = pattern.sub("", osm)
 
-    return wc_stripped and osm_stripped and wc_stripped == osm_stripped
+    return bool(wc_stripped and osm_stripped and wc_stripped == osm_stripped)
 
 
 def prefix_name_match(osm: str, wd: str):
@@ -293,14 +297,14 @@ def strip_non_char_start(s: str) -> str:
     return re_non_char_start.sub("", s)
 
 
-def strip_non_letter_start(s):
+def strip_non_letter_start(s: str) -> str:
     return re_non_letter_start.sub("", s)
 
 
-def drop_initials(name):
+def drop_initials(name: str) -> str | None:
     first_space = name.find(" ")
     if first_space == -1:
-        return
+        return None
     tail = strip_non_char_start(name[first_space:])
 
     if check_for_intials_match(name[:first_space], tail):
@@ -308,13 +312,14 @@ def drop_initials(name):
 
     last_space = name.rfind(" ")
     if last_space == first_space:
-        return
+        return None
     head = strip_non_char_start(name[:last_space])
     if check_for_intials_match(name[last_space:], head):
         return head
+    return None
 
 
-def split_on_upper(name):
+def split_on_upper(name: str) -> typing.Iterator[str]:
     upper_positions = [num for num, char in enumerate(name) if char.isupper()]
 
     xpos = 0
@@ -328,12 +333,12 @@ def split_on_upper(name):
         yield text
 
 
-def split_on_upper_and_tidy(name):
+def split_on_upper_and_tidy(name: str) -> list[str]:
     parts = [re_strip_non_chars.sub("", part) for part in split_on_upper(name)]
     return [part for part in parts if part]
 
 
-def name_containing_initials(n1, n2):
+def name_containing_initials(n1: str, n2: str) -> bool:
     if not any_upper(n1) or not any_upper(n2):
         return False
     n1_split = split_on_upper_and_tidy(n1)
@@ -392,7 +397,7 @@ def two_saints(n1: str, n2: str) -> bool:
 
 
 def name_match_main(
-    osm: str, wd: str, endings: list[str] | None = None, debug: bool | None = False
+    osm: str, wd: str, endings: set[str] | None = None, debug: bool | None = False
 ) -> NameMatch | None:
     """Check for a name match."""
     if not wd or not osm:
@@ -582,15 +587,15 @@ def more_place_name_varients(place_names: Collection[str]) -> set[str]:
     return place_names
 
 
-def match_two_streets(osm, wd, endings=None, **kwargs):
+def match_two_streets(osm: str, wd: str, endings=None, **kwargs) -> NameMatch | None:
     endings = set(endings or [])
     osm_and_list = [sep for sep in ("&", " and ", " And ") if sep in osm]
     if len(osm_and_list) != 1:
-        return
+        return None
 
     wd_and_list = [sep for sep in ("&", " and ", " And ") if sep in wd]
     if len(wd_and_list) != 1:
-        return
+        return None
 
     osm_part1, _, osm_part2 = [n.strip() for n in osm.partition(osm_and_list[0])]
     wd_part1, _, wd_part2 = [n.strip() for n in wd.partition(wd_and_list[0])]
@@ -603,7 +608,7 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
 
     part1 = name_match_main(osm_part1, wd_part1, endings=part1_endings, **kwargs)
     if not part1:
-        return
+        return None
 
     part2_endings = endings.copy()
     for n in osm_part2, wd_part2:
@@ -614,6 +619,8 @@ def match_two_streets(osm, wd, endings=None, **kwargs):
     part2 = name_match_main(osm_part2, wd_part2, endings=part2_endings, **kwargs)
     if part2:
         return part1
+
+    return None
 
 
 def name_road_end_match(
@@ -632,7 +639,14 @@ def name_road_end_match(
     return name_match_main(x_osm, x_wd, **kwargs)
 
 
-def name_match(osm, wd, endings=None, debug=False, place_names=None):
+def name_match(
+    osm: str,
+    wd: str,
+    endings: set[str] | None = None,
+    debug: bool | None = False,
+    place_names: Collection[str] | None = None,
+) -> NameMatch | None:
+    """Compare osm and Wikidata names to see if they match."""
     match = name_match_main(osm, wd, endings, debug)
     if match:
         return match
@@ -698,7 +712,7 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
                 return match
 
     if ";" not in osm:
-        return
+        return None
     for osm_name in osm.split(";"):
         match = name_match(
             osm_name.strip(), wd, endings=endings, debug=debug, place_names=place_names
@@ -706,11 +720,15 @@ def name_match(osm, wd, endings=None, debug=False, place_names=None):
         if match:
             return match
 
+    return None
 
-def ordinal_number_to_word(name):
-    return re_ordinal_number.sub(
-        lambda m: num2words(int(m.group(1)), to="ordinal"), name
+
+def ordinal_number_to_word(name: str) -> str:
+    """Convert ordinal numbers to words."""
+    ret = re_ordinal_number.sub(
+        lambda m: str(num2words(m.group(1), to="ordinal")), name
     )
+    return ret
 
 
 def normalize_name(name: str) -> str:
@@ -720,18 +738,20 @@ def normalize_name(name: str) -> str:
     return re_strip_non_chars.sub("", name.lower())
 
 
-def has_address(osm_tags: dict[str, str]) -> bool:
+def has_address(osm_tags: OsmTags) -> bool:
     """OSM tags include an address."""
     return any("addr:" + part in osm_tags for part in ("housenumber", "full"))
 
 
-def any_url_match(osm_value: str, values: list[str]) -> bool:
+def any_url_match(osm_value: str, values: Collection[str]) -> bool:
     """OSM value matches one of the values from wikidata."""
     osm_url = normalize_url(osm_value)
     return any(osm_url == normalize_url(wd_url) for wd_url in values)
 
 
-def check_identifier(osm_tags, item_identifiers):
+def check_identifier(
+    osm_tags: OsmTags, item_identifiers: dict[str, list[tuple[set[str], str]]]
+) -> bool:
     if not item_identifiers:
         return False
     for k, v in item_identifiers.items():
@@ -756,7 +776,7 @@ def check_identifier(osm_tags, item_identifiers):
 re_range_start = re.compile(r"\d+ ?([-–+&]|and) ?$")
 
 
-def check_for_address_in_extract(osm_tags: dict[str, str], extract: str) -> bool:
+def check_for_address_in_extract(osm_tags: OsmTags, extract: str) -> bool:
     """Extract contains an address that matches OSM."""
     if not extract or not has_address(osm_tags):
         return False
@@ -792,7 +812,7 @@ def name_contains_housenumber(name: str) -> bool:
 
 
 def check_name_matches_address(
-    osm_tags: dict[str, str], wikidata_names: collections.abc.Collection[str]
+    osm_tags: OsmTags, wikidata_names: collections.abc.Collection[str]
 ) -> bool | None:
     if not has_address(osm_tags):
         return None
@@ -908,7 +928,8 @@ def check_name_matches_address(
     return None if name_match else False
 
 
-def get_names(osm_tags):
+def get_names(osm_tags: OsmTags) -> OsmTags:
+    """Extract names from OSM tags."""
     return {
         k: v
         for k, v in osm_tags.items()
@@ -916,20 +937,31 @@ def get_names(osm_tags):
     }
 
 
-def intials_matches_other_wikidata_name(initials, wikidata_names):
+def intials_matches_other_wikidata_name(
+    initials: str, wikidata_names: dict[str, str]
+) -> bool:
     return any(
         w != initials and initials_match(initials, w) for w in wikidata_names.keys()
     )
 
 
-def strip_operator(name, operator):
+def strip_operator(name: str, operator: str) -> str:
+    """Strip operator name from name."""
     start = name.lower().find(operator.lower())
     return name[:start] + name[start + len(operator) :]
 
 
+NameMatchDict = dict[str, list[tuple[str, str, str]]]
+
+
 def check_for_match(
-    osm_tags, wikidata_names, endings=None, place_names=None, trim_house=True
-):
+    osm_tags: OsmTags,
+    wikidata_names: dict[str, str],
+    endings: collections.abc.Collection[str] | None = None,
+    place_names: Collection[str] | None = None,
+    trim_house: bool = True,
+) -> NameMatchDict:
+    """Check for match."""
     endings = set(endings or [])
     if trim_house:
         endings.add("house")
@@ -968,8 +1000,8 @@ def check_for_match(
             "a " + city,  # Italian
         }
 
-    name = defaultdict(list)
-    cache = {}
+    name: defaultdict[str, list[tuple[str, str, str]]] = defaultdict(list)
+    cache: dict[tuple[str, str], tuple[str, str, str] | None] = {}
     for w, source in wikidata_names.items():
         for osm_key, o in names.items():
             if (o, w) in cache:
@@ -1020,7 +1052,11 @@ def check_for_match(
     return dict(name)
 
 
-def get_all_matches(osm_tags, wikidata_names, endings=None):
+def get_all_matches(
+    osm_tags: OsmTags,
+    wikidata_names: dict[str, str],
+    endings: set[str] | None = None,
+) -> list[NameMatch]:
     names = get_names(osm_tags)
 
     matches = []
