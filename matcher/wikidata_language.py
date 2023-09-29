@@ -1,11 +1,11 @@
 from typing import Any
 
-from . import wikidata_api
+from . import Entity, wikidata_api
 
 LangType = dict[str, Any]
 
 
-def languages_from_entity(entity: wikidata_api.EntityType) -> list[LangType]:
+def languages_from_entity(entity: Entity) -> list[LangType]:
     """Languages that are used in the country of this geographic entity."""
     languages = languages_from_country_entity(entity)
     if languages or "P17" not in entity["claims"]:
@@ -22,7 +22,7 @@ def languages_from_entity(entity: wikidata_api.EntityType) -> list[LangType]:
     return []
 
 
-def get_lang_qids(entity: wikidata_api.EntityType) -> list[str]:
+def get_lang_qids(entity: Entity) -> list[str]:
     """Retrieve language QIDs from country entity."""
     if "P37" not in entity["claims"]:
         return []
@@ -44,7 +44,7 @@ def get_lang_qids(entity: wikidata_api.EntityType) -> list[str]:
     return lang_qids
 
 
-def languages_from_country_entity(entity: wikidata_api.EntityType) -> list[LangType]:
+def languages_from_country_entity(entity: Entity) -> list[LangType]:
     """Get list of languages from country."""
     lang_qids = get_lang_qids(entity)
 
@@ -56,7 +56,7 @@ def languages_from_country_entity(entity: wikidata_api.EntityType) -> list[LangT
 
 
 def process_language_entities(
-    entities: list[wikidata_api.EntityType],
+    entities: list[Entity],
 ) -> list[LangType]:
     languages = []
     for lang in entities:
