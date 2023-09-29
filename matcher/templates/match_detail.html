@@ -17,7 +17,7 @@
     var lon = {{ '{:.4f}'.format(lon) }};
     var map = L.map('mapid').setView([lat, lon], 18);
 
-    L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     var marker = L.marker([lat, lon]).addTo(map);
 
   </script>
@@ -90,7 +90,7 @@
 </div>
     <div id="mapid"></div>
 
-    {# 
+    {#
 
     <h3>labels</h3>
     <pre>{{ entity.labels | pprint }}</pre>
