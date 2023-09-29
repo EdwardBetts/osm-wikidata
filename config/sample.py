@@ -27,30 +27,4 @@ DB_HOST = "localhost"
 SMTP_HOST = "localhost"
 MAIL_FROM = "{{ mail_from }}"
 
-
-SOCIAL_AUTH_USER_MODEL = "matcher.model.User"
-SOCIAL_AUTH_CLEAN_USERNAMES = False
-
-SOCIAL_AUTH_PIPELINE = (
-    "social.pipeline.social_auth.social_details",
-    "social.pipeline.social_auth.social_uid",
-    "social.pipeline.social_auth.auth_allowed",
-    "social.pipeline.social_auth.social_user",
-    "social.pipeline.user.get_username",
-    "social.pipeline.user.create_user",
-    "social.pipeline.social_auth.associate_user",
-    "social.pipeline.social_auth.load_extra_data",
-    "social.pipeline.user.user_details",
-)
-
-SOCIAL_AUTH_LOGIN_URL = "/"
-SOCIAL_AUTH_LOGIN_REDIRECT_URL = "/done/"
-SOCIAL_AUTH_AUTHENTICATION_BACKENDS = (
-    "social.backends.openstreetmap.OpenStreetMapOAuth",
-)
-
-SOCIAL_AUTH_OPENSTREETMAP_KEY = "{{ osm_key }}"
-SOCIAL_AUTH_OPENSTREETMAP_SECRET = "{{ osm_secret }}"
-
-
 BROWSE_CACHE_TTL = timedelta(days=1)
