@@ -774,7 +774,6 @@ def load_languages():
     filename = "data/languages.json"
 
     if not os.path.exists(filename):
-
         query = """
     SELECT ?lang WHERE {
       ?lang wdt:P424 ?code .
@@ -1374,7 +1373,6 @@ def place_filter(place_identifier, want_isa):
 @click.argument("filename")
 @click.argument("want_isa")
 def place_filter_file(filename, want_isa):
-
     places = []
     for line in open(filename):
         place_identifier, _, name = line[:-1].partition(",")
@@ -1639,3 +1637,15 @@ def load_embassy_list(filename):
         e = Embassy(**i)
         database.session.add(e)
     database.session.commit()
+
+
+@app.cli.command()
+def now_utc():
+    """Now UTC."""
+    app.config.from_object("config.default")
+    database.init_app(app)
+
+    print(func.now().type)
+    print(func.timezone("utc", func.now()).type)
+
+    print(database.now_utc().type)
