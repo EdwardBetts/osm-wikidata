@@ -8,7 +8,7 @@ import requests
 
 from . import model, utils
 
-base = "https://www.openstreetmap.org/api/0.6/"
+base = "https://api.openstreetmap.org/api/0.6/"
 
 
 def get_changeset(changeset_id: int) -> lxml.etree._Element:
