@@ -26,8 +26,25 @@ class EntityType(typing.TypedDict):
 
 
 CandidatesList = list[model.ItemCandidate]
-CandidateDict = dict[str, typing.Any]
+# CandidateDict = dict[str, typing.Any]
 DbCursor = psycopg2.extensions.cursor
+
+
+class CandidateDict(typing.TypedDict):
+    """Candidate dict."""
+
+    osm_type: str
+    osm_id: int
+    name: str
+    tags: dict[str, str]
+    dist: float
+    planet_table: str
+    src_id: int
+    identifier_match: bool
+    address_match: bool
+    name_match: match.NameMatchDict
+    matching_tags: set[str]
+
 
 cat_to_ending = {}
 patterns: dict[str, re.Pattern[str]] = {}
@@ -108,7 +125,7 @@ def simplify_tags(tags: list[str]) -> list[str]:
     return tags
 
 
-def tag_and_key_if_possible(tags: list[str]) -> list[str]:
+def tag_and_key_if_possible(tags: set[str]) -> set[str]:
     """Remove foo if dict contains foo=bar."""
     key_only = sorted(t for t in tags if "=" not in t)
     for k in key_only:
@@ -327,7 +344,7 @@ def find_nrhp_match(
     return nrhp_match if len(nrhp_match) == 1 else None
 
 
-def find_matching_tags(osm, wikidata):
+def find_matching_tags(osm: dict[str, str], wikidata: set[str]) -> set[str]:
     matching = set()
     for wikidata_tag in wikidata:
         if "=" in wikidata_tag:
@@ -339,7 +356,12 @@ def find_matching_tags(osm, wikidata):
     return tag_and_key_if_possible(matching)
 
 
-def bad_building_match(osm_tags: dict[str, str], name_match, item: model.Item) -> bool:
+def bad_building_match(
+    osm_tags: dict[str, str],
+    name_match: match.NameMatchDict,
+    item: model.Item,
+) -> bool:
+    """Bad building match."""
     if "amenity" in osm_tags:
         amenity = set(osm_tags["amenity"].split(";"))
         if "parking" in amenity:
@@ -529,7 +551,9 @@ def osm_is_stolperstein(osm_tags: dict[str, str]) -> bool:
     )
 
 
-def get_within_names(cur: DbCursor, prefix, src_type, src_id) -> set[str]:
+def get_within_names(
+    cur: DbCursor, prefix: str, src_type: str, src_id: int
+) -> set[str]:
     sql = f"""select a.tags
 from {prefix}_polygon as a, {prefix}_{src_type} as b
 where b.osm_id={src_id} and a.osm_id != b.osm_id and st_contains(a.way, b.way);
@@ -876,7 +900,7 @@ def prefer_tag_match_over_building_only_match(
     return more_good
 
 
-def prefer_farmhouse(candidates):
+def prefer_farmhouse(candidates: list[CandidateDict]) -> list[CandidateDict]:
     if len(candidates) != 2:
         return candidates
 
@@ -897,7 +921,7 @@ def prefer_farmhouse(candidates):
         return candidates
 
 
-def filter_bridge(candidates):
+def filter_bridge(candidates: list[CandidateDict]) -> list[CandidateDict]:
     if not any(c["tags"].get("man_made") == "bridge" for c in candidates):
         return candidates
 
@@ -906,7 +930,9 @@ def filter_bridge(candidates):
     ]
 
 
-def check_item_candidate(candidate):
+def check_item_candidate(
+    candidate: model.ItemCandidate,
+) -> dict[str, str | bool | set[str] | dict[str, str]]:
     item, osm_tags = candidate.item, candidate.tags
     cats = item.categories or []
     item_identifiers = item.get_item_identifiers()
@@ -1081,7 +1107,7 @@ def get_biggest_polygon(item: dict[str, typing.Any]) -> int:
     return ret
 
 
-def all_in_one(item, conn, prefix):
+def all_in_one(item: dict[str, typing.Any], conn, prefix: str):
     cur = conn.cursor()
     biggest = get_biggest_polygon(item)
     if not biggest:
