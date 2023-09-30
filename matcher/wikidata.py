@@ -665,6 +665,9 @@ class Row(typing.TypedDict):
     isa: list[str]
 
 
+QueryRow = dict[str, dict[str, typing.Any]]
+
+
 def get_query(q: str, south: float, north: float, west: float, east: float) -> str:
     """Pass coordinates to bounding box query."""
     return render_template_string(q, south=south, north=north, west=west, east=east)
@@ -719,10 +722,10 @@ def run_query(
     name: str | None = None,
     timeout: int | None = None,
     send_error_mail: bool = False,
-) -> list[typing.Any]:
+) -> list[QueryRow]:
     """Run query, return JSON."""
     filename: str
-    bindings: list[typing.Any]
+    bindings: list[QueryRow]
     if name:
         filename = cache_filename(name + ".json")
         if os.path.exists(filename):
@@ -745,7 +748,7 @@ def run_query_raw(
     """Run query, return response."""
     attempts = 5
 
-    def error_mail(subject, r):
+    def error_mail(subject: str, r: requests.Response) -> None:
         if send_error_mail:
             mail.error_mail("wikidata query error", query, r)
 
@@ -992,7 +995,9 @@ def parse_osm_keys(rows):
     return items
 
 
-def get_location_hierarchy(qid, name=None):
+def get_location_hierarchy(
+    qid: str, name: str | None = None
+) -> list[dict[str, str | None]]:
     # not currently in use
     query = located_in_query.replace("QID", qid)
     return [
@@ -1232,7 +1237,8 @@ def get_item_labels(items: list[str]) -> list[dict[str, typing.Any]]:
     return rows
 
 
-def row_qid_and_label(row: dict[str, typing.Any], name: str) -> str | None:
+def row_qid_and_label(row: QueryRow, name: str) -> dict[str, str] | None:
+    """QID and label from row."""
     qid = wd_to_qid(row[name])
     return {"qid": qid, "label": row[name + "Label"]["value"]} if qid else None
 
@@ -1284,7 +1290,9 @@ def get_isa(items, name=None):
     return ret
 
 
-def item_types_graph(items, name=None, rows=None):
+def item_types_graph(
+    items, name: str | None = None, rows: list[QueryRow] | None = None
+) -> dict[str, dict[str, set | str]]:
     if rows is None:
         query = query_for_items(item_types_tree, items)
         rows = run_query(query, name=name, send_error_mail=False)
@@ -1324,14 +1332,14 @@ def find_superclasses(items, name=None):
     }
 
 
-def claim_value(claim):
+def claim_value(claim: dict[str, dict[str, typing.Any]]) -> typing.Any:
     try:
         return claim["mainsnak"]["datavalue"]["value"]
     except KeyError:
         pass
 
 
-def country_iso_codes_from_qid(qid):
+def country_iso_codes_from_qid(qid: str) -> list[str] | None:
     item = WikidataItem.retrieve_item(qid)
     extra = {"Q159583": "VA"}  # Holy See
     no_iso_3166_code = {
@@ -1353,7 +1361,7 @@ def country_iso_codes_from_qid(qid):
     # operator (P137): Embassy of the United States, Jerusalem (Q53492009)
 
     if qid in no_iso_3166_code:
-        return
+        return None
 
     for wikidata_property in ("P297", "P298"):
         if qid in extra or item.claims.get(wikidata_property):
@@ -1369,7 +1377,13 @@ def country_iso_codes_from_qid(qid):
 
 
 class WikidataItem:
-    def __init__(self, qid, entity):
+    """Wikidata item."""
+
+    qid: str
+    entity: Entity
+
+    def __init__(self, qid: str, entity: Entity) -> None:
+        """Init."""
         assert entity
         self.qid = qid
         self.entity = entity
@@ -1383,11 +1397,13 @@ class WikidataItem:
         return item
 
     @property
-    def claims(self):
+    def claims(self) -> dict[str, typing.Any]:
+        """Item claims."""
         return self.entity["claims"]
 
     @property
-    def labels(self):
+    def labels(self) -> dict[str, dict[str, str]]:
+        """Item labels."""
         return self.entity.get("labels", {})
 
     @property
@@ -1427,11 +1443,13 @@ class WikidataItem:
             if "badges" in v:
                 del v["badges"]
 
-    def first_claim_value(self, key):
+    def first_claim_value(self, key: str) -> typing.Any:
+        """Get first claim value for given key."""
         return claim_value(self.claims[key][0])
 
     @property
-    def has_coords(self):
+    def has_coords(self) -> bool:
+        """Item has coordinates."""
         try:
             self.first_claim_value("P625")
         except (IndexError, KeyError):
@@ -1444,7 +1462,8 @@ class WikidataItem:
         return self.has_coords and self.first_claim_value("P625")["globe"] == earth
 
     @property
-    def coords(self):
+    def coords(self) -> tuple[float, float] | tuple[None, None]:
+        """Get item coordinates."""
         if not self.has_coords:
             return None, None
         c = self.first_claim_value("P625")
