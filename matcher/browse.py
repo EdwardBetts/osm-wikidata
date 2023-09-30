@@ -5,7 +5,7 @@ import os
 import typing
 from datetime import datetime
 from time import time
-from typing import Any, TypedDict
+from typing import TypedDict
 
 import flask
 
@@ -387,7 +387,7 @@ class Continent(TypedDict):
     banner_url: str | None
 
 
-def row_to_continent_dict(row: dict[str, Any]) -> Continent:
+def row_to_continent_dict(row: wikidata.QueryRow) -> Continent:
     """Convert a WDQS row into a contient item."""
     qid = wikidata.wd_to_qid(row["continent"])
     assert qid
@@ -415,7 +415,7 @@ def get_banner_images(items: list[Continent]) -> None:
         item["banner_url"] = images[banner]["url"] if banner else None
 
 
-def rows_to_item_list(rows: list[dict[str, Any]]) -> list[Continent]:
+def rows_to_item_list(rows: list[wikidata.QueryRow]) -> list[Continent]:
     """List of WDQS rows to item list."""
     items = []
     for row in rows:
@@ -427,7 +427,6 @@ def rows_to_item_list(rows: list[dict[str, Any]]) -> list[Continent]:
         except KeyError:
             pass
         items.append(item)
-        row["item"] = item
 
     return items
 
@@ -436,7 +435,6 @@ def get_continents() -> list[Continent]:
     """Return details of the continents."""
     query = wikidata.continents_with_country_count_query
     rows = wikidata.run_query(query)
-    assert isinstance(rows, list)
     items = rows_to_item_list(rows)
 
     get_banner_images(items)
