@@ -116,11 +116,15 @@ class BrowseDetail:
     """Details for browse page."""
 
     item_id: int
+    languages: list[wikidata_language.LangType]
+    timing: list[tuple[str, float]]
+    lang: str | None
+    sort: str | None
 
     def __init__(
         self,
         item_id: int,
-        timing: list[tuple[str, int]],
+        timing: list[tuple[str, float]],
         lang: str | None = None,
         sort: str | None = None,
     ):
@@ -189,13 +193,13 @@ class BrowseDetail:
 
             self.rows = rows
 
-    def download_missing_isa(self, download_isa):
+    def download_missing_isa(self, download_isa: set[str]) -> None:
         """Download any IsA object that aren't in the database already."""
         for isa_qid, entity in wikidata_api.entity_iter(download_isa):
             if self.isa_map[isa_qid]:
                 self.isa_map[isa_qid].entity = entity
                 continue
-            isa_obj = IsA(item_id=isa_qid[1:], entity=entity)
+            isa_obj = IsA(item_id=int(isa_qid[1:]), entity=entity)
             self.isa_map[isa_qid] = isa_obj
             database.session.add(isa_obj)
         database.session.commit()
@@ -217,7 +221,7 @@ class BrowseDetail:
         if download_isa:
             self.download_missing_isa(download_isa)
 
-    def get_lang_qids_from_country(self):
+    def get_lang_qids_from_country(self) -> None:
         # P17 = country
         if self.lang_qids or "P17" not in self.item.entity["claims"]:
             return
@@ -242,7 +246,7 @@ class BrowseDetail:
                 if lang_qid not in self.lang_qids:
                     self.lang_qids.append(lang_qid)
 
-    def add_langs_to_items(self):
+    def add_langs_to_items(self) -> None:
         for lang_qid in self.lang_qids:
             lang_item_id = int(lang_qid[1:])
             lang_item = WikidataItem.query.get(lang_item_id)
@@ -252,9 +256,9 @@ class BrowseDetail:
                 lang_item = WikidataItem.download(lang_item_id)
             self.items[lang_qid] = lang_item
 
-    def update_items(self):
+    def update_items(self) -> None:
         if not self.check_lastrevid:
-            return
+            return None
         check_qids = [check_qid for check_qid, rev_id in self.check_lastrevid]
         cur_rev_ids = wikidata_api.get_lastrevids(check_qids)
         for check_qid, rev_id in self.check_lastrevid:
@@ -283,7 +287,7 @@ class BrowseDetail:
             )
         }
 
-    def add_code_to_lang(self):
+    def add_code_to_lang(self) -> None:
         if not self.lang and self.languages:
             for lang_dict in self.languages:
                 if "code" not in lang_dict:
@@ -291,11 +295,12 @@ class BrowseDetail:
                 self.lang = lang_dict["code"]
                 break
 
-    def get_languages(self):
+    def get_languages(self) -> None:
+        """Get languages."""
         lang_items = (self.items[lang_qid].entity for lang_qid in self.lang_qids)
         self.languages = wikidata_language.process_language_entities(lang_items)
 
-    def get_rows_with_cache(self):
+    def get_rows_with_cache(self) -> None:
         """Call Wikidata Query service to get next-level rows, cache the results."""
         cache_path = utils.cache_dir()
 
@@ -309,7 +314,7 @@ class BrowseDetail:
                 timestamp = datetime.fromisoformat(json_data["timestamp"])
                 if now - timestamp < flask.current_app.config.get("BROWSE_CACHE_TTL"):
                     self.rows = json_data["rows"]
-                    return
+                    return None
 
         self.rows = wikidata.next_level_places(
             self.qid, self.entity, language=self.lang
@@ -317,7 +322,7 @@ class BrowseDetail:
         with open(filename, "w") as f:
             json.dump({"timestamp": now.isoformat(), "rows": self.rows}, f, indent=2)
 
-    def details(self):
+    def details(self) -> None:
         """Return details for browse page."""
         self.check_lastrevid = []
 
@@ -379,11 +384,13 @@ class Continent(TypedDict):
 
 def row_to_continent_dict(row: dict[str, Any]) -> Continent:
     """Convert a WDQS row into a contient item."""
+    qid = wikidata.wd_to_qid(row["continent"])
+    assert qid
     item: Continent = {
         "label": row["continentLabel"]["value"],
         "description": row["continentDescription"]["value"],
         "country_count": row["count"]["value"],
-        "qid": wikidata.wd_to_qid(row["continent"]),
+        "qid": qid,
         "banner": None,
         "banner_url": None,
     }
