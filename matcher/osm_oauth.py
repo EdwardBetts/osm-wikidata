@@ -1,47 +1,47 @@
-from flask import current_app, session
-from requests_oauthlib import OAuth1Session
-from urllib.parse import urlencode
+import json
 from datetime import datetime
-from flask import g
-
-from .model import User
-
-from . import user_agent_headers
+from urllib.parse import urlencode
 
 import lxml.etree
+from flask import current_app, g, session, url_for
+from requests_oauthlib import OAuth2Session
+
+from . import user_agent_headers
+from .model import User
 
 osm_api_base = "https://api.openstreetmap.org/api/0.6"
+scope = ["read_prefs", "write_api"]
+
+
+def get_session():
+    token = session.get("oauth_token")
+    if not token:
+        user = g.user
+        assert user.is_authenticated
+        token = json.loads(user.osm_oauth_token)
+        session["oauth_token"] = token
+
+    callback = url_for("oauth_callback", _external=True)
+    return OAuth2Session(
+        current_app.config["CLIENT_KEY"],
+        redirect_uri=callback,
+        scope=scope,
+        token=token,
+    )
 
 
 def api_put_request(path, **kwargs):
-    user = g.user
-    assert user.is_authenticated
-    oauth = OAuth1Session(
-        current_app.config["CLIENT_KEY"],
-        client_secret=current_app.config["CLIENT_SECRET"],
-        resource_owner_key=user.osm_oauth_token,
-        resource_owner_secret=user.osm_oauth_token_secret,
-    )
+    oauth = get_session()
     return oauth.request(
         "PUT", osm_api_base + path, headers=user_agent_headers(), **kwargs
     )
 
 
 def api_request(path, **params):
-    user = g.user
-    assert user.is_authenticated
-    app = current_app
     url = osm_api_base + path
     if params:
         url += "?" + urlencode(params)
-    client_key = app.config["CLIENT_KEY"]
-    client_secret = app.config["CLIENT_SECRET"]
-    oauth = OAuth1Session(
-        client_key,
-        client_secret=client_secret,
-        resource_owner_key=user.osm_oauth_token,
-        resource_owner_secret=user.osm_oauth_token_secret,
-    )
+    oauth = get_session()
     return oauth.get(url, timeout=4)
 
 

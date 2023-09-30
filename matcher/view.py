@@ -6,10 +6,12 @@ import random
 import re
 import sys
 import traceback
+import typing
 from collections import Counter
 from time import sleep, time
 from typing import Any
 
+import flask
 import flask_login
 import jinja2
 import requests
@@ -17,7 +19,6 @@ import sqlalchemy.exc
 import werkzeug
 from flask import (
     Flask,
-    Response,
     abort,
     flash,
     g,
@@ -32,10 +33,11 @@ from flask import (
 from jinja2.utils import markupsafe
 from lxml import etree
 from markupsafe import escape
-from requests_oauthlib import OAuth1Session
+from requests_oauthlib import OAuth2Session
 from sqlalchemy import distinct, func
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.debug.tbtools import DebugTraceback
+from werkzeug.wrappers.response import Response
 
 from . import (
     browse,
@@ -139,22 +141,65 @@ def newline_br(eval_ctx, value):
     return result
 
 
-def demo_mode():
-    return session.get("demo_mode", False) or request.args.get("demo")
+def demo_mode() -> bool:
+    """Demo mode."""
+    return bool(session.get("demo_mode", False) or request.args.get("demo"))
+
+
+def clear_oauth_session() -> None:
+    """Clear OAuth session."""
+    g.user.osm_oauth_token = None
+    g.user.osm_oauth_token_secret = None
+    database.session.commit()
+    flask.session.pop("oauth_state", None)
+    flask.session.pop("oauth_token", None)
+    flask_login.logout_user()
+    g.user = flask_login.current_user._get_current_object()
 
 
 @app.before_request
-def global_user():
+def global_user() -> None:
+    """Set global user."""
     if demo_mode():
         g.user = User.query.get(1)
-    else:
-        g.user = flask_login.current_user._get_current_object()
+        return
+    g.user = flask_login.current_user._get_current_object()
+    if not g.user.is_authenticated:
+        return
+
+    if g.user.osm_oauth_token_secret:
+        clear_oauth_session()
+        flash("A system upgrade means you need to login again")
+        return None
+    if g.user.osm_oauth_token is None:
+        return
+
+    try:
+        json.loads(g.user.osm_oauth_token)
+    except json.decoder.JSONDecodeError:
+        clear_oauth_session()
+        flash("A system upgrade means you need to login again")
+        return None
+
+    r = osm_oauth.api_request("/user/details")
+    if r.content == b"Couldn't authenticate you":
+        clear_oauth_session()
+        flash("Failure to authenticate, you've been logged out")
+        return None
+
+    info = osm_oauth.parse_userinfo_call(r.content)
+    g.user.username = info["username"]
+    g.user.description = info["description"]
+    g.user.img = info["img"]
+
+    database.session.commit()
 
 
 @app.before_request
-def site_banner():
+def site_banner() -> None:
+    """Site banner."""
     if "/static/" in request.path:
-        return
+        return None
     try:
         g.banner = SiteBanner.query.filter(SiteBanner.end.is_(None)).one_or_none()
     except sqlalchemy.exc.SQLAlchemyError:
@@ -162,18 +207,18 @@ def site_banner():
 
 
 @app.before_request
-def slow_crawl():
+def slow_crawl() -> None:
     if utils.is_bot():
         sleep(5)
 
 
 @login_manager.user_loader
-def load_user(user_id):
+def load_user(user_id: int) -> User:
     return User.query.get(user_id)
 
 
 @app.context_processor
-def navbar():
+def navbar() -> dict[str, typing.Any]:
     try:
         return dict(navbar_pages=navbar_pages, active=request.endpoint)
     except RuntimeError:
@@ -182,7 +227,7 @@ def navbar():
 
 @app.route("/login")
 def login_route():
-    if app.env == "development":
+    if False and app.env == "development":
         users = User.query
         return render_template(
             "dev/login.html", users=users, next=request.args.get("next")
@@ -205,13 +250,20 @@ def dev_login():
 
 
 @app.route("/login/openstreetmap/")
-def login_openstreetmap():
+def login_openstreetmap() -> Response:
+    """Login via OpenStreetMap."""
     return redirect(url_for("start_oauth", next=request.args.get("next")))
 
 
 @app.route("/logout")
-def logout():
+def logout() -> Response:
+    """Logout."""
     next_url = request.args.get("next") or url_for("index")
+    flask.session.pop("oauth_state", None)
+    flask.session.pop("oauth_token", None)
+    if g.user:
+        g.user.osm_oauth_token = None
+        database.session.commit()
     flask_login.logout_user()
     flash("you are logged out")
     return redirect(next_url)
@@ -223,32 +275,27 @@ def done():
     return redirect(url_for("index"))
 
 
+auth_base_url = "https://www.openstreetmap.org/oauth2/authorize"
+access_token_url = "https://www.openstreetmap.org/oauth2/token"
+
+
 @app.route("/oauth/start")
 def start_oauth():
     next_page = request.args.get("next")
     if next_page:
         session["next"] = next_page
 
-    client_key = app.config["CLIENT_KEY"]
-    client_secret = app.config["CLIENT_SECRET"]
-
-    request_token_url = "https://www.openstreetmap.org/oauth/request_token"
-
     callback = url_for("oauth_callback", _external=True)
 
-    oauth = OAuth1Session(
-        client_key, client_secret=client_secret, callback_uri=callback
+    oauth = OAuth2Session(
+        app.config["CLIENT_KEY"],
+        redirect_uri=callback,
+        scope=["read_prefs", "write_api"],
     )
-    fetch_response = oauth.fetch_request_token(request_token_url)
 
-    session["owner_key"] = fetch_response.get("oauth_token")
-    session["owner_secret"] = fetch_response.get("oauth_token_secret")
-
-    base_authorization_url = "https://www.openstreetmap.org/oauth/authorize"
-    authorization_url = oauth.authorization_url(
-        base_authorization_url, oauth_consumer_key=client_key
-    )
-    return redirect(authorization_url)
+    auth_url, state = oauth.authorization_url(auth_base_url)
+    flask.session["oauth_state"] = state
+    return flask.redirect(auth_url)
 
 
 @app.route("/oauth/callback", methods=["GET"])
@@ -256,27 +303,23 @@ def oauth_callback():
     client_key = app.config["CLIENT_KEY"]
     client_secret = app.config["CLIENT_SECRET"]
 
-    oauth = OAuth1Session(
+    callback = url_for("oauth_callback", _external=True)
+
+    oauth = OAuth2Session(
         client_key,
-        client_secret=client_secret,
-        resource_owner_key=session["owner_key"],
-        resource_owner_secret=session["owner_secret"],
+        redirect_uri=callback,
+        state=flask.session["oauth_state"],
+        scope=["read_prefs", "write_api"],
     )
 
-    oauth_response = oauth.parse_authorization_response(request.url)
-    verifier = oauth_response.get("oauth_verifier")
-    access_token_url = "https://www.openstreetmap.org/oauth/access_token"
-    oauth = OAuth1Session(
-        client_key,
+    token = oauth.fetch_token(
+        access_token_url,
         client_secret=client_secret,
-        resource_owner_key=session["owner_key"],
-        resource_owner_secret=session["owner_secret"],
-        verifier=verifier,
+        authorization_response=flask.request.url,
     )
 
-    oauth_tokens = oauth.fetch_access_token(access_token_url)
-    session["owner_key"] = oauth_tokens.get("oauth_token")
-    session["owner_secret"] = oauth_tokens.get("oauth_token_secret")
+    flask.session["oauth_token"] = token
+    token_as_json = json.dumps(token)
 
     r = oauth.get(osm_api_base + "/user/details")
     info = osm_oauth.parse_userinfo_call(r.content)
@@ -284,8 +327,7 @@ def oauth_callback():
     user = User.query.filter_by(osm_id=info["id"]).one_or_none()
 
     if user:
-        user.osm_oauth_token = oauth_tokens.get("oauth_token")
-        user.osm_oauth_token_secret = oauth_tokens.get("oauth_token_secret")
+        user.osm_oauth_token = token_as_json
     else:
         user = User(
             username=info["username"],
@@ -295,6 +337,7 @@ def oauth_callback():
             osm_account_created=info["account_created"],
         )
         database.session.add(user)
+        user.osm_oauth_token = token_as_json
     database.session.commit()
     flask_login.login_user(user)
 
