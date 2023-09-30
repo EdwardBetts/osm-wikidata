@@ -652,6 +652,19 @@ ORDER BY ?continentLabel
 wikidata_query_api_url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql"
 
 
+class Row(typing.TypedDict):
+    """Wikidata query result row."""
+
+    population: int | None
+    area: int | None
+    label: str
+    description: str | None
+    start: str
+    item_id: int
+    qid: str
+    isa: list[str]
+
+
 def get_query(q: str, south: float, north: float, west: float, east: float) -> str:
     """Pass coordinates to bounding box query."""
     return render_template_string(q, south=south, north=north, west=west, east=east)
@@ -1012,7 +1025,8 @@ def up_one_level(qid: str, name: str | None = None) -> dict[str, str | None] | N
     }
 
 
-def next_level_types(types):
+def next_level_types(types: list[str]) -> str:
+    """Wikidata Query SPARQL fragment to filter on item type."""
     types = list(types)
     if len(types) == 1:
         return "?item wdt:P31/wdt:P279* wd:{} .".format(types[0])
@@ -1069,7 +1083,7 @@ def get_next_level_query(
     return query.replace("QID", qid).replace("LANGUAGE", language)
 
 
-def run_next_level_query(query: str, name: str) -> requests.Response:
+def run_next_level_query(query: str, name: str | None) -> requests.Response:
     """Call the Wikidata Query Service and mail admin for queries that take too long."""
     t0 = time()
     r = run_query(query, name=name, return_json=False, send_error_mail=True)
@@ -1094,7 +1108,7 @@ def get_isa_list_from_row(row: dict[str, dict[str, str]]) -> list[str]:
     return isa_list
 
 
-def get_population_from_row(row: dict[str, dict[str, str]]) -> str:
+def get_population_from_row(row: dict[str, dict[str, str]]) -> int | None:
     """Read population from WDQS row."""
     pop = row.get("pop")
     # https://www.wikidata.org/wiki/Q896427 has 'unknown value' for population
@@ -1110,13 +1124,13 @@ def get_population_from_row(row: dict[str, dict[str, str]]) -> str:
 
 
 def process_next_level_places(
-    query_rows: dict[str, dict[str, typing.Any]]
-) -> list[dict[str, typing.Any]]:
+    query_rows: list[dict[str, dict[str, typing.Any]]]
+) -> list[Row]:
     """Process a list of rows from the WDQS into our own format."""
     rows = []
     for row in query_rows:
         item_id = wd_uri_to_id(row["item"]["value"])
-        i = {
+        i: Row = {
             "population": get_population_from_row(row),
             "area": (
                 int(float(row["area"]["value"]) / 1e6) if row.get("area") else None
@@ -1139,9 +1153,9 @@ def next_level_places(
     qid: str,
     entity: Entity,
     language: str | None = None,
-    query: str = None,
-    name: str = None,
-) -> list[dict[str, typing.Any]]:
+    query: str | None = None,
+    name: str | None = None,
+) -> list[Row]:
     """Look up the next level places for the given QID."""
     if not query:
         query = get_next_level_query(qid, entity, language=language)

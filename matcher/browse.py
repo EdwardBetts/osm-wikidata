@@ -120,7 +120,10 @@ class BrowseDetail:
     timing: list[tuple[str, float]]
     lang: str | None
     sort: str | None
+    extra_type_label: str | None
     isa_map: dict[str, IsA] = {}
+    rows: list[wikidata.Row]
+    extra_rows: list[wikidata.Row]
 
     def __init__(
         self,
@@ -169,6 +172,7 @@ class BrowseDetail:
         """Is there a second type of subregion we want to show on the browse page."""
         if self.qid == "Q21":  # England
             # Q48091 = region of England
+            assert self.lang
             types = wikidata.next_level_types(["Q48091"])
             query = (
                 wikidata.next_level_query2.replace("TYPES", types)
@@ -205,7 +209,7 @@ class BrowseDetail:
             database.session.add(isa_obj)
         database.session.commit()
 
-    def build_isa_map(self, rows) -> None:
+    def build_isa_map(self, rows: list[wikidata.Row]) -> None:
         """Build a map of IsA item QIDs to Wikidata objects."""
         self.isa_map = {}
         download_isa: set[str] = set()
