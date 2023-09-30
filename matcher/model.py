@@ -1580,7 +1580,8 @@ class WikidataItem(Base):
     entity = Column(postgresql.JSON)
 
     @classmethod
-    def get_and_update(cls, item_id):
+    def get_and_update(cls, item_id: int) -> "WikidataItem":
+        """Get and update item."""
         qid = f"Q{item_id}"
 
         existing = cls.query.get(item_id)
@@ -1597,6 +1598,7 @@ class WikidataItem(Base):
             return existing
 
         entity = wikidata_api.get_entity(qid)
+        assert entity
         item = cls(item_id=item_id, rev_id=entity["lastrevid"], entity=entity)
         session.add(item)
         return item
@@ -1607,15 +1609,18 @@ class WikidataItem(Base):
         self.rev_id = entity["lastrevid"]
 
     @classmethod
-    def download(cls, item_id):
+    def download(cls, item_id: int) -> "WikidataItem":
+        """Download item."""
         qid = f"Q{item_id}"
         entity = wikidata_api.get_entity(qid)
+        assert entity
         item = cls(item_id=item_id, rev_id=entity["lastrevid"], entity=entity)
         session.add(item)
         return item
 
     @classmethod
-    def get(cls, item_id):
+    def get(cls, item_id: int) -> "WikidataItem":
+        """Get item."""
         qid = f"Q{item_id}"
 
         existing = cls.query.get(item_id)
@@ -1623,6 +1628,7 @@ class WikidataItem(Base):
             return existing
 
         entity = wikidata_api.get_entity(qid)
+        assert entity
         item = cls(item_id=item_id, rev_id=entity["lastrevid"], entity=entity)
         session.add(item)
         return item
