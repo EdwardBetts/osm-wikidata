@@ -318,6 +318,11 @@ def exception_handler(
 
     last_frame = list(traceback.walk_tb(current_traceback))[-1][0]
     last_frame_args = inspect.getargs(last_frame.f_code)
+    redact_variables = {"client_id", "client_key", "client_secret"}
+    last_frame_locals = {
+        key: value if key not in redact_variables else "[REDACTED]"
+        for key, value in last_frame.f_locals.items()
+    }
 
     return (
         render_template(
@@ -328,6 +333,7 @@ def exception_handler(
             summary=summary,
             last_frame=last_frame,
             last_frame_args=last_frame_args,
+            last_frame_locals=last_frame_locals,
         ),
         500,
     )

@@ -20,7 +20,7 @@
 {{ summary | safe }}
 
 <p>Error in function "{{ last_frame.f_code.co_name }}": {{ last_frame_args | pprint }}</p>
-<pre>{{ last_frame.f_locals | pprint }}</pre>
+<pre>{{ last_frame_locals | pprint }}</pre>
 
 </div>
 </div>
