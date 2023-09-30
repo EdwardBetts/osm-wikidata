@@ -164,8 +164,10 @@ class IsA(Base):
             ret[lang] = {"label": label["value"], "description": description}
         return ret
 
-    def label_and_description(self, languages):
+    def label_and_description(self, languages) -> dict[str, str | None]:
+        """Label and description."""
         try:
+            assert isinstance(self.entity, dict)
             labels = self.entity["labels"]
         except (TypeError, KeyError):
             return {"lang": None, "label": None, "description": None}
@@ -183,14 +185,19 @@ class IsA(Base):
             }
         return {"lang": None, "label": None, "description": None}
 
-    def entity_label(self, lang="en"):
+    def entity_label(self, lang: str = "en") -> str:
+        """Entity label."""
+        assert isinstance(self.entity, dict)
         labels = self.entity["labels"]
+        label: str
         if lang in labels:
-            return labels[lang]["value"]
+            label = labels[lang]["value"]
         elif "en" in labels:
-            return labels["en"]["value"]
+            label = labels["en"]["value"]
         elif labels:
-            return list(labels.values())[0]["value"]
+            label = list(labels.values())[0]["value"]
+
+        return label
 
     def label_and_qid(self) -> str:
         """Return a formatted string with the Label and QID."""
@@ -198,13 +205,15 @@ class IsA(Base):
             subject = f"missing labels: {self.qid}"
             body = f"Wikidata entity is missing labels\n\n{self.url}"
             mail.send_mail(subject, body)
-            return self.qid
+            return str(self.qid)
         else:
             return f"{self.entity_label()} ({self.qid})"
 
-    def labels(self):
+    def labels(self) -> dict[str, dict[str, str]]:
         """Entity labels."""
-        return self.entity["labels"]
+        assert isinstance(self.entity, dict)
+        labels: dict[str, dict[str, str]] = self.entity["labels"]
+        return labels
 
 
 class ItemIsA(Base):

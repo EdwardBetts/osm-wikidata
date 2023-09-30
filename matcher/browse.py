@@ -120,6 +120,7 @@ class BrowseDetail:
     timing: list[tuple[str, float]]
     lang: str | None
     sort: str | None
+    isa_map: dict[str, IsA] = {}
 
     def __init__(
         self,
@@ -164,7 +165,7 @@ class BrowseDetail:
         """Top-level item description."""
         return wikidata.entity_description(self.entity, language=self.lang)
 
-    def get_extra_rows(self):
+    def get_extra_rows(self) -> None:
         """Is there a second type of subregion we want to show on the browse page."""
         if self.qid == "Q21":  # England
             # Q48091 = region of England
@@ -204,9 +205,9 @@ class BrowseDetail:
             database.session.add(isa_obj)
         database.session.commit()
 
-    def build_isa_map(self, rows):
+    def build_isa_map(self, rows) -> None:
         """Build a map of IsA item QIDs to Wikidata objects."""
-        self.isa_map: dict[str, IsA] = {}
+        self.isa_map = {}
         download_isa: set[str] = set()
         for row in rows:
             for isa_qid in row["isa"]:
@@ -277,7 +278,7 @@ class BrowseDetail:
         ):
             self.languages.append({"code": "en", "local": "English", "en": "English"})
 
-    def get_former_type(self, isa_map) -> set[str]:
+    def get_former_type(self, isa_map: dict[str, IsA]) -> set[str]:
         """Which types represent historical entities."""
         return {
             isa_qid
