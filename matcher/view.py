@@ -1521,12 +1521,14 @@ def criteria_page():
 
 
 @app.route("/documentation")
-def documentation():
+def documentation() -> Response:
+    """Redirect to documentation on GitHub."""
     return redirect("https://github.com/EdwardBetts/osm-wikidata/blob/master/README.md")
 
 
 @app.route("/changes")
-def changesets():
+def changesets() -> str:
+    """Recent changes."""
     q = Changeset.query.filter(Changeset.update_count > 0).order_by(Changeset.id.desc())
 
     page = get_int_arg("page") or 1
@@ -1537,13 +1539,14 @@ def changesets():
 
 
 @app.route("/browse/")
-def browse_index():
+def browse_index() -> str:
+    """Show list of continents as top lever for browse interface."""
     items = browse.get_continents()
     return render_template("browse_index.html", items=items)
 
 
 @app.route("/browse/Q<int:item_id>")
-def browse_page(item_id):
+def browse_page(item_id: int) -> str:
     """Page showing list of subregions."""
     timing = [("start", time())]
     timing.append(("get place done", time()))

@@ -124,6 +124,8 @@ class BrowseDetail:
     isa_map: dict[str, IsA] = {}
     rows: list[wikidata.Row]
     extra_rows: list[wikidata.Row]
+    check_lastrevid: list[tuple[str, int]]
+    items: dict[str, WikidataItem]
 
     def __init__(
         self,
@@ -227,6 +229,7 @@ class BrowseDetail:
             self.download_missing_isa(download_isa)
 
     def get_lang_qids_from_country(self) -> None:
+        """Check country to find Wikidata QIDs of languages."""
         # P17 = country
         if self.lang_qids or "P17" not in self.item.entity["claims"]:
             return
@@ -262,6 +265,7 @@ class BrowseDetail:
             self.items[lang_qid] = lang_item
 
     def update_items(self) -> None:
+        """Update any items that need updating."""
         if not self.check_lastrevid:
             return None
         check_qids = [check_qid for check_qid, rev_id in self.check_lastrevid]
@@ -329,6 +333,7 @@ class BrowseDetail:
 
     def details(self) -> None:
         """Return details for browse page."""
+        # list of items that to check if newer versions of are available
         self.check_lastrevid = []
 
         # top level item
