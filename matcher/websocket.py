@@ -20,8 +20,6 @@ sock = Sock()
 
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
-PING_SECONDS = 10
-
 # TODO: different coloured icons
 # - has enwiki article
 # - match found
@@ -77,7 +75,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         chat.send_command(queue_socket, "match", **params)
 
         while ws_sock.connected:
-            readable = select.select([queue_socket], [], [], timeout=PING_SECONDS)[0]
+            readable = select.select([queue_socket], [], [])
             if readable:
                 item = chat.read_line(queue_socket)
             else:  # timeout
