@@ -4,7 +4,9 @@ import json
 import os.path
 import re
 import subprocess
+import typing
 from collections import Counter
+from decimal import Decimal
 from time import time
 
 import user_agents
@@ -78,7 +80,7 @@ skip_tags = {
 }
 
 
-def drop_building_tag(tags: list[str]) -> None:
+def drop_building_tag(tags: set[str]) -> None:
     """Drop builing tags.
 
     Building is a very generic tag so remove it if we have more specific search criteria
@@ -90,7 +92,7 @@ def drop_building_tag(tags: list[str]) -> None:
             tags.discard("building=yes")
 
 
-BBox = tuple[float, float, float, float]
+BBox = tuple[Decimal, Decimal, Decimal, Decimal]
 
 
 def bbox_chunk(bbox: BBox, n: int) -> list[BBox]:
@@ -113,7 +115,8 @@ def bbox_chunk(bbox: BBox, n: int) -> list[BBox]:
     return chunks
 
 
-def envelope(bbox):
+def envelope(bbox: BBox):
+    """Make envelope from bbox."""
     # note: different order for coordinates, xmin first, not ymin
     ymin, ymax, xmin, xmax = bbox
     return func.ST_MakeEnvelope(xmin, ymin, xmax, ymax, 4326)
@@ -181,12 +184,12 @@ class Place(Base):
         return f"{base_osm_url}/{self.osm_type}/{self.osm_id}"
 
     @classmethod
-    def get_by_osm(cls, osm_type: str, osm_id: int):
+    def get_by_osm(cls, osm_type: str, osm_id: int) -> "Place" | None:
         """Get place by OSM type and ID."""
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     @classmethod
-    def from_osm(cls, osm_type: str, osm_id: int):
+    def from_osm(cls, osm_type: str, osm_id: int) -> "Place" | None:
         place = cls.get_by_osm(osm_type, osm_id)
         if place:
             return place
@@ -194,7 +197,7 @@ class Place(Base):
         try:
             hit = nominatim.reverse(osm_type, osm_id)
         except nominatim.SearchError:
-            return
+            return None
         place = Place.from_nominatim(hit)
         if place:
             session.add(place)
@@ -202,7 +205,8 @@ class Place(Base):
         return place
 
     @property
-    def type_label(self):
+    def type_label(self) -> str:
+        """Type label."""
         t = self.type.replace("_", " ")
         cat = self.category.replace("_", " ")
         if cat == "place":
@@ -411,7 +415,8 @@ class Place(Base):
             return n
 
     @classmethod
-    def from_nominatim(cls, hit):
+    def from_nominatim(cls, hit: dict[str, typing.Any]) -> "Place":
+        """Build place from nominatim search result hit."""
         assert "error" not in hit
         keys = (
             "place_id",
@@ -431,7 +436,7 @@ class Place(Base):
         bbox = hit["boundingbox"]
         (n["south"], n["north"], n["west"], n["east"]) = bbox
         n["geom"] = hit["geotext"]
-        n["address"] = [dict(name=n, type=t) for t, n in hit["address"].items()]
+        n["address"] = [{"name": n, "type": t} for t, n in hit["address"].items()]
         if hit.get("extratags"):
             n["wikidata"] = hit["extratags"].get("wikidata")
         return cls(**n)
@@ -455,20 +460,26 @@ class Place(Base):
         return place
 
     @property
-    def match_ratio(self):
-        if self.item_count:
-            return self.candidate_count / self.item_count
+    def match_ratio(self) -> float | None:
+        """Ratio of candidates to items."""
+        if not self.item_count:
+            return None
+        assert self.candidate_count is not None
+        return self.candidate_count / self.item_count
 
     @property
-    def bbox(self):
+    def bbox(self) -> BBox:
+        """Bounding box for place."""
         return (self.south, self.north, self.west, self.east)
 
     @property
-    def is_point(self):
+    def is_point(self) -> bool:
+        """Is place a point."""
         return self.osm_type == "node"
 
     @property
-    def display_area(self):
+    def display_area(self) -> str:
+        """Size of place for display."""
         return "{:,.1f} km²".format(self.area_in_sq_km)
 
     def get_wikidata_query(self):
