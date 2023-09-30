@@ -717,20 +717,37 @@ def get_point_query(lat, lon, radius):
 def run_query(
     query: str,
     name: str | None = None,
-    return_json: bool = True,
-    timeout: int = None,
+    timeout: int | None = None,
     send_error_mail: bool = False,
-) -> requests.models.Response | list[typing.Any]:
+) -> list[typing.Any]:
+    """Run query, return JSON."""
+    filename: str
+    bindings: list[typing.Any]
+    if name:
+        filename = cache_filename(name + ".json")
+        if os.path.exists(filename):
+            bindings = json.load(open(filename))["results"]["bindings"]
+            return bindings
+
+    r = run_query_raw(query, name, timeout, send_error_mail)
+    if name:
+        open(filename, "wb").write(r.content)
+    bindings = r.json()["results"]["bindings"]
+    return bindings
+
+
+def run_query_raw(
+    query: str,
+    name: str | None = None,
+    timeout: int | None = None,
+    send_error_mail: bool = False,
+) -> requests.models.Response:
+    """Run query, return response."""
     attempts = 5
 
     def error_mail(subject, r):
         if send_error_mail:
             mail.error_mail("wikidata query error", query, r)
-
-    if name:
-        filename = cache_filename(name + ".json")
-        if os.path.exists(filename):
-            return json.load(open(filename))["results"]["bindings"]
 
     for attempt in range(attempts):
         try:  # retry if we get a ChunkedEncodingError
@@ -742,12 +759,7 @@ def run_query(
             )
             if r.status_code != 200:
                 break
-            if name:
-                open(filename, "wb").write(r.content)
-            if return_json:
-                return r.json()["results"]["bindings"]
-            else:
-                return r
+            return r
         except requests.exceptions.ChunkedEncodingError:
             if attempt == attempts - 1:
                 error_mail("wikidata query error", r)
@@ -1086,7 +1098,7 @@ def get_next_level_query(
 def run_next_level_query(query: str, name: str | None) -> requests.Response:
     """Call the Wikidata Query Service and mail admin for queries that take too long."""
     t0 = time()
-    r = run_query(query, name=name, return_json=False, send_error_mail=True)
+    r = run_query_raw(query, send_error_mail=True)
     query_time = time() - t0
     if query_time > 2:
         subject = f"next level places query took {query_time:.1f}"
@@ -1171,7 +1183,7 @@ def next_level_places(
         query = next_level_has_part_query.replace("QID", qid).replace(
             "LANGUAGE", language
         )
-        r = run_query(query, name=name, return_json=False, send_error_mail=True)
+        r = run_query_raw(query, send_error_mail=True)
         query_rows = r.json()["results"]["bindings"]
 
     if not query_rows:
@@ -1189,7 +1201,7 @@ def next_level_places(
             query = get_next_level_query(
                 located_in_qid, located_in_entity, language=language
             )
-            r = run_query(query, return_json=False, send_error_mail=True)
+            r = run_query_raw(query, send_error_mail=True)
             located_in_rows = r.json()["results"]["bindings"]
             query_rows += located_in_rows
 
