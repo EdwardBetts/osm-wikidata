@@ -115,6 +115,8 @@ def place_from_nominatim(hit: dict[str, typing.Any]) -> Place | None:
 class BrowseDetail:
     """Details for browse page."""
 
+    item_id: int
+
     def __init__(
         self,
         item_id: int,
@@ -139,10 +141,10 @@ class BrowseDetail:
     @property
     def entity(self) -> Entity:
         """Wikidata item entity dict."""
-        return self.item.entity
+        return typing.cast(Entity, self.item.entity)
 
     @property
-    def place(self) -> Place:
+    def place(self) -> Place | None:
         """Place for top-level item."""
         return Place.get_by_wikidata(self.qid) or place_via_nominatim(
             self.qid, entity=self.entity
@@ -154,7 +156,7 @@ class BrowseDetail:
         return wikidata.entity_label(self.entity, language=self.lang)
 
     @property
-    def description(self) -> str:
+    def description(self) -> str | None:
         """Top-level item description."""
         return wikidata.entity_description(self.entity, language=self.lang)
 
@@ -377,18 +379,24 @@ class Continent(TypedDict):
 
 def row_to_continent_dict(row: dict[str, Any]) -> Continent:
     """Convert a WDQS row into a contient item."""
-    item = {
+    item: Continent = {
         "label": row["continentLabel"]["value"],
         "description": row["continentDescription"]["value"],
         "country_count": row["count"]["value"],
         "qid": wikidata.wd_to_qid(row["continent"]),
+        "banner": None,
+        "banner_url": None,
     }
     return item
 
 
 def get_banner_images(items: list[Continent]) -> None:
     """Add banner URL to items."""
-    banner_filenames = [item["banner"] for item in items if item.get("banner")]
+    banner_filenames = []
+    for item in items:
+        if banner := item.get("banner"):
+            banner_filenames.append(banner)
+
     images = commons.image_detail(banner_filenames)
     for item in items:
         banner = item.get("banner")
@@ -416,6 +424,7 @@ def get_continents() -> list[Continent]:
     """Return details of the continents."""
     query = wikidata.continents_with_country_count_query
     rows = wikidata.run_query(query)
+    assert isinstance(rows, list)
     items = rows_to_item_list(rows)
 
     get_banner_images(items)
