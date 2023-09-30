@@ -216,7 +216,8 @@ class Place(Base):
         return t + " " + cat
 
     @classmethod
-    def get_by_wikidata(cls, qid):
+    def get_by_wikidata(cls, qid: str) -> "Place" | None:
+        """Get place with given Wikidata QID."""
         q = cls.query.filter_by(wikidata=qid)
         try:
             return q.one_or_none()
