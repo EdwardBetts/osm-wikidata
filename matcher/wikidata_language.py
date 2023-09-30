@@ -1,8 +1,8 @@
-from typing import Any
+import typing
 
 from . import Entity, wikidata_api
 
-LangType = dict[str, Any]
+LangType = dict[str, typing.Any]
 
 
 def languages_from_entity(entity: Entity) -> list[LangType]:
@@ -56,7 +56,7 @@ def languages_from_country_entity(entity: Entity) -> list[LangType]:
 
 
 def process_language_entities(
-    entities: list[Entity],
+    entities: typing.Iterable[Entity],
 ) -> list[LangType]:
     languages = []
     for lang in entities:

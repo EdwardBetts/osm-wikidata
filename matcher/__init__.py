@@ -12,6 +12,7 @@ class Entity(typing.TypedDict):
     labels: dict[str, typing.Any]
     descriptions: dict[str, typing.Any]
     claims: dict[str, typing.Any]
+    lastrevid: int
 
 
 user_agent = (
