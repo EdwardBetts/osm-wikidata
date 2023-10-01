@@ -356,6 +356,9 @@ GROUP BY ?place ?placeLabel ?address ?street ?item ?itemLabel ?tag
 # Q15893266 == former entity
 # Q56061 == administrative territorial entity
 
+# P150 = contains the administrative territorial entity
+# P131 = located in the administrative territorial entity
+
 next_level_query = """
 SELECT DISTINCT ?item ?itemLabel ?itemDescription
                 ?startLabel
@@ -1055,6 +1058,9 @@ def isa_list(types):
     if len(types) == 1:
         return "?item wdt:P31 wd:{} .".format(types[0])
     return " union ".join("{ ?item wdt:P31 wd:" + t + " }" for t in types)
+
+
+# P527 = has parts
 
 
 def get_next_level_query(
