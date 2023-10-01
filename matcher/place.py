@@ -184,12 +184,12 @@ class Place(Base):
         return f"{base_osm_url}/{self.osm_type}/{self.osm_id}"
 
     @classmethod
-    def get_by_osm(cls, osm_type: str, osm_id: int) -> "Place" | None:
+    def get_by_osm(cls, osm_type: str, osm_id: int) -> typing.Optional["Place"]:
         """Get place by OSM type and ID."""
         return cls.query.filter_by(osm_type=osm_type, osm_id=osm_id).one_or_none()
 
     @classmethod
-    def from_osm(cls, osm_type: str, osm_id: int) -> "Place" | None:
+    def from_osm(cls, osm_type: str, osm_id: int) -> typing.Optional["Place"]:
         place = cls.get_by_osm(osm_type, osm_id)
         if place:
             return place
@@ -216,7 +216,7 @@ class Place(Base):
         return t + " " + cat
 
     @classmethod
-    def get_by_wikidata(cls, qid: str) -> "Place" | None:
+    def get_by_wikidata(cls, qid: str) -> typing.Optional["Place"]:
         """Get place with given Wikidata QID."""
         q = cls.query.filter_by(wikidata=qid)
         try:
