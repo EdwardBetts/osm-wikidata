@@ -203,7 +203,7 @@ class BrowseDetail:
     def download_missing_isa(self, download_isa: set[str]) -> None:
         """Download any IsA object that aren't in the database already."""
         for isa_qid, entity in wikidata_api.entity_iter(download_isa):
-            if self.isa_map[isa_qid]:
+            if self.isa_map.get(isa_qid):
                 self.isa_map[isa_qid].entity = entity
                 continue
             isa_obj = IsA(item_id=int(isa_qid[1:]), entity=entity)
