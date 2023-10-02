@@ -1584,9 +1584,10 @@ def browse_page(item_id: int) -> str:
 
 
 @app.route("/matcher/Q<int:item_id>")
-def matcher_wikidata(item_id):
-    def get_search_string(qid):
+def matcher_wikidata(item_id: int) -> Response:
+    def get_search_string(qid: str) -> str:
         entity = wikidata_api.get_entity(qid)
+        assert entity is not None
         return browse.qid_to_search_string(qid, entity)
 
     qid = "Q{}".format(item_id)

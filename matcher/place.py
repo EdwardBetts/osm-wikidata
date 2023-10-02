@@ -26,6 +26,7 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.schema import Column, ForeignKey, ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.sql.expression import false, or_, true
 from sqlalchemy.types import JSON, BigInteger, Boolean, DateTime, Float, Integer, String
+from werkzeug.wrappers.response import Response
 
 from . import (
     default_change_comments,
@@ -841,12 +842,16 @@ class Place(Base):
     def candidates_url(self, **kwargs):
         return self.place_url("candidates", **kwargs)
 
-    def place_url(self, endpoint, **kwargs):
+    def place_url(self, endpoint: str, **kwargs) -> str:
+        """Flask URL for this place."""
         return url_for(endpoint, osm_type=self.osm_type, osm_id=self.osm_id, **kwargs)
 
-    def browse_url(self):
+    def browse_url(self) -> str | None:
+        """Browse URL if place has associated wikidata item."""
         if self.wikidata:
             return url_for("browse_page", item_id=self.wikidata_item_id)
+        else:
+            return None
 
     def next_state_url(self):
         return (
@@ -855,13 +860,15 @@ class Place(Base):
             else self.matcher_progress_url()
         )
 
-    def matcher_progress_url(self):
+    def matcher_progress_url(self) -> str:
+        """Matcher progress URL."""
         return self.place_url("matcher.matcher_progress")
 
     def matcher_done_url(self, start):
         return self.place_url("matcher.matcher_done", start=start)
 
-    def redirect_to_matcher(self):
+    def redirect_to_matcher(self) -> Response:
+        """Redirect to matcher page for this place."""
         return redirect(self.matcher_progress_url())
 
     def item_list(self):
