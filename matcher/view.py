@@ -2,6 +2,7 @@
 
 import inspect
 import json
+import operator
 import random
 import re
 import sys
@@ -40,6 +41,7 @@ from werkzeug.debug.tbtools import DebugTraceback
 from werkzeug.wrappers.response import Response
 
 from . import (
+    Entity,
     browse,
     database,
     edit,
@@ -1542,44 +1544,112 @@ def changesets() -> str:
 def browse_index() -> str:
     """Show list of continents as top lever for browse interface."""
     items = browse.get_continents()
+
+    for item in items:
+        assert item["label"] and item["qid"]
+        item["link"] = flask.url_for("browse_page", item_id=int(item["qid"][1:]))
+
     return render_template("browse_index.html", items=items)
 
 
+def get_continents_for_country(entity: Entity) -> list[browse.Item]:
+    items: list[browse.Item] = []
+    has_preferred = any(
+        claim["rank"] == "preferred" for claim in entity["claims"]["P30"]
+    )
+
+    for claim in entity["claims"]["P30"]:
+        if has_preferred and claim["rank"] != "preferred":
+            continue
+        p31_qid = claim["mainsnak"]["datavalue"]["value"]["id"]
+        up_entity = wikidata_api.get_entity_with_cache(p31_qid)
+        assert up_entity
+        up_label = wikidata.get_en_value(up_entity, "label")
+        items.append({"qid": p31_qid, "item_id": int(p31_qid[1:]), "label": up_label})
+
+    return items
+
+
+# P30 = continent
+# P31 = instance of
+# P150 = contains the administrative territorial entity
 @app.route("/browse/Q<int:item_id>")
 def browse_page(item_id: int) -> str:
-    """Page showing list of subregions."""
-    timing = [("start", time())]
-    timing.append(("get place done", time()))
+    """Browse place."""
+    t0 = time()
+    qid = f"Q{item_id}"
+    entity = wikidata_api.get_entity_with_cache(qid)
+    assert entity
+    p31 = [
+        claim["mainsnak"]["datavalue"]["value"]["id"]
+        for claim in entity["claims"]["P31"]
+        if not wikidata.claim_has_end_time(claim)
+    ]
+    place = {
+        "qid": qid,
+        "item_id": int(qid[1:]),
+        "label": wikidata.get_en_value(entity, "label"),
+        "isa": p31,
+    }
 
-    lang = request.args.get("lang")
-    sort = request.args.get("sort")
-    browse_details = browse.BrowseDetail(item_id, timing, lang, sort)
-    browse_details.details()
+    up_items = list(reversed(wikidata.located_in_admin_hierachy(qid)))
 
-    timing.append(("start get banner", time()))
-    banner = wikidata.page_banner_from_entity(browse_details.entity)
-    timing.append(("get banner done", time()))
+    # Q3624078 = sovereign state
+    # Q15634554 = state with limited recognition
+    if "Q3624078" in p31 or "Q15634554" in p31:
+        continents = get_continents_for_country(entity)
+    elif up_items:
+        country_qid = up_items[0]["qid"]
+        country_entity = wikidata_api.get_entity_with_cache(country_qid)
+        assert country_entity
+        continents = get_continents_for_country(country_entity)
+    else:
+        continents = []
 
-    start = timing[0][1]
-    timing = [(name, t - start) for name, t in timing]
+    items = []
+    if "Q5107" in p31:  # continent
+        items = wikidata.get_countries(qid)
+        place["up"] = [(flask.url_for("index"), "earth")]
+    else:
+        p150 = entity["claims"].get("P150")
+        if p150:
+            contains_qids = [
+                claim["mainsnak"]["datavalue"]["value"]["id"]
+                for claim in p150
+                if not wikidata.claim_has_end_time(claim)
+            ]
+            items = [
+                wikidata.process_entity(entity)
+                for entity in wikidata_api.get_entities_with_cache(contains_qids)
+            ]
+        elif "Q3624078" in p31 or "Q15634554" in p31:
+            items = wikidata.first_level_subdivision(qid)
+        else:
+            items = wikidata.located_in(qid)
 
-    database.session.commit()
-    return render_template(
+    for item in items:
+        item_qid = item["qid"]
+        assert item_qid
+        if "item_id" not in item:
+            item["item_id"] = int(item_qid[1:])
+        item["link"] = flask.url_for("browse_page", item_id=int(item_qid[1:]))
+
+    items.sort(key=operator.itemgetter("label"))
+
+    query_time = time() - t0
+
+    if query_time > 4:
+        subject = f'browse {place["label"]} ({qid}) took {query_time:.1f} seconds'
+        mail.send_mail(subject, request.url)
+
+    return flask.render_template(
         "browse.html",
-        banner=banner,
-        timing=timing,
-        qid=browse_details.qid,
-        isa_map=browse_details.isa_map,
-        item_id=browse_details.item_id,
-        place=browse_details.place,
-        name=browse_details.name,
-        description=browse_details.description,
-        languages=browse_details.languages,
-        entity=browse_details.entity,
-        current_places=browse_details.current_places,
-        former_places=browse_details.former_places,
-        extra_type_label=browse_details.extra_type_label,
-        extra_rows=browse_details.extra_rows,
+        place=place,
+        items=items,
+        entity=entity,
+        up_items=up_items,
+        query_time=query_time,
+        continents=continents,
     )
 
 
@@ -1600,7 +1670,7 @@ def matcher_wikidata(item_id: int) -> Response:
         return place.redirect_to_matcher()
 
     q = get_search_string(qid)
-    place = browse.place_from_qid(qid, q=q)
+    place = browse.place_via_nominatim(qid, q=q)
     # search using wikidata query and nominatim
     if place and place.osm_type != "node":
         return place.redirect_to_matcher()

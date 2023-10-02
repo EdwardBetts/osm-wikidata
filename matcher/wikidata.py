@@ -1,11 +1,13 @@
 """Functions for interacting with Wikidata."""
 
+import hashlib
 import json
 import os
 import re
 import typing
 from collections import defaultdict
 from time import time
+from typing import Literal, Required, TypedDict
 from urllib.parse import unquote
 
 import requests
@@ -24,7 +26,13 @@ from . import (
 )
 from .language import get_language_label
 from .utils import cache_filename, drop_start
-from .wikidata_api import QueryError, QueryTimeout, get_entities, get_entity
+from .wikidata_api import (
+    QueryError,
+    QueryTimeout,
+    get_entities,
+    get_entity,
+    get_entity_with_cache,
+)
 
 report_missing_values = False
 wd_entity = "http://www.wikidata.org/entity/Q"
@@ -533,38 +541,6 @@ GROUP BY ?item ?itemLabel ?startLabel
 ORDER BY ?itemLabel
 """
 
-countries_in_continent_query = """
-SELECT DISTINCT ?item
-                ?itemLabel
-                ?startLabel
-                (SAMPLE(?pop) AS ?pop)
-                (SAMPLE(?area) AS ?area)
-                (GROUP_CONCAT(?isa) as ?isa_list)
-WHERE {
-  VALUES ?start { wd:QID } .
-  VALUES (?region) {
-    (wd:Q3624078)  # sovereign state
-    (wd:Q161243)   # dependent territory
-    (wd:Q179164)   # unitary state
-    (wd:Q1763527)  # constituent country
-    (wd:Q734818)   # condominium
-    (wd:Q82794)    # geographic region
-  }
-
-  ?item wdt:P30 ?start .
-  ?item p:P31 ?statement .
-  ?statement ps:P31 ?region .
-  FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q15893266 } .
-  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
-  OPTIONAL { ?item wdt:P1082 ?pop } .
-  OPTIONAL { ?item p:P2046/psn:P2046/wikibase:quantityAmount ?area } .
-  OPTIONAL { ?item wdt:P31 ?isa } .
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "LANGUAGE" }
-}
-GROUP BY ?item ?itemLabel ?startLabel
-ORDER BY ?itemLabel
-"""
-
 # walk place hierarchy grabbing labels and country names
 located_in_query = """
 SELECT ?item ?itemLabel ?country ?countryLabel WHERE {
@@ -640,16 +616,68 @@ continents_with_country_count_query = """
 SELECT ?continent
        ?continentLabel
        ?continentDescription
-       ?banner
+       ?img
        (COUNT(?country) AS ?count)
 WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
   ?country wdt:P30 ?continent .
   ?country wdt:P31 wd:Q6256 .
-  ?continent wdt:P948 ?banner
+  optional { ?continent wdt:P242 ?img }
 }
-GROUP BY ?continent ?continentLabel ?continentDescription ?banner
+GROUP BY ?continent ?continentLabel ?continentDescription ?img
 ORDER BY ?continentLabel
+"""
+
+countries_in_continent_query = """
+SELECT ?item ?itemLabel ?itemDescription ?osmWay ?osmRel WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  VALUES ?isa { wd:Q3624078 wd:Q15634554 }
+  ?item wdt:P31 ?isa .
+  ?item wdt:P30 wd:CONTINENT .
+  FILTER NOT EXISTS { ?item wdt:P31 wd:Q3024240 } .  # ignore historical country
+  FILTER NOT EXISTS { ?item wdt:P31 wd:Q99541706 } . # ignore historical unrecognized state
+
+  OPTIONAL { ?item wdt:P10689 ?osmWay }
+  OPTIONAL { ?item wdt:P402 ?osmRel }
+}
+ORDER BY ?itemLabel
+"""
+
+first_level_query = """
+SELECT ?item ?itemLabel ?itemDescription ?firstLevel ?firstLevelLabel WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  ?firstLevel wdt:P279 wd:Q10864048 .
+  ?firstLevel wdt:P17 wd:COUNTRY .
+  ?item wdt:P31 ?firstLevel .
+}
+"""
+
+located_in_admin_hierachy_query = """
+SELECT ?item ?itemLabel ?itemDescription WHERE {
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+  wd:START wdt:P131+ ?item .
+}
+"""
+
+admin_area_types_for_country_query = """
+SELECT DISTINCT ?item ?itemLabel ?itemDescription WHERE {
+  ?item wdt:P279+ wd:Q12076836 .
+  ?item wdt:P17 wd:START .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  FILTER NOT EXISTS { ?item wdt:P279 wd:Q19953632 } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+ORDER BY ?itemLabel
+"""
+
+located_in_query = """
+SELECT DISTINCT ?item ?itemLabel ?itemDescription WHERE {
+  TYPES
+  ?item wdt:P131 wd:START .
+  FILTER NOT EXISTS { ?item wdt:P576 ?end } .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+ORDER BY ?itemLabel
 """
 
 wikidata_query_api_url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql"
@@ -718,6 +746,11 @@ def get_point_query(lat, lon, radius):
     return render_template_string(
         wikidata_point_query, lat=lat, lon=lon, radius=float(radius) / 1000.0
     )
+
+
+def md5sum(s: str) -> str:
+    """Calculate md5sum."""
+    return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 
 def run_query(
@@ -1689,3 +1722,133 @@ row: {repr(row)}\n"""
                 element["key"] = "{0[type]:s}_{0[id]:d}".format(element)
                 found.append((element, m))
         return found
+
+
+def claim_has_end_time(claim: dict[str, typing.Any]) -> bool:
+    """Claim has an end time (P582) qualifier."""
+    return "qualifiers" in claim and "P582" in claim["qualifiers"]
+
+
+def get_en_value(
+    entity: Entity, what: Literal["label"] | Literal["description"]
+) -> str:
+    """Get label or description in English."""
+    src = entity[what + "s"]
+    return (
+        typing.cast(str, src["en"]["value"]) if "en" in src else f"[no English {what}]"
+    )
+
+
+class Item(TypedDict, total=False):
+    """Item."""
+
+    qid: Required[str]
+    item_id: int | None
+    link: str
+    label: Required[str]
+    description: str | None
+    img: str | None
+    img_url: str
+    osm_way: str | None
+    osm_relation: str | None
+
+
+def optional_value(row: QueryRow, key: str) -> str | None:
+    return row[key]["value"] if key in row else None
+
+
+def row_to_item(row: QueryRow) -> Item:
+    """Convert WDQS row to Item."""
+    uri = row["item"]["value"]
+    qid = uri.rpartition("/")[-1]
+
+    try:
+        filename = commons.commons_uri_to_filename(row["img"]["value"])
+    except KeyError:
+        filename = None
+
+    return {
+        "qid": qid,
+        "item_id": int(qid[1:]),
+        "label": row["itemLabel"]["value"],
+        "description": optional_value(row, "itemDescription"),
+        "img": filename,
+        "osm_way": optional_value(row, "osmWay"),
+        "osm_relation": optional_value(row, "osmRel"),
+    }
+
+
+def run_query_with_cache(query: str) -> list[QueryRow]:
+    """Run query and cache results."""
+    md5_query = md5sum(query)
+    return run_query(query, name=md5_query)
+
+
+def items_from_query(query: str, qid: str) -> list[Item]:
+    """Run query and return items."""
+    query = query.replace("START", qid)
+    return [row_to_item(row) for row in run_query_with_cache(query)]
+
+
+def located_in_admin_hierachy(qid: str) -> list[Item]:
+    return items_from_query(located_in_admin_hierachy_query, qid)
+
+
+def located_in(qid: str) -> list[Item]:
+    country_qid = get_country_for_item(qid)
+    admin_area_types = admin_area_types_for_country(country_qid)
+
+    type_list = [i["qid"] for i in admin_area_types]
+    type_values = " ".join(f"wd:{type_qid}" for type_qid in type_list)
+    types = "VALUES ?type {" + type_values + "} .\n?item wdt:P31 ?type .\n"
+    query = located_in_query.replace("TYPES", types).replace("START", qid)
+
+    return [row_to_item(row) for row in run_query_with_cache(query)]
+
+
+def admin_area_types_for_country(qid: str) -> list[Item]:
+    return items_from_query(admin_area_types_for_country_query, qid)
+
+
+def get_country_for_item(qid: str) -> str:
+    """Get country for item."""
+    entity = get_entity_with_cache(qid)
+    assert entity
+
+    p17_qid: str = entity["claims"]["P17"][0]["mainsnak"]["datavalue"]["value"]["id"]
+    return p17_qid
+
+
+def first_level_subdivision(country_qid: str) -> list[Item]:
+    """First level areas in country."""
+    query = first_level_query.replace("COUNTRY", country_qid)
+    items: list[Item] = [row_to_item(row) for row in run_query_with_cache(query)]
+
+    return items
+
+
+def get_countries(continent_qid: str) -> list[Item]:
+    """Get the list of countries in the given continent."""
+    query = countries_in_continent_query.replace("CONTINENT", continent_qid)
+    items: list[Item] = [row_to_item(row) for row in run_query_with_cache(query)]
+
+    return items
+
+
+def property_first_value(entity: Entity, pid: str) -> str | None:
+    return (
+        typing.cast(str, entity["claims"][pid][0]["mainsnak"]["datavalue"]["value"])
+        if pid in entity["claims"]
+        else None
+    )
+
+
+def process_entity(entity: Entity) -> Item:
+    """Process entity into item."""
+    return {
+        "qid": entity["id"],
+        "label": get_en_value(entity, "label"),
+        "description": get_en_value(entity, "description"),
+        "osm_way": property_first_value(entity, "P10689"),
+        "osm_relation": property_first_value(entity, "P402"),
+    }

@@ -9,6 +9,7 @@ CallParams = dict[str, str | int]
 class Entity(typing.TypedDict):
     """Wikidata Entity."""
 
+    id: str
     labels: dict[str, typing.Any]
     descriptions: dict[str, typing.Any]
     claims: dict[str, typing.Any]

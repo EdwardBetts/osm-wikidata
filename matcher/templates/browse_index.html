@@ -6,6 +6,28 @@
 <div class="container my-2">
   <h1>Continents</h1>
 
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+
+  {% for row in items %}
+  <div class="col">
+    <div class="card m-2 p-2">
+      <a href="{{ row.link }}">
+      <img src="{{ row.img_url }}" class="card-img-top">
+      </a>
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{{ row.link }}">
+          {{ row.label }} ({{ row.qid }})
+          </a>
+        </h5>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  </div>
+
+
+  {#
   {% for item in items %}
     {% set browse_url = url_for('browse_page', item_id=item.qid[1:]) %}
     <div>
@@ -17,6 +39,7 @@
       <a href="https://wikidata.org/wiki/{{ item.qid }}">view on Wikidata</a>
     </div>
   {% endfor %}
+  #}
 
 </div>
 {% endblock %}

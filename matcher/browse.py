@@ -1,11 +1,12 @@
 """Support functions for browse interface."""
 
+import collections
 import json
 import os
 import typing
 from datetime import datetime
 from time import time
-from typing import TypedDict
+from typing import Required, TypedDict
 
 import flask
 
@@ -21,6 +22,26 @@ from . import (
 )
 from .model import IsA, WikidataItem
 from .place import Place
+
+
+class Item(TypedDict, total=False):
+    """Item."""
+
+    qid: Required[str]
+    item_id: int | None
+    link: str
+    label: Required[str]
+    description: str | None
+    img: str | None
+    img_url: str
+    osm_way: str | None
+    osm_relation: str | None
+
+
+class Continent(Item):
+    """Dict to represent a continent."""
+
+    country_count: int
 
 
 def place_via_nominatim(
@@ -381,67 +402,49 @@ class BrowseDetail:
         self.former_places = [row for row in self.rows if set(row["isa"]) & former_type]
 
 
-class Continent(TypedDict):
-    """Dict to represent a continent."""
-
-    label: str
-    description: str
-    country_count: int
-    qid: str
-    banner: str | None
-    banner_url: str | None
-
-
-def row_to_continent_dict(row: wikidata.QueryRow) -> Continent:
-    """Convert a WDQS row into a contient item."""
-    qid = wikidata.wd_to_qid(row["continent"])
-    assert qid
-    item: Continent = {
-        "label": row["continentLabel"]["value"],
-        "description": row["continentDescription"]["value"],
-        "country_count": row["count"]["value"],
-        "qid": qid,
-        "banner": None,
-        "banner_url": None,
-    }
-    return item
-
-
-def get_banner_images(items: list[Continent]) -> None:
-    """Add banner URL to items."""
-    banner_filenames = []
+def add_image_urls(items: collections.abc.Sequence[Item]) -> None:
+    """Add image URL to items."""
+    img_filenames: list[str] = [item["img"] for item in items if item.get("img")]
+    images = commons.image_detail(img_filenames)
     for item in items:
-        if banner := item.get("banner"):
-            banner_filenames.append(banner)
-
-    images = commons.image_detail(banner_filenames)
-    for item in items:
-        banner = item.get("banner")
-        item["banner_url"] = images[banner]["url"] if banner else None
+        img = item.get("img")
+        if img:
+            item["img_url"] = images[img]["url"]
 
 
-def rows_to_item_list(rows: list[wikidata.QueryRow]) -> list[Continent]:
-    """List of WDQS rows to item list."""
-    items = []
-    for row in rows:
-        item = row_to_continent_dict(row)
-        item["banner"] = None
-        try:
-            filename = commons.commons_uri_to_filename(row["banner"]["value"])
-            item["banner"] = filename
-        except KeyError:
-            pass
-        items.append(item)
-
-    return items
+override_locator_map = {"Q538": "Oceania (centered orthographic projection).svg"}
 
 
 def get_continents() -> list[Continent]:
-    """Return details of the continents."""
+    """Return a list of continents."""
     query = wikidata.continents_with_country_count_query
     rows = wikidata.run_query(query)
-    items = rows_to_item_list(rows)
+    items = []
+    for row in rows:
+        countries = int(row["count"]["value"])
+        if countries < 2:
+            continue
+        uri = row["continent"]["value"]
+        qid = uri.rpartition("/")[-1]
 
-    get_banner_images(items)
+        if qid in override_locator_map:
+            filename = override_locator_map[qid]
+        else:
+            try:
+                filename = commons.commons_uri_to_filename(row["img"]["value"])
+                print(filename)
+            except KeyError:
+                filename = None
+
+        item: Continent = {
+            "qid": qid,
+            "label": row["continentLabel"]["value"],
+            "description": row["continentDescription"]["value"],
+            "country_count": countries,
+            "img": filename,
+        }
+        items.append(item)
+
+    add_image_urls(items)
 
     return items

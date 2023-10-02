@@ -1,6 +1,9 @@
+import json
+import os
 import time
 import typing
 
+import flask
 import requests
 import requests.exceptions
 import simplejson.errors
@@ -124,3 +127,46 @@ def get_entities(ids: list[str], attempts: int = 5) -> list[Entity]:
                 raise QueryError(params, r)
 
     return []
+
+
+def get_entity_with_cache(qid: str) -> Entity:
+    """Get an item from Wikidata."""
+    cache_dir = flask.current_app.config["CACHE_DIR"]
+    cache_filename = os.path.join(cache_dir, qid + ".json")
+    entity: Entity
+    if os.path.exists(cache_filename):
+        entity = json.load(open(cache_filename))
+        return entity
+
+    r = api_call({"action": "wbgetentities", "ids": qid})
+    entity = r.json()["entities"][qid]
+    with open(cache_filename, "w") as f:
+        json.dump(entity, f, indent=2)
+    return entity
+
+
+def get_entities_with_cache(qids: list[str]) -> list[Entity]:
+    """Get an item from Wikidata."""
+    items: list[Entity] = []
+    missing: list[str] = []
+    cache_dir = flask.current_app.config["CACHE_DIR"]
+    for qid in qids:
+        cache_filename = os.path.join(cache_dir, qid + ".json")
+        if os.path.exists(cache_filename):
+            entity = json.load(open(cache_filename))
+            items.append(entity)
+        else:
+            missing.append(qid)
+
+    for cur in chunk(missing, 50):
+        r = api_call({"action": "wbgetentities", "ids": "|".join(cur)})
+        reply = r.json()
+        if "entities" not in reply:
+            print(json.dumps(reply, indent=2))
+        assert "entities" in reply
+        for qid, entity in reply["entities"].items():
+            cache_filename = os.path.join(cache_dir, qid + ".json")
+            with open(cache_filename, "w") as f:
+                json.dump(entity, f, indent=2)
+            items.append(entity)
+    return items

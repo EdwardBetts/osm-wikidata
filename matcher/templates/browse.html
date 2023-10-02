@@ -1,163 +1,54 @@
-{% from "macro.html" import place_box %}
 {% extends "base.html" %}
 
-{% block title %}Browse {{ name }} ({{ qid }}){% endblock %}
-
-{%- macro sort_link(key, label) -%}
-{%- if request.args.sort == key -%}
-  <b>{{ label }}</b>
-{%- else -%}
-  <a href="{{ set_url_args(sort=key) }}">{{ label }}</a>
-{%- endif -%}
-{%- endmacro -%}
-
-{% macro lang_label(lang) %}
-{{- lang.local -}}
-{%- if lang.local != lang.en %} ({{ lang.en }}){%- endif -%}
-{% endmacro %}
-
-{% macro place_table(rows) %}
-<table class="table">
-<thead>
-<tr>
-  <th>place</th>
-  <th>matcher</th>
-  <th>instance of</th>
-  <th class="text-right">area</th>
-  <th class="text-right">population</th>
-</tr>
-</thead>
-<tbody>
-{% for row in rows %}
-<tr>
-  <td><a href="{{set_url_args(item_id=row.item_id, lang=request.args.get('lang'))}}">
-      {{ row.label }}</a> ({{ row.qid }})
-  </td>
-  <td>
-    {% if not row.area or row.area < config.PLACE_MAX_AREA %}
-      <a href="{{ url_for('matcher_wikidata', item_id=row.item_id) }}">match</a><br>
-    {% else %}
-      too big for matcher
-    {% endif %}
-  </td>
-  <td>
-    {% for isa_qid in row.isa %}
-      {% set isa = isa_map[isa_qid] %}
-      <a href="https://wikidata.org/wiki/{{ isa_qid }}">
-        {{ isa.entity_label(lang=uselang) }}
-      </a> ({{ isa_qid }})
-      {% if not loop.last %}<br/>{% endif %}
-    {% endfor %}
-  </td>
-  <td class="text-right">{{ '{:,d}'.format(row.area) if row.area else 'missing' }}</td>
-  <td class="text-right">{{ '{:,d}'.format(row.population) if row.population else 'missing' }}</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{% endmacro %}
+{% block title %}{{ place.label }} ({{ place.qid }}){% endblock %}
 
 {% block content %}
 <div class="container my-2">
 <div class="row">
 <div class="col">
+    <div>
+      <h1>{{ self.title() }}</h1>
+      <p><a href="https://wikidata.org/wiki/{{ place.qid }}">Wikidata</a></p>
+      <div><a href="{{ url_for('matcher_wikidata', item_id=place.item_id) }}" class="btn btn-primary my-1">match</a><br>
+    </div>
 
-<h1>{{ name }} <small>({{ qid }})</small></h1>
-{% if place %}
-  {{ place_box(place) }}
-{% endif %}
+    <div>
+    <a href="{{ url_for("browse_index") }}">Earth</a> &rarr;
 
-{% if banner %}
-  <div>
-    <img src="{{ banner.url }}" class="img-fluid w-100" />
-  </div>
-{% endif %}
-
-{% if description %}
-  <p>{{ description }}</p>
-{% endif %}
-
-<div class="mt-2">
-<ul>
-  <li>View <a href="https://www.wikidata.org/wiki/{{ qid }}">
-      {{ name }} ({{ qid }}) on Wikidata</a></li>
-
-{% if languages %}
-  <li>Language:
-  {% for lang in languages %}
-    {%- if lang.code == uselang -%}
-      <b>{{ lang_label(lang) }}</b>
-    {%- elif lang.code -%}
-      <a href="{{ set_url_args(lang=lang.code) }}" class="text-nowrap">{{ lang_label(lang) }}</a>
-    {%- else -%}
-      {{- lang_label(lang) -}}
-    {%- endif -%}
-    {%- if loop.revindex == 2 %} or {% elif not loop.last %}, {% endif %}
-  {%- endfor -%}
-  </li>
-{% endif %}
-
-{% if current_places %}
-
-  <li>Sort by:
-    {{ sort_link('label', 'name') -}},
-    {{ sort_link('area', 'area') -}},
-    {{ sort_link('population', 'population') }} or
-    {{ sort_link('qid', 'Wikidata ID') }}
-  </li>
-{% endif %}
-
-</ul>
-</div>
-
-{% if current_places %}
-  {{ place_table(current_places) }}
-{% else %}
-  <p>No subregions were found.</p>
-{% endif %}
-
-{% if extra_rows %}
-  <h3>{{ extra_type_label }}</h3>
-{{ place_table(extra_rows) }}
-{% endif %}
-
-{% if former_places %}
-<h3>former places</h3>
-{{ place_table(former_places) }}
-{% endif %}
+    {% for continent in continents %}
+    <a href="{{ url_for("browse_page", item_id=continent.item_id) }}">{{ continent.label }}</a>
+    {% if not loop.last %}&amp;{% endif %}
+    {% endfor %}
+    {% if continents %} &rarr; {% endif %}
+    {% for up in up_items %}
+    <a href="{{ url_for("browse_page", item_id=up.item_id) }}">{{ up.label }}</a> &rarr;
+    {% endfor %}
+    {{ place.label }}
+    </div>
 
 
-{% if timing %}
-<hr/>
-<p>
-Page took {{ '%.2f' | format(timing[-1][1]) }} seconds to render.
-<a data-toggle="collapse" href="#collapseTiming">[toggle details]</a>
-</p>
 
-<div class="collapse" id="collapseTiming">
-  <table class="table w-auto">
-    <thead>
-      <tr>
-        <th class="text-right">name</th>
-        <th class="text-right">since start</th>
-        <th class="text-right">delta</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for name, seconds in timing %}
-        <tr>
-          <td class="text-right">{{ name }}</td>
-          <td class="text-right">{{ '%.2f' | format(seconds) }}</td>
-          {% if not loop.first %}
-          <td class="text-right">{{ '%.2f' | format(seconds - loop.previtem[1]) }}</td>
-          {% endif %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% endif %}
+    <div>{{ items | count }} areas</div>
 
+    <div>
+    {% for item in items %}
+      <div>
+        <a href="{{ item.link }}">{{ item.label }}</a> ({{ item.qid }}) &mdash;
+        {{ item.description }}
+        <a href="https://wikidata.org/wiki/{{ item.qid }}">wikidata</a>
+        {% if item.osm_way %}
+        <a href="https://www.openstreetmap.org/way/{{ item.osm_way }}">OSM way</a>
+        {% endif %}
+        {% if item.osm_relation %}
+        <a href="https://www.openstreetmap.org/relation/{{ item.osm_relation }}">
+          OSM relation
+        </a>
+        {% endif %}
+        <a href="{{ url_for('matcher_wikidata', item_id=item.item_id) }}" class="btn btn-primary btn-sm my-1">match</a><br>
+      </div>
+    {% endfor %}
+    </div>
+    <p class="mt-2">Page took {{ "{:.1f}".format(query_time) }} seconds to render.</p>
 </div>
 </div>
 </div>
