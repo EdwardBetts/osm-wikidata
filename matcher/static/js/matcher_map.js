@@ -41,7 +41,9 @@ layer = L.geoJSON(chunk_geojson);
 
 layer.addTo(map);
 map.fitBounds(layer.getBounds());
-var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+var tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+});
 tiles.addTo(map);
 
 function add_pin(item) {
