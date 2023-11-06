@@ -376,12 +376,12 @@ Change comment: "<em>{{ obj.comment }}</em>"
     </div>
   </div>
   <div v-if="authenticated && items.length > 0">
-  <button class="btn btn-primary">add wikidata tags to OpenStreetMap</button>
+  <button class="btn btn-primary">Add wikidata tags to OpenStreetMap</button>
   (Don't worry, there's a confirmation page)
   </div>
 
   <p v-if="!authenticated && items.length > 0">
-    <a class="btn btn-primary" :href="login_url">login to upload wikidata tags</a>
+    <a class="btn btn-primary" :href="login_url">Login to upload wikidata tags</a>
   </p>
 
   </template>
