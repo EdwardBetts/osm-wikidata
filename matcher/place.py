@@ -82,7 +82,7 @@ skip_tags = {
 
 
 def drop_building_tag(tags: set[str]) -> None:
-    """Drop builing tags.
+    """Drop building tags.
 
     Building is a very generic tag so remove it if we have more specific search criteria
     """

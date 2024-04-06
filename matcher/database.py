@@ -26,7 +26,7 @@ def get_tables() -> list[str]:
 
 
 def init_app(app: flask.Flask, echo: bool = False) -> None:
-    """Intialise application."""
+    """Initialise application."""
     db_url = app.config["DB_URL"]
     session.configure(bind=get_engine(db_url, echo=echo))
 

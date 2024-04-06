@@ -578,7 +578,7 @@ def strip_place_name(name: str, place_name: str) -> str:
 
 
 def more_place_name_varients(place_names: Collection[str]) -> set[str]:
-    """Find more place name varients."""
+    """Find more place name variants."""
     place_names = set(place_names)
     for n in set(place_names):
         for e in "city", "county":

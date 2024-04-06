@@ -1129,7 +1129,7 @@ class ItemCandidate(Base):
     #
     @property
     def key(self) -> str:
-        """Genereate a unique key for this item candidate."""
+        """Generate a unique key for this item candidate."""
         return f"Q{self.item_id}-{self.osm_type:s}-{self.osm_id:d}"
 
     def get_match(self):
