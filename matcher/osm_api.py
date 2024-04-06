@@ -22,7 +22,7 @@ def get_changeset(changeset_id: int) -> lxml.etree._Element:
     r = requests.get(url)
     r.raise_for_status()
     open(filename, "wb").write(r.content)
-    sleep(1)
+    sleep(1)  # FIXME is this required?
     return lxml.etree.fromstring(r.content)
 
 
