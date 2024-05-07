@@ -1,7 +1,10 @@
-from flask import Blueprint, redirect, render_template, g, request, flash, current_app
+import re
+
+import flask
+from flask import Blueprint, flash, g, redirect, render_template, request
+
 from . import database, mail, utils
 from .place import Place
-import re
 
 re_point = re.compile(r"^Point\((-?[0-9.]+) (-?[0-9.]+)\)$")
 
@@ -9,8 +12,8 @@ matcher_blueprint = Blueprint("matcher", __name__)
 
 
 def announce_matcher_progress(place):
-    """ Send mail to announce when somebody runs the matcher. """
-    if current_app.env == "development":
+    """Send mail to announce when somebody runs the matcher."""
+    if flask.current_app.config["DEBUG"]:
         return
     if g.user.is_authenticated:
         user = g.user.username
