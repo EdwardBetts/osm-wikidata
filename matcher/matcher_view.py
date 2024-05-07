@@ -12,7 +12,7 @@ re_point = re.compile(r"^Point\((-?[0-9.]+) (-?[0-9.]+)\)$")
 matcher_blueprint = flask.Blueprint("matcher", __name__)
 
 
-def announce_matcher_progress(place):
+def announce_matcher_progress(place: Place) -> None:
     """Send mail to announce when somebody runs the matcher."""
     if flask.current_app.config["DEBUG"]:
         return
