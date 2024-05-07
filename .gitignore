@@ -4,3 +4,4 @@ cache
 matcher/static/bootstrap4
 __pycache__
 .webassets-cache
+.mypy_cache
