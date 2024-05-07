@@ -298,7 +298,8 @@ class Place(Base):
             and not self.too_complex
         )
 
-    def update_from_nominatim(self, hit):
+    def update_from_nominatim(self, hit: dict[str, typing.Any]) -> None:
+        """Update place data from nominatim."""
         assert "error" not in hit
         if self.place_id != int(hit["place_id"]):
             print((self.place_id, hit["place_id"]))
@@ -572,17 +573,19 @@ class Place(Base):
         overpass_dir = current_app.config["OVERPASS_DIR"]
         return os.path.join(overpass_dir, "{}.xml".format(self.place_id))
 
-    def is_overpass_filename(self, f):
-        """Does the overpass filename belongs to this place."""
+    def is_overpass_filename(self, f: str) -> bool:
+        """Overpass filename belongs to this place."""
         place_id = str(self.place_id)
         return f == place_id + ".xml" or f.startswith(place_id + "_")
 
-    def delete_overpass(self):
+    def delete_overpass(self) -> None:
+        """Delete overpass cache."""
         for f in os.scandir(current_app.config["OVERPASS_DIR"]):
             if self.is_overpass_filename(f.name):
                 os.remove(f.path)
 
-    def clean_up(self):
+    def clean_up(self) -> None:
+        """Clean up after running matcher."""
         if current_app.config.get("DO_CLEAN_UP") is False:
             return
         place_id = self.place_id
@@ -673,7 +676,8 @@ class Place(Base):
     def items_with_instanceof(self):
         return [item for item in self.items if item.instanceof()]
 
-    def osm2pgsql_cmd(self, filename=None):
+    def osm2pgsql_cmd(self, filename: str | None = None) -> list[str]:
+        """Get osm2pgsql command."""
         if filename is None:
             filename = self.overpass_filename
         style = os.path.join(current_app.config["DATA_DIR"], "matcher.style")
@@ -1068,7 +1072,8 @@ class Place(Base):
         except IndexError:
             return None
 
-    def reset_all_items_to_not_done(self):
+    def reset_all_items_to_not_done(self) -> None:
+        """Reset all items to not done."""
         place_items = (
             PlaceItem.query.join(Item)
             .filter(
@@ -1166,7 +1171,7 @@ class Place(Base):
 
         conn.close()
 
-    def load_isa(self, progress=None):
+    def load_isa(self, progress=None) -> None:
         if progress is None:
 
             def progress(msg):
@@ -1528,11 +1533,12 @@ class Place(Base):
         out["items"] = items
         return out
 
-    def refresh_nominatim(self):
+    def refresh_nominatim(self) -> None:
+        """Refresh nominatim for this place."""
         try:
             hit = nominatim.reverse(self.osm_type, self.osm_id)
         except nominatim.SearchError:
-            return  # FIXME: mail admin
+            return None  # FIXME: mail admin
         self.update_from_nominatim(hit)
         session.commit()
 

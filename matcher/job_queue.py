@@ -84,7 +84,8 @@ class MatcherJob(threading.Thread):
         self.job_manager = job_manager  # dependency injection
         self.log_file = None
 
-    def end_job(self):
+    def end_job(self) -> None:
+        """End the job."""
         if self.log_file:
             self.log_file.close()
         self.job_manager.end_job(self.osm_type, self.osm_id)
@@ -98,12 +99,15 @@ class MatcherJob(threading.Thread):
         """Job is stopping."""
         return self._stop_event.is_set()
 
-    def check_for_stop(self):
+    def check_for_stop(self) -> None:
+        """Check if job is meant to stop."""
         if self._stop_event.is_set():
             raise MatcherJobStopped
 
-    def drop_database_tables(self):
+    def drop_database_tables(self) -> None:
+        """Drop database tables."""
         engine = database.session.bind
+        assert self.place
         gis_tables = self.place.gis_tables
         for t in gis_tables & set(database.get_tables()):
             engine.execute(f"drop table if exists {t}")
@@ -112,7 +116,9 @@ class MatcherJob(threading.Thread):
         # make sure all GIS tables for this place have been removed
         assert not self.place.gis_tables & set(database.get_tables())
 
-    def prepare_for_refresh(self):
+    def prepare_for_refresh(self) -> None:
+        """Prepare for refresh."""
+        assert self.place
         self.place.delete_overpass()
         self.place.reset_all_items_to_not_done()
         self.drop_database_tables()
@@ -132,8 +138,11 @@ class MatcherJob(threading.Thread):
         mail.send_mail("Overpass error", remark.text)
         return True  # FIXME report error to admin
 
-    def matcher(self):
+    def matcher(self) -> None:
+        """Run matcher."""
+        assert self.place
         place = self.place
+
         self.get_items()
         db_items = {item.qid: item for item in self.place.items}
         item_count = len(db_items)
@@ -157,7 +166,7 @@ class MatcherJob(threading.Thread):
         assert overpass_good
         self.check_for_stop()
         if any(self.overpass_chunk_error(chunk) for chunk in chunks):
-            return  # FIXME report error to admin
+            return None  # FIXME report error to admin
 
         if len(chunks) > 1:
             self.merge_chunks(chunks)
@@ -230,21 +239,24 @@ class MatcherJob(threading.Thread):
 
         print("end thread:", self.name)
 
-    def send(self, msg_type, **data):
+    def send(self, msg_type: str, **data: typing.Any) -> None:
+        """Send message."""
         data["time"] = time() - self.t0
         data["type"] = msg_type
         for status_queue in self.subscribers.values():
             status_queue.put(data)
 
         if not self.log_file:
-            return
+            return None
         print(json.dumps(data), file=self.log_file)
 
-    def status(self, msg):
+    def status(self, msg: str) -> None:
+        """Send status update."""
         if msg:
             self.send("msg", msg=msg)
 
-    def error(self, msg):
+    def error(self, msg: str) -> None:
+        """Send error message."""
         self.send("error", msg=msg)
 
     def item_line(self, msg):
@@ -252,7 +264,8 @@ class MatcherJob(threading.Thread):
             self.send("item", msg=msg)
 
     @property
-    def subscriber_count(self):
+    def subscriber_count(self) -> int:
+        """Return subscriber count."""
         return len(self.subscribers)
 
     def subscribe(self, thread_name, status_queue):
@@ -440,7 +453,9 @@ class MatcherJob(threading.Thread):
         if msg:
             self.status(msg)
 
-    def run_osm2pgsql(self):
+    def run_osm2pgsql(self) -> None:
+        """Run osm2pgsql."""
+        assert self.place
         self.status("running osm2pgsql")
         cmd = self.place.osm2pgsql_cmd()
         env = {"PGPASSWORD": app.config["DB_PASS"]}
@@ -448,16 +463,22 @@ class MatcherJob(threading.Thread):
         print("osm2pgsql done")
         self.status("osm2pgsql done")
 
-    def load_isa(self):
-        def progress(msg):
+    def load_isa(self) -> None:
+        """Load IsA data."""
+
+        def progress(msg: str) -> None:
+            """Progress update."""
             self.status(msg)
             self.check_for_stop()
 
+        assert self.place
         self.status("downloading 'instance of' data for Wikidata items")
         self.place.load_isa(progress)
         self.status("Wikidata 'instance of' download complete")
 
-    def run_matcher(self):
+    def run_matcher(self) -> None:
+        """Run the matcher."""
+
         def progress(candidates, item):
             num = len(candidates)
             noun = "candidate" if num == 1 else "candidates"
@@ -466,6 +487,7 @@ class MatcherJob(threading.Thread):
             self.item_line(msg)
             self.check_for_stop()
 
+        assert self.place
         self.place.run_matcher(progress=progress, want_isa=self.want_isa)
 
 
