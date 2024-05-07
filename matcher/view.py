@@ -1761,14 +1761,16 @@ def match_detail(item_id, osm_type, osm_id):
     )
 
 
-def build_item_page(wikidata_id, item):
+def build_item_page(wikidata_id: int, item: Item | None) -> str:
+    """Build item page."""
     qid = "Q" + str(wikidata_id)
     if item and item.entity:
         entity = wikidata.WikidataItem(qid, item.entity)
     else:
         entity = wikidata.WikidataItem.retrieve_item(qid)
 
-    if not entity:
+    # FIXME: 2024-05-03 Edward added code to return 404 if item not found
+    if not entity or not item:
         abort(404)
 
     entity.report_broken_wikidata_osm_tags()
@@ -1864,7 +1866,8 @@ def build_item_page(wikidata_id, item):
 
 
 @app.route("/Q<int:wikidata_id>")
-def item_page(wikidata_id):
+def item_page(wikidata_id: int) -> str:
+    """Item page."""
     check_still_auth()
     item = Item.query.get(wikidata_id)
     if item:

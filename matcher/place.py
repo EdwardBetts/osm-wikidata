@@ -241,7 +241,8 @@ class Place(Base):
         return self.get_address_key("country")
 
     @classmethod
-    def get_or_abort(cls, osm_type, osm_id):
+    def get_or_abort(cls, osm_type: str, osm_id: int) -> "Place":
+        """Get matching place or abort with 404 if not found."""
         place = cls.get_by_osm(osm_type, osm_id)
         if place:
             return place

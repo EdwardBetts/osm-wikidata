@@ -3,6 +3,7 @@
 import re
 
 import flask
+import werkzeug
 
 from . import database, mail, utils
 from .place import Place
@@ -12,7 +13,7 @@ re_point = re.compile(r"^Point\((-?[0-9.]+) (-?[0-9.]+)\)$")
 matcher_blueprint = flask.Blueprint("matcher", __name__)
 
 
-def announce_matcher_progress(place):
+def announce_matcher_progress(place: Place) -> None:
     """Send mail to announce when somebody runs the matcher."""
     if flask.current_app.config["DEBUG"]:
         return
@@ -38,7 +39,8 @@ area: {mail.get_area(place)}
 
 
 @matcher_blueprint.route("/matcher/<osm_type>/<int:osm_id>")
-def matcher_progress(osm_type, osm_id):
+def matcher_progress(osm_type: str, osm_id: int) -> werkzeug.wrappers.Response | str:
+    """Matcher progress page."""
     place = Place.get_or_abort(osm_type, osm_id)
     if place.state == "ready":
         return flask.redirect(place.candidates_url())
@@ -62,7 +64,8 @@ def matcher_progress(osm_type, osm_id):
 
 
 @matcher_blueprint.route("/matcher/<osm_type>/<int:osm_id>/done")
-def matcher_done(osm_type, osm_id):
+def matcher_done(osm_type: str, osm_id: int) -> werkzeug.wrappers.Response | str:
+    """Matcher done redirect."""
     place = Place.get_or_abort(osm_type, osm_id)
     if place.too_big:
         return flask.render_template("too_big.html", place=place)
@@ -76,7 +79,8 @@ def matcher_done(osm_type, osm_id):
 
 
 @matcher_blueprint.route("/replay/<osm_type>/<int:osm_id>")
-def replay(osm_type, osm_id):
+def replay(osm_type: str, osm_id: int) -> str:
+    """Replay matcher run."""
     place = Place.get_or_abort(osm_type, osm_id)
 
     replay_log = True

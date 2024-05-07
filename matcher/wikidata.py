@@ -818,7 +818,8 @@ def run_query_raw(
     raise QueryError(query, r)
 
 
-def flatten_criteria(items):
+def flatten_criteria(items: set[str]) -> set[str]:
+    """Flatten the match criteria."""
     start = {"Tag:" + i[4:] + "=" for i in items if i.startswith("Key:")}
     return {i for i in items if not any(i.startswith(s) for s in start)}
 
@@ -1003,7 +1004,11 @@ def names_from_entity(entity: Entity, skip_lang=None):
     return ret
 
 
-def parse_osm_keys(rows):
+StrDict = dict[str, typing.Any]
+
+
+def parse_osm_keys(rows: list[StrDict]) -> dict[str, StrDict]:
+    """Parse OSM keys."""
     start = "http://www.wikidata.org/entity/"
     items = {}
     for row in rows:
@@ -1517,13 +1522,14 @@ class WikidataItem:
         if nrhp.isdigit():
             return nrhp
 
-    def get_oql(self, criteria, radius):
+    def get_oql(self, criteria: set[str], radius: int | None) -> str | None:
+        """Get Overpass query."""
         nrhp = self.nrhp
         if not criteria:
-            return
+            return None
         lat, lon = self.coords
         if lat is None or lon is None:
-            return
+            return None
 
         osm_filter = "around:{},{:.5f},{:.5f}".format(radius, lat, lon)
 
@@ -1584,7 +1590,7 @@ class WikidataItem:
                 if new and new not in wikidata_names:
                     wikidata_names[new] = name_values
 
-    def osm_key_query(self):
+    def osm_key_query(self) -> str:
         return render_template_string(wikidata_subclass_osm_tags, qid=self.qid)
 
     @property
@@ -1665,7 +1671,8 @@ SELECT DISTINCT ?code WHERE {
         """is this a proposed building or structure (Q811683)?"""
         return "Q811683" in self.is_a
 
-    def criteria(self):
+    def criteria(self) -> set[str]:
+        """Match criteria set."""
         items = {row["tag"]["value"] for row in self.osm_keys}
         for is_a in self.is_a:
             items |= set(extra_keys.get(is_a, []))
@@ -1682,7 +1689,8 @@ SELECT DISTINCT ?code WHERE {
         items.discard("Key:room")
         return items
 
-    def report_broken_wikidata_osm_tags(self):
+    def report_broken_wikidata_osm_tags(self) -> None:
+        """Report broken wikidata OSM tags."""
         start_allowed = ("Key", "Tag", "Role", "Relation")
         for row in self.osm_keys:
             value = row["tag"]["value"]
