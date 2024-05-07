@@ -1,3 +1,6 @@
+"""Job queue."""
+
+import collections
 import json
 import os.path
 import queue
@@ -5,6 +8,7 @@ import re
 import subprocess
 import threading
 import traceback
+import typing
 from datetime import datetime
 from time import time
 
@@ -17,11 +21,13 @@ from matcher.view import app
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
 
-def overpass_chunk_filename(chunk):
+def overpass_chunk_filename(chunk: dict[str, str]) -> str:
+    """Filename for overpass chunk."""
     return os.path.join(app.config["OVERPASS_DIR"], chunk["filename"])
 
 
-def error_in_overpass_chunk(filename):
+def error_in_overpass_chunk(filename: str) -> bool:
+    """Error present in overpass chunk."""
     return (
         os.path.getsize(filename) < 2000
         and "<remark> runtime error" in open(filename).read()
@@ -44,46 +50,6 @@ def build_item_list(items):
             item["tags"] = list(v["tags"])
         item_list.append(item)
     return item_list
-
-
-class JobManager:
-    def __init__(self):
-        self.active_jobs = {}
-        self.task_queue = queue.PriorityQueue()
-
-    def end_job(self, osm_type, osm_id):
-        del self.active_jobs[(osm_type, osm_id)]
-
-    def get_job(self, osm_type, osm_id):
-        return self.active_jobs.get((osm_type, osm_id))
-
-    def get_next_job(self):
-        return self.task_queue.get()
-
-    def new_job(self, osm_type, osm_id, **kwargs):
-        job = MatcherJob(osm_type, osm_id, job_manager=self, **kwargs)
-        self.active_jobs[(osm_type, osm_id)] = job
-        return job
-
-    def iter_jobs(self):
-        return (job for job in threading.enumerate() if isinstance(job, MatcherJob))
-
-    def stop_job(self, osm_type, osm_id):
-        for job in self.iter_jobs():
-            if job.osm_type == osm_type and job.osm_id == osm_id:
-                job.stop()
-
-    def job_list(self):
-        return [
-            {
-                "osm_id": job.osm_id,
-                "osm_type": job.osm_type,
-                "subscribers": job.subscriber_count,
-                "start": str(datetime.utcfromtimestamp(int(job.start_time))),
-                "stopping": job.stopping,
-            }
-            for job in self.iter_jobs()
-        ]
 
 
 class MatcherJobStopped(Exception):
@@ -123,11 +89,13 @@ class MatcherJob(threading.Thread):
             self.log_file.close()
         self.job_manager.end_job(self.osm_type, self.osm_id)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop job."""
         self._stop_event.set()
 
     @property
-    def stopping(self):
+    def stopping(self) -> bool:
+        """Job is stopping."""
         return self._stop_event.is_set()
 
     def check_for_stop(self):
@@ -499,3 +467,53 @@ class MatcherJob(threading.Thread):
             self.check_for_stop()
 
         self.place.run_matcher(progress=progress, want_isa=self.want_isa)
+
+
+class JobManager:
+    """Job manager."""
+
+    def __init__(self) -> None:
+        """Init."""
+        self.active_jobs: dict[tuple[str, int], MatcherJob] = {}
+        self.task_queue: queue.PriorityQueue[MatcherJob] = queue.PriorityQueue()
+
+    def end_job(self, osm_type: str, osm_id: int) -> None:
+        """End job."""
+        del self.active_jobs[(osm_type, osm_id)]
+
+    def get_job(self, osm_type: str, osm_id: int) -> MatcherJob | None:
+        """Get job."""
+        return self.active_jobs.get((osm_type, osm_id))
+
+    def get_next_job(self) -> MatcherJob:
+        """Get next job."""
+        return self.task_queue.get()
+
+    def new_job(self, osm_type: str, osm_id: int, **kwargs: typing.Any) -> MatcherJob:
+        """Add new job."""
+        job = MatcherJob(osm_type, osm_id, job_manager=self, **kwargs)
+        self.active_jobs[(osm_type, osm_id)] = job
+        return job
+
+    def iter_jobs(self) -> collections.abc.Iterator[MatcherJob]:
+        """Iterate through jobs."""
+        return (job for job in threading.enumerate() if isinstance(job, MatcherJob))
+
+    def stop_job(self, osm_type: str, osm_id: int) -> None:
+        """Stop given job."""
+        for job in self.iter_jobs():
+            if job.osm_type == osm_type and job.osm_id == osm_id:
+                job.stop()
+
+    def job_list(self) -> list[dict[str, typing.Any]]:
+        """Get job list."""
+        return [
+            {
+                "osm_id": job.osm_id,
+                "osm_type": job.osm_type,
+                "subscribers": job.subscriber_count,
+                "start": str(datetime.utcfromtimestamp(int(job.start_time))),
+                "stopping": job.stopping,
+            }
+            for job in self.iter_jobs()
+        ]
