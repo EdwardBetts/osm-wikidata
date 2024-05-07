@@ -21,7 +21,15 @@ from matcher.view import app
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
 
-def overpass_chunk_filename(chunk: dict[str, str]) -> str:
+class Chunk(typing.TypedDict):
+    """Chunk."""
+
+    filename: str
+    num: int
+    oql: str
+
+
+def overpass_chunk_filename(chunk: Chunk) -> str:
     """Filename for overpass chunk."""
     return os.path.join(app.config["OVERPASS_DIR"], chunk["filename"])
 
@@ -44,6 +52,7 @@ def build_item_list(items):
         m = re_point.match(v["location"])
         if not m:
             print(qid, label, enwiki, v["location"])
+        assert m
         lon, lat = map(float, m.groups())
         item = {"qid": qid, "label": label, "lat": lat, "lon": lon}
         if "tags" in v:
@@ -61,14 +70,15 @@ class MatcherJob(threading.Thread):
 
     def __init__(
         self,
-        osm_type,
-        osm_id,
-        job_manager=None,
-        user=None,
-        remote_addr=None,
-        user_agent=None,
-        want_isa=None,
-    ):
+        osm_type: str,
+        osm_id: int,
+        job_manager: "JobManager",
+        user: model.User | None = None,
+        remote_addr: str | None = None,
+        user_agent: str | None = None,
+        want_isa: set[str] | None = None,
+    ) -> None:
+        """Init."""
         super(MatcherJob, self).__init__()
         self.osm_type = osm_type
         self.osm_id = osm_id
@@ -88,6 +98,7 @@ class MatcherJob(threading.Thread):
         """End the job."""
         if self.log_file:
             self.log_file.close()
+        assert self.job_manager
         self.job_manager.end_job(self.osm_type, self.osm_id)
 
     def stop(self) -> None:
@@ -125,15 +136,17 @@ class MatcherJob(threading.Thread):
         self.place.refresh_nominatim()
         database.session.commit()
 
-    def overpass_chunk_error(self, chunk):
+    def overpass_chunk_error(self, chunk: Chunk) -> bool | None:
+        """Overpass chunk contains error."""
         if not chunk["oql"]:
-            return  # empty chunk
+            return None  # empty chunk
         filename = overpass_chunk_filename(chunk)
         if not error_in_overpass_chunk(filename):
-            return
+            return None
         self.check_for_stop()
         root = lxml.etree.parse(filename).getroot()
         remark = root.find(".//remark")
+        assert remark is not None and remark.text
         self.error("overpass: " + remark.text)
         mail.send_mail("Overpass error", remark.text)
         return True  # FIXME report error to admin
@@ -180,7 +193,8 @@ class MatcherJob(threading.Thread):
         self.check_for_stop()
         self.place.clean_up()
 
-    def run_in_app_context(self):
+    def run_in_app_context(self) -> None:
+        """Run matcher in app context."""
         self.place = Place.get_by_osm(self.osm_type, self.osm_id)
         if not self.place:
             self.send("not_found")
@@ -259,7 +273,8 @@ class MatcherJob(threading.Thread):
         """Send error message."""
         self.send("error", msg=msg)
 
-    def item_line(self, msg):
+    def item_line(self, msg: str) -> None:
+        """Item line."""
         if msg:
             self.send("item", msg=msg)
 
@@ -268,7 +283,8 @@ class MatcherJob(threading.Thread):
         """Return subscriber count."""
         return len(self.subscribers)
 
-    def subscribe(self, thread_name, status_queue):
+    def subscribe(self, thread_name: str, status_queue):
+        """Subscribe."""
         msg = {
             "time": time() - self.t0,
             "type": "connected",
@@ -278,10 +294,12 @@ class MatcherJob(threading.Thread):
         self.subscribers[thread_name] = status_queue
         return status_queue
 
-    def unsubscribe(self, thread_name):
+    def unsubscribe(self, thread_name: str) -> None:
+        """Unsubscribe."""
         del self.subscribers[thread_name]
 
     def wikidata_chunked(self, chunks):
+        assert self.place
         items = {}
         num = 0
         while chunks:
@@ -304,6 +322,7 @@ class MatcherJob(threading.Thread):
         return items
 
     def get_items(self):
+        assert self.place
         self.send("get_wikidata_items")
 
         if self.place.is_point:
@@ -329,9 +348,11 @@ class MatcherJob(threading.Thread):
         self.send("items_saved")
 
     def get_items_point(self):
+        assert self.place
         return self.place.point_wikidata_items()
 
     def get_items_bbox(self):
+        assert self.place
         ctx = app.test_request_context()
         ctx.push()  # to make url_for work
         place = self.place
@@ -366,6 +387,7 @@ class MatcherJob(threading.Thread):
             self.item_line(msg)
 
         print("getting wikidata item details")
+        assert self.place
         self.status("getting wikidata item details")
         for qid, entity in wikidata_api.entity_iter(db_items.keys()):
             item = db_items[qid]
@@ -379,12 +401,14 @@ class MatcherJob(threading.Thread):
         self.place.load_extracts(progress=extracts_progress)
         self.item_line("extracts loaded")
 
-    def report_empty_chunks(self, chunks):
+    def report_empty_chunks(self, chunks: list[Chunk]) -> None:
+        """Report empty chunks to user."""
         empty = [chunk["num"] for chunk in chunks if not chunk["oql"]]
         if empty:
             self.send("empty", empty=empty)
 
-    def overpass_request(self, chunks):
+    def overpass_request(self, chunks: list[Chunk]) -> bool:
+        assert self.place
         send_queue = queue.Queue()
 
         fields = ["place_id", "osm_id", "osm_type", "area"]
@@ -434,7 +458,10 @@ class MatcherJob(threading.Thread):
                 self.status("from network: " + repr(msg))
         return complete
 
-    def merge_chunks(self, chunks):
+    def merge_chunks(self, chunks: list[Chunk]) -> None:
+        """Merge chunks using osmium."""
+        assert self.place
+
         files = [
             os.path.join("overpass", chunk["filename"])
             for chunk in chunks
@@ -491,13 +518,16 @@ class MatcherJob(threading.Thread):
         self.place.run_matcher(progress=progress, want_isa=self.want_isa)
 
 
+Task = tuple[float, dict[str, typing.Any]]
+
+
 class JobManager:
     """Job manager."""
 
     def __init__(self) -> None:
         """Init."""
         self.active_jobs: dict[tuple[str, int], MatcherJob] = {}
-        self.task_queue: queue.PriorityQueue[MatcherJob] = queue.PriorityQueue()
+        self.task_queue: queue.PriorityQueue[Task] = queue.PriorityQueue()
 
     def end_job(self, osm_type: str, osm_id: int) -> None:
         """End job."""
