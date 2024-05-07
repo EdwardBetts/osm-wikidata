@@ -546,8 +546,8 @@ def is_address_node(osm_type: str, osm_tags: dict[str, str]) -> bool:
 def osm_is_stolperstein(osm_tags: dict[str, str]) -> bool:
     """OSM object is a Stolperstein."""
     return (
-        osm_tags["memorial:type"] == "stolperstein"
-        or osm_tags["memorial"] == "stolperstein"
+        osm_tags.get("memorial:type") == "stolperstein"
+        or osm_tags.get("memorial") == "stolperstein"
     )
 
 
