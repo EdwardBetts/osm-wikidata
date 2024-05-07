@@ -831,10 +831,11 @@ class Place(Base):
         else:
             return self.get_bbox_oql(buildings_special=False)
 
-    def candidates_url(self, **kwargs):
+    def candidates_url(self, **kwargs: typing.Any) -> str:
+        """URL of candidates page."""
         return self.place_url("candidates", **kwargs)
 
-    def place_url(self, endpoint: str, **kwargs) -> str:
+    def place_url(self, endpoint: str, **kwargs: typing.Any) -> str:
         """Flask URL for this place."""
         return url_for(endpoint, osm_type=self.osm_type, osm_id=self.osm_id, **kwargs)
 
