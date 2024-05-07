@@ -13,7 +13,7 @@ from time import sleep, time
 from typing import Any
 
 import flask
-import flask_login
+import flask_login  # type: ignore
 import jinja2
 import requests
 import sqlalchemy.exc
@@ -31,9 +31,8 @@ from flask import (
     session,
     url_for,
 )
-from jinja2.utils import markupsafe
 from lxml import etree
-from markupsafe import escape
+from markupsafe import Markup, escape
 from requests_oauthlib import OAuth2Session
 from sqlalchemy import distinct, func
 from sqlalchemy.orm.attributes import flag_modified
@@ -128,6 +127,7 @@ def set_url_args(**new_args):
     args.update(request.args)
     args.update(new_args)
     args = {k: v for k, v in args.items() if v is not None}
+    assert request.endpoint
     return url_for(request.endpoint, **args)
 
 
@@ -139,7 +139,7 @@ def newline_br(eval_ctx, value):
         for p in _paragraph_re.split(escape(value))
     )
     if eval_ctx.autoescape:
-        result = markupsafe.Markup(result)
+        result = Markup(result)
     return result
 
 
