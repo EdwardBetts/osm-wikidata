@@ -1,8 +1,12 @@
+"""OSM Oauth functions."""
+
 import json
+import typing
 from datetime import datetime
 from urllib.parse import urlencode
 
 import lxml.etree
+import requests
 from flask import current_app, g, session, url_for
 from requests_oauthlib import OAuth2Session
 
@@ -13,7 +17,8 @@ osm_api_base = "https://api.openstreetmap.org/api/0.6"
 scope = ["read_prefs", "write_api"]
 
 
-def get_session():
+def get_session() -> OAuth2Session:
+    """Get session."""
     token = session.get("oauth_token")
     if not token:
         user = g.user
@@ -30,14 +35,16 @@ def get_session():
     )
 
 
-def api_put_request(path, **kwargs):
+def api_put_request(path: str, **kwargs: typing.Any) -> requests.Response:
+    """Send OSM API PUT request."""
     oauth = get_session()
     return oauth.request(
         "PUT", osm_api_base + path, headers=user_agent_headers(), **kwargs
     )
 
 
-def api_request(path, **params):
+def api_request(path: str, **params: typing.Any) -> requests.Response:
+    """Send OSM API request."""
     url = osm_api_base + path
     if params:
         url += "?" + urlencode(params)
@@ -45,33 +52,41 @@ def api_request(path, **params):
     return oauth.get(url, timeout=4)
 
 
-def parse_iso_date(value):
+def parse_iso_date(value: str) -> datetime:
+    """Parse ISO date."""
     return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
 
 
-def parse_userinfo_call(xml):
+def parse_userinfo_call(xml: bytes) -> dict[str, typing.Any]:
+    """Parse userinfo call."""
     root = lxml.etree.fromstring(xml)
     user = root[0]
     img = user.find(".//img")
 
-    account_created = parse_iso_date(user.get("account_created"))
+    account_created_date = user.get("account_created")
+    assert account_created_date
+    account_created = parse_iso_date(account_created_date)
 
     assert user.tag == "user"
 
+    id_str = user.get("id")
+    assert id_str and isinstance(id_str, str)
+
     return {
         "account_created": account_created,
-        "id": int(user.get("id")),
+        "id": int(id_str),
         "username": user.get("display_name"),
         "description": user.findtext(".//description"),
         "img": (img.get("href") if img is not None else None),
     }
 
 
-def get_username():
+def get_username() -> str | None:
+    """Get username."""
     if "user_id" not in session:
-        return  # not authorized
+        return None  # not authorized
 
     user_id = session["user_id"]
 
     user = User.query.get(user_id)
-    return user.username
+    return typing.cast(str, user.username)
