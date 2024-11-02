@@ -722,7 +722,7 @@ def show_polygons(place_identifier):
 
     return
     num = "(-?[0-9.]+)"
-    re_box = re.compile(f"^BOX\({num} {num},{num} {num}\)$")
+    re_box = re.compile(rf"^BOX\({num} {num},{num} {num}\)$")
 
     # select ST_Dump(geom::geometry) as poly from place where osm_id=1543125
     stmt = (
