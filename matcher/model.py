@@ -1623,23 +1623,25 @@ class SpaceWarning(Base):
 
 
 class WikidataItem(Base):
+    """Wikidata item."""
+
     __tablename__ = "wikidata_item"
-    item_id = Column(Integer, primary_key=True, autoincrement=False)
-    qid = column_property("Q" + cast(item_id, String))
-    rev_id = Column(Integer, nullable=False)
+    item_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    qid: Mapped[str] = column_property("Q" + cast(item_id, String))
+    rev_id: Mapped[int] = mapped_column(nullable=False)
     entity = Column(postgresql.JSON)
 
     @classmethod
-    def get_and_update(cls, item_id: int) -> "WikidataItem":
+    def get_and_update(cls, item_id: int) -> typing.Self:
         """Get and update item."""
         qid = f"Q{item_id}"
 
-        existing = cls.query.get(item_id)
+        existing: typing.Self = cls.query.get(item_id)
         if existing:
             print("found existing")
             t0 = time()
             lastrevid = wikidata_api.get_lastrevid(qid)
-            print(f"get_lastrevid took: {time()-t0:.2f} seconds")
+            print(f"get_lastrevid took: {time() - t0:.2f} seconds")
             print((lastrevid, existing.rev_id, lastrevid == existing.rev_id))
             if lastrevid != existing.rev_id:
                 entity = wikidata_api.get_entity(qid)
@@ -1653,13 +1655,14 @@ class WikidataItem(Base):
         session.add(item)
         return item
 
-    def update(self):
+    def update(self) -> None:
+        """Update Wikidata item."""
         entity = wikidata_api.get_entity(self.qid)
         self.entity = entity
         self.rev_id = entity["lastrevid"]
 
     @classmethod
-    def download(cls, item_id: int) -> "WikidataItem":
+    def download(cls, item_id: int) -> typing.Self:
         """Download item."""
         qid = f"Q{item_id}"
         entity = wikidata_api.get_entity(qid)
@@ -1669,11 +1672,11 @@ class WikidataItem(Base):
         return item
 
     @classmethod
-    def get(cls, item_id: int) -> "WikidataItem":
+    def get(cls, item_id: int) -> typing.Self:
         """Get item."""
         qid = f"Q{item_id}"
 
-        existing = cls.query.get(item_id)
+        existing: typing.Self = cls.query.get(item_id)
         if existing:
             return existing
 
@@ -1703,6 +1706,8 @@ class InProgress(Base):
 
 
 class PageBanner(Base):
+    """Page banner."""
+
     __tablename__ = "page_banner"
 
     item_id = Column(Integer, primary_key=True, autoincrement=False)
@@ -1712,9 +1717,11 @@ class PageBanner(Base):
     qid = column_property("Q" + cast(item_id, String))
 
     @classmethod
-    def get_by_qid(cls, qid):
+    def get_by_qid(cls, qid: str) -> typing.Self | None:
+        """Get by QID."""
         if qid and len(qid) > 1 and qid[0].upper() == "Q" and qid[1:].isdigit():
-            return cls.query.get(qid[1:])
+            return typing.cast(typing.Self, cls.query.get(qid[1:]))
+        return None
 
 
 # "Turkish Republic of Northern Cyprus" has no alpha-2 code or alpha-3 code
