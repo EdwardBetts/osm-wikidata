@@ -35,6 +35,7 @@ from lxml import etree
 from markupsafe import Markup, escape
 from requests_oauthlib import OAuth2Session
 from sqlalchemy import distinct, func
+from sqlalchemy.orm import Query
 from sqlalchemy.orm.attributes import flag_modified
 from werkzeug.debug.tbtools import DebugTraceback
 from werkzeug.wrappers.response import Response
@@ -1004,18 +1005,17 @@ def cache_has_missing_sitelink(cache: dict[str, Any]) -> bool:
 
 def candidates_json_item(
     item: Item,
-    candidates: list[ItemCandidate],
+    candidates: Query[ItemCandidate],
     langs: list[Language],
     isa_list: list[str],
     isa_super_qids: list[str],
-    ticked: bool,
-    upload_okay: bool,
     bad_matches: set[tuple[int, str, int]],
-    matched_candidate: list[ItemCandidate],
+    bad_match_items: set[int],
     osm_count: Counter[tuple[str, int]],
 ) -> dict[str, typing.Any]:
     """Build item dict to return in candidates JSON call."""
     lat, lon = item.get_lat_lon()
+    upload_okay: bool
 
     sitelinks = item.sitelinks()
     first_paragraphs = {
@@ -1025,6 +1025,31 @@ def candidates_json_item(
     }
 
     notes: list[str] = []
+
+    if item.item_id in bad_match_items:
+        notes.append("bad match reported")
+        upload_okay = False
+
+    matched_candidates: list[ItemCandidate] = matcher.reduce_candidates(
+        item, candidates.all()
+    )
+
+    if len(matched_candidates) == 1:
+        matched_candidate = candidates[0]
+        max_dist = matched_candidate.get_max_dist()
+        ticked = matched_candidate.checkbox_ticked()
+        upload_okay = True
+        if not ticked and max_dist < matched_candidate.dist:
+            # FIXME update to respect user setting for distance units
+            notes.append(
+                "distance between OSM and Wikidata is "
+                + f"greater than {max_dist:,.0f}m"
+            )
+    else:
+        max_dist, ticked = None, None
+        upload_okay = False
+        notes.append("more than one candidate found")
+        matched_candidate = None
 
     search_tags = item.tags
     identifiers = item.identifier_values()
@@ -1128,39 +1153,13 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
             osm_count[(c.osm_type, c.osm_id)] += 1
 
     if (osm_type, osm_id) in hide_trams:
-        items = [item for item in items if not item.is_instance_of("Q2175765")]
+        tram_stop = "Q2175765"
+        items = [item for item in items if not item.is_instance_of(tram_stop)]
 
     item_list = []
     isa_lookup = {}
     for item in items:
         candidates = item.candidates
-
-        notes = []
-
-        matched_candidates = matcher.reduce_candidates(item, candidates.all())
-
-        if len(matched_candidates) == 1:
-            matched_candidate = candidates[0]
-            max_dist = matched_candidate.get_max_dist()
-            ticked = matched_candidate.checkbox_ticked()
-            upload_okay = True
-            if not ticked and max_dist < matched_candidate.dist:
-                # FIXME update to respect user setting for distance units
-                notes.append(
-                    "distance between OSM and Wikidata is "
-                    + f"greater than {max_dist:,.0f}m"
-                )
-        else:
-            max_dist, ticked = None, None
-            upload_okay = False
-            notes.append("more than one candidate found")
-            matched_candidate = None
-
-        if item.item_id in bad_match_items:
-            notes.append("bad match reported")
-            upload_okay = False
-
-        lat, lon = item.get_lat_lon()
 
         isa_list: list[str] = []
         isa_super_qids: list[str] = []
@@ -1189,10 +1188,8 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
                 langs,
                 isa_list,
                 isa_super_qids,
-                ticked,
-                upload_okay,
                 bad_matches,
-                matched_candidate,
+                bad_match_items,
                 osm_count,
             )
         )
