@@ -44,6 +44,7 @@ class CandidateDict(typing.TypedDict):
     address_match: bool
     name_match: match.NameMatchDict
     matching_tags: set[str]
+    geom: typing.NotRequired[str]
 
 
 cat_to_ending = {}
@@ -846,7 +847,7 @@ def find_item_matches(
         row = cur.fetchone()
         geom = row and row[0]
 
-        candidate = {
+        candidate: CandidateDict = {
             "osm_type": osm_type,
             "osm_id": osm_id,
             "name": osm_name,

@@ -1031,6 +1031,8 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
         language["lang"] = language_dict(lang)
         languages.append(language)
 
+    assert langs
+
     osm_count: Counter[tuple[str, int]] = Counter()
 
     items = place.get_candidate_items()
@@ -1117,6 +1119,8 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
             for lang, paragraph in item.first_paragraphs(langs).items()
             if lang + "wiki" in sitelinks
         }
+
+        assert langs
 
         item_list.append(
             {
@@ -1296,7 +1300,8 @@ def test_candidates(osm_type, osm_id):
     )
 
 
-def get_place(osm_type, osm_id):
+def get_place(osm_type: str, osm_id: int) -> Place | Response:
+    """Get place."""
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
 
@@ -1312,7 +1317,8 @@ def get_place(osm_type, osm_id):
 
 
 @app.route("/no_match/<osm_type>/<int:osm_id>")
-def no_match(osm_type, osm_id):
+def no_match(osm_type: str, osm_id: int) -> Response | str:
+    """No match page."""
     place = get_place(osm_type, osm_id)
     if not isinstance(place, Place):
         return place
@@ -1334,7 +1340,8 @@ def no_match(osm_type, osm_id):
 
 
 @app.route("/already_tagged/<osm_type>/<int:osm_id>")
-def already_tagged(osm_type, osm_id):
+def already_tagged(osm_type: str, osm_id: int) -> Response | str:
+    """Already tagged page."""
     place = get_place(osm_type, osm_id)
     if not isinstance(place, Place):
         return place
@@ -1378,7 +1385,8 @@ out bb tags;
 
 
 @app.route("/refresh/<osm_type>/<int:osm_id>", methods=["GET", "POST"])
-def refresh_place(osm_type, osm_id):
+def refresh_place(osm_type: str, osm_id: int) -> Response:
+    """Refresh place page."""
     place = Place.get_or_abort(osm_type, osm_id)
     if place.state not in ("ready", "complete"):
         return place.redirect_to_matcher()
@@ -1990,13 +1998,15 @@ def delete_places():
 
 @app.route("/account")
 @flask_login.login_required
-def account_page():
+def account_page() -> str:
+    """User account page."""
     return render_template("user/account.html", user=g.user)
 
 
 @app.route("/account/settings", methods=["GET", "POST"])
 @flask_login.login_required
-def account_settings_page():
+def account_settings_page() -> Response | str:
+    """User account settings page."""
     form = AccountSettingsForm()
     if request.method == "GET":
         if g.user.single:
@@ -2012,12 +2022,14 @@ def account_settings_page():
         form.populate_obj(g.user)
         database.session.commit()
         flash("Account settings saved.")
+        assert request.endpoint
         return redirect(url_for(request.endpoint))
     return render_template("user/settings.html", form=form)
 
 
 @app.route("/item_candidate/Q<int:item_id>.json")
-def item_candidate_json(item_id):
+def item_candidate_json(item_id: int) -> Response:
+    """JSON for item candidate."""
     item = Item.query.get(item_id)
     if item is None:
         return jsonify(qid=f"Q{item_id}", candidates=[])
@@ -2037,7 +2049,8 @@ def item_candidate_json(item_id):
 
 
 @app.route("/debug/<osm_type>/<int:osm_id>/Q<int:item_id>")
-def single_item_match(osm_type, osm_id, item_id):
+def single_item_match(osm_type: str, osm_id: int, item_id: int) -> Response | str:
+    """Single item match."""
     place = get_place(osm_type, osm_id)
     if not isinstance(place, Place):
         return place
