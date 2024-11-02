@@ -12,7 +12,7 @@ from time import time
 import user_agents
 from flask import abort, current_app, g, redirect, url_for
 from geoalchemy2 import Geography, Geometry
-from sqlalchemy import cast, func, select
+from sqlalchemy import cast, func, select, text
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import (
     backref,
@@ -542,7 +542,7 @@ class Place(Base):
 
     def covers(self, item):
         """Is the given item within the geometry of this place."""
-        q = select([func.ST_Covers(Place.geom, item["location"])]).where(
+        q = select(func.ST_Covers(Place.geom, item["location"])).where(
             Place.place_id == self.place_id
         )
         return object_session(self).scalar(q)
@@ -590,12 +590,11 @@ class Place(Base):
             return
         place_id = self.place_id
 
-        engine = session.bind
         for t in get_tables():
             if not t.startswith(self.prefix):
                 continue
-            engine.execute(f"drop table if exists {t}")
-        engine.execute("commit")
+            session.execute(text(f"drop table if exists {t}"))
+        session.commit()
 
         overpass_dir = current_app.config["OVERPASS_DIR"]
         for f in os.listdir(overpass_dir):

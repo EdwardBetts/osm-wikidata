@@ -13,6 +13,7 @@ from datetime import datetime
 from time import time
 
 import lxml.etree
+from sqlalchemy import text
 
 from matcher import database, mail, model, wikidata_api, wikipedia
 from matcher.place import Place, PlaceMatcher, bbox_chunk
@@ -117,12 +118,10 @@ class MatcherJob(threading.Thread):
 
     def drop_database_tables(self) -> None:
         """Drop database tables."""
-        engine = database.session.bind
         assert self.place
         gis_tables = self.place.gis_tables
         for t in gis_tables & set(database.get_tables()):
-            engine.execute(f"drop table if exists {t}")
-        engine.execute("commit")
+            database.session.execute(text(f"drop table if exists {t}"))
         database.session.commit()
         # make sure all GIS tables for this place have been removed
         assert not self.place.gis_tables & set(database.get_tables())
