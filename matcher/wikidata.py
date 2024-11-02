@@ -704,7 +704,9 @@ def get_query(q: str, south: float, north: float, west: float, east: float) -> s
     return render_template_string(q, south=south, north=north, west=west, east=east)
 
 
-def query_map(prefix: str, **kwargs) -> dict[str, str]:
+def query_map(prefix: str, **kwargs: typing.Any) -> dict[str, str]:
+    """Build SPARQL queries to look for items of interest."""
+    queries: tuple[str, ...]
     if kwargs.get("want_isa"):
         queries = ("item_tag", "hq_item_tag")
     else:
@@ -717,8 +719,9 @@ def query_map(prefix: str, **kwargs) -> dict[str, str]:
 
 
 def bbox_query_map(
-    south: float, north: float, west: float, east: float, **kwargs
-) -> str:
+    south: float, north: float, west: float, east: float, **kwargs: typing.Any
+) -> dict[str, str]:
+    """Build query for items of interest in a given bounding box."""
     return query_map("bbox", south=south, north=north, west=west, east=east, **kwargs)
 
 
