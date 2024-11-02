@@ -1573,13 +1573,18 @@ class LanguageLabel(Base):
 
 
 class SpaceWarning(Base):
+    """Space warning."""
+
     __tablename__ = "space_warning"
     timestamp = Column(DateTime, primary_key=True, default=now_utc())
     free_space = Column(BigInteger)
 
     @classmethod
-    def most_recent(cls):
-        return cls.query.order_by(cls.timestamp.desc()).first()
+    def most_recent(cls) -> typing.Self:
+        """Most recent."""
+        return typing.cast(
+            typing.Self, cls.query.order_by(cls.timestamp.desc()).first()
+        )
 
 
 class WikidataItem(Base):

@@ -1,7 +1,6 @@
 """Monitor free space on the server."""
 
 from datetime import datetime, timedelta
-from typing import NoReturn
 
 import flask
 import humanize
@@ -9,7 +8,7 @@ import humanize
 from . import database, mail, model, utils
 
 
-def check_free_space(config: flask.config.Config = None) -> NoReturn:
+def check_free_space(config: flask.config.Config | None = None) -> None:
     """Check how much disk space is free. E-mail admin if free space is low."""
     if config is None:
         if not flask.has_app_context():
