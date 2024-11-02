@@ -1002,6 +1002,89 @@ def cache_has_missing_sitelink(cache: dict[str, Any]) -> bool:
     return False
 
 
+def candidates_json_item(
+    item,
+    candidates,
+    langs,
+    isa_list,
+    isa_super_qids,
+    ticked: bool,
+    upload_okay: bool,
+    bad_matches,
+    matched_candidate,
+    osm_count,
+) -> dict[str, typing.Any]:
+    """Build item dict to return in candidates JSON call."""
+    lat, lon = item.get_lat_lon()
+
+    sitelinks = item.sitelinks()
+    first_paragraphs = {
+        lang: paragraph
+        for lang, paragraph in item.first_paragraphs(langs).items()
+        if lang + "wiki" in sitelinks
+    }
+
+    notes: list[str] = []
+
+    search_tags = item.tags
+    identifiers = item.identifier_values()
+
+    for candidate in candidates:
+        housename = candidate.tags.get("addr:housename")
+        if housename and housename.isdigit():
+            notes.append("number as house name")
+            upload_okay = False
+
+        name = candidate.tags.get("name")
+        if name and name.isdigit():
+            notes.append("number as name")
+            upload_okay = False
+
+        if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
+            notes.append("OSM candidate matches multiple Wikidata items")
+            upload_okay = False
+
+    return {
+        "labels": item.label_and_description_list(langs),
+        "qid": item.qid,
+        "enwiki": item.enwiki,
+        "lat": lat,
+        "lon": lon,
+        "first_paragraphs": first_paragraphs,
+        "street_addresses": item.get_street_addresses(),
+        # 'search_tags': list(item.tags),
+        "isa_list": isa_list,
+        "isa_super_qids": isa_super_qids,
+        "identifiers": [[list(values), label] for values, label in item.identifiers()],
+        "defunct_cats": item.defunct_cats(),
+        "image_filenames": item.image_filenames(),
+        "notes": notes,
+        "ticked": ticked,
+        "upload_okay": upload_okay,
+        "sitelinks": sitelinks,
+        "candidates": [
+            {
+                "key": c.key,
+                "is_best": (matched_candidate and c.key == matched_candidate.key),
+                "bad_match_reported": (item.item_id, c.osm_type, c.osm_id)
+                in bad_matches,
+                # 'label': c.label_best_language(langs),
+                "names": c.names(),
+                # 'name': c.name,
+                "dist": c.dist,
+                "osm_type": c.osm_type,
+                "osm_id": c.osm_id,
+                "display_distance": c.display_distance(),
+                "identifier_match": c.identifier_match,
+                "name_match": c.name_match or None,
+                "address_match": c.address_match,
+                "tags": candidate_tags(search_tags, identifiers, c),
+            }
+            for c in candidates
+        ],
+    }
+
+
 @app.route("/candidates/<osm_type>/<int:osm_id>.json")
 def candidates_json(osm_type: str, osm_id: int) -> Response:
     """Candidate JSON."""
@@ -1025,8 +1108,8 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
     languages = []
     langs = []
     for language in g.default_languages:
-        lang = get_wikidata_language(language["code"])
-        if not lang:
+        lang: Language | None
+        if not (lang := get_wikidata_language(language["code"])):
             continue
         langs.append(lang)
         language["lang"] = language_dict(lang)
@@ -1051,8 +1134,6 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
     isa_lookup = {}
     for item in items:
         candidates = item.candidates
-        search_tags = item.tags
-        identifiers = item.identifier_values()
 
         notes = []
 
@@ -1099,74 +1180,21 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
 
             isa_super_qids += [isa.qid] + super_list
 
-        for candidate in candidates:
-            housename = candidate.tags.get("addr:housename")
-            if housename and housename.isdigit():
-                notes.append("number as house name")
-                upload_okay = False
-
-            name = candidate.tags.get("name")
-            if name and name.isdigit():
-                notes.append("number as name")
-                upload_okay = False
-
-            if osm_count[(candidate.osm_type, candidate.osm_id)] > 1:
-                notes.append("OSM candidate matches multiple Wikidata items")
-                upload_okay = False
-
-        sitelinks = item.sitelinks()
-        first_paragraphs = {
-            lang: paragraph
-            for lang, paragraph in item.first_paragraphs(langs).items()
-            if lang + "wiki" in sitelinks
-        }
-
         assert langs
 
         item_list.append(
-            {
-                "labels": item.label_and_description_list(langs),
-                "qid": item.qid,
-                "enwiki": item.enwiki,
-                "lat": lat,
-                "lon": lon,
-                "first_paragraphs": first_paragraphs,
-                "street_addresses": item.get_street_addresses(),
-                # 'search_tags': list(item.tags),
-                "isa_list": isa_list,
-                "isa_super_qids": isa_super_qids,
-                "identifiers": [
-                    [list(values), label] for values, label in item.identifiers()
-                ],
-                "defunct_cats": item.defunct_cats(),
-                "image_filenames": item.image_filenames(),
-                "notes": notes,
-                "ticked": ticked,
-                "upload_okay": upload_okay,
-                "sitelinks": sitelinks,
-                "candidates": [
-                    {
-                        "key": c.key,
-                        "is_best": (
-                            matched_candidate and c.key == matched_candidate.key
-                        ),
-                        "bad_match_reported": (item.item_id, c.osm_type, c.osm_id)
-                        in bad_matches,
-                        # 'label': c.label_best_language(langs),
-                        "names": c.names(),
-                        # 'name': c.name,
-                        "dist": c.dist,
-                        "osm_type": c.osm_type,
-                        "osm_id": c.osm_id,
-                        "display_distance": c.display_distance(),
-                        "identifier_match": c.identifier_match,
-                        "name_match": c.name_match or None,
-                        "address_match": c.address_match,
-                        "tags": candidate_tags(search_tags, identifiers, c),
-                    }
-                    for c in candidates
-                ],
-            }
+            candidates_json_item(
+                item,
+                candidates,
+                langs,
+                isa_list,
+                isa_super_qids,
+                ticked,
+                upload_okay,
+                bad_matches,
+                matched_candidate,
+                osm_count,
+            )
         )
 
     if user_language_order:
