@@ -7,15 +7,20 @@ from collections import defaultdict
 from time import time
 from typing import Any
 
-import sqlalchemy
 from flask import g, has_app_context
 from flask_login import UserMixin
 from geoalchemy2 import Geography  # noqa: F401
 from sqlalchemy import func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import backref, column_property, relationship
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    backref,
+    column_property,
+    mapped_column,
+    relationship,
+)
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.schema import Column, ForeignKey, ForeignKeyConstraint
 from sqlalchemy.sql.expression import cast
@@ -37,8 +42,13 @@ from .utils import capfirst
 
 re_lau_code = re.compile(r"^[A-Z]{2}([^A-Z].+)$")  # 'LAU (local administrative unit)'
 
-Base: sqlalchemy.orm.decl_api.DeclarativeMeta = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
+
+
 Base.query = session.query_property()
+
 
 osm_api_base = "https://api.openstreetmap.org/api/0.6"
 
@@ -1524,27 +1534,32 @@ def get_bad(items):
 
 
 class Language(Base):
+    """Language."""
+
     __tablename__ = "language"
-    item_id = Column(Integer, primary_key=True, autoincrement=False)
-    iso_639_1 = Column(String(2))
-    iso_639_2 = Column(String(3))
-    iso_639_3 = Column(String(3))
-    wikimedia_language_code = Column(String, unique=True)
+    item_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    iso_639_1: Mapped[str] = mapped_column(String(2))
+    iso_639_2: Mapped[str] = mapped_column(String(3))
+    iso_639_3: Mapped[str] = mapped_column(String(3))
+    wikimedia_language_code: Mapped[str] = mapped_column(unique=True)
     qid = column_property("Q" + cast(item_id, String))
     labels = relationship(
         "LanguageLabel", lazy="dynamic", foreign_keys=lambda: LanguageLabel.item_id
     )
 
-    def english_name(self):
-        return self.labels.filter_by(wikimedia_language_code="en").one().label
+    def english_name(self) -> str:
+        """Name of language in English."""
+        n: str = self.labels.filter_by(wikimedia_language_code="en").one().label
+        assert isinstance(n, str)
+        return n
 
-    def self_name(self):
+    def self_name(self) -> str | None:
         """Name of this language in this language."""
         name = self.labels.filter_by(language=self).one_or_none()
-        if name:
-            return name.label
+        return typing.cast(str, name.label) if name else None
 
-    def label(self, with_code=True):
+    def label(self, with_code: bool = True) -> str:
+        """Language label."""
         name = self.self_name()
         if not name:  # self label missing for language
             name = self.english_name()
@@ -1553,12 +1568,15 @@ class Language(Base):
         return f"{name} [{self.wikimedia_language_code}]" if with_code else name
 
     @property
-    def site_name(self):
+    def site_name(self) -> str:
+        """Wikipedia site name for this language."""
         return f"{self.wikimedia_language_code}wiki"
 
     @classmethod
-    def get_by_code(cls, code):
-        return cls.query.filter_by(wikimedia_language_code=code).one()
+    def get_by_code(cls, code: str) -> typing.Self:
+        """Lookup language by code."""
+        lang: typing.Self = cls.query.filter_by(wikimedia_language_code=code).one()
+        return lang
 
 
 class LanguageLabel(Base):

@@ -926,7 +926,8 @@ def candidates(osm_type, osm_id):
     )
 
 
-def language_dict(lang):
+def language_dict(lang: Language) -> dict[str, typing.Any]:
+    """Language as dict."""
     return {
         "qid": lang.qid,
         "wikimedia_language_code": lang.wikimedia_language_code,
@@ -1922,7 +1923,8 @@ def reports_view():
 
 
 @app.route("/reports/isa")
-def isa_list_report():
+def isa_list_report() -> str:
+    """List of IsA items."""
     q = (
         database.session.query(IsA.item_id, IsA.label, func.count())
         .join(ItemIsA)
@@ -1934,13 +1936,15 @@ def isa_list_report():
 
 
 @app.route("/reports/isa/Q<int:isa_id>")
-def isa_item_report(isa_id):
+def isa_item_report(isa_id: int) -> str:
+    """Report page for IsA item."""
     item = IsA.query.get(isa_id)
     return render_template("reports/isa_item.html", item=item, isa_id=isa_id)
 
 
 @app.route("/reports/isa/Q<int:isa_id>/refresh", methods=["POST"])
-def isa_item_refresh(isa_id):
+def isa_item_refresh(isa_id: int) -> Response:
+    """Refresh IsA item."""
     item = IsA.query.get(isa_id)
     qid = f"Q{isa_id}"
     item.entity = wikidata_api.get_entity(qid)
@@ -1974,7 +1978,7 @@ def old_places():
 
 @app.route("/delete/<int:place_id>", methods=["POST", "DELETE"])
 @flask_login.login_required
-def delete_place(place_id):
+def delete_place(place_id) -> Response:
     place = Place.query.get(place_id)
     place.clean_up()
 
@@ -1985,7 +1989,7 @@ def delete_place(place_id):
 
 @app.route("/delete", methods=["POST", "DELETE"])
 @flask_login.login_required
-def delete_places():
+def delete_places() -> Response:
     place_list = request.form.getlist("place")
     for place_id in place_list:
         place = Place.query.get(place_id)
