@@ -15,6 +15,7 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import (
     DeclarativeBase,
+    DynamicMapped,
     Mapped,
     backref,
     column_property,
@@ -136,7 +137,7 @@ class Language(Base):
     iso_639_3: Mapped[str] = mapped_column(String(3))
     wikimedia_language_code: Mapped[str] = mapped_column(unique=True)
     qid = column_property("Q" + cast(item_id, String))
-    labels = relationship(
+    labels: DynamicMapped["LanguageLabel"] = relationship(
         "LanguageLabel", lazy="dynamic", foreign_keys=lambda: LanguageLabel.item_id
     )
 
@@ -173,14 +174,18 @@ class Language(Base):
 
 
 class LanguageLabel(Base):
-    __tablename__ = "language_label"
-    item_id = Column(Integer, ForeignKey(Language.item_id), primary_key=True)
-    wikimedia_language_code = Column(
-        String, ForeignKey(Language.wikimedia_language_code), primary_key=True
-    )
-    label = Column(String, nullable=False)
+    """Language label."""
 
-    language = relationship("Language", foreign_keys=[wikimedia_language_code])
+    __tablename__ = "language_label"
+    item_id: Mapped[int] = mapped_column(ForeignKey(Language.item_id), primary_key=True)
+    wikimedia_language_code: Mapped[str] = mapped_column(
+        ForeignKey(Language.wikimedia_language_code), primary_key=True
+    )
+    label: Mapped[str] = mapped_column(nullable=False)
+
+    language: Mapped[Language] = relationship(
+        "Language", foreign_keys=[wikimedia_language_code]
+    )
 
 
 class IsA(Base):
