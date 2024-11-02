@@ -1,165 +1,188 @@
-from matcher import match
 import pytest
+from matcher import match
+
 
 def test_prefix_name_match():
-    osm = 'National Museum of Mathematics (MoMath)'
-    wd = 'National Museum of Mathematics'
-    assert match.prefix_name_match(osm, wd) == '(MoMath)'
+    osm = "National Museum of Mathematics (MoMath)"
+    wd = "National Museum of Mathematics"
+    assert match.prefix_name_match(osm, wd) == "(MoMath)"
 
-    osm = 'NationalMuseumOfMathematics (MoMath)'
-    wd = 'National Museum of Mathematics'
-    assert match.prefix_name_match(osm, wd) == '(MoMath)'
+    osm = "NationalMuseumOfMathematics (MoMath)"
+    wd = "National Museum of Mathematics"
+    assert match.prefix_name_match(osm, wd) == "(MoMath)"
+
 
 def test_tidy_name():
-    same = 'no change'
+    same = "no change"
     assert match.tidy_name(same) == same
     assert match.tidy_name("saint andrew's") == "st andrew"
-    assert match.tidy_name(' ? ') == '?'
-    assert match.tidy_name(' s ') == 's'
-    assert match.tidy_name('Թի Դի Գարդեն'.lower()) == 't`i di garden'
+    assert match.tidy_name(" ? ") == "?"
+    assert match.tidy_name(" s ") == "s"
+    assert match.tidy_name("Թի Դի Գարդեն".lower()) == "t`i di garden"
 
-    assert match.tidy_name('four crosses') == 'four cros'
-    assert match.tidy_name('four crosses, powys') == 'four cros, powy'
+    assert match.tidy_name("four crosses") == "four cros"
+    assert match.tidy_name("four crosses, powys") == "four cros, powy"
+
 
 def test_drop_article():
-    assert match.drop_article('the old shop') == 'old shop'
+    assert match.drop_article("the old shop") == "old shop"
+
 
 def test_match_with_words_removed():
-    same = 'no change'
-    assert match.match_with_words_removed(same, same, ['test'])
+    same = "no change"
+    assert match.match_with_words_removed(same, same, ["test"])
     assert not match.match_with_words_removed(same, same, [])
 
-    wd = 'norwich bus station'
-    osm = 'norwich'
-    assert match.match_with_words_removed(osm, wd, ['bus station'])
+    wd = "norwich bus station"
+    osm = "norwich"
+    assert match.match_with_words_removed(osm, wd, ["bus station"])
 
-    assert match.match_with_words_removed('Vif',
-                                          'gare de Vif',
-                                          ['gare de'])
+    assert match.match_with_words_removed("Vif", "gare de Vif", ["gare de"])
+
 
 def test_initials_match():
-    n1 = 'TIAT'
-    n2 = 'This Is A Test'
+    n1 = "TIAT"
+    n2 = "This Is A Test"
 
     assert match.initials_match(n1, n2)
-    assert match.initials_match(n1 + ' station', n2, endings=['station'])
+    assert match.initials_match(n1 + " station", n2, endings=["station"])
 
-    n1 = 'T.I.A.T.'
-    n2 = 'This Is A Test'
-
-    assert match.initials_match(n1, n2)
-
-    n1 = 'TIAT'
-    n2 = 'This is a test'
+    n1 = "T.I.A.T."
+    n2 = "This Is A Test"
 
     assert match.initials_match(n1, n2)
 
-    assert not match.initials_match('bad', 'Bad Match Here')
-
-    assert not match.initials_match('TO', 'to short')
-
-    n1 = 'ТГПУ'
-    n2 = 'Томский государственный педагогический университет'
+    n1 = "TIAT"
+    n2 = "This is a test"
 
     assert match.initials_match(n1, n2)
 
-    n1 = 'CRM'
-    n2 = 'Centre de Recerca Matemàtica'
+    assert not match.initials_match("bad", "Bad Match Here")
+
+    assert not match.initials_match("TO", "to short")
+
+    n1 = "ТГПУ"
+    n2 = "Томский государственный педагогический университет"
 
     assert match.initials_match(n1, n2)
+
+    n1 = "CRM"
+    n2 = "Centre de Recerca Matemàtica"
+
+    assert match.initials_match(n1, n2)
+
 
 def test_reorder():
-    assert match.name_match('Renaissance Center Tower 300',
-                            'Renaissance Center 300 Tower', endings=['tower'])
+    assert match.name_match(
+        "Renaissance Center Tower 300",
+        "Renaissance Center 300 Tower",
+        endings=["tower"],
+    )
 
-    assert match.name_match('Renaissance Center Tower 300',
-                            'Renaissance Center 300 Tower')
+    assert match.name_match(
+        "Renaissance Center Tower 300", "Renaissance Center 300 Tower"
+    )
+
 
 def test_no_alpha():
-    assert not match.no_alpha('abc')
-    assert not match.no_alpha('123abc')
-    assert match.no_alpha('123')
-    assert match.no_alpha('')
+    assert not match.no_alpha("abc")
+    assert not match.no_alpha("123abc")
+    assert match.no_alpha("123")
+    assert match.no_alpha("")
+
 
 def test_normalize_name():
-    assert match.normalize_name('TEST TEST') == 'testtest'
-    assert match.normalize_name('testtest') == 'testtest'
+    assert match.normalize_name("TEST TEST") == "testtest"
+    assert match.normalize_name("testtest") == "testtest"
+
 
 def test_has_address():
     assert not match.has_address({})
-    assert match.has_address({'addr:full': '1 Station Road'})
-    assert match.has_address({'addr:housenumber': '1'})
+    assert match.has_address({"addr:full": "1 Station Road"})
+    assert match.has_address({"addr:housenumber": "1"})
+
 
 def test_check_identifiers():
     assert match.check_identifier({}, {}) is False
 
-    identifiers = {'iata': [(('PDX',), 'IATA airport code')]}
+    identifiers = {"iata": [(("PDX",), "IATA airport code")]}
 
-    assert match.check_identifier({'iata': 'PDX'}, identifiers)
-    assert not match.check_identifier({'iata': 'LAX'}, identifiers)
+    assert match.check_identifier({"iata": "PDX"}, identifiers)
+    assert not match.check_identifier({"iata": "LAX"}, identifiers)
     assert not match.check_identifier({}, identifiers)
 
-    tag = 'seamark:light:reference'
-    identifiers = {tag: [(('D123',), 'Admiralty number')]}
+    tag = "seamark:light:reference"
+    identifiers = {tag: [(("D123",), "Admiralty number")]}
 
-    assert match.check_identifier({tag: 'D 123'}, identifiers)
+    assert match.check_identifier({tag: "D 123"}, identifiers)
 
-    url = 'http://test.org'
-    identifiers = {'website': [((url,), 'website')]}
-    assert match.check_identifier({'website': url}, identifiers)
+    url = "http://test.org"
+    identifiers = {"website": [((url,), "website")]}
+    assert match.check_identifier({"website": url}, identifiers)
 
-    url = 'https://www.test.org'
-    assert match.check_identifier({'website': url}, identifiers)
+    url = "https://www.test.org"
+    assert match.check_identifier({"website": url}, identifiers)
+
 
 def test_split_on_upper():
-    name = 'Phillips Chapel CME Church'
+    name = "Phillips Chapel CME Church"
     parts = list(match.split_on_upper(name))
-    assert parts == ['Phillips', 'Chapel', 'C', 'M', 'E', 'Church']
+    assert parts == ["Phillips", "Chapel", "C", "M", "E", "Church"]
+
 
 def test_match_name_containing_initials():
-    n1 = 'Phillips Chapel CME Church'
-    n2 = ' Phillips Chapel Christian Methodist Episcopal Church'
+    n1 = "Phillips Chapel CME Church"
+    n2 = " Phillips Chapel Christian Methodist Episcopal Church"
     assert match.name_containing_initials(n1, n2)
 
-    n1 = 'Phillips Chapel C.M.E. Church'
-    n2 = ' Phillips Chapel Christian Methodist Episcopal Church'
+    n1 = "Phillips Chapel C.M.E. Church"
+    n2 = " Phillips Chapel Christian Methodist Episcopal Church"
     assert match.name_containing_initials(n1, n2)
 
-    n1 = 'Phillips Chapel CME Church'
-    n2 = ' PC Christian Methodist Episcopal Church'
+    n1 = "Phillips Chapel CME Church"
+    n2 = " PC Christian Methodist Episcopal Church"
     assert match.name_containing_initials(n1, n2)
 
-    assert not match.name_containing_initials("(St John's College)", 'LMBC')
+    assert not match.name_containing_initials("(St John's College)", "LMBC")
 
-    assert not match.name_containing_initials('1', '1-й общественный совет')
+    assert not match.name_containing_initials("1", "1-й общественный совет")
+
 
 def test_name_match_numbers():
-    assert match.name_match('Manhattan Community Board 1',
-                            'Manhattan Community Board 1')
+    assert match.name_match(
+        "Manhattan Community Board 1", "Manhattan Community Board 1"
+    )
 
-    assert not match.name_match('Manhattan Community Board 11',
-                                'Manhattan Community Board 1')
+    assert not match.name_match(
+        "Manhattan Community Board 11", "Manhattan Community Board 1"
+    )
 
-    assert not match.name_match('Manhattan Community Board 1',
-                                'Manhattan Community Board 11')
+    assert not match.name_match(
+        "Manhattan Community Board 1", "Manhattan Community Board 11"
+    )
 
-    assert not match.name_containing_initials('Manhattan Community Board 1',
-                                              'Manhattan Community Board 11')
+    assert not match.name_containing_initials(
+        "Manhattan Community Board 1", "Manhattan Community Board 11"
+    )
 
     osm_tags = {
-        'name': 'Manhattan Community Board 11',
+        "name": "Manhattan Community Board 11",
     }
     wikidata_names = {
-        '1-й общественный совет': [('label', 'ru')],
-        'Manhattan Community Board 1': [('label', 'en'),
-                                        ('sitelink', 'enwiki'),
-                                        ('extract', 'enwiki')],
+        "1-й общественный совет": [("label", "ru")],
+        "Manhattan Community Board 1": [
+            ("label", "en"),
+            ("sitelink", "enwiki"),
+            ("extract", "enwiki"),
+        ],
     }
     assert not match.check_for_match(osm_tags, wikidata_names)
 
+
 def test_name_containing_initials():
-    assert match.name_containing_initials('ČSOB centrála', 'ČSOB')
-    assert not match.name_containing_initials('ČSOB Centrála', 'ČSOB')
+    assert match.name_containing_initials("ČSOB centrála", "ČSOB")
+    assert not match.name_containing_initials("ČSOB Centrála", "ČSOB")
+
 
 def test_name_with_dashes():
     wikidata = "Hôpital Saint-François d'Assise"
@@ -167,800 +190,888 @@ def test_name_with_dashes():
 
     assert match.name_match(osm, wikidata)
 
-    wikidata = 'Walton-on-the-Hill'
-    osm = 'Walton on the Hill'
+    wikidata = "Walton-on-the-Hill"
+    osm = "Walton on the Hill"
 
     assert match.name_match(osm, wikidata)
+
 
 def test_russian_doesnt_match_number():
-    assert not match.name_match_main('1', '1-й общественный совет')
+    assert not match.name_match_main("1", "1-й общественный совет")
+
 
 def test_ordinal_number_name_match():
-    osm = '3rd Avenue–149th Street'
-    wikidata = '3rd Avenue – 149th Street'
+    osm = "3rd Avenue–149th Street"
+    wikidata = "3rd Avenue – 149th Street"
     assert match.name_match_main(osm, wikidata)
 
-    osm = '3rd Avenue–149th Street'
-    wikidata = 'Third Avenue – 149th Street'
+    osm = "3rd Avenue–149th Street"
+    wikidata = "Third Avenue – 149th Street"
     assert match.name_match_main(osm, wikidata)
+
 
 def test_name_match():
-    assert not match.name_match('', '')
-    assert match.name_match('test', 'test')
-    assert match.name_match('the old shop', 'old shop')
+    assert not match.name_match("", "")
+    assert match.name_match("test", "test")
+    assert match.name_match("the old shop", "old shop")
 
-    assert not match.name_match('test', '')
-    assert not match.name_match('', 'test')
-    assert match.name_match('test', 'test.')
-    assert match.name_match('test.', 'test')
+    assert not match.name_match("test", "")
+    assert not match.name_match("", "test")
+    assert match.name_match("test", "test.")
+    assert match.name_match("test.", "test")
 
-    assert not match.name_match('test', '.')
-    assert not match.name_match('.', 'test')
+    assert not match.name_match("test", ".")
+    assert not match.name_match(".", "test")
 
-    assert not match.name_match('aaa', 'bbb')
+    assert not match.name_match("aaa", "bbb")
 
-    assert not match.name_match('aaa', 'the ')
+    assert not match.name_match("aaa", "the ")
 
-    assert match.name_match('aaa-bbb', 'aaa bbb')
-    assert match.name_match('the old shop', 'old shop')
-    assert match.name_match('the bull', 'bull public house',
-                            ['public house'])
-    assert match.name_match('TIAT', 'This Is A Test')
+    assert match.name_match("aaa-bbb", "aaa bbb")
+    assert match.name_match("the old shop", "old shop")
+    assert match.name_match("the bull", "bull public house", ["public house"])
+    assert match.name_match("TIAT", "This Is A Test")
 
-    assert match.name_match('John Smith', 'Statue of John Smith')
-    assert match.name_match('John Smith', 'Tomb of John Smith')
+    assert match.name_match("John Smith", "Statue of John Smith")
+    assert match.name_match("John Smith", "Tomb of John Smith")
 
-    assert match.name_match('Lake Test', 'Test', ['lake'])
-    assert match.name_match('Test', 'Lake Test', ['lake'])
+    assert match.name_match("Lake Test", "Test", ["lake"])
+    assert match.name_match("Test", "Lake Test", ["lake"])
 
-    assert match.name_match('Test', 'Test, Washington, DC')
+    assert match.name_match("Test", "Test, Washington, DC")
 
-    assert match.name_match('aaa bbb', 'bbb aaa')
+    assert match.name_match("aaa bbb", "bbb aaa")
 
-    assert match.name_match('Vif', 'gare de Vif', endings=['gare'])
-    assert match.name_match('Vif', 'station Vif', endings=['station'])
+    assert match.name_match("Vif", "gare de Vif", endings=["gare"])
+    assert match.name_match("Vif", "station Vif", endings=["station"])
 
-    assert match.name_match('Sliabh Liag', 'Sliabh a Liag')
+    assert match.name_match("Sliabh Liag", "Sliabh a Liag")
 
-    assert match.name_match('Beulah', 'Beulah, Powys')
-    assert match.name_match('Four Crosses', 'Four Crosses, Powys') is not None
+    assert match.name_match("Beulah", "Beulah, Powys")
+    assert match.name_match("Four Crosses", "Four Crosses, Powys") is not None
 
-    assert match.name_match('The Ship', "'The Ship', Derriford")
-    assert match.name_match('Place Bellecour', ' La Place Bellecour')
+    assert match.name_match("The Ship", "'The Ship', Derriford")
+    assert match.name_match("Place Bellecour", " La Place Bellecour")
 
-    assert match.name_match('Lamott', 'La Mott, Pennsylvania')
+    assert match.name_match("Lamott", "La Mott, Pennsylvania")
 
-    assert match.name_match('Ті-Ді гарден', 'Թի Դի Գարդեն')
-    assert match.name_match('Maria-Hilf-Kirche', 'Mariahilfkirche, Munich')
-    assert match.name_match('Kunkelspass', 'Кункелспас') is not None
-    assert match.name_match('Bethanien-Kirche', 'Bethanienkirche, Berlin')
-    assert match.name_match('Tricketts Cross', "Trickett's Cross, Dorset")
-    assert match.name_match('Кастелец', 'Кастелець')
+    assert match.name_match("Ті-Ді гарден", "Թի Դի Գարդեն")
+    assert match.name_match("Maria-Hilf-Kirche", "Mariahilfkirche, Munich")
+    assert match.name_match("Kunkelspass", "Кункелспас") is not None
+    assert match.name_match("Bethanien-Kirche", "Bethanienkirche, Berlin")
+    assert match.name_match("Tricketts Cross", "Trickett's Cross, Dorset")
+    assert match.name_match("Кастелец", "Кастелець")
 
-    assert match.name_match('Church and 18th Street', 'Church Street & 18th Street')
-    assert match.name_match('Church and 18th Street',
-                            'Church Street & 18th Street', endings={'test'})
+    assert match.name_match("Church and 18th Street", "Church Street & 18th Street")
+    assert match.name_match(
+        "Church and 18th Street", "Church Street & 18th Street", endings={"test"}
+    )
 
-    assert match.name_match('Boulder Railroad Depot (Historic)',
-                            'Boulder Railroad Depot')
+    assert match.name_match(
+        "Boulder Railroad Depot (Historic)", "Boulder Railroad Depot"
+    )
 
-    assert match.name_match('Times Furnishing', 'Times Furnishing Company Building')
+    assert match.name_match("Times Furnishing", "Times Furnishing Company Building")
 
-    assert match.name_match('Bailiffscourt Hotel And Country Club',
-                            'Bailiffscourt Hotel') is not None
+    assert (
+        match.name_match("Bailiffscourt Hotel And Country Club", "Bailiffscourt Hotel")
+        is not None
+    )
 
-    osm = 'St Peter & St Paul'
-    wd = 'St Peter and St Paul, Bromley'
+    osm = "St Peter & St Paul"
+    wd = "St Peter and St Paul, Bromley"
     assert match.name_match(osm, wd)
 
-    osm = 'New York Skyports Incorporated Seaplane Base'
-    wikidata = 'New York Skyports Inc. Seaplane Base'
+    osm = "New York Skyports Incorporated Seaplane Base"
+    wikidata = "New York Skyports Inc. Seaplane Base"
     assert match.name_match(osm, wikidata)
 
-    osm = 'Disneyland Pacific Hotel; Pacific Hotel'
-    wikidata = 'Disneyland Pacific Hotel'
+    osm = "Disneyland Pacific Hotel; Pacific Hotel"
+    wikidata = "Disneyland Pacific Hotel"
     assert match.name_match(osm, wikidata)
 
-    osm = 'Leeds Bradford International'
-    wikidata = 'Leeds Bradford International Airport'
-    trim = ['airport', 'international airport']
+    osm = "Leeds Bradford International"
+    wikidata = "Leeds Bradford International Airport"
+    trim = ["airport", "international airport"]
     assert match.name_match(osm, wikidata, endings=trim)
 
-    osm = 'Bresso'
-    wikidata = 'Aeroporto di Bresso'
-    trim = ['aeroporto']
+    osm = "Bresso"
+    wikidata = "Aeroporto di Bresso"
+    trim = ["aeroporto"]
     assert match.name_match(osm, wikidata, endings=trim)
 
-    assert match.name_match('Rainbow Grocery Coop',
-                            'Rainbow Grocery Cooperative')
+    assert match.name_match("Rainbow Grocery Coop", "Rainbow Grocery Cooperative")
 
-    assert match.name_match('Kirkwood Inn', "Kirkwood's", endings=['inn'])
+    assert match.name_match("Kirkwood Inn", "Kirkwood's", endings=["inn"])
 
-    osm = 'ESCOLA DE NAUTICA DE BARCELONA'
-    wikidata = 'Escola de Nàutica de Barcelona'
+    osm = "ESCOLA DE NAUTICA DE BARCELONA"
+    wikidata = "Escola de Nàutica de Barcelona"
 
     cur = match.name_match(osm, wikidata)
     assert cur.match_type == match.MatchType.good
 
-    osm = 'Lombard Buildings'
-    wikidata = 'Lombard Building'
+    osm = "Lombard Buildings"
+    wikidata = "Lombard Building"
 
-    cur = match.name_match(osm, wikidata, endings=['building'])
+    cur = match.name_match(osm, wikidata, endings=["building"])
     assert cur.match_type == match.MatchType.good
 
-    assert match.name_match('Boxers', 'The Boxers')
+    assert match.name_match("Boxers", "The Boxers")
 
-    osm = 'The Landers'
-    wikidata = 'Landers Theatre'
+    osm = "The Landers"
+    wikidata = "Landers Theatre"
 
-    assert match.name_match('The Landers', 'Landers Theatre', endings=['theatre'])
+    assert match.name_match("The Landers", "Landers Theatre", endings=["theatre"])
 
-    osm = 'Main Street Station'
-    wikidata = 'Richmond Main Street Station'
-    place_names = {'Richmond City', 'Virginia'}
+    osm = "Main Street Station"
+    wikidata = "Richmond Main Street Station"
+    place_names = {"Richmond City", "Virginia"}
 
     assert match.name_match(osm, wikidata, place_names=place_names)
 
-    osm = 'Manor Buildings'
-    wikidata = 'Manor House Buildings'
-    assert match.name_match(osm, wikidata, endings={'house'})
+    osm = "Manor Buildings"
+    wikidata = "Manor House Buildings"
+    assert match.name_match(osm, wikidata, endings={"house"})
 
-    assert match.name_match('site of Pegwell Lodge', 'Pegwell Lodge')
+    assert match.name_match("site of Pegwell Lodge", "Pegwell Lodge")
 
-    n1 = 'City of Birmingham Symphony Orchestra'
-    n2 = 'CBSO Centre'
+    n1 = "City of Birmingham Symphony Orchestra"
+    n2 = "CBSO Centre"
     assert match.name_match(n1, n2)
 
-    osm = 'Wabasca Indian Reserve #166'
-    wikidata = 'Wabasca 166'
-    assert match.name_match(osm, wikidata, endings={'Indian reserve'})
+    osm = "Wabasca Indian Reserve #166"
+    wikidata = "Wabasca 166"
+    assert match.name_match(osm, wikidata, endings={"Indian reserve"})
+
 
 def test_church_names():
     name = "St John's Church"
-    assert match.name_match(name, name + ' And Attached Railings')
+    assert match.name_match(name, name + " And Attached Railings")
 
-    assert match.name_match('Church building', 'Church')
-    assert match.name_match('Church', 'Church building')
+    assert match.name_match("Church building", "Church")
+    assert match.name_match("Church", "Church building")
 
     osm = "St. Michael's Church"
-    wikidata = 'Church Of St Michael'
+    wikidata = "Church Of St Michael"
 
-    trim = ['church', 'church of']
+    trim = ["church", "church of"]
     assert match.name_match(osm, wikidata, endings=trim)
 
-    osm = 'Saint Vitus Catholic Church'
+    osm = "Saint Vitus Catholic Church"
     wikidata = "St. Vitus's Church, Cleveland"
-    trim = ['church', 'church of', 'catholic church', 'rc church']
-    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
+    trim = ["church", "church of", "catholic church", "rc church"]
+    place_names = {"Cleveland", "Cuyahoga County", "Ohio"}
 
     assert match.name_match(osm, wikidata, endings=trim, place_names=place_names)
 
-    assert match.name_match("St. Paul's Roman Catholic Church",
-                            "St. Paul's Catholic Church")
+    assert match.name_match(
+        "St. Paul's Roman Catholic Church", "St. Paul's Catholic Church"
+    )
 
-    assert match.name_match('St Peter', 'Saint Peter')
-    assert match.name_match('Test Roman Catholic church', 'Test RC church')
+    assert match.name_match("St Peter", "Saint Peter")
+    assert match.name_match("Test Roman Catholic church", "Test RC church")
 
-    assert match.name_match('Church of Ss Peter and Paul',
-                            "St Peter and St Paul's Church",
-                            endings=['church', 'church of'])
+    assert match.name_match(
+        "Church of Ss Peter and Paul",
+        "St Peter and St Paul's Church",
+        endings=["church", "church of"],
+    )
 
-    assert match.name_match('Church of Ss Peter and Paul',
-                            "St Peter and St Paul's Church",
-                            endings=['church', 'church of'])
+    assert match.name_match(
+        "Church of Ss Peter and Paul",
+        "St Peter and St Paul's Church",
+        endings=["church", "church of"],
+    )
 
-    assert match.name_match('Michaelstow Church',
-                            'Michaelstow DSC 8243',
-                            endings=['church', 'church of'])
+    assert match.name_match(
+        "Michaelstow Church", "Michaelstow DSC 8243", endings=["church", "church of"]
+    )
 
-    assert match.name_match('Saint Edmund and Saint George',
-                            'Church of St Edmund and George',
-                            endings=['church', 'church of', 'st'])
+    assert match.name_match(
+        "Saint Edmund and Saint George",
+        "Church of St Edmund and George",
+        endings=["church", "church of", "st"],
+    )
 
-    assert match.name_match('Parish Church of St Mary',
-                            'St Mary the Virgin',
-                            endings=['parish church', 'church'])
+    assert match.name_match(
+        "Parish Church of St Mary",
+        "St Mary the Virgin",
+        endings=["parish church", "church"],
+    )
 
-    assert match.name_match('St John the Evangelist parish church',
-                            'Parish Church of St John, the Evangelist',
-                            endings=['parish church', 'parish', 'church'])
+    assert match.name_match(
+        "St John the Evangelist parish church",
+        "Parish Church of St John, the Evangelist",
+        endings=["parish church", "parish", "church"],
+    )
 
-    assert match.name_match('St Mary and St Edmund',
-                            'Church of St Edmund and St Mary',
-                            endings=['parish church', 'parish', 'church', 'church of'])
+    assert match.name_match(
+        "St Mary and St Edmund",
+        "Church of St Edmund and St Mary",
+        endings=["parish church", "parish", "church", "church of"],
+    )
 
 
 def test_number_in_name():
     # https://www.wikidata.org/wiki/Q88276810
-    n1 = 'Lake Number Ten'
-    n2 = 'Lake No. 10'
+    n1 = "Lake Number Ten"
+    n2 = "Lake No. 10"
     assert bool(match.name_match(n1, n2))
     assert bool(match.name_match(n2, n1))
 
-    n1 = 'Test forty two'
-    n2 = 'Test 42'
+    n1 = "Test forty two"
+    n2 = "Test 42"
     assert bool(match.name_match(n1, n2))
     assert bool(match.name_match(n2, n1))
+
 
 def test_match_german_church():
     # n1 = 'Alte Johanneskirche'
     # n2 = 'Johann'
 
-    n1 = 'Johannes der Täufer'
-    n2 = 'St. Johann der Täufer'
-    assert match.name_match_main(n1, n2, endings=['st', 'kirche'], debug=True) is not None
+    n1 = "Johannes der Täufer"
+    n2 = "St. Johann der Täufer"
+    assert (
+        match.name_match_main(n1, n2, endings=["st", "kirche"], debug=True) is not None
+    )
+
 
 def test_ignore_apostrophe_s_in_match():
-    osm = 'Augustine Steward House'
+    osm = "Augustine Steward House"
     wikidata = "Augustine Steward's House"
     cur = match.name_match(osm, wikidata)
     assert cur.match_type == match.MatchType.good
 
+
 def test_number_bad_match():
-    assert not match.name_match_main('1 & 2', '12, Downside')
-    assert not match.name_match_main('5.', '5, High Street')
+    assert not match.name_match_main("1 & 2", "12, Downside")
+    assert not match.name_match_main("5.", "5, High Street")
+
 
 def test_match_with_missing_house_number():
-    assert match.name_match('1-3 Rectory Cottages', 'Rectory Cottages')
+    assert match.name_match("1-3 Rectory Cottages", "Rectory Cottages")
+
 
 def test_at_symbol_match():
-    a = 'HEB Center @ Cedar Park'
-    b = 'H-E-B Center at Cedar Park'
+    a = "HEB Center @ Cedar Park"
+    b = "H-E-B Center at Cedar Park"
     assert match.name_match(a, b)
     assert match.name_match(b, a)
 
-def test_street_address():
-    assert not match.name_match('17 Mill Lane', '1, Mill Lane')
 
-    assert match.name_match('110 Livingston', '110 Livingston Street')
-    assert not match.name_match('Livingston', 'Livingston Street')
+def test_street_address():
+    assert not match.name_match("17 Mill Lane", "1, Mill Lane")
+
+    assert match.name_match("110 Livingston", "110 Livingston Street")
+    assert not match.name_match("Livingston", "Livingston Street")
+
 
 def test_name_starts_with_the_old():
-    assert match.name_match('The Old Rectory', 'The Rectory')
+    assert match.name_match("The Old Rectory", "The Rectory")
+
 
 def test_match_with_words_removed_both():
-    osm = 'Oxmoor Mall'.lower()
-    wd = 'Oxmoor Center'.lower()
-    endings = ['mall', 'center']
+    osm = "Oxmoor Mall".lower()
+    wd = "Oxmoor Center".lower()
+    endings = ["mall", "center"]
     m = match.match_with_words_removed(osm, wd, endings)
-    assert m.match_type.name == 'both_trimmed'
+    assert m.match_type.name == "both_trimmed"
+
 
 def test_strict_stable_name_match():
-    assert not match.name_match('Nazeing Park',
-                                'Stable At Nazeing Park',
-                                endings=['stable'])
+    assert not match.name_match(
+        "Nazeing Park", "Stable At Nazeing Park", endings=["stable"]
+    )
+
 
 def test_name_match_trim_both():
-    m = match.name_match('Oxmoor Mall', 'Oxmoor Center',
-                          endings=['mall', 'center'])
-    assert m.match_type.name == 'both_trimmed'
+    m = match.name_match("Oxmoor Mall", "Oxmoor Center", endings=["mall", "center"])
+    assert m.match_type.name == "both_trimmed"
 
-    m = match.name_match('Castle House', 'The Castle Inn',
-                         endings=['house', 'inn'])
-    assert m.match_type.name == 'both_trimmed'
+    m = match.name_match("Castle House", "The Castle Inn", endings=["house", "inn"])
+    assert m.match_type.name == "both_trimmed"
+
 
 def test_name_contains_initials():
-    osm = 'RGC – Rainbow Grocery Coop'
+    osm = "RGC – Rainbow Grocery Coop"
     name = match.drop_initials(osm)
-    assert name == 'Rainbow Grocery Coop'
+    assert name == "Rainbow Grocery Coop"
 
-    osm = 'R.G.C. – Rainbow Grocery Coop'
+    osm = "R.G.C. – Rainbow Grocery Coop"
     name = match.drop_initials(osm)
-    assert name == 'Rainbow Grocery Coop'
+    assert name == "Rainbow Grocery Coop"
 
-    osm = 'Rainbow Grocery Coop RGC'
+    osm = "Rainbow Grocery Coop RGC"
     name = match.drop_initials(osm)
-    assert name == 'Rainbow Grocery Coop'
+    assert name == "Rainbow Grocery Coop"
 
-    osm = 'Rainbow Grocery Coop (RGC)'
+    osm = "Rainbow Grocery Coop (RGC)"
     name = match.drop_initials(osm)
-    assert name == 'Rainbow Grocery Coop'
+    assert name == "Rainbow Grocery Coop"
+
 
 def test_name_match_initials_then_name():
-    osm = 'RGC – Rainbow Grocery Coop'
-    wd = 'Rainbow Grocery Coop'
+    osm = "RGC – Rainbow Grocery Coop"
+    wd = "Rainbow Grocery Coop"
     assert match.name_match(osm, wd)
 
-def test_name_match_trim_to_empty():
-    osm = 'Hall'
-    wd = 'Post Office'
-    endings = ['hall', 'post office']
 
-    assert not match.match_with_words_removed(osm.lower(),
-                                              wd.lower(),
-                                              endings)
+def test_name_match_trim_to_empty():
+    osm = "Hall"
+    wd = "Post Office"
+    endings = ["hall", "post office"]
+
+    assert not match.match_with_words_removed(osm.lower(), wd.lower(), endings)
 
     assert not match.name_match(osm, wd, endings=endings)
 
+
 def test_match_name_abbreviation():
     wikidata_names = [
-        'Bishop Justus Church of England School',
-        'Bishop Justus CE School',
+        "Bishop Justus Church of England School",
+        "Bishop Justus CE School",
     ]
 
     for wd in wikidata_names:
-        assert match.name_match('Bishop Justus CofE School ', wd)
+        assert match.name_match("Bishop Justus CofE School ", wd)
 
-    osm = 'Mullard Radio Astronomy Observatory (MRAO)'
-    wikidata = 'Mullard Radio Astronomy Observatory'
+    osm = "Mullard Radio Astronomy Observatory (MRAO)"
+    wikidata = "Mullard Radio Astronomy Observatory"
     assert match.name_match(osm, wikidata)
 
+
 def test_strip_words():
-    osm = 'Rio de la Tetta'
-    wd = 'Rio Tetta'
+    osm = "Rio de la Tetta"
+    wd = "Rio Tetta"
 
     assert match.name_match(osm, wd)
 
-    osm = 'Holy Trinity Church'
-    wd = 'Church Of The Holy Trinity'
+    osm = "Holy Trinity Church"
+    wd = "Church Of The Holy Trinity"
 
-    assert match.name_match(osm, wd, endings=['church'])
+    assert match.name_match(osm, wd, endings=["church"])
+
 
 @pytest.mark.skip(reason="todo")
 def test_match_name_parish_church():
-    osm = 'Church of St Peter & St Paul'
-    wd = 'St Peter and St Paul, Bromley'
-    assert match.name_match(osm, wd, ['church of'])
+    osm = "Church of St Peter & St Paul"
+    wd = "St Peter and St Paul, Bromley"
+    assert match.name_match(osm, wd, ["church of"])
 
-    osm = 'Bromley Parish Church of St Peter & St Paul'
-    wd = 'St Peter and St Paul, Bromley'
-    assert match.name_match(osm, wd, ['Parish Church of'])
+    osm = "Bromley Parish Church of St Peter & St Paul"
+    wd = "St Peter and St Paul, Bromley"
+    assert match.name_match(osm, wd, ["Parish Church of"])
+
 
 def test_get_names():
     assert match.get_names({}) == {}
-    assert match.get_names({'name': 'test'}) == {'name': 'test'}
-    assert match.get_names({'operator': 'test'}) == {'operator': 'test'}
-    assert match.get_names({'name:left': 'test'}) == {}
+    assert match.get_names({"name": "test"}) == {"name": "test"}
+    assert match.get_names({"operator": "test"}) == {"operator": "test"}
+    assert match.get_names({"name:left": "test"}) == {}
+
 
 @pytest.mark.skip(reason="get_wikidata_names is unused code")
 def test_get_wikidata_names():
-    item = {'labels': {}}
+    item = {"labels": {}}
     assert match.get_wikidata_names(item) == {}
 
-    item = {'labels': {'en': 'test'}}
-    expect = {'test': [('label', 'en')]}
+    item = {"labels": {"en": "test"}}
+    expect = {"test": [("label", "en")]}
     assert dict(match.get_wikidata_names(item)) == expect
 
-    item = {'labels': {'en': 'test', 'ar': 'test'}}
+    item = {"labels": {"en": "test", "ar": "test"}}
     assert dict(match.get_wikidata_names(item)) == expect
 
     item = {
-        'labels': {'en': 'test', 'ar': 'test'},
-        'sitelinks': {'enwiki': 'test', 'arwiki': 'test'},
+        "labels": {"en": "test", "ar": "test"},
+        "sitelinks": {"enwiki": "test", "arwiki": "test"},
     }
-    expect = {'test': [('label', 'en'), ('sitelink', 'enwiki')]}
+    expect = {"test": [("label", "en"), ("sitelink", "enwiki")]}
     assert dict(match.get_wikidata_names(item)) == expect
+
 
 def test_check_name_matches_address():
     assert not match.check_name_matches_address({}, [])
 
-    tags = {'addr:housenumber': '12', 'addr:street': 'Station Road'}
-    assert match.check_name_matches_address(tags, ['12 Station Road'])
-    assert match.check_name_matches_address(tags, ['12, Station Road'])
-    assert match.check_name_matches_address(tags, ['Number 12 Station Road'])
-    tags = {'addr:housenumber': '12-14', 'addr:street': 'Station Road'}
-    assert match.check_name_matches_address(tags, ['Nos 12-14 Station Road'])
+    tags = {"addr:housenumber": "12", "addr:street": "Station Road"}
+    assert match.check_name_matches_address(tags, ["12 Station Road"])
+    assert match.check_name_matches_address(tags, ["12, Station Road"])
+    assert match.check_name_matches_address(tags, ["Number 12 Station Road"])
+    tags = {"addr:housenumber": "12-14", "addr:street": "Station Road"}
+    assert match.check_name_matches_address(tags, ["Nos 12-14 Station Road"])
 
-    assert not match.check_name_matches_address(tags, ['Station Road'])
+    assert not match.check_name_matches_address(tags, ["Station Road"])
 
-    tags = {'addr:full': '12 Station Road'}
-    assert match.check_name_matches_address(tags, ['12 Station Road'])
+    tags = {"addr:full": "12 Station Road"}
+    assert match.check_name_matches_address(tags, ["12 Station Road"])
 
-    tags = {'addr:full': 'Station Road'}
-    assert not match.check_name_matches_address(tags, ['12 Station Road'])
+    tags = {"addr:full": "Station Road"}
+    assert not match.check_name_matches_address(tags, ["12 Station Road"])
 
     tags = {
-        'addr:street': 'Krakowskie Przedmieście',
-        'addr:housenumber': '66',
-        'addr:postcode': '00-322',
-        'name': 'Centralna Biblioteka Rolnicza',
+        "addr:street": "Krakowskie Przedmieście",
+        "addr:housenumber": "66",
+        "addr:postcode": "00-322",
+        "name": "Centralna Biblioteka Rolnicza",
     }
 
-    wd_address = '66 Krakowskie Przedmieście Street in Warsaw'
+    wd_address = "66 Krakowskie Przedmieście Street in Warsaw"
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
     tags = {
-        'name': '100 East Wisconsin',
-        'addr:state': 'WI',
-        'addr:street': 'East Wisconsin Avenue',
-        'addr:city': 'Milwaukee',
-        'addr:postcode': '53202',
-        'addr:housenumber': '100',
+        "name": "100 East Wisconsin",
+        "addr:state": "WI",
+        "addr:street": "East Wisconsin Avenue",
+        "addr:city": "Milwaukee",
+        "addr:postcode": "53202",
+        "addr:housenumber": "100",
     }
-    wd_address = '100 East Wisconsin'
+    wd_address = "100 East Wisconsin"
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
     tags = {
-        'name': '1000 Second Avenue',
-        'addr:housenumber': '1000',
-        'addr:street': '2nd Avenue',
-        'addr:city': 'Seattle',
-        'addr:postcode': '98104',
+        "name": "1000 Second Avenue",
+        "addr:housenumber": "1000",
+        "addr:street": "2nd Avenue",
+        "addr:city": "Seattle",
+        "addr:postcode": "98104",
     }
-    wd_address = '1000 Second Avenue'
+    wd_address = "1000 Second Avenue"
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
     tags = {
-        'name': '1300 Lafayette East Cooperative',
-        'addr:housenumber': '1300',
-        'addr:street': 'Lafayette Street East',
-        'addr:city': 'Detroit',
+        "name": "1300 Lafayette East Cooperative",
+        "addr:housenumber": "1300",
+        "addr:street": "Lafayette Street East",
+        "addr:city": "Detroit",
     }
-    wd_address = '1300 Lafayette East Cooperative'
+    wd_address = "1300 Lafayette East Cooperative"
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
     tags = {
-        'addr:city': 'Kraków',
-        'addr:country': 'PL',
-        'addr:housenumber': '3',
-        'addr:postcode': '31-134',
-        'addr:street': 'Basztowa',
-        'building': 'apartments',
+        "addr:city": "Kraków",
+        "addr:country": "PL",
+        "addr:housenumber": "3",
+        "addr:postcode": "31-134",
+        "addr:street": "Basztowa",
+        "building": "apartments",
     }
-    wd_address = 'Basztowa 3'
+    wd_address = "Basztowa 3"
     # assert match.check_name_matches_address(tags, [wd_address]) is not False
 
-    wd_address = '3 Basztowa street in Kraków'
+    wd_address = "3 Basztowa street in Kraków"
     assert match.check_name_matches_address(tags, [wd_address]) is True
 
-    wd_address = '4 Basztowa street in Kraków'
+    wd_address = "4 Basztowa street in Kraków"
     assert match.check_name_matches_address(tags, [wd_address]) is False
+
 
 def test_check_name_matches_address_postcode():
     tags = {
-        'addr:housenumber': '12',
-        'addr:street': 'Buckingham Street',
+        "addr:housenumber": "12",
+        "addr:street": "Buckingham Street",
     }
-    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+    assert match.check_name_matches_address(tags, ["12, Buckingham Street Wc2"])
 
     tags = {
-        'addr:housenumber': '12',
-        'addr:street': 'Buckingham Street',
-        'addr:postcode': 'WC2N 6DF',
+        "addr:housenumber": "12",
+        "addr:street": "Buckingham Street",
+        "addr:postcode": "WC2N 6DF",
     }
-    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+    assert match.check_name_matches_address(tags, ["12, Buckingham Street Wc2"])
 
     tags = {
-        'addr:housenumber': '12',
-        'addr:street': 'Buckingham Street',
-        'addr:postcode': 'EC1X 1AA',
+        "addr:housenumber": "12",
+        "addr:street": "Buckingham Street",
+        "addr:postcode": "EC1X 1AA",
     }
-    assert not match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+    assert not match.check_name_matches_address(tags, ["12, Buckingham Street Wc2"])
 
-    tags = {'addr:full': '12 Buckingham Street'}
-    assert match.check_name_matches_address(tags, ['12, Buckingham Street Wc2'])
+    tags = {"addr:full": "12 Buckingham Street"}
+    assert match.check_name_matches_address(tags, ["12, Buckingham Street Wc2"])
 
     tags = {
-        'name': '510 Marquette',
-        'addr:housenumber': '510',
-        'addr:street': 'Marquette Avenue South',
+        "name": "510 Marquette",
+        "addr:housenumber": "510",
+        "addr:street": "Marquette Avenue South",
     }
-    wikidata_names = ['510 Marquette Building']
+    wikidata_names = ["510 Marquette Building"]
     assert match.check_name_matches_address(tags, wikidata_names) is not False
 
     tags = {
-        'addr:street': 'Poydras Street',
-        'name': 'Eni Building',
-        'building': 'yes',
-        'addr:housenumber': '1250',
-        'height': '104',
-        'wikidata': 'Q4548391',
+        "addr:street": "Poydras Street",
+        "name": "Eni Building",
+        "building": "yes",
+        "addr:housenumber": "1250",
+        "height": "104",
+        "wikidata": "Q4548391",
     }
-    wikidata_names = ['1250 Poydras Plaza', 'Mobil Building', 'Eni Building']
+    wikidata_names = ["1250 Poydras Plaza", "Mobil Building", "Eni Building"]
     assert match.check_name_matches_address(tags, wikidata_names) is not False
+
 
 def test_check_for_address_in_extract():
     osm_tags = {
-        'addr:street': 'West 43rd Street',
-        'addr:housenumber': '4',
+        "addr:street": "West 43rd Street",
+        "addr:housenumber": "4",
     }
 
-    extract = ('Aeolian Hall was a concert hall in midtown Manhattan in ' +
-               'New York City, located on the third floor of ' +
-               '29-33 West 42nd Street (also 34 West 43rd Street, from the ' +
-               'other side) across the street from Bryant Park.')
+    extract = (
+        "Aeolian Hall was a concert hall in midtown Manhattan in "
+        + "New York City, located on the third floor of "
+        + "29-33 West 42nd Street (also 34 West 43rd Street, from the "
+        + "other side) across the street from Bryant Park."
+    )
 
     assert not match.check_for_address_in_extract(osm_tags, extract)
 
-    osm_tags = {'addr:street': 'Station Road', 'addr:housenumber': '10'}
-    extract = 'Test House, located at 10 Station Road is a test.'
+    osm_tags = {"addr:street": "Station Road", "addr:housenumber": "10"}
+    extract = "Test House, located at 10 Station Road is a test."
     assert match.check_for_address_in_extract(osm_tags, extract)
 
-    extract = ('The Pinball Hall of Fame is a museum for pinball machines ' +
-               'that opened in Paradise, Nevada in January 2006. It is ' +
-               'located at 1610 E Tropicana Ave.')
+    extract = (
+        "The Pinball Hall of Fame is a museum for pinball machines "
+        + "that opened in Paradise, Nevada in January 2006. It is "
+        + "located at 1610 E Tropicana Ave."
+    )
     osm_tags = {
-        'addr:city': 'Las Vegas',
-        'addr:street': 'East Tropicana Avenue',
-        'addr:postcode': '89119',
-        'addr:housenumber': '1610',
+        "addr:city": "Las Vegas",
+        "addr:street": "East Tropicana Avenue",
+        "addr:postcode": "89119",
+        "addr:housenumber": "1610",
     }
     assert match.check_for_address_in_extract(osm_tags, extract)
 
     osm_tags = {
-        'name': 'Old Stone House',
-        'tourism': 'attraction',
-        'building': 'yes',
-        'historic': 'house',
-        'addr:city': 'Washington',
-        'addr:state': 'DC',
-        'addr:street': 'M Street Northwest',
-        'addr:country': 'US',
-        'addr:housenumber': '3051',
+        "name": "Old Stone House",
+        "tourism": "attraction",
+        "building": "yes",
+        "historic": "house",
+        "addr:city": "Washington",
+        "addr:state": "DC",
+        "addr:street": "M Street Northwest",
+        "addr:country": "US",
+        "addr:housenumber": "3051",
     }
 
-    extract = ('Built in 1765, Old Stone House is located at 3051 M Street, ' +
-               'Northwest in the Georgetown neighborhood.')
+    extract = (
+        "Built in 1765, Old Stone House is located at 3051 M Street, "
+        + "Northwest in the Georgetown neighborhood."
+    )
     assert match.check_for_address_in_extract(osm_tags, extract)
 
     osm_tags = {
-        'addr:housenumber': '1264',
-        'addr:street': 'Wisconsin Avenue Northwest',
-        'amenity': 'pub',
-        'name': "Billy Martin's Tavern",
+        "addr:housenumber": "1264",
+        "addr:street": "Wisconsin Avenue Northwest",
+        "amenity": "pub",
+        "name": "Billy Martin's Tavern",
     }
 
-    extract = ("Martin's is located at 1264 Wisconsin Avenue, NW in the " +
-               'Georgetown neighborhood of Washington D.C.')
+    extract = (
+        "Martin's is located at 1264 Wisconsin Avenue, NW in the "
+        + "Georgetown neighborhood of Washington D.C."
+    )
     assert match.check_for_address_in_extract(osm_tags, extract)
 
     osm_tags = {
-        'height': '15.3',
-        'building': 'yes',
-        'addr:street': '2nd Avenue',
-        'addr:postcode': '10003',
-        'addr:housenumber': '137',
+        "height": "15.3",
+        "building": "yes",
+        "addr:street": "2nd Avenue",
+        "addr:postcode": "10003",
+        "addr:housenumber": "137",
     }
 
-    extract = ("two adjoining historic buildings located at 135 and 137 2nd " +
-               "Avenue in the East Village neighborhood of Manhattan")
+    extract = (
+        "two adjoining historic buildings located at 135 and 137 2nd "
+        + "Avenue in the East Village neighborhood of Manhattan"
+    )
     assert not match.check_for_address_in_extract(osm_tags, extract)
+
 
 def test_check_for_address_range_in_extract():
     osm_tags = {
-        'addr:street': 'Queen Square',
-        'addr:housenumber': '29',
+        "addr:street": "Queen Square",
+        "addr:housenumber": "29",
     }
 
-    extract = ('The Sailors Refuge is an historic house situated ' +
-               'at 27–29 Queen Square, Bristol, England.')
+    extract = (
+        "The Sailors Refuge is an historic house situated "
+        + "at 27–29 Queen Square, Bristol, England."
+    )
 
     assert not match.check_for_address_in_extract(osm_tags, extract)
+
 
 def test_check_for_match():
     assert match.check_for_match({}, []) == {}
 
-    osm_tags = {'addr:city': 'Rome', 'name': 'test', 'alt_name': 'test'}
-    wd_names = {'test': [('label', 'en')]}
+    osm_tags = {"addr:city": "Rome", "name": "test", "alt_name": "test"}
+    wd_names = {"test": [("label", "en")]}
 
     expect = {
-        'alt_name': [('good', 'test', [('label', 'en')])],
-        'name': [('good', 'test', [('label', 'en')])],
+        "alt_name": [("good", "test", [("label", "en")])],
+        "name": [("good", "test", [("label", "en")])],
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
 
-    osm_tags = {'name': 'Burgers and Cupcakes'}
+    osm_tags = {"name": "Burgers and Cupcakes"}
     wd_names = {
-        'Baryshnikov Arts Center': [('label', 'en')],
-        'BAC': [('extract', 'en')],
+        "Baryshnikov Arts Center": [("label", "en")],
+        "BAC": [("extract", "en")],
     }
     assert match.check_for_match(osm_tags, wd_names) == {}
 
-    del wd_names['Baryshnikov Arts Center']
+    del wd_names["Baryshnikov Arts Center"]
     assert match.check_for_match(osm_tags, wd_names)
 
-    osm_tags = {'name': 'National Museum of Mathematics (MoMath)'}
+    osm_tags = {"name": "National Museum of Mathematics (MoMath)"}
     wd_names = {
-        'National Museum of Mathematics': [('label', 'en')],
-        'Momath': [('alias', 'en')],
-        'Museum of Mathematics': [('alias', 'en')],
+        "National Museum of Mathematics": [("label", "en")],
+        "Momath": [("alias", "en")],
+        "Museum of Mathematics": [("alias", "en")],
     }
 
     expect = {
-        'name': [('prefix', 'National Museum of Mathematics', [('label', 'en')])],
+        "name": [("prefix", "National Museum of Mathematics", [("label", "en")])],
     }
 
     assert match.check_for_match(osm_tags, wd_names) == expect
 
     osm_tags = {
-        'building:levels': '6',
-        'name': 'Lombard Buildings',
-        'building': 'yes',
+        "building:levels": "6",
+        "name": "Lombard Buildings",
+        "building": "yes",
     }
 
-    wd_names = {'Lombard Building': [('label', 'en'),
-                                     ('sitelink', 'enwiki'),
-                                     ('extract', 'enwiki')]}
+    wd_names = {
+        "Lombard Building": [
+            ("label", "en"),
+            ("sitelink", "enwiki"),
+            ("extract", "enwiki"),
+        ]
+    }
 
-    expect = {'name': [('good', 'Lombard Building', [('label', 'en'),
-                                                     ('sitelink', 'enwiki'),
-                                                     ('extract', 'enwiki')])]}
+    expect = {
+        "name": [
+            (
+                "good",
+                "Lombard Building",
+                [("label", "en"), ("sitelink", "enwiki"), ("extract", "enwiki")],
+            )
+        ]
+    }
 
-    endings = ['building']
+    endings = ["building"]
     assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
 
     osm_tags = {
-        'name': 'Westland London',
-        'shop': 'furniture',
-        'building': 'yes',
-        'addr:street': 'Leonard Street',
-        'addr:postcode': 'EC2A 4QX',
-        'addr:housename': "St. Michael's Church",
+        "name": "Westland London",
+        "shop": "furniture",
+        "building": "yes",
+        "addr:street": "Leonard Street",
+        "addr:postcode": "EC2A 4QX",
+        "addr:housename": "St. Michael's Church",
     }
-    wd_names = {'Church Of St Michael': [('label', 'en')]}
+    wd_names = {"Church Of St Michael": [("label", "en")]}
 
-    expect = {'addr:housename': [('both_trimmed',
-                                  'Church Of St Michael',
-                                  [('label', 'en')])]}
-    endings = ['church', 'church of']
-
-    assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
-
-    osm_tags = {
-        'denomination': 'roman_catholic',
-        'name': 'Saint Vitus Catholic Church',
-        'amenity': 'place_of_worship',
-        'religion': 'christian',
+    expect = {
+        "addr:housename": [("both_trimmed", "Church Of St Michael", [("label", "en")])]
     }
-
-    wd_names = {"St. Vitus's Church, Cleveland": [('label', 'en')]}
-    endings = ['church', 'church of', 'catholic church', 'rc church']
-
-    expect = {'name': [('both_trimmed',
-                        "St. Vitus's Church, Cleveland",
-                        [('label', 'en')])]}
-
-    place_names = {'Cleveland', 'Cuyahoga County', 'Ohio'}
-
-    assert match.check_for_match(osm_tags,
-                                 wd_names,
-                                 place_names=place_names,
-                                 endings=endings) == expect
-
-    wd_names = {'Samson And Lion Public House': [('label', 'en')]}
-    osm_tags = {
-        'addr:city': 'Birmingham',
-        'addr:housenumber': '42',
-        'addr:postcode': 'B9 5QF',
-        'addr:street': 'Yardley Green Road',
-        'amenity': 'place_of_worship',
-        'building': 'yes',
-        'heritage': '2',
-        'heritage:operator': 'Historic England',
-        'listed_status': 'Grade II',
-        'name': 'Masjid Noor-Us-Sunnah',
-        'previous_name': 'Samson & Lion',
-        'previous_use': 'pub',
-        'religion': 'muslim',
-    }
-    endings = ['public house']
-
-    expect = {'previous_name': [('wikidata_trimmed',
-                                 'Samson And Lion Public House',
-                                 [('label', 'en')])]}
+    endings = ["church", "church of"]
 
     assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
 
     osm_tags = {
-        'area': 'yes',
-        'highway': 'services',
-        'name': 'Stop24 Folkestone Services',
-        'operator': 'Stop24'
+        "denomination": "roman_catholic",
+        "name": "Saint Vitus Catholic Church",
+        "amenity": "place_of_worship",
+        "religion": "christian",
     }
-    wd_names = {'Folkestone services': [('sitelink', 'enwiki')],
-                'Stop 24 services': [('label', 'en'), ('extract', 'enwiki')]}
-    expect = {'operator': [('wikidata_trimmed', 'Stop 24 services',
-                           [('label', 'en'), ('extract', 'enwiki')])],
-              'name': [('good', 'Folkestone services', [('sitelink', 'enwiki')]),
-                       ('good', 'Stop 24 services',
-                        [('label', 'en'), ('extract', 'enwiki')])]}
 
-    endings = {'services'}
-    place_names = {'Folkestone', 'Kent'}
+    wd_names = {"St. Vitus's Church, Cleveland": [("label", "en")]}
+    endings = ["church", "church of", "catholic church", "rc church"]
 
-    assert match.check_for_match(osm_tags, wd_names,
-                                 place_names=place_names,
-                                 endings=endings) == expect
+    expect = {
+        "name": [("both_trimmed", "St. Vitus's Church, Cleveland", [("label", "en")])]
+    }
+
+    place_names = {"Cleveland", "Cuyahoga County", "Ohio"}
+
+    assert (
+        match.check_for_match(
+            osm_tags, wd_names, place_names=place_names, endings=endings
+        )
+        == expect
+    )
+
+    wd_names = {"Samson And Lion Public House": [("label", "en")]}
+    osm_tags = {
+        "addr:city": "Birmingham",
+        "addr:housenumber": "42",
+        "addr:postcode": "B9 5QF",
+        "addr:street": "Yardley Green Road",
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "heritage": "2",
+        "heritage:operator": "Historic England",
+        "listed_status": "Grade II",
+        "name": "Masjid Noor-Us-Sunnah",
+        "previous_name": "Samson & Lion",
+        "previous_use": "pub",
+        "religion": "muslim",
+    }
+    endings = ["public house"]
+
+    expect = {
+        "previous_name": [
+            ("wikidata_trimmed", "Samson And Lion Public House", [("label", "en")])
+        ]
+    }
+
+    assert match.check_for_match(osm_tags, wd_names, endings=endings) == expect
+
+    osm_tags = {
+        "area": "yes",
+        "highway": "services",
+        "name": "Stop24 Folkestone Services",
+        "operator": "Stop24",
+    }
+    wd_names = {
+        "Folkestone services": [("sitelink", "enwiki")],
+        "Stop 24 services": [("label", "en"), ("extract", "enwiki")],
+    }
+    expect = {
+        "operator": [
+            (
+                "wikidata_trimmed",
+                "Stop 24 services",
+                [("label", "en"), ("extract", "enwiki")],
+            )
+        ],
+        "name": [
+            ("good", "Folkestone services", [("sitelink", "enwiki")]),
+            ("good", "Stop 24 services", [("label", "en"), ("extract", "enwiki")]),
+        ],
+    }
+
+    endings = {"services"}
+    place_names = {"Folkestone", "Kent"}
+
+    assert (
+        match.check_for_match(
+            osm_tags, wd_names, place_names=place_names, endings=endings
+        )
+        == expect
+    )
+
 
 def test_get_all_matches():
-    tags = {'name': 'test'}
-    names = {'test': [('label', 'en'), ('sitelink', 'enwiki')]}
+    tags = {"name": "test"}
+    names = {"test": [("label", "en"), ("sitelink", "enwiki")]}
     match_list = match.get_all_matches(tags, names)
     assert len(match_list) == 1
     m = match_list[0]
-    assert m.osm_name == 'test'
-    assert m.osm_key == 'name'
-    assert m.wikidata_name == 'test'
-    assert m.wikidata_source == [('label', 'en'), ('sitelink', 'enwiki')]
+    assert m.osm_name == "test"
+    assert m.osm_key == "name"
+    assert m.wikidata_name == "test"
+    assert m.wikidata_source == [("label", "en"), ("sitelink", "enwiki")]
+
 
 @pytest.mark.skip(reason="broken code")
 def test_get_all_matches_address():
-    tags = {'addr:housenumber': '12', 'addr:street': 'Station Road'}
-    names = {'12 Station Road': [('label', 'en')]}
+    tags = {"addr:housenumber": "12", "addr:street": "Station Road"}
+    names = {"12 Station Road": [("label", "en")]}
     match_list = match.get_all_matches(tags, names)
     assert len(match_list) == 1
 
+
 def test_match_operator_at_start_of_name():
     osm_tags = {
-        'highway': 'services',
-        'landuse': 'commercial',
-        'name': 'Welcome Break Gordano Services',
-        'operator': 'Welcome Break',
+        "highway": "services",
+        "landuse": "commercial",
+        "name": "Welcome Break Gordano Services",
+        "operator": "Welcome Break",
     }
 
-    wd_names = {'Gordano services': [('label', 'en')]}
-    expect = {'name': [('good', 'Gordano services', [('label', 'en')])]}
+    wd_names = {"Gordano services": [("label", "en")]}
+    expect = {"name": [("good", "Gordano services", [("label", "en")])]}
 
     assert match.check_for_match(osm_tags, wd_names) == expect
 
     osm_tags = {
-        'name': 'Citizens Bank (Roslindale)',
-        'operator': 'Citizens Bank',
+        "name": "Citizens Bank (Roslindale)",
+        "operator": "Citizens Bank",
     }
 
-    wd_names = {'Roslindale Theatre': [('label', 'en')]}
+    wd_names = {"Roslindale Theatre": [("label", "en")]}
 
-    assert not match.check_for_match(osm_tags, wd_names, ['theatre'])
+    assert not match.check_for_match(osm_tags, wd_names, ["theatre"])
+
 
 def test_match_with_place_names():
-    osm = 'Hungarian house'
-    wd = 'Hungarian House of New York'
+    osm = "Hungarian house"
+    wd = "Hungarian House of New York"
 
-    place_names = ['Manhattan', 'New York City', 'New York',
-                   'United States of America']
+    place_names = ["Manhattan", "New York City", "New York", "United States of America"]
 
     assert match.name_match(osm, wd, place_names=place_names)
 
-def test_no_trim_s_on_single_term_name():
-    osm = 'Boots'
-    wd = 'The Boot Inn'
 
-    assert not match.name_match(osm, wd, endings=['inn'])
+def test_no_trim_s_on_single_term_name():
+    osm = "Boots"
+    wd = "The Boot Inn"
+
+    assert not match.name_match(osm, wd, endings=["inn"])
+
 
 def test_strip_place_name():
-    osm = 'Danmarks ambassade'
-    wd = 'Danmarks ambassade i Oslo'
+    osm = "Danmarks ambassade"
+    wd = "Danmarks ambassade i Oslo"
 
-    assert match.name_match(osm, wd, place_names=['Oslo'])
+    assert match.name_match(osm, wd, place_names=["Oslo"])
+
 
 @pytest.mark.skip(reason="not needed")
 def test_church_name_match():
     n1 = "St. Michael's Church"
-    n2 = 'Church Of St Michael'
+    n2 = "Church Of St Michael"
 
     assert match.church_name_match(n1, n2)
 
-    n1 = 'Saint Vitus Catholic Church'
+    n1 = "Saint Vitus Catholic Church"
     n2 = "St. Vitus's Church, Cleveland"
-    assert match.church_name_match(n1, n2, place_names={'Cleveland'})
+    assert match.church_name_match(n1, n2, place_names={"Cleveland"})
 
     n1 = "St. Paul's Roman Catholic Church"
     n2 = "St. Paul's Catholic Church"
 
     assert match.church_name_match(n1, n2)
 
+
 def test_embassy_match():
     tags = {
-        'name': 'Consulate General of Switzerland in San Francisco',
-        'amenity': 'embassy',
-        'country': 'CH',
-        'addr:city': 'San Francisco',
-        'addr:state': 'CA',
-        'addr:street': 'Montgomery Street',
-        'addr:postcode': '94104',
-        'addr:housenumber': '456',
+        "name": "Consulate General of Switzerland in San Francisco",
+        "amenity": "embassy",
+        "country": "CH",
+        "addr:city": "San Francisco",
+        "addr:state": "CA",
+        "addr:street": "Montgomery Street",
+        "addr:postcode": "94104",
+        "addr:housenumber": "456",
     }
 
-    wd_address = '456 Montgomery Street Suite #2100'
+    wd_address = "456 Montgomery Street Suite #2100"
     assert match.check_name_matches_address(tags, [wd_address]) is not False
 
+
 def test_name_match_dash_and_both_trim():
-    n1 = 'Sint Pieters Museum'
-    n2 = 'Museum Sint-Pieters'
-    assert match.name_match(n1, n2, endings=['museum'])
+    n1 = "Sint Pieters Museum"
+    n2 = "Museum Sint-Pieters"
+    assert match.name_match(n1, n2, endings=["museum"])
+
 
 def test_name_match_church():
     n1 = "St Andrew"
     n2 = "St Andrew's Church"
-    assert match.name_match(n1, n2, endings=['church'])
+    assert match.name_match(n1, n2, endings=["church"])
