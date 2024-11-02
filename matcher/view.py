@@ -73,6 +73,7 @@ from .model import (
     ItemIsA,
     ItemTag,
     Language,
+    LanguageCount,
     SiteBanner,
     Timing,
     User,
@@ -618,7 +619,8 @@ def place_redirect(name):
     return redirect(place.candidates_url())
 
 
-def get_bad_matches(place):
+def get_bad_matches(place) -> set[tuple[typing.Any, ...]]:
+    """Get bad matches from database."""
     q = (
         database.session.query(
             ItemCandidate.item_id, ItemCandidate.osm_type, ItemCandidate.osm_id
@@ -630,17 +632,21 @@ def get_bad_matches(place):
     return set(tuple(row) for row in q)
 
 
-def get_wikidata_language(code):
-    return Language.query.filter_by(wikimedia_language_code=code).one_or_none()
+def get_wikidata_language(code: str) -> Language | None:
+    """Get Language object with given language code."""
+    return typing.cast(
+        Language, Language.query.filter_by(wikimedia_language_code=code).one_or_none()
+    )
 
 
-def set_top_language(place, top):
+def set_top_language(place: Place, top: str) -> Response:
+    """Set top language."""
     languages = place.languages()
     cookie_name = "language_order"
     place_identifier = f"{place.osm_type}/{place.osm_id}"
 
     cookie = read_language_order()
-    current_order = cookie.get(place_identifier) or [l["code"] for l in languages]
+    current_order = cookie.get(place_identifier) or [lang["code"] for lang in languages]
     current_order.remove(top)
     cookie[place_identifier] = [top] + current_order
 
@@ -651,7 +657,8 @@ def set_top_language(place, top):
 
 
 @app.route("/languages/<osm_type>/<int:osm_id>")
-def switch_languages(osm_type, osm_id):
+def switch_languages(osm_type: str, osm_id: int) -> Response | str:
+    """Switch languages."""
     place = Place.get_or_abort(osm_type, osm_id)
 
     top = request.args.get("top")
@@ -659,20 +666,24 @@ def switch_languages(osm_type, osm_id):
         return set_top_language(place, top)
 
     languages = place.languages()
-    for l in languages:
-        l["lang"] = get_wikidata_language(l["code"])
+    for language in languages:
+        language["lang"] = get_wikidata_language(language["code"])
 
     return render_template("switch_languages.html", place=place, languages=languages)
 
 
-def read_language_order():
+def read_language_order() -> dict[str, typing.Any]:
+    """Read language order from cookie."""
     cookie_name = "language_order"
     cookie_json = request.cookies.get(cookie_name)
     return json.loads(cookie_json) if cookie_json else {}
 
 
-def languages_in_user_order(user_language_order, languages):
-    lookup = {l["code"]: l for l in languages}
+def languages_in_user_order(
+    user_language_order: list[str], languages: list[LanguageCount]
+) -> list[LanguageCount]:
+    """Languages in user order."""
+    lookup = {lang["code"]: lang for lang in languages}
     return [lookup[code] for code in user_language_order if code in lookup]
 
 
@@ -991,7 +1002,8 @@ def cache_has_missing_sitelink(cache: dict[str, Any]) -> bool:
 
 
 @app.route("/candidates/<osm_type>/<int:osm_id>.json")
-def candidates_json(osm_type, osm_id):
+def candidates_json(osm_type: str, osm_id: int) -> Response:
+    """Candidate JSON."""
     place = Place.get_or_abort(osm_type, osm_id)
     g.country_code = place.country_code
     g.default_languages = place.languages()
@@ -1004,22 +1016,22 @@ def candidates_json(osm_type, osm_id):
 
     cache = place.match_cache
     if cache and not cache_has_missing_sitelink(cache):
-        languages = cache.pop("languages")
+        languages: list[LanguageCount] = cache.pop("languages")
         if user_language_order:
             languages = languages_in_user_order(user_language_order, languages)
         return jsonify(osm_type=osm_type, osm_id=osm_id, languages=languages, **cache)
 
     languages = []
     langs = []
-    for l in g.default_languages:
-        lang = get_wikidata_language(l["code"])
+    for language in g.default_languages:
+        lang = get_wikidata_language(language["code"])
         if not lang:
             continue
         langs.append(lang)
-        l["lang"] = language_dict(lang)
-        languages.append(l)
+        language["lang"] = language_dict(lang)
+        languages.append(language)
 
-    osm_count = Counter()
+    osm_count: Counter[tuple[str, int]] = Counter()
 
     items = place.get_candidate_items()
 

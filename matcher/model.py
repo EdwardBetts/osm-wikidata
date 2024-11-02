@@ -2,6 +2,7 @@
 
 import collections
 import re
+import typing
 from collections import defaultdict
 from time import time
 from typing import Any
@@ -1691,3 +1692,12 @@ class Embassy(Base):
     label = Column(String, nullable=False)
     names = Column(postgresql.ARRAY(String))
     qid = column_property("Q" + cast(item_id, String))
+
+
+class LanguageCount(typing.TypedDict):
+    """Language count."""
+
+    code: str
+    wikidata: int
+    osm: int | None
+    lang: typing.NotRequired[Language]

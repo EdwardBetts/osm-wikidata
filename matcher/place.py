@@ -46,6 +46,7 @@ from .model import (
     Item,
     ItemCandidate,
     ItemTag,
+    LanguageCount,
     PlaceItem,
     get_bad,
     osm_type_enum,
@@ -225,19 +226,24 @@ class Place(Base):
         except MultipleResultsFound:
             return None
 
-    def get_address_key(self, key):
+    def get_address_key(self, key: str) -> str | None:
+        """Get key from address."""
         if isinstance(self.address, dict):
             return self.address.get(key)
         for line in self.address or []:
             if line["type"] == key:
+                assert isinstance(line["name"], str)
                 return line["name"]
+        return None
 
     @property
-    def country_code(self):
+    def country_code(self) -> str | None:
+        """Country code."""
         return self.get_address_key("country_code")
 
     @property
-    def country(self):
+    def country(self) -> str | None:
+        """Country name."""
         return self.get_address_key("country")
 
     @classmethod
@@ -540,14 +546,14 @@ class Place(Base):
 
         return items
 
-    def covers(self, item):
+    def covers(self, item: Item) -> bool:
         """Is the given item within the geometry of this place."""
         q = select(func.ST_Covers(Place.geom, item["location"])).where(
             Place.place_id == self.place_id
         )
-        return object_session(self).scalar(q)
+        return bool(object_session(self).scalar(q))
 
-    def add_tags_to_items(self):
+    def add_tags_to_items(self) -> None:
         for item in self.items.filter(Item.categories != "{}"):
             # if wikidata says this is a place then adding tags
             # from wikipedia can just confuse things
@@ -557,19 +563,23 @@ class Place(Base):
                 item.tags.add(t)
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
+        """Place table prefix."""
         return f"osm_{self.place_id}"
 
     @property
-    def gis_tables(self):
+    def gis_tables(self) -> set[str]:
+        """Place OSM table names."""
         return {f"{self.prefix}_{t}" for t in ("line", "point", "polygon")}
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
+        """Place OSM identifier."""
         return f"{self.osm_type}/{self.osm_id}"
 
     @property
-    def overpass_filename(self):
+    def overpass_filename(self) -> str:
+        """Overpass query results filename."""
         overpass_dir = current_app.config["OVERPASS_DIR"]
         return os.path.join(overpass_dir, "{}.xml".format(self.place_id))
 
@@ -992,8 +1002,9 @@ class Place(Base):
                 print(qid)
             items[qid].entity = entity
 
-    def languages_osm(self):
-        lang_count = Counter()
+    def languages_osm(self) -> list[tuple[str, int]]:
+        """Language counts from OSM."""
+        lang_count: Counter[str] = Counter()
 
         candidate_count = 0
         candidate_has_language_count = 0
@@ -1008,7 +1019,9 @@ class Place(Base):
 
         return sorted(lang_count.items(), key=lambda i: i[1], reverse=True)
 
-    def languages_wikidata(self):
+    def languages_wikidata(self) -> list[tuple[str, int]]:
+        """Language counts from Wikidata."""
+        lang_count: Counter[str] | dict[str, int]
         lang_count = Counter()
         item_count = self.items.count()
         count_sv = self.country_code in {"se", "fi"}
@@ -1045,15 +1058,18 @@ class Place(Base):
 
         return sorted(lang_count.items(), key=lambda i: i[1], reverse=True)[:10]
 
-    def languages(self):
+    def languages(self) -> list[LanguageCount]:
+        """List of languages with counts from Wikidata and OSM."""
         if self.language_count:
-            return self.language_count
+            return typing.cast(list[LanguageCount], self.language_count)
 
         wikidata = self.languages_wikidata()
         osm = dict(self.languages_osm())
 
         count = [
-            {"code": code, "wikidata": count, "osm": osm.get(code)}
+            typing.cast(
+                LanguageCount, {"code": code, "wikidata": count, "osm": osm.get(code)}
+            )
             for code, count in wikidata
         ]
         self.language_count = count
