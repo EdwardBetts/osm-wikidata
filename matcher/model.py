@@ -126,6 +126,63 @@ class User(Base, UserMixin):
 # bad state: overpass_fail
 
 
+class Language(Base):
+    """Language."""
+
+    __tablename__ = "language"
+    item_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    iso_639_1: Mapped[str] = mapped_column(String(2))
+    iso_639_2: Mapped[str] = mapped_column(String(3))
+    iso_639_3: Mapped[str] = mapped_column(String(3))
+    wikimedia_language_code: Mapped[str] = mapped_column(unique=True)
+    qid = column_property("Q" + cast(item_id, String))
+    labels = relationship(
+        "LanguageLabel", lazy="dynamic", foreign_keys=lambda: LanguageLabel.item_id
+    )
+
+    def english_name(self) -> str:
+        """Name of language in English."""
+        n: str = self.labels.filter_by(wikimedia_language_code="en").one().label
+        assert isinstance(n, str)
+        return n
+
+    def self_name(self) -> str | None:
+        """Name of this language in this language."""
+        name = self.labels.filter_by(language=self).one_or_none()
+        return typing.cast(str, name.label) if name else None
+
+    def label(self, with_code: bool = True) -> str:
+        """Language label."""
+        name = self.self_name()
+        if not name:  # self label missing for language
+            name = self.english_name()
+        elif self.wikimedia_language_code != "en":  # add name in English
+            name = capfirst(name) + " / " + capfirst(self.english_name())
+        return f"{name} [{self.wikimedia_language_code}]" if with_code else name
+
+    @property
+    def site_name(self) -> str:
+        """Wikipedia site name for this language."""
+        return f"{self.wikimedia_language_code}wiki"
+
+    @classmethod
+    def get_by_code(cls, code: str) -> typing.Self:
+        """Lookup language by code."""
+        lang: typing.Self = cls.query.filter_by(wikimedia_language_code=code).one()
+        return lang
+
+
+class LanguageLabel(Base):
+    __tablename__ = "language_label"
+    item_id = Column(Integer, ForeignKey(Language.item_id), primary_key=True)
+    wikimedia_language_code = Column(
+        String, ForeignKey(Language.wikimedia_language_code), primary_key=True
+    )
+    label = Column(String, nullable=False)
+
+    language = relationship("Language", foreign_keys=[wikimedia_language_code])
+
+
 class IsA(Base):
     __tablename__ = "isa"
     item_id = Column(Integer, primary_key=True, autoincrement=False)
@@ -175,7 +232,7 @@ class IsA(Base):
             ret[lang] = {"label": label["value"], "description": description}
         return ret
 
-    def label_and_description(self, languages) -> dict[str, str | None]:
+    def label_and_description(self, languages: list[Language]) -> dict[str, str | None]:
         """Label and description."""
         try:
             assert isinstance(self.entity, dict)
@@ -408,8 +465,12 @@ class Item(Base):
     def wikidata_uri(self):
         return f"https://www.wikidata.org/wiki/{self.qid}"
 
-    def get_lat_lon(self):
-        return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
+    def get_lat_lon(self) -> tuple[float, float]:
+        """Get lat/lon for item."""
+        return typing.cast(
+            tuple[float, float],
+            session.query(func.ST_Y(self.location), func.ST_X(self.location)).one(),
+        )
 
     def get_osm_url(self, zoom=18, show_marker=False):
         lat, lon = self.get_lat_lon()
@@ -512,20 +573,22 @@ https://www.wikidata.org/wiki/{self.qid}
 
         return addresses
 
-    def identifiers(self):
+    def identifiers(self) -> set[tuple[tuple[str, ...], str]]:
+        """Item identifiers."""
         ret = set()
         for v in self.get_item_identifiers().values():
             ret.update(v)
         return ret
 
-    def identifier_values(self):
-        ret = defaultdict(set)
+    def identifier_values(self) -> dict[str, set[str]]:
+        """Item identifier values."""
+        ret: defaultdict[str, set[str]] = defaultdict(set)
         for osm_key, wikidata_values in self.get_item_identifiers().items():
             for values, _ in wikidata_values:
                 ret[osm_key].update(values)
-        return ret
+        return dict(ret)
 
-    def get_item_identifiers(self):
+    def get_item_identifiers(self) -> dict[str, list[tuple[tuple[str, ...], str]]]:
         if not self.entity:
             return {}
 
@@ -585,7 +648,7 @@ https://www.wikidata.org/wiki/{self.qid}
                 ]
             for osm_key in osm_keys:
                 tags[osm_key].append((tuple(values), label))
-        return tags
+        return dict(tags)
 
     def ref_nrhp(self):
         if self.entity:
@@ -687,7 +750,8 @@ https://www.wikidata.org/wiki/{self.qid}
     def coords(self):
         return session.query(func.ST_Y(self.location), func.ST_X(self.location)).one()
 
-    def image_filenames(self):
+    def image_filenames(self) -> list[str]:
+        """Image filenames for item."""
         return [
             i["mainsnak"]["datavalue"]["value"]
             for i in self.entity["claims"].get("P18", [])
@@ -755,9 +819,13 @@ https://www.wikidata.org/wiki/{self.qid}
         if self.categories:
             return matcher.categories_to_tags_map(self.categories)
 
-    def sitelinks(self):
-        if self.entity:
-            return self.entity.get("sitelinks")
+    def sitelinks(self) -> list[dict[str, typing.Any]] | None:
+        """Site links for item."""
+        return (
+            typing.cast(list[dict[str, typing.Any]], self.entity.get("sitelinks"))
+            if self.entity
+            else None
+        )
 
     def is_hamlet(self):
         return "Q5084" in self.instanceof() or any(
@@ -1288,7 +1356,8 @@ class ItemCandidate(Base):
         self.identifier_match = match.check_identifier(self.tags, identifiers)
         return True
 
-    def display_distance(self):
+    def display_distance(self) -> str:
+        """Display distance."""
         if has_app_context() and g.user.is_authenticated and g.user.units:
             units = g.user.units
         else:
@@ -1531,63 +1600,6 @@ def get_bad(items):
         BadMatch.item_id.in_([i.item_id for i in items])
     )
     return {item_id for item_id, in q}
-
-
-class Language(Base):
-    """Language."""
-
-    __tablename__ = "language"
-    item_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
-    iso_639_1: Mapped[str] = mapped_column(String(2))
-    iso_639_2: Mapped[str] = mapped_column(String(3))
-    iso_639_3: Mapped[str] = mapped_column(String(3))
-    wikimedia_language_code: Mapped[str] = mapped_column(unique=True)
-    qid = column_property("Q" + cast(item_id, String))
-    labels = relationship(
-        "LanguageLabel", lazy="dynamic", foreign_keys=lambda: LanguageLabel.item_id
-    )
-
-    def english_name(self) -> str:
-        """Name of language in English."""
-        n: str = self.labels.filter_by(wikimedia_language_code="en").one().label
-        assert isinstance(n, str)
-        return n
-
-    def self_name(self) -> str | None:
-        """Name of this language in this language."""
-        name = self.labels.filter_by(language=self).one_or_none()
-        return typing.cast(str, name.label) if name else None
-
-    def label(self, with_code: bool = True) -> str:
-        """Language label."""
-        name = self.self_name()
-        if not name:  # self label missing for language
-            name = self.english_name()
-        elif self.wikimedia_language_code != "en":  # add name in English
-            name = capfirst(name) + " / " + capfirst(self.english_name())
-        return f"{name} [{self.wikimedia_language_code}]" if with_code else name
-
-    @property
-    def site_name(self) -> str:
-        """Wikipedia site name for this language."""
-        return f"{self.wikimedia_language_code}wiki"
-
-    @classmethod
-    def get_by_code(cls, code: str) -> typing.Self:
-        """Lookup language by code."""
-        lang: typing.Self = cls.query.filter_by(wikimedia_language_code=code).one()
-        return lang
-
-
-class LanguageLabel(Base):
-    __tablename__ = "language_label"
-    item_id = Column(Integer, ForeignKey(Language.item_id), primary_key=True)
-    wikimedia_language_code = Column(
-        String, ForeignKey(Language.wikimedia_language_code), primary_key=True
-    )
-    label = Column(String, nullable=False)
-
-    language = relationship("Language", foreign_keys=[wikimedia_language_code])
 
 
 class SpaceWarning(Base):

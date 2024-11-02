@@ -1599,7 +1599,8 @@ class Place(Base):
         ret.sort(key=lambda place: place.area_in_sq_km)
         return ret
 
-    def get_candidate_items(self):
+    def get_candidate_items(self) -> list[Item]:
+        """Get candidate items."""
         items = self.items_with_candidates()
 
         if self.existing_wikidata:

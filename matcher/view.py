@@ -619,7 +619,7 @@ def place_redirect(name):
     return redirect(place.candidates_url())
 
 
-def get_bad_matches(place) -> set[tuple[typing.Any, ...]]:
+def get_bad_matches(place: Place) -> set[tuple[int, str, int]]:
     """Get bad matches from database."""
     q = (
         database.session.query(
@@ -1003,16 +1003,16 @@ def cache_has_missing_sitelink(cache: dict[str, Any]) -> bool:
 
 
 def candidates_json_item(
-    item,
-    candidates,
-    langs,
-    isa_list,
-    isa_super_qids,
+    item: Item,
+    candidates: list[ItemCandidate],
+    langs: list[Language],
+    isa_list: list[str],
+    isa_super_qids: list[str],
     ticked: bool,
     upload_okay: bool,
-    bad_matches,
-    matched_candidate,
-    osm_count,
+    bad_matches: set[tuple[int, str, int]],
+    matched_candidate: list[ItemCandidate],
+    osm_count: Counter[tuple[str, int]],
 ) -> dict[str, typing.Any]:
     """Build item dict to return in candidates JSON call."""
     lat, lon = item.get_lat_lon()
@@ -1162,8 +1162,8 @@ def candidates_json(osm_type: str, osm_id: int) -> Response:
 
         lat, lon = item.get_lat_lon()
 
-        isa_list = []
-        isa_super_qids = []
+        isa_list: list[str] = []
+        isa_super_qids: list[str] = []
         for isa in item.isa:
             if isa.qid not in isa_lookup:
                 isa_lookup[isa.qid] = {"labels": isa.label_and_description_list(langs)}
