@@ -10,7 +10,8 @@ StrDict = dict[str, typing.Any]
 
 
 def matcher_queue_request(
-    command: str, **params: dict[typing.Any, typing.Any]
+    command: str,
+    **params: typing.Any,
 ) -> StrDict:
     """Make request to matcher queue."""
     sock = chat.connect_to_queue()
