@@ -10,6 +10,8 @@ from .place import Place
 re_place_identifier = re.compile(r"^(node|way|relation)/(\d+)$")
 re_qid = re.compile(r"^(Q\d+)$")
 
+NominatimResults = list[dict[str, typing.Any]]
+
 
 class SearchError(Exception):
     """Search error."""
@@ -47,21 +49,24 @@ class Hit:
         return f"https://api.openstreetmap.org/{self.osm_type}/{self.osm_id}"
 
     @property
-    def wikidata(self):
-        if self.place:
-            return self.place.wikidata
+    def wikidata(self) -> str | None:
+        """Wikidata QID for place."""
+        return self.place.wikidata if self.place else None
 
-    def banner(self):
+    def banner(self) -> str | None:
+        """Banner URL."""
         if not self.place or not self.place.wikidata:
-            return
+            return None
         b = PageBanner.get_by_qid(self.place.wikidata)
-        if b:
-            return b.url
+        return b.url if b else None
 
-    def next_level_name_search(self):
+    def next_level_name_search(self) -> str:
+        """Next level search."""
+        assert request.endpoint
         return url_for(request.endpoint, q=self.next_level_name())
 
-    def banner_link(self):
+    def banner_link(self) -> str:
+        """Link from banner."""
         if self.ready:
             return self.url
         if self.show_browse_link():
@@ -78,6 +83,7 @@ class Hit:
 
     @property
     def url(self) -> str:
+        """Place candidates page URL."""
         assert self.place
         return self.place.candidates_url()
 
@@ -85,7 +91,8 @@ class Hit:
         assert self.place
         return self.place.next_state_url()
 
-    def browse_url(self) -> str:
+    def browse_url(self) -> str | None:
+        """Browse URL."""
         assert self.place
         return self.place.browse_url()
 
@@ -93,13 +100,13 @@ class Hit:
         terms = self.display_name.split(", ")
         return ", ".join(terms[1:])
 
-    def show_browse_link(self):
-        """Should we show the browse link along with the matcher link?"""
+    def show_browse_link(self) -> bool:
+        """We show the browse link along with the matcher link."""
         min_area = current_app.config.get("BROWSE_LINK_MIN_AREA", 0)
-        return self.wikidata and self.area and self.area > min_area
+        return bool(self.wikidata and self.area and self.area > min_area)
 
-    def show_browse_link_instead(self):
-        """Should we show the browse link instead of the matcher link?"""
+    def show_browse_link_instead(self) -> bool:
+        """Show the browse link instead of the matcher link."""
         config = current_app.config
 
         place_max_area = (
@@ -108,28 +115,32 @@ class Hit:
             else config["PLACE_MAX_AREA_ANON"]
         )
 
-        return self.wikidata and (
-            (self.area and self.area >= place_max_area)
-            or (self.place and self.place.too_complex)
+        return bool(
+            self.wikidata
+            and (
+                (self.area and self.area >= place_max_area)
+                or (self.place and self.place.too_complex)
+            )
         )
 
     @property
-    def disallowed_cat(self):
-        return self.place and not self.place.allowed_cat
+    def disallowed_cat(self) -> bool:
+        """Place is in a disallowed category."""
+        return bool(self.place and not self.place.allowed_cat)
 
-    def reason_matcher_not_allowed(self):
+    def reason_matcher_not_allowed(self) -> str | None:
         if self.osm_type == "node":
             return "matcher only works with relations and ways, not with nodes"
         config = current_app.config
 
         if self.matcher_allowed:
-            return
+            return None
 
         if self.place and not self.place.allowed_cat:
             return "matcher only works with place or boundary"
 
         if self.osm_type not in ("way", "relation") or not self.area:
-            return
+            return None
 
         if self.area >= config["PLACE_MAX_AREA"]:
             return "area too large for matcher"
@@ -139,12 +150,15 @@ class Hit:
         if self.place and self.place.too_complex:
             return "place boundary is too complex for matcher"
 
+        return None
 
-def convert_hits_to_objects(results):
+
+def convert_hits_to_objects(results: NominatimResults) -> list[Hit]:
+    """Convert results into list of hit objects."""
     return [Hit(hit) for hit in results if "osm_type" in hit]
 
 
-def update_search_results(results):
+def update_search_results(results: NominatimResults) -> None:
     need_commit = False
     for hit in results:
         if not ("osm_type" in hit and "osm_id" in hit and "geotext" in hit):
@@ -180,7 +194,7 @@ def update_search_results(results):
         database.session.commit()
 
 
-def check_for_place_identifier(q):
+def check_for_place_identifier(q: str):
     q = q.strip()
     m = re_place_identifier.match(q)
     if not m:
@@ -193,7 +207,7 @@ def check_for_place_identifier(q):
     return p.candidates_url() if p.state == "ready" else p.matcher_progress_url()
 
 
-def check_for_search_identifier(q):
+def check_for_search_identifier(q: str):
     q = q.strip()
     # if searching for a Wikidata QID then redirect to the item page for that QID
     m = re_qid.match(q)
@@ -203,7 +217,7 @@ def check_for_search_identifier(q):
     return check_for_place_identifier(q)
 
 
-def handle_redirect_on_single(results):
+def handle_redirect_on_single(results: NominatimResults):
     if not session.get("redirect_on_single", False):
         return
 
@@ -218,7 +232,8 @@ def handle_redirect_on_single(results):
         return place.redirect_to_matcher()
 
 
-def check_for_city_node_in_results(q, results):
+def check_for_city_node_in_results(q: str, results: NominatimResults) -> None:
+    """Check for city node in results."""
     for hit_num, hit in enumerate(results):
         if hit.get("osm_type") != "node":
             continue
@@ -234,7 +249,8 @@ def check_for_city_node_in_results(q, results):
             results[hit_num] = city_results[0]
 
 
-def run(q):
+def run(q: str) -> NominatimResults:
+    """Run nominatim search."""
     try:
         results = nominatim.lookup(q)
         city_of = "City of "
