@@ -7,8 +7,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Collection, cast
 
-from num2words import num2words
-from unidecode import unidecode
+from num2words import num2words  # type: ignore
+from unidecode import unidecode  # type: ignore
 
 from .utils import any_upper, normalize_url
 
