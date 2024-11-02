@@ -1,13 +1,13 @@
-"""OSM Oauth functions."""
+"""OSM Authentication."""
 
 import json
 import typing
 from datetime import datetime
 from urllib.parse import urlencode
 
+import flask
 import lxml.etree
 import requests
-from flask import current_app, g, session, url_for
 from requests_oauthlib import OAuth2Session
 
 from . import user_agent_headers
@@ -19,16 +19,16 @@ scope = ["read_prefs", "write_api"]
 
 def get_session() -> OAuth2Session:
     """Get session."""
-    token = session.get("oauth_token")
+    token = flask.session.get("oauth_token")
     if not token:
-        user = g.user
+        user = flask.g.user
         assert user.is_authenticated
         token = json.loads(user.osm_oauth_token)
-        session["oauth_token"] = token
+        flask.session["oauth_token"] = token
 
-    callback = url_for("oauth_callback", _external=True)
+    callback = flask.url_for("oauth_callback", _external=True)
     return OAuth2Session(
-        current_app.config["CLIENT_KEY"],
+        flask.current_app.config["CLIENT_KEY"],
         redirect_uri=callback,
         scope=scope,
         token=token,
@@ -38,6 +38,7 @@ def get_session() -> OAuth2Session:
 def api_put_request(path: str, **kwargs: typing.Any) -> requests.Response:
     """Send OSM API PUT request."""
     oauth = get_session()
+
     return oauth.request(
         "PUT", osm_api_base + path, headers=user_agent_headers(), **kwargs
     )
@@ -48,6 +49,7 @@ def api_request(path: str, **params: typing.Any) -> requests.Response:
     url = osm_api_base + path
     if params:
         url += "?" + urlencode(params)
+
     oauth = get_session()
     return oauth.get(url, timeout=4)
 
@@ -82,11 +84,11 @@ def parse_userinfo_call(xml: bytes) -> dict[str, typing.Any]:
 
 
 def get_username() -> str | None:
-    """Get username."""
-    if "user_id" not in session:
+    """Get username of current user."""
+    if "user_id" not in flask.session:
         return None  # not authorized
 
-    user_id = session["user_id"]
+    user_id = flask.session["user_id"]
 
     user = User.query.get(user_id)
     return typing.cast(str, user.username)
