@@ -153,8 +153,12 @@ def get_entities_with_cache(qids: list[str]) -> list[Entity]:
     for qid in qids:
         cache_filename = os.path.join(cache_dir, qid + ".json")
         if os.path.exists(cache_filename):
-            entity = json.load(open(cache_filename))
-            items.append(entity)
+            try:
+                entity = json.load(open(cache_filename))
+            except json.decoder.JSONDecodeError:
+                missing.append(qid)
+            else:
+                items.append(entity)
         else:
             missing.append(qid)
 

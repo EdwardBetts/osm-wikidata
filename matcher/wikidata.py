@@ -768,8 +768,12 @@ def run_query(
     if name:
         filename = cache_filename(name + ".json")
         if os.path.exists(filename):
-            bindings = json.load(open(filename))["results"]["bindings"]
-            return bindings
+            try:
+                bindings = json.load(open(filename))["results"]["bindings"]
+            except json.decoder.JSONDecodeError:
+                pass
+            else:
+                return bindings
 
     r = run_query_raw(query, name, timeout, send_error_mail)
     if name:
