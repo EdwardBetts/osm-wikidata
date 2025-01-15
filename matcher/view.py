@@ -124,7 +124,9 @@ disabled_tab_pages = [{"route": "overpass_query", "label": "Overpass query"}]
 
 
 @app.template_global()
-def set_url_args(**new_args):
+def set_url_args(**new_args: dict[str, str | int | None]) -> str:
+    """Set URL arguments."""
+    assert request.view_args
     args = request.view_args.copy()
     args.update(request.args)
     args.update(new_args)
@@ -135,7 +137,8 @@ def set_url_args(**new_args):
 
 @app.template_filter()
 @jinja2.pass_eval_context
-def newline_br(eval_ctx, value):
+def newline_br(eval_ctx: jinja2.nodes.EvalContext, value: str) -> str:
+    """Jinja2 template to encode text into paragraphs."""
     result = "\n\n".join(
         "<p>%s</p>" % p.replace("\n", "<br>\n")
         for p in _paragraph_re.split(escape(value))
@@ -212,6 +215,7 @@ def site_banner() -> None:
 
 @app.before_request
 def slow_crawl() -> None:
+    """Slow down crawls by bots to stop overloading server."""
     if utils.is_bot():
         sleep(5)
 
@@ -223,6 +227,7 @@ def load_user(user_id: int) -> User:
 
 @app.context_processor
 def navbar() -> dict[str, typing.Any]:
+    """Nabar pages."""
     try:
         return dict(navbar_pages=navbar_pages, active=request.endpoint)
     except RuntimeError:
@@ -230,7 +235,8 @@ def navbar() -> dict[str, typing.Any]:
 
 
 @app.route("/login")
-def login_route():
+def login_route() -> str | Response:
+    """Login route."""
     if False and app.env == "development":
         users = User.query
         return render_template(
