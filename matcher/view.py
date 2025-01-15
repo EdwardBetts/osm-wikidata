@@ -274,7 +274,8 @@ def logout() -> Response:
 
 
 @app.route("/done/")
-def done():
+def done() -> Response:
+    """Login success."""
     flash("login successful")
     return redirect(url_for("index"))
 
@@ -284,7 +285,8 @@ access_token_url = "https://www.openstreetmap.org/oauth2/token"
 
 
 @app.route("/oauth/start")
-def start_oauth():
+def start_oauth() -> werkzeug.Response:
+    """Start OAuth."""
     next_page = request.args.get("next")
     if next_page:
         session["next"] = next_page
@@ -303,7 +305,8 @@ def start_oauth():
 
 
 @app.route("/oauth/callback", methods=["GET"])
-def oauth_callback():
+def oauth_callback() -> Response:
+    """Login via OAuth callback."""
     client_key = app.config["CLIENT_KEY"]
     client_secret = app.config["CLIENT_SECRET"]
 
