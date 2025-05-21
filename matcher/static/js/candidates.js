@@ -108,6 +108,9 @@ var app = new Vue({
       languages: function(new_lang, old_lang) {
           this.update_language(new_lang);
       },
+      isa_filter: function(new_filter) {
+          localStorage.setItem('isa_filter', JSON.stringify(new_filter));
+      }
   },
   methods: {
       set_refresh_matcher_url: function(url) {
@@ -268,6 +271,11 @@ var app = new Vue({
       },
   },
   mounted () {
+    // Initialize isa_filter from localStorage if present
+    var saved_filter = localStorage.getItem('isa_filter');
+    if (saved_filter) {
+        this.isa_filter = JSON.parse(saved_filter);
+    }
     axios.get(candidates_json_url)
          .then(response => {
             this.items = response.data.items;
