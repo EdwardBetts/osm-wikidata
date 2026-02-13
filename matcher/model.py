@@ -45,7 +45,7 @@ re_lau_code = re.compile(r"^[A-Z]{2}([^A-Z].+)$")  # 'LAU (local administrative 
 
 
 class Base(DeclarativeBase):
-    pass
+    """Database model base class."""
 
 
 Base.query = session.query_property()
