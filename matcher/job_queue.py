@@ -37,10 +37,10 @@ def overpass_chunk_filename(chunk: Chunk) -> str:
 
 def error_in_overpass_chunk(filename: str) -> bool:
     """Error present in overpass chunk."""
-    return (
-        os.path.getsize(filename) < 2000
-        and "<remark> runtime error" in open(filename).read()
-    )
+    if os.path.getsize(filename) >= 2000:
+        return False
+    content = open(filename).read()
+    return "<remark> runtime error" in content or "<!DOCTYPE html" in content
 
 
 def build_item_list(items):
@@ -143,6 +143,18 @@ class MatcherJob(threading.Thread):
         if not error_in_overpass_chunk(filename):
             return None
         self.check_for_stop()
+        content = open(filename).read()
+        if "<!DOCTYPE html" in content:
+            # Overpass returned an HTML error page instead of XML
+            if "too busy" in content:
+                msg = "Overpass server too busy to handle request"
+            elif "runtime error" in content:
+                msg = "Overpass runtime error"
+            else:
+                msg = "Overpass server returned an error"
+            self.error("overpass: " + msg)
+            mail.send_mail("Overpass error", content)
+            return True
         root = lxml.etree.parse(filename).getroot()
         remark = root.find(".//remark")
         assert remark is not None and remark.text
