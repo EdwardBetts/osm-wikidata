@@ -1156,8 +1156,8 @@ class PlaceItem(Base):
         ),
     )
 
-    item = relationship("Item")
-    place = relationship("Place")
+    item = relationship("Item", overlaps="items,places")
+    place = relationship("Place", overlaps="items,places")
 
 
 class OsmCandidate(Base):
