@@ -14,25 +14,12 @@ import requests
 import requests.exceptions
 from flask import render_template, render_template_string, request
 
-from . import (
-    Entity,
-    commons,
-    language,
-    mail,
-    match,
-    matcher,
-    overpass,
-    user_agent_headers,
-)
+from . import (Entity, commons, language, mail, match, matcher, overpass,
+               user_agent_headers)
 from .language import get_language_label
 from .utils import cache_filename, drop_start
-from .wikidata_api import (
-    QueryError,
-    QueryTimeout,
-    get_entities,
-    get_entity,
-    get_entity_with_cache,
-)
+from .wikidata_api import (QueryError, QueryTimeout, get_entities, get_entity,
+                           get_entity_with_cache)
 
 report_missing_values = False
 wd_entity = "http://www.wikidata.org/entity/Q"
@@ -815,6 +802,7 @@ def run_query_raw(
     # java.lang.RuntimeException: java.util.concurrent.ExecutionException: com.bigdata.bop.engine.QueryTimeoutException: Query deadline is expired.
     # java.util.concurrent.TimeoutException
     if (
+        r.status_code == 504 or
         "Query deadline is expired." in r.text
         or "java.util.concurrent.TimeoutException" in r.text
     ):
