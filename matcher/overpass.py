@@ -162,6 +162,8 @@ def oql_for_area(
     union = []
 
     for key, values in sorted(group_tags(tags).items()):
+        if not key:
+            continue
         u = oql_element_filter(key, values)
         if u:
             union.append(u)
