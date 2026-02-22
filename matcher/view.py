@@ -1873,8 +1873,6 @@ def build_item_page(wikidata_id: int, item: Item | None) -> str:
             is_proposed=is_proposed,
         )
 
-    criteria = wikidata.flatten_criteria(criteria)
-
     radius = utils.get_radius()
     oql = entity.get_oql(criteria, radius)
     if item:

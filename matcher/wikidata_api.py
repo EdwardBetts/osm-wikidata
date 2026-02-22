@@ -27,7 +27,7 @@ CallParams = typing.Mapping[str, str | int]
 class QueryError(Exception):
     """Query error."""
 
-    def __init__(self, query: CallParams, r: requests.Response) -> None:
+    def __init__(self, query: str, r: requests.Response) -> None:
         """Init."""
         self.query = query
         self.r = r

@@ -50,8 +50,6 @@ def api_get(wikidata_id, entity, radius):
     if item:  # add criteria from the Item object
         criteria |= item.criteria
 
-    criteria = wikidata.flatten_criteria(criteria)
-
     data = {
         'wikidata': {
             'item': qid,

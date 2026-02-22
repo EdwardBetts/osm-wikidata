@@ -425,9 +425,6 @@ def test_names_from_entity():
 
     assert dict(names) == expect
 
-def test_flatten_criteria():
-    assert wikidata.flatten_criteria([]) == set()
-
 def test_enwiki_url_to_title():
     start = 'https://en.wikipedia.org/wiki/'
     with pytest.raises(AssertionError):
