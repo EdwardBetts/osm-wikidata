@@ -33,7 +33,7 @@ def init_app(app: flask.Flask, echo: bool = False) -> None:
 
     from .procrastinate_app import procrastinate_app
 
-    procrastinate_app.open(engine=engine)
+    procrastinate_app.open(engine)
 
     @app.teardown_appcontext
     def shutdown_session(exception: Exception | None = None) -> None:
