@@ -1828,7 +1828,7 @@ def build_item_page(wikidata_id: int, item: Item | None) -> str:
     if not entity or not item:
         abort(404)
 
-    entity.report_broken_wikidata_osm_tags()
+    # entity.report_broken_wikidata_osm_tags()
 
     osm_keys = entity.osm_keys
     wikidata_osm_tags = wikidata.parse_osm_keys(osm_keys)

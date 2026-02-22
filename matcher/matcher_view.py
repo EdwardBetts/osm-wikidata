@@ -50,7 +50,7 @@ def matcher_progress(osm_type: str, osm_id: int) -> werkzeug.wrappers.Response |
 
     is_refresh = place.state == "refresh"
 
-    announce_matcher_progress(place)
+    # announce_matcher_progress(place)
 
     url_scheme = flask.request.environ.get("wsgi.url_scheme")
     ws_scheme = "wss" if url_scheme == "https" else "ws"
