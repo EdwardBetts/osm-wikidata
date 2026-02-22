@@ -5,14 +5,15 @@ import re
 import select
 import traceback
 
+import psycopg2
 import requests
-from flask import g, request
+from flask import current_app, g, request
 from flask_login import current_user
 from flask_sock import Sock
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 
-from . import chat, database, edit, mail
+from . import database, edit, mail
 from .model import ChangesetEdit, ItemCandidate
 from .place import Place
 
@@ -24,6 +25,8 @@ re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 # - has enwiki article
 # - match found
 # - match not found
+
+WEBSOCKET_TIMEOUT = 120.0  # seconds to wait for next notification before sending ping
 
 
 class VersionMismatch(Exception):
@@ -47,9 +50,8 @@ def add_wikipedia_tag(root, m) -> None:
 @sock.route("/websocket/matcher/<osm_type>/<int:osm_id>")
 def ws_matcher(ws_sock, osm_type, osm_id):
     """Run matcher for given place."""
-    # idea: catch exceptions, then pass to pass to web page as status update
-    # also e-mail them
     place = None
+    listen_conn = None
 
     def send(msg):
         return ws_sock.send(msg)
@@ -59,42 +61,68 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
         if place.state == "ready":
             send(json.dumps({"type": "already_done"}))
-            return  # FIXME - send error mail
+            return
 
         user_agent = request.headers.get("User-Agent")
         user_id = current_user.id if current_user.is_authenticated else None
-        queue_socket = chat.connect_to_queue()
-        params = {
-            "type": "match",
-            "osm_type": osm_type,
-            "osm_id": osm_id,
-            "user": user_id,
-            "remote_addr": request.remote_addr,
-            "user_agent": user_agent,
-        }
-        chat.send_command(queue_socket, "match", **params)
+
+        channel = f"matcher_{osm_type}_{osm_id}"
+        db_url = current_app.config["DB_URL"]
+
+        # Set up LISTEN before deferring so we don't miss any notifications.
+        listen_conn = psycopg2.connect(db_url)
+        listen_conn.autocommit = True
+        listen_cur = listen_conn.cursor()
+        listen_cur.execute(f"LISTEN {channel}")
+
+        # Defer the matcher task. Use lock+queueing_lock so at most one job
+        # runs at a time and at most one more can be queued.
+        from . import tasks
+        from .procrastinate_app import procrastinate_app
+
+        try:
+            procrastinate_app.configure_task(
+                "matcher.run_matcher",
+                lock=channel,
+                queueing_lock=channel,
+            ).defer(
+                osm_type=osm_type,
+                osm_id=osm_id,
+                user_id=user_id,
+                remote_addr=request.remote_addr,
+                user_agent=user_agent,
+            )
+        except Exception as exc:
+            from procrastinate.exceptions import AlreadyEnqueued
+
+            if not isinstance(exc, AlreadyEnqueued):
+                raise
+            # A job is already queued for this place – just listen for updates.
 
         while ws_sock.connected:
-            readable = select.select([queue_socket], [], [])
+            readable, _, _ = select.select([listen_conn], [], [], WEBSOCKET_TIMEOUT)
             if readable:
-                item = chat.read_line(queue_socket)
-            else:  # timeout
-                item = json.dumps({"type": "ping"})
-
-            if not item:
-                ws_sock.close()
-                break
-            send(item)
-            if not ws_sock.connected:
-                break
-            reply = ws_sock.receive()
-            if reply is None:
-                break
-            if reply != "ack":
-                print("reply: ", repr(reply))
-            assert reply == "ack", "No ack."
-
-        queue_socket.close()
+                listen_conn.poll()
+                while listen_conn.notifies and ws_sock.connected:
+                    notify = listen_conn.notifies.pop(0)
+                    item = notify.payload
+                    send(item)
+                    if not ws_sock.connected:
+                        break
+                    reply = ws_sock.receive()
+                    if reply is None:
+                        break
+                    data = json.loads(item)
+                    if data["type"] in ("done", "error"):
+                        return
+            else:
+                # Timeout – send a ping to keep the connection alive.
+                send(json.dumps({"type": "ping"}))
+                if not ws_sock.connected:
+                    break
+                reply = ws_sock.receive()
+                if reply is None:
+                    break
 
     except Exception as e:
         msg = type(e).__name__ + ": " + str(e)
@@ -112,6 +140,9 @@ https://openstreetmap.org/{osm_type}/{osm_id}
 exception in matcher websocket
 """
         mail.send_traceback(info)
+    finally:
+        if listen_conn:
+            listen_conn.close()
 
 
 def check_if_already_tagged(r, osm) -> bool:

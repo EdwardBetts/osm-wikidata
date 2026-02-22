@@ -96,12 +96,7 @@ def list_users():
 @flask_login.login_required
 def list_active_jobs():
     assert_user_is_admin()
-    try:
-        job_list = jobs.get_jobs()
-    except ConnectionRefusedError:
-        return render_template('error_page.html',
-                               message='Failed to talk to matcher queue.')
-
+    job_list = jobs.get_jobs()
     return render_template('admin/active_jobs.html',
                            admin_job_lists=admin_job_lists,
                            items=job_list)

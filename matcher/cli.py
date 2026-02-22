@@ -19,7 +19,6 @@ from tabulate import tabulate
 
 from . import (
     browse,
-    chat,
     database,
     jobs,
     mail,
@@ -1257,25 +1256,22 @@ def first_paragraph(qid):
 
 
 def update_place(place, want_isa=None):
+    """Run the matcher for *place* directly and print status messages."""
+    from .job_queue import MatcherJob
+
     if want_isa is None:
         want_isa = set()
 
-    sock = chat.connect_to_queue()
-    msg = {
-        "type": "match",
-        "osm_type": place.osm_type,
-        "osm_id": place.osm_id,
-        "want_isa": want_isa,
-    }
-    chat.send_command(sock, "match", **msg)
-
-    while True:
-        msg = chat.read_json_line(sock)
-        if msg is None:
-            break
-        yield (msg)
-
-    sock.close()
+    job = MatcherJob(
+        osm_type=place.osm_type,
+        osm_id=place.osm_id,
+        want_isa=want_isa,
+        status_callback=lambda msg: print(msg),
+    )
+    try:
+        job.run_in_app_context()
+    finally:
+        job.close()
 
 
 def place_from_qid(qid):
@@ -1315,24 +1311,11 @@ def match_subregions(qid):
                 if place.state == "ready":
                     place.state = "refresh"
                     database.session.commit()
-                for msg in update_place(place):
-                    print(f"{num + 1}/{place_count}  {p['qid']} {p['label']}", msg)
+                print(f"{num + 1}/{place_count}  {p['qid']} {p['label']}")
+                update_place(place)
 
         else:
             print("not found:", p["qid"], p["label"])
-
-
-def matcher_queue_send(cmd):
-    sock = chat.connect_to_queue()
-    chat.send_command(sock, cmd)
-
-    while True:
-        msg = chat.read_json_line(sock)
-        if msg is None:
-            break
-        print(msg)
-
-    sock.close()
 
 
 @app.cli.command()
@@ -1343,8 +1326,7 @@ def matcher_update_place(place_identifier):
     if place.state == "ready":
         place.state = "refresh"
         database.session.commit()
-    for msg in update_place(place):
-        print(msg)
+    update_place(place)
 
 
 @app.cli.command()
@@ -1358,8 +1340,7 @@ def place_filter(place_identifier, want_isa):
         place.state = "refresh"
         database.session.commit()
 
-    for msg in update_place(place, want_isa=want_isa.split(",")):
-        print(msg)
+    update_place(place, want_isa=want_isa.split(","))
 
     app.config["SERVER_NAME"] = "osm.wikidata.link"
     ctx = app.test_request_context()
@@ -1386,8 +1367,7 @@ def place_filter_file(filename, want_isa):
             place.state = "refresh"
             database.session.commit()
 
-        for msg in update_place(place, want_isa=want_isa.split(",")):
-            print(msg)
+        update_place(place, want_isa=want_isa.split(","))
 
         print(f"{name:25s} https://osm.wikidata.link/candidates/{place_identifier}")
 

@@ -28,7 +28,12 @@ def get_tables() -> list[str]:
 def init_app(app: flask.Flask, echo: bool = False) -> None:
     """Initialise application."""
     db_url = app.config["DB_URL"]
-    session.configure(bind=get_engine(db_url, echo=echo))
+    engine = get_engine(db_url, echo=echo)
+    session.configure(bind=engine)
+
+    from .procrastinate_app import procrastinate_app
+
+    procrastinate_app.open(engine=engine)
 
     @app.teardown_appcontext
     def shutdown_session(exception: Exception | None = None) -> None:

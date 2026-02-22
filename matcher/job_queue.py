@@ -1,25 +1,25 @@
 """Job queue."""
 
-import collections
 import json
 import os.path
-import queue
 import re
 import subprocess
-import threading
 import traceback
 import typing
-from datetime import datetime
-from time import time
+from time import sleep, time
 
 import lxml.etree
+import psycopg2
+import requests.exceptions
 from sqlalchemy import text
 
-from matcher import database, mail, model, wikidata_api, wikipedia
+from matcher import database, mail, model, overpass, space_alert, wikidata_api, wikipedia
 from matcher.place import Place, PlaceMatcher, bbox_chunk
 from matcher.view import app
 
 re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
+
+NOTIFY_MAX_BYTES = 7900  # PostgreSQL NOTIFY payload limit is 8000 bytes
 
 
 class Chunk(typing.TypedDict):
@@ -66,64 +66,122 @@ class MatcherJobStopped(Exception):
     pass
 
 
-class MatcherJob(threading.Thread):
-    """Matcher job within the matcher queue."""
+class MatcherJob:
+    """Matcher job."""
 
     def __init__(
         self,
         osm_type: str,
         osm_id: int,
-        job_manager: "JobManager",
         user: model.User | None = None,
         remote_addr: str | None = None,
         user_agent: str | None = None,
         want_isa: set[str] | None = None,
+        status_callback: typing.Callable | None = None,
     ) -> None:
         """Init."""
-        super(MatcherJob, self).__init__()
         self.osm_type = osm_type
         self.osm_id = osm_id
-        self.start_time = time()
-        self.subscribers = {}
         self.t0 = time()
-        self.name = f"{osm_type}/{osm_id}  {self.t0}"
         self.user_id = user
         self.remote_addr = remote_addr
         self.user_agent = user_agent
         self.want_isa = set(want_isa) if want_isa else set()
-        self._stop_event = threading.Event()
-        self.job_manager = job_manager  # dependency injection
+        self.place: Place | None = None
         self.log_file = None
+        self._notify_conn: psycopg2.extensions.connection | None = None
+        self.status_callback = status_callback
 
-    def end_job(self) -> None:
-        """End the job."""
+    def _get_notify_conn(self) -> psycopg2.extensions.connection:
+        """Get or create the psycopg2 connection used for NOTIFY."""
+        if self._notify_conn is None or self._notify_conn.closed:
+            db_url = app.config["DB_URL"]
+            self._notify_conn = psycopg2.connect(db_url)
+            self._notify_conn.autocommit = True
+        return self._notify_conn
+
+    def close(self) -> None:
+        """Close the notification connection and log file."""
+        if self._notify_conn and not self._notify_conn.closed:
+            self._notify_conn.close()
+        self._notify_conn = None
         if self.log_file:
             self.log_file.close()
-        assert self.job_manager
-        self.job_manager.end_job(self.osm_type, self.osm_id)
+            self.log_file = None
 
-    def stop(self) -> None:
-        """Stop job."""
-        self._stop_event.set()
+    def _pg_notify(self, channel: str, payload: str) -> None:
+        """Send a PostgreSQL NOTIFY."""
+        conn = self._get_notify_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_notify(%s, %s)", [channel, payload])
 
-    @property
-    def stopping(self) -> bool:
-        """Job is stopping."""
-        return self._stop_event.is_set()
+    def _send_chunked_pins(
+        self, channel: str, pins: list, time_val: float
+    ) -> None:
+        """Send a large pins list in multiple NOTIFY messages."""
+        chunk_size = max(1, len(pins) // 20)
+        i = 0
+        while i < len(pins):
+            chunk = pins[i : i + chunk_size]
+            payload = json.dumps(
+                {"type": "pins", "pins": chunk, "time": time_val}
+            )
+            # Shrink chunk_size until it fits
+            while len(payload) > NOTIFY_MAX_BYTES and chunk_size > 1:
+                chunk_size = max(1, chunk_size // 2)
+                chunk = pins[i : i + chunk_size]
+                payload = json.dumps(
+                    {"type": "pins", "pins": chunk, "time": time_val}
+                )
+            self._pg_notify(channel, payload)
+            i += len(chunk)
 
-    def check_for_stop(self) -> None:
-        """Check if job is meant to stop."""
-        if self._stop_event.is_set():
-            raise MatcherJobStopped
+    def send(self, msg_type: str, **data: typing.Any) -> None:
+        """Send a status message via PostgreSQL NOTIFY (and optional callback)."""
+        data["time"] = time() - self.t0
+        data["type"] = msg_type
+
+        if self.log_file:
+            print(json.dumps(data), file=self.log_file)
+
+        if self.status_callback:
+            self.status_callback(data)
+
+        channel = f"matcher_{self.osm_type}_{self.osm_id}"
+        payload = json.dumps(data)
+
+        if len(payload) <= NOTIFY_MAX_BYTES:
+            self._pg_notify(channel, payload)
+        elif msg_type == "pins" and "pins" in data:
+            self._send_chunked_pins(channel, data["pins"], data["time"])
+        else:
+            print(f"WARNING: dropping oversized notify payload for type {msg_type!r}")
+
+    def status(self, msg: str) -> None:
+        """Send a status message."""
+        if msg:
+            self.send("msg", msg=msg)
+
+    def error(self, msg: str) -> None:
+        """Send an error message."""
+        self.send("error", msg=msg)
+
+    def item_line(self, msg: str) -> None:
+        """Send an item progress line."""
+        if msg:
+            self.send("item", msg=msg)
+
+    def end_job(self) -> None:
+        """Clean up after the job finishes."""
+        self.close()
 
     def drop_database_tables(self) -> None:
-        """Drop database tables."""
+        """Drop GIS tables for this place."""
         assert self.place
         gis_tables = self.place.gis_tables
         for t in gis_tables & set(database.get_tables()):
             database.session.execute(text(f"drop table if exists {t}"))
         database.session.commit()
-        # make sure all GIS tables for this place have been removed
         assert not self.place.gis_tables & set(database.get_tables())
 
     def prepare_for_refresh(self) -> None:
@@ -136,16 +194,14 @@ class MatcherJob(threading.Thread):
         database.session.commit()
 
     def overpass_chunk_error(self, chunk: Chunk) -> bool | None:
-        """Overpass chunk contains error."""
+        """Check if an overpass chunk contains an error."""
         if not chunk["oql"]:
-            return None  # empty chunk
+            return None
         filename = overpass_chunk_filename(chunk)
         if not error_in_overpass_chunk(filename):
             return None
-        self.check_for_stop()
         content = open(filename).read()
         if "<!DOCTYPE html" in content:
-            # Overpass returned an HTML error page instead of XML
             if "too busy" in content:
                 msg = "Overpass server too busy to handle request"
             elif "runtime error" in content:
@@ -160,7 +216,59 @@ class MatcherJob(threading.Thread):
         assert remark is not None and remark.text
         self.error("overpass: " + remark.text)
         mail.send_mail("Overpass error", remark.text)
-        return True  # FIXME report error to admin
+        return True
+
+    def wait_for_slot(self) -> bool:
+        """Wait for an Overpass API slot. Returns False if Overpass is unavailable."""
+        try:
+            status = overpass.get_status()
+        except overpass.OverpassError as e:
+            r = e.args[0]
+            body = f"URL: {r.url}\n\nresponse:\n{r.text}"
+            mail.send_mail("Overpass API unavailable", body)
+            self.error("Can't access overpass API")
+            return False
+        except requests.exceptions.Timeout:
+            mail.send_mail("Overpass API timeout", "Timeout talking to overpass API")
+            self.error("Can't access overpass API")
+            return False
+
+        if not status["slots"]:
+            return True
+        secs = status["slots"][0]
+        if secs <= 0:
+            return True
+        self.status(f"waiting {secs} seconds for overpass slot")
+        sleep(secs)
+        return True
+
+    def overpass_request(self, chunks: list[Chunk]) -> bool:
+        """Download overpass data for all chunks."""
+        assert self.place
+
+        for num, chunk in enumerate(chunks):
+            oql = chunk.get("oql")
+            if not oql:
+                continue
+            filename = overpass_chunk_filename(chunk)
+            if not os.path.exists(filename):
+                space_alert.check_free_space(app.config)
+                if not self.wait_for_slot():
+                    return False
+                self.send("get_chunk", chunk_num=num)
+                while True:
+                    try:
+                        r = overpass.run_query(oql)
+                        break
+                    except overpass.RateLimited:
+                        self.wait_for_slot()
+                with open(filename, "wb") as out:
+                    out.write(r.content)
+                space_alert.check_free_space(app.config)
+            self.send("chunk_done", chunk_num=num)
+
+        self.send("overpass_done")
+        return True
 
     def matcher(self) -> None:
         """Run matcher."""
@@ -172,7 +280,6 @@ class MatcherJob(threading.Thread):
         item_count = len(db_items)
         self.status("{:,d} Wikidata items found".format(item_count))
 
-        self.check_for_stop()
         self.get_item_detail(db_items)
 
         chunk_size = 96 if self.want_isa else None
@@ -184,39 +291,31 @@ class MatcherJob(threading.Thread):
         else:
             chunks = place.get_chunks(chunk_size=chunk_size, skip=skip)
             self.report_empty_chunks(chunks)
-        self.check_for_stop()
 
         overpass_good = self.overpass_request(chunks)
         assert overpass_good
-        self.check_for_stop()
         if any(self.overpass_chunk_error(chunk) for chunk in chunks):
-            return None  # FIXME report error to admin
+            return None
 
         if len(chunks) > 1:
             self.merge_chunks(chunks)
 
-        self.check_for_stop()
         self.run_osm2pgsql()
-        self.check_for_stop()
         self.load_isa()
-        self.check_for_stop()
         self.run_matcher()
-        self.check_for_stop()
         self.place.clean_up()
 
     def run_in_app_context(self) -> None:
-        """Run matcher in app context."""
+        """Run the full matcher pipeline."""
         self.place = Place.get_by_osm(self.osm_type, self.osm_id)
         if not self.place:
             self.send("not_found")
             self.send("done")
-            self.end_job()
             return
 
         if self.place.state == "ready":
             self.send("already_done")
             self.send("done")
-            self.end_job()
             return
 
         is_refresh = self.place.state == "refresh"
@@ -246,75 +345,12 @@ class MatcherJob(threading.Thread):
         print("sending done")
         self.send("done")
         print("done sent")
-        self.end_job()
-
-    def run(self):
-        with app.app_context():
-            try:
-                self.run_in_app_context()
-            except Exception as e:
-                error_str = f"{type(e).__name__}: {e}"
-                print(error_str)
-                self.send("error", msg=error_str)
-                self.end_job()
-
-                info = "matcher queue"
-                mail.send_traceback(info, prefix="matcher queue")
-                traceback.print_exc()
-
-        print("end thread:", self.name)
-
-    def send(self, msg_type: str, **data: typing.Any) -> None:
-        """Send message."""
-        data["time"] = time() - self.t0
-        data["type"] = msg_type
-        for status_queue in self.subscribers.values():
-            status_queue.put(data)
-
-        if not self.log_file:
-            return None
-        print(json.dumps(data), file=self.log_file)
-
-    def status(self, msg: str) -> None:
-        """Send status update."""
-        if msg:
-            self.send("msg", msg=msg)
-
-    def error(self, msg: str) -> None:
-        """Send error message."""
-        self.send("error", msg=msg)
-
-    def item_line(self, msg: str) -> None:
-        """Item line."""
-        if msg:
-            self.send("item", msg=msg)
-
-    @property
-    def subscriber_count(self) -> int:
-        """Return subscriber count."""
-        return len(self.subscribers)
-
-    def subscribe(self, thread_name: str, status_queue):
-        """Subscribe."""
-        msg = {
-            "time": time() - self.t0,
-            "type": "connected",
-        }
-        status_queue.put(msg)
-        print("subscribe", self.name)
-        self.subscribers[thread_name] = status_queue
-        return status_queue
-
-    def unsubscribe(self, thread_name: str) -> None:
-        """Unsubscribe."""
-        del self.subscribers[thread_name]
 
     def wikidata_chunked(self, chunks):
         assert self.place
         items = {}
         num = 0
         while chunks:
-            self.check_for_stop()
             bbox = chunks.pop()
             num += 1
             msg = f"requesting wikidata chunk {num}"
@@ -341,19 +377,13 @@ class MatcherJob(threading.Thread):
         else:
             wikidata_items = self.get_items_bbox()
 
-        self.check_for_stop()
-
         self.status("wikidata query complete")
         pins = build_item_list(wikidata_items)
         self.send("pins", pins=pins)
 
-        self.check_for_stop()
-
         self.send("load_cat")
         wikipedia.add_enwiki_categories(wikidata_items)
         self.send("load_cat_done")
-
-        self.check_for_stop()
 
         self.place.save_items(wikidata_items)
         self.send("items_saved")
@@ -365,7 +395,7 @@ class MatcherJob(threading.Thread):
     def get_items_bbox(self):
         assert self.place
         ctx = app.test_request_context()
-        ctx.push()  # to make url_for work
+        ctx.push()
         place = self.place
         if self.want_isa:
             size = 220
@@ -385,7 +415,6 @@ class MatcherJob(threading.Thread):
 
         if chunk_size != 1:
             chunks = list(place.polygon_chunk(size=size))
-
             msg = f"downloading wikidata in {len(chunks)} chunks"
             self.status(msg)
             wikidata_items = self.wikidata_chunked(chunks)
@@ -417,57 +446,6 @@ class MatcherJob(threading.Thread):
         empty = [chunk["num"] for chunk in chunks if not chunk["oql"]]
         if empty:
             self.send("empty", empty=empty)
-
-    def overpass_request(self, chunks: list[Chunk]) -> bool:
-        assert self.place
-        send_queue = queue.Queue()
-
-        fields = ["place_id", "osm_id", "osm_type", "area"]
-        msg = {
-            "place": {f: getattr(self.place, f) for f in fields},
-            "chunks": chunks,
-        }
-
-        try:
-            area = float(self.place.area)
-        except ValueError:
-            area = 0
-
-        self.job_manager.task_queue.put(
-            (
-                area,
-                {
-                    "place": self.place,
-                    "chunks": chunks,
-                    "queue": send_queue,
-                },
-            )
-        )
-
-        complete = False
-        while True:
-            print("read from send queue")
-            msg = send_queue.get()
-            print("read complete")
-            if msg is None:
-                print("done (msg is None)")
-                break
-            print("message type {}".format(repr(msg["type"])))
-            if msg["type"] == "run_query":
-                chunk_num = msg["num"]
-                self.send("get_chunk", chunk_num=chunk_num)
-            elif msg["type"] == "chunk":
-                chunk_num = msg["num"]
-                self.send("chunk_done", chunk_num=chunk_num)
-            elif msg["type"] == "done":
-                complete = True
-                self.send("overpass_done")
-                break
-            elif msg["type"] == "error":
-                self.error(msg["msg"])
-            else:
-                self.status("from network: " + repr(msg))
-        return complete
 
     def merge_chunks(self, chunks: list[Chunk]) -> None:
         """Merge chunks using osmium."""
@@ -505,9 +483,7 @@ class MatcherJob(threading.Thread):
         """Load IsA data."""
 
         def progress(msg: str) -> None:
-            """Progress update."""
             self.status(msg)
-            self.check_for_stop()
 
         assert self.place
         self.status("downloading 'instance of' data for Wikidata items")
@@ -523,60 +499,6 @@ class MatcherJob(threading.Thread):
             count = f": {num} {noun} found"
             msg = item.label_and_qid() + count
             self.item_line(msg)
-            self.check_for_stop()
 
         assert self.place
         self.place.run_matcher(progress=progress, want_isa=self.want_isa)
-
-
-Task = tuple[float, dict[str, typing.Any]]
-
-
-class JobManager:
-    """Job manager."""
-
-    def __init__(self) -> None:
-        """Init."""
-        self.active_jobs: dict[tuple[str, int], MatcherJob] = {}
-        self.task_queue: queue.PriorityQueue[Task] = queue.PriorityQueue()
-
-    def end_job(self, osm_type: str, osm_id: int) -> None:
-        """End job."""
-        del self.active_jobs[(osm_type, osm_id)]
-
-    def get_job(self, osm_type: str, osm_id: int) -> MatcherJob | None:
-        """Get job."""
-        return self.active_jobs.get((osm_type, osm_id))
-
-    def get_next_job(self) -> MatcherJob:
-        """Get next job."""
-        return self.task_queue.get()
-
-    def new_job(self, osm_type: str, osm_id: int, **kwargs: typing.Any) -> MatcherJob:
-        """Add new job."""
-        job = MatcherJob(osm_type, osm_id, job_manager=self, **kwargs)
-        self.active_jobs[(osm_type, osm_id)] = job
-        return job
-
-    def iter_jobs(self) -> collections.abc.Iterator[MatcherJob]:
-        """Iterate through jobs."""
-        return (job for job in threading.enumerate() if isinstance(job, MatcherJob))
-
-    def stop_job(self, osm_type: str, osm_id: int) -> None:
-        """Stop given job."""
-        for job in self.iter_jobs():
-            if job.osm_type == osm_type and job.osm_id == osm_id:
-                job.stop()
-
-    def job_list(self) -> list[dict[str, typing.Any]]:
-        """Get job list."""
-        return [
-            {
-                "osm_id": job.osm_id,
-                "osm_type": job.osm_type,
-                "subscribers": job.subscriber_count,
-                "start": str(datetime.utcfromtimestamp(int(job.start_time))),
-                "stopping": job.stopping,
-            }
-            for job in self.iter_jobs()
-        ]

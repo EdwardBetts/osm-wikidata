@@ -1,72 +1,76 @@
-"""Jobs."""
+"""Job management via procrastinate."""
 
 import typing
-from datetime import datetime
+from datetime import datetime, timezone
 
-from . import chat
+from sqlalchemy import text
+
+from . import database
 from .place import Place
 
 StrDict = dict[str, typing.Any]
 
+MATCHER_TASK_NAME = "matcher.run_matcher"
 
-def matcher_queue_request(
-    command: str,
-    **params: typing.Any,
-) -> StrDict:
-    """Make request to matcher queue."""
-    sock = chat.connect_to_queue()
-    chat.send_command(sock, command, **params)
-
-    replies = []
-    while True:
-        msg: StrDict | None = chat.read_json_line(sock)
-        if msg is None:
-            break
-        replies.append(msg)
-
-    sock.close()
-
-    assert len(replies) == 1
-    return replies[0]
-
-
-def parse_job_start(start: str) -> datetime:
-    """Parse timestamp string to datetime."""
-    return datetime.strptime(start, "%Y-%m-%d %H:%M:%S")
-
-
-def get_job(place: Place) -> StrDict | None:
-    """Get job for given place."""
-    reply = matcher_queue_request("jobs")
-    assert reply["type"] == "jobs"
-
-    job: StrDict
-    for job in reply["items"]:
-        if not all(job[key] == getattr(place, key) for key in ("osm_type", "osm_id")):
-            continue
-        job["start"] = parse_job_start(job["start"])
-        return job
-    return None
+_ACTIVE_JOBS_SQL = text(
+    """
+    SELECT j.id,
+           j.args,
+           j.status,
+           j.abort_requested,
+           e.at AS created_at
+    FROM procrastinate_jobs j
+    JOIN procrastinate_events e
+      ON e.job_id = j.id AND e.type = 'deferred'
+    WHERE j.task_name = :task_name
+      AND j.status IN ('todo', 'doing')
+    ORDER BY e.at
+    """
+)
 
 
 def get_jobs() -> list[StrDict]:
-    """Get jobs from matcher queue."""
-    reply = matcher_queue_request("jobs")
-    assert reply["type"] == "jobs"
+    """Return active matcher jobs as a list of dicts suitable for the admin UI."""
+    rows = database.session.execute(
+        _ACTIVE_JOBS_SQL, {"task_name": MATCHER_TASK_NAME}
+    ).fetchall()
 
     job_list = []
-    for job in reply["items"]:
-        osm_type, osm_id = job["osm_type"], job["osm_id"]
+    for row in rows:
+        args = row.args
+        osm_type = args.get("osm_type")
+        osm_id = args.get("osm_id")
         place = Place.get_by_osm(osm_type, osm_id)
-        job["start"] = parse_job_start(job["start"])
-        job["place"] = place
-        job_list.append(job)
+        job_list.append(
+            {
+                "id": row.id,
+                "osm_type": osm_type,
+                "osm_id": osm_id,
+                "place": place,
+                "start": row.created_at,
+                "status": row.status,
+                "stopping": row.abort_requested,
+                "subscribers": 0,
+            }
+        )
 
     return job_list
 
 
-def stop_job(place: Place) -> None:
-    """Send stop job request to matcher queue."""
-    reply = matcher_queue_request("stop", osm_type=place.osm_type, osm_id=place.osm_id)
+def get_job(place: Place) -> StrDict | None:
+    """Return the active job for *place*, or None."""
+    for job in get_jobs():
+        if job["osm_type"] == place.osm_type and job["osm_id"] == place.osm_id:
+            return job
+    return None
 
-    assert reply["type"] == "stop" and reply["success"]
+
+def stop_job(place: Place) -> None:
+    """Request cancellation of the active job for *place*."""
+    from .procrastinate_app import procrastinate_app
+
+    job = get_job(place)
+    if job is None:
+        raise ValueError(f"No active job found for {place.osm_type}/{place.osm_id}")
+
+    procrastinate_app.job_manager.cancel_job_by_id(job["id"], abort=True)
