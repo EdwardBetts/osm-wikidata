@@ -70,4 +70,12 @@ it will be left alone.
 * Tasks: <https://github.com/EdwardBetts/osm-wikidata/issues>
 * All timestamps stored in the database should be in UTC.
 
+### Database setup
+
+Apply the procrastinate schema to the database:
+
+```
+python3 -m procrastinate --app=matcher.procrastinate_app.cli_app schema --apply
+```
+
 <!--- vim: set syntax=markdown tw=80 spell: --->
