@@ -6,7 +6,8 @@ from flask import request, request_finished
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from matcher import database
-from matcher.error_mail import setup_error_mail
+
+# from matcher.error_mail import setup_error_mail
 from matcher.view import app
 
 logger = logging.getLogger("osm-wikidata")
@@ -70,6 +71,6 @@ def log_response(sender, response, **extra):
 
 app.config.from_object("config.default")
 database.init_app(app)
-setup_error_mail(app)
+# setup_error_mail(app)
 request_finished.connect(log_response, app)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_host=1)
