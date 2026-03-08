@@ -247,7 +247,9 @@
     </form>
     {% if q %}
     <div class="results-count">
-      {% if identifier_not_found %}
+      {% if search_error %}
+        search error for &ldquo;{{ q }}&rdquo;
+      {% elif identifier_not_found %}
         not found in Nominatim: &ldquo;{{ q }}&rdquo;
       {% elif results | count == 0 %}
         no results for &ldquo;{{ q }}&rdquo;
@@ -264,7 +266,13 @@
 <div class="container py-4">
   {% include "flash_msg.html" %}
 
-  {% if q %}
+  {% if search_error %}
+    <div class="no-results">
+      <div class="no-results-icon"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></div>
+      <p>Nominatim search error for <strong>{{ q }}</strong>:</p>
+      <pre style="font-size:.8rem;white-space:pre-wrap;text-align:left">{{ search_error }}</pre>
+    </div>
+  {% elif q %}
     {% if identifier_not_found %}
       <div class="no-results">
         <div class="no-results-icon"><i class="fa fa-question-circle-o" aria-hidden="true"></i></div>
@@ -281,6 +289,7 @@
       {% include "search_results.html" with context %}
     {% endif %}
   {% endif %}
+{% endif %}
 </div>
 
 {% endblock %}

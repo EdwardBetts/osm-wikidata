@@ -1519,9 +1519,10 @@ def search_results():
 
     try:
         results = search.run(q)
-    except search.SearchError:
-        message = "nominatim API search error"
-        return render_template("error_page.html", message=message)
+    except search.SearchError as e:
+        return render_template(
+            "results_page.html", results=[], q=q, search_error=str(e) or "nominatim API error"
+        )
 
     search.update_search_results(results)
 

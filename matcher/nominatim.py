@@ -33,13 +33,13 @@ def lookup_with_params(**kwargs: str | int) -> list[Hit]:
     }
     params.update(kwargs)
     r = requests.get(url, params=params, headers=user_agent_headers())
-    if r.status_code == 500:
-        raise SearchError
+    if not r.ok:
+        raise SearchError(f"HTTP {r.status_code}: {r.text[:400]}")
 
     try:
         hits: list[Hit] = json.loads(r.text, object_pairs_hook=OrderedDict)
     except json.decoder.JSONDecodeError:
-        raise SearchError(r)
+        raise SearchError(f"HTTP {r.status_code}: response is not JSON: {r.text[:400]}")
 
     return hits
 

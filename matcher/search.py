@@ -271,7 +271,7 @@ def run(q: str) -> NominatimResults:
                 return results
 
         check_for_city_node_in_results(q, results)
-    except nominatim.SearchError:
-        raise SearchError
+    except nominatim.SearchError as e:
+        raise SearchError(str(e)) from e
 
     return results
