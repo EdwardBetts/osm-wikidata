@@ -231,7 +231,7 @@ def site_banner() -> None:
 def slow_crawl() -> None:
     """Slow down crawls by bots to stop overloading server."""
     if utils.is_bot():
-        if request.endpoint == "search_results":
+        if request.endpoint in {"search_results", "matcher_wikidata"}:
             abort(429)
         sleep(5)
 
@@ -239,7 +239,7 @@ def slow_crawl() -> None:
 @app.route("/robots.txt")
 def robots_txt() -> Response:
     """Serve robots.txt disallowing search endpoint."""
-    body = "User-agent: *\nDisallow: /search\n"
+    body = "User-agent: *\nDisallow: /search\nDisallow: /matcher/Q\n"
     return make_response(body, 200, {"Content-Type": "text/plain"})
 
 
