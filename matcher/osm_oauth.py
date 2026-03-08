@@ -61,6 +61,11 @@ def parse_iso_date(value: str) -> datetime:
 
 def parse_userinfo_call(xml: bytes) -> dict[str, typing.Any]:
     """Parse userinfo call."""
+    # The OSM API may include a UTF-8 BOM or other leading bytes before the
+    # XML declaration; strip anything before the first '<'.
+    start = xml.find(b"<")
+    if start > 0:
+        xml = xml[start:]
     root = lxml.etree.fromstring(xml)
     user = root[0]
     img = user.find(".//img")
