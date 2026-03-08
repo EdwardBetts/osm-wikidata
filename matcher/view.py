@@ -196,7 +196,14 @@ def global_user() -> None:
         flash("Failure to authenticate, you've been logged out")
         return None
 
-    info = osm_oauth.parse_userinfo_call(r.content)
+    if not r.ok:
+        return None  # OSM API unavailable — skip profile refresh, keep session
+
+    try:
+        info = osm_oauth.parse_userinfo_call(r.content)
+    except Exception:
+        return None  # API returned unexpected content (e.g. HTML error page)
+
     g.user.username = info["username"]
     g.user.description = info["description"]
     g.user.img = info["img"]
