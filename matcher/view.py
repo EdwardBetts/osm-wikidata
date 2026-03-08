@@ -197,6 +197,8 @@ def global_user() -> None:
         return None
 
     if not r.ok:
+        print(f"OSM API error fetching user details: {r.status_code} {r.reason}")
+        print(r.text)
         flash(f"OSM API error fetching user details: {r.status_code} {r.reason}")
         return None
 
