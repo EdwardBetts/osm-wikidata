@@ -197,12 +197,15 @@ def global_user() -> None:
         return None
 
     if not r.ok:
-        return None  # OSM API unavailable — skip profile refresh, keep session
+        flash(f"OSM API error fetching user details: {r.status_code} {r.reason}")
+        return None
 
     try:
         info = osm_oauth.parse_userinfo_call(r.content)
     except Exception:
-        return None  # API returned unexpected content (e.g. HTML error page)
+        content_preview = r.content[:200].decode("utf-8", errors="replace")
+        flash(f"OSM API returned unexpected content: {content_preview}")
+        return None
 
     g.user.username = info["username"]
     g.user.description = info["description"]
