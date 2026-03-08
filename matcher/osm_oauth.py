@@ -51,7 +51,7 @@ def api_request(path: str, **params: typing.Any) -> requests.Response:
         url += "?" + urlencode(params)
 
     oauth = get_session()
-    return oauth.get(url, timeout=4)
+    return oauth.get(url, headers=user_agent_headers(), timeout=4)
 
 
 def parse_iso_date(value: str) -> datetime:
