@@ -1,5 +1,9 @@
+import pathlib
+import shutil
+
 import pytest
 from flask import Flask
+from sqlalchemy import text
 from testing.postgresql import Postgresql
 from matcher import database
 from matcher.place import Place  # noqa: F401
@@ -13,11 +17,31 @@ def postgresql(request):
     psql.stop()
 
 @pytest.fixture(scope='session')
-def app(request, postgresql):
+def config_default():
+    """Materialize config/default.py for tests.
+
+    matcher.procrastinate_app does `from config.default import DB_URL` at
+    module scope, but config/default.py is gitignored and absent in tests
+    and CI. Copy from config/sample.py for the duration of the session,
+    then remove it if we created it.
+    """
+    default_py = pathlib.Path(__file__).resolve().parent.parent / 'config' / 'default.py'
+    sample_py = default_py.with_name('sample.py')
+    created = False
+    if not default_py.exists() and sample_py.exists():
+        shutil.copy(sample_py, default_py)
+        created = True
+    yield default_py
+    if created:
+        default_py.unlink()
+
+@pytest.fixture(scope='session')
+def app(request, postgresql, config_default):
     app = Flask('test_app')
 
     class TestConfig():
         DB_URL = postgresql.url()
+        DB_PASS = ''
         TESTING = True
         DEBUG = True
         ADMIN_EMAIL = 'tests@osm.wikidata.link'
@@ -35,9 +59,17 @@ def app(request, postgresql):
 
     # create database tables
     engine = database.session.get_bind()
-    engine.execute('create extension postgis')
+    with engine.begin() as conn:
+        conn.execute(text('create extension if not exists postgis'))
+        conn.execute(text('create extension if not exists hstore'))
     Base.metadata.create_all(engine)
 
     yield app
 
     ctx.pop()
+
+
+@pytest.fixture(scope='session')
+def osm2pgsql_available():
+    """True if osm2pgsql is on PATH. Integration tests skip when False."""
+    return shutil.which('osm2pgsql') is not None
