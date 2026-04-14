@@ -1,0 +1,42 @@
+[project]
+name = "osm-wikidata"
+version = "0.1.0"
+description = "Match items in Wikidata with objects in OpenStreetMap"
+requires-python = ">=3.11"
+dependencies = [
+    "Flask",
+    "Flask-Login",
+    "Flask-WTF",
+    "flask-sock",
+    "GeoAlchemy2",
+    "geopy",
+    "gevent",
+    "gunicorn",
+    "humanize",
+    "inflect",
+    "lxml",
+    "num2words",
+    "procrastinate",
+    "psycopg2-binary",
+    "requests",
+    "requests-oauthlib",
+    "simplejson",
+    "SQLAlchemy",
+    "tabulate",
+    "termcolor",
+    "ua-parser",
+    "unidecode",
+    "user-agents",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "testing.postgresql",
+    "vcrpy",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests requiring a real osm2pgsql binary on PATH",
+]

@@ -10,29 +10,14 @@ be installed for the system to function.
 The tool expects to find an e-mail server running on localhost and accepting
 connection via SMTP. This is to send occasional e-mails to the administrator.
 
-Python requirements:
+Python dependencies are declared in pyproject.toml and locked in uv.lock.
+Install them with uv (https://docs.astral.sh/uv/):
 
-    sqlalchemy
-    psycopg2
-    GeoAlchemy2
-    geopy
-    Flask
-    flask-login
-    gevent
-    websockets
-    gunicorn
-    humanize
-    unidecode
-    termcolor
-    lxml
-    requests
-    simplejson
-    ua-parser
-    user-agents
-    pattern
-    num2words
-    Flask-WTF
-    flask-sock
+    uv sync            # production deps only
+    uv sync --all-groups  # include test deps
+
+This creates a .venv directory; activate it with `source .venv/bin/activate`
+or invoke commands via `uv run <command>`.
 
 The front-end libraries need to be installed in the matcher/static directory.
 This list is the expected directory name, and the software required:

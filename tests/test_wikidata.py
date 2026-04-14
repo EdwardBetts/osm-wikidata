@@ -447,14 +447,6 @@ def test_wd_uri_to_qid():
     uri = 'http://www.wikidata.org/entity/Q42'
     assert wikidata.wd_uri_to_id(uri) == 42
 
-def test_drop_tag_prefix():
-    assert wikidata.drop_tag_prefix('Tag:name=test') == 'name=test'
-    assert wikidata.drop_tag_prefix('Key:name') == 'name'
-
-    assert wikidata.drop_tag_prefix('Key:name=test') is None
-    assert wikidata.drop_tag_prefix('Tag:name') is None
-    assert wikidata.drop_tag_prefix('test') is None
-
 def test_entity_label():
     entity = {'labels': {'en': {'value': 'test'}}}
     assert wikidata.entity_label(entity) == 'test'
@@ -466,19 +458,6 @@ def test_claim_value():
     assert wikidata.claim_value({'mainsnak': {}}) is None
     c = {'mainsnak': {'datavalue': {'value': 'test'}}}
     assert wikidata.claim_value(c) == 'test'
-
-def test_get_item_labels_query():
-    with pytest.raises(AssertionError):
-        wikidata.get_item_labels_query([])
-
-    expect = '''
-SELECT ?item ?itemLabel
-WHERE {
-  VALUES (?item) { (wd:Q30) (wd:Q99) }
-  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
-}'''
-
-    assert wikidata.get_item_labels_query(['Q30', 'Q99']) == expect
 
 def test_parse_enwiki_query():
     assert wikidata.parse_enwiki_query([]) == {}

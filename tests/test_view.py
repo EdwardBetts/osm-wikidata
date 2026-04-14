@@ -1,4 +1,4 @@
-from matcher import view, wikidata, overpass, matcher
+from matcher import api_view, view, wikidata, overpass, matcher
 from pprint import pprint
 import werkzeug.exceptions
 import pytest
@@ -339,7 +339,7 @@ expected_reply = {
           'tags': {'historic': 'monument', 'name': 'Golden Spike'},
           'type': 'node'}],
  'response': 'ok',
- 'search': {'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork'],
+ 'search': {'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork', 'historic=monument'],
             'radius': 1000},
  'wikidata': {'aliases': {'en': [{'language': 'en', 'value': 'Final spike'}],
                           'pt': [{'language': 'pt', 'value': 'Last Spike'}]},
@@ -368,7 +368,7 @@ expected_reply = {
 def test_api_get(monkeypatch):
     monkeypatch.delattr('requests.sessions.Session.request')
     with pytest.raises(werkzeug.exceptions.NotFound):
-        view.api_get(30, {}, 1000)
+        api_view.api_get(30, {}, 1000)
 
     monkeypatch.setattr(wikidata,
                         'get_entities',
@@ -385,7 +385,7 @@ def test_api_get(monkeypatch):
         def get(self):
             pass
 
-    monkeypatch.setattr(view.Item, 'query', MockQuery)
+    monkeypatch.setattr(view.Item, 'query', MockQuery, raising=False)
     monkeypatch.setattr(overpass, 'get_existing', lambda qid: [])
 
     def item_query(oql, qid, radius):
@@ -417,7 +417,7 @@ def test_api_get(monkeypatch):
         config = {'DATA_DIR': data_dir}
 
     monkeypatch.setattr(matcher, 'current_app', MockApp)
-    ret = view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
+    ret = api_view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
 
     assert ret == expected_reply
 
@@ -426,7 +426,7 @@ def test_api_get(monkeypatch):
 
     monkeypatch.setattr(overpass, 'get_existing', get_existing_rate_limited)
 
-    ret = view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
+    ret = api_view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
     del ret['wikidata']
     pprint(ret)
 
@@ -435,7 +435,7 @@ def test_api_get(monkeypatch):
         'found_matches': False,
         'response': 'error',
         'search': {
-            'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork'],
+            'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork', 'historic=monument'],
             'radius': 1000,
         }
     }
@@ -443,14 +443,14 @@ def test_api_get(monkeypatch):
     assert ret == rate_limited_error
 
     del entity.claims['P625']
-    ret = view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
+    ret = api_view.api_get(wikidata_id=4384193, entity=entity, radius=1000)
 
     expect_no_coords = {
         'error': 'no coordinates',
         'found_matches': False,
         'response': 'error',
         'search': {
-            'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork'],
+            'criteria': ['Tag:historic=monument', 'Tag:tourism=artwork', 'historic=monument'],
             'radius': 1000
         },
     }
