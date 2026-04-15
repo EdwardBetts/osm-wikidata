@@ -38,6 +38,14 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--import-mode=importlib",
+    "-ra",
+]
+xfail_strict = true
 markers = [
     "integration: marks tests requiring a real osm2pgsql binary on PATH",
 ]
