@@ -8,8 +8,10 @@ from itertools import islice
 from typing import Any, Iterable, Iterator, TypeVar, cast
 
 import flask
-import pattern.en
+import inflect
 import user_agents
+
+_inflect = inflect.engine()
 
 metres_per_mile = 1609.344
 feet_per_metre = 3.28084
@@ -184,8 +186,8 @@ def pluralize_label(label: dict[str, str]) -> str:
     if label["language"] != "en":
         return text
 
-    # pattern.en.pluralize has the plural of 'mine' as 'ours'
+    # inflect.plural returns 'ours' for 'mine'
     if text == "mine":
         return "mines"
 
-    return cast(str, pattern.en.pluralize(text))
+    return cast(str, _inflect.plural(text))

@@ -12,8 +12,6 @@ import flask
 import requests
 from flask import current_app, g, has_request_context, request
 
-from .place import Place
-
 
 def send_mail(
     subject: str, body: str, config: flask.config.Config | None = None
@@ -65,7 +63,7 @@ def get_username() -> str:
     return user
 
 
-def get_area(place: Place) -> str:
+def get_area(place: "Place") -> str:
     """Get area of place in human readable format."""
     return f"{place.area_in_sq_km:,.2f} sq km" if place.area else "n/a"
 

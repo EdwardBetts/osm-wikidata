@@ -1,5 +1,7 @@
 """Matcher functions."""
 
+from __future__ import annotations
+
 import collections
 import json
 import os.path
@@ -25,7 +27,7 @@ class EntityType(typing.TypedDict):
     check_housename: bool
 
 
-CandidatesList = list[model.ItemCandidate]
+CandidatesList = list["model.ItemCandidate"]
 # CandidateDict = dict[str, typing.Any]
 DbCursor = psycopg2.extensions.cursor
 

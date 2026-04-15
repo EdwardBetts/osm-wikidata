@@ -1,5 +1,7 @@
 """Look for an embassy by name."""
 
+from __future__ import annotations
+
 import re
 
 from . import model
