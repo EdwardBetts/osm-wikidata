@@ -97,6 +97,27 @@ def build_item_list(items):
     return item_list
 
 
+def bbox_geojson_feature(bbox, chunk_num: int) -> dict[str, typing.Any]:
+    """Return a GeoJSON feature for a Wikidata query bounding box."""
+    south, north, west, east = (float(v) for v in bbox)
+    return {
+        "type": "Feature",
+        "properties": {"chunk_num": chunk_num},
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [west, south],
+                    [east, south],
+                    [east, north],
+                    [west, north],
+                    [west, south],
+                ]
+            ],
+        },
+    }
+
+
 class MatcherJobStopped(Exception):
     pass
 
@@ -536,6 +557,11 @@ class MatcherJob:
         while chunks:
             bbox = chunks.pop()
             num += 1
+            self.send(
+                "wikidata_chunk",
+                chunk_num=num,
+                chunk=bbox_geojson_feature(bbox, num),
+            )
             msg = f"requesting wikidata chunk {num}"
             print(msg)
             self.status(msg)
@@ -543,11 +569,21 @@ class MatcherJob:
                 items.update(
                     self.place.bbox_wikidata_items(bbox, want_isa=self.want_isa)
                 )
+                self.send("wikidata_chunk_done", chunk_num=num)
             except wikidata_api.QueryTimeout:
                 msg = f"wikidata timeout, splitting chunk {num} into four"
                 print(msg)
                 self.status(msg)
-                chunks += bbox_chunk(bbox, 2)
+                split_chunks = bbox_chunk(bbox, 2)
+                self.send(
+                    "wikidata_chunk_split",
+                    chunk_num=num,
+                    chunks=[
+                        bbox_geojson_feature(split_bbox, num)
+                        for split_bbox in split_chunks
+                    ],
+                )
+                chunks += split_chunks
             except wikidata_api.QueryRateLimited as e:
                 chunks.append(bbox)  # put back to retry after waiting
                 num -= 1

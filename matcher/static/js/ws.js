@@ -191,6 +191,18 @@ connection.onmessage = function(e) {
       logMessage('Items saved to database');
       break;
 
+    case 'wikidata_chunk':
+      addWikidataChunk(data.chunk, 'active');
+      break;
+
+    case 'wikidata_chunk_done':
+      setWikidataChunkState(data.chunk_num, 'done');
+      break;
+
+    case 'wikidata_chunk_split':
+      splitWikidataChunk(data.chunk_num, data.chunks);
+      break;
+
     /* ── Overpass stage ───────────────────────────── */
 
     case 'empty':
