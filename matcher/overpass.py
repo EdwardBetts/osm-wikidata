@@ -66,6 +66,7 @@ class OverpassError(Exception):
 
     def __init__(self, r: requests.models.Response):
         """Make an error object."""
+        super().__init__(r)
         self.r = r
 
 
@@ -345,11 +346,12 @@ def parse_status(r: requests.models.Response) -> OverpassStatus:
         slots.append(int(m.group(2)))
 
     next_line = lines[i]
-    assert (
+    if not (
         re_available_now.match(next_line)
         or next_line
         == "Currently running queries (pid, space limit, time limit, start time):"
-    )
+    ):
+        raise OverpassError(r)
 
     return {
         "rate_limit": int(lines[rate_limit_line][len(limit) :]),
@@ -365,7 +367,7 @@ def status_url() -> str:
 
 def get_status(url: str | None = None) -> OverpassStatus:
     """Get Overpass status."""
-    r = requests.get(url or status_url(), timeout=10)
+    r = requests.get(url or status_url(), headers=user_agent_headers(), timeout=10)
     if "502 Bad Gateway" in r.text:
         raise OverpassError(r)
     return parse_status(r)

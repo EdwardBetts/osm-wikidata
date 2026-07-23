@@ -68,6 +68,10 @@ class MatcherJobStopped(Exception):
     pass
 
 
+class MatcherJobFailed(Exception):
+    """A matcher job failed after reporting a useful message to the user."""
+
+
 class MatcherJob:
     """Matcher job."""
 
@@ -166,6 +170,7 @@ class MatcherJob:
 
     def error(self, msg: str) -> None:
         """Send an error message."""
+        print(f"ERROR: {msg}")
         self.send("error", msg=msg)
 
     def item_line(self, msg: str) -> None:
@@ -229,14 +234,22 @@ class MatcherJob:
         try:
             status = overpass.get_status()
         except overpass.OverpassError as e:
-            r = e.args[0]
+            r = e.r
             body = f"URL: {r.url}\n\nresponse:\n{r.text}"
             mail.send_mail("Overpass API unavailable", body)
-            self.error("Can't access overpass API")
+            msg = (
+                "Can't access Overpass API status: "
+                + self.overpass_response_summary(r)
+            )
+            self.error(msg)
             return False
         except requests.exceptions.Timeout:
             mail.send_mail("Overpass API timeout", "Timeout talking to overpass API")
-            self.error("Can't access overpass API")
+            self.error("Can't access Overpass API status: request timed out")
+            return False
+        except requests.exceptions.RequestException as e:
+            mail.send_mail("Overpass API unavailable", str(e))
+            self.error(f"Can't access Overpass API status: {e}")
             return False
 
         if not status["slots"]:
@@ -267,7 +280,11 @@ class MatcherJob:
                         r = overpass.run_query(oql)
                         break
                     except overpass.RateLimited:
-                        self.wait_for_slot()
+                        if not self.wait_for_slot():
+                            return False
+                    except requests.exceptions.RequestException as e:
+                        self.error(f"Can't access Overpass API query endpoint: {e}")
+                        return False
                 with open(filename, "wb") as out:
                     out.write(r.content)
                 space_alert.check_free_space(app.config)
@@ -275,6 +292,15 @@ class MatcherJob:
 
         self.send("overpass_done")
         return True
+
+    @staticmethod
+    def overpass_response_summary(r) -> str:
+        """Return a compact summary of an Overpass response for logs/UI."""
+        text = " ".join(r.text.split())
+        if len(text) > 500:
+            text = text[:497] + "..."
+        status = f"HTTP {r.status_code}" if r.status_code else "no HTTP status"
+        return f"{status} from {r.url}: {text or '<empty response>'}"
 
     def matcher(self) -> None:
         """Run matcher."""
@@ -305,9 +331,10 @@ class MatcherJob:
             self.report_empty_chunks(chunks)
 
         overpass_good = self.overpass_request(chunks)
-        assert overpass_good
+        if not overpass_good:
+            raise MatcherJobFailed("Overpass API unavailable")
         if any(self.overpass_chunk_error(chunk) for chunk in chunks):
-            return None
+            raise MatcherJobFailed("Overpass returned an error response")
 
         if len(chunks) > 1:
             self.merge_chunks(chunks)

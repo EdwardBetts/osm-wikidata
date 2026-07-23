@@ -16,7 +16,7 @@ def run_matcher_task(
 ) -> None:
     """Run the matcher for a given place."""
     from matcher import mail
-    from matcher.job_queue import MatcherJob
+    from matcher.job_queue import MatcherJob, MatcherJobFailed
     from matcher.view import app
 
     with app.app_context():
@@ -30,6 +30,8 @@ def run_matcher_task(
         )
         try:
             job.run_in_app_context()
+        except MatcherJobFailed:
+            pass
         except Exception as e:
             error_str = f"{type(e).__name__}: {e}"
             print(error_str)
