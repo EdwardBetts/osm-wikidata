@@ -10,6 +10,7 @@ var activityLine  = document.getElementById('activity-line');
 var startTime     = Date.now();
 var chunksNonEmpty = Math.max(total_chunks, 1);  // at least 1 for node places
 var chunksDone    = 0;
+var retryTimer    = null;
 
 /* ── Utilities ─────────────────────────────────────────────── */
 
@@ -43,8 +44,51 @@ function setActivity(text) {
 }
 
 function clearActivity() {
+  if (retryTimer) {
+    window.clearInterval(retryTimer);
+    retryTimer = null;
+  }
   activityWrap.classList.add('d-none');
   activityLine.textContent = '';
+}
+
+function plural(num, singular, pluralText) {
+  return num === 1 ? singular : pluralText;
+}
+
+function formatSeconds(total) {
+  var m = Math.floor(total / 60);
+  var s = total % 60;
+  if (m <= 0) return total + ' ' + plural(total, 'second', 'seconds');
+  return m + ':' + (s < 10 ? '0' + s : s);
+}
+
+function startRetryCountdown(data) {
+  if (retryTimer) window.clearInterval(retryTimer);
+
+  var remaining = data.delay;
+  var service = data.service || 'Service';
+  var reason = data.reason || 'temporarily unavailable';
+  var attempts = data.attempt + '/' + data.max_attempts;
+
+  function render() {
+    setActivity(
+      service + ' ' + reason + '; retrying in ' +
+      formatSeconds(remaining) + ' (' + attempts + ')'
+    );
+  }
+
+  render();
+  retryTimer = window.setInterval(function() {
+    remaining--;
+    if (remaining <= 0) {
+      window.clearInterval(retryTimer);
+      retryTimer = null;
+      setActivity(service + ' retrying now\u2026');
+      return;
+    }
+    render();
+  }, 1000);
 }
 
 /* ── Stage helpers ──────────────────────────────────────────── */
@@ -68,6 +112,12 @@ function setStageFailed(id) {
   el.classList.remove('active');
   el.classList.add('failed');
   el.querySelector('.stage-icon').textContent = '\u00d7';
+}
+
+function failActiveStages() {
+  $.each($('.stage.active'), function(_i, el) {
+    setStageFailed(el.id);
+  });
 }
 
 function isActive(id) { return stageEl(id).classList.contains('active'); }
@@ -165,6 +215,7 @@ connection.onmessage = function(e) {
       break;
 
     case 'chunk_done':
+      clearActivity();
       chunksDone++;
       updateChunkProgress();
       break;
@@ -196,11 +247,22 @@ connection.onmessage = function(e) {
         setStageDone('stage-wikidata');
         setStageDone('stage-details');
         logMessage(text);
+      } else if (text.indexOf('Overpass server too busy, retrying in') !== -1) {
+        /* retry_wait carries structured data and renders the countdown */
       } else if (text.indexOf('rate limited') !== -1) {
         logMessage(text, 'log-warn');
       } else {
         logMessage(text);
       }
+      break;
+
+    case 'retry_wait':
+      logMessage(
+        data.service + ' ' + data.reason + ', retrying in ' +
+        data.delay + ' seconds (' + data.attempt + '/' + data.max_attempts + ')',
+        'log-warn'
+      );
+      startRetryCountdown(data);
       break;
 
     case 'matching_start':
@@ -225,6 +287,13 @@ connection.onmessage = function(e) {
       break;
 
     /* ── Terminal states ──────────────────────────── */
+
+    case 'failed':
+      clearActivity();
+      failActiveStages();
+      if (data.msg) logMessage(data.msg, 'log-error');
+      if (connection.readyState === WebSocket.OPEN) connection.close();
+      break;
 
     case 'done':
       setStageDone('stage-matching');

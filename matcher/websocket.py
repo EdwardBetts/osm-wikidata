@@ -154,7 +154,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
                     if reply is None:
                         break
                     data = json.loads(item)
-                    if data["type"] in ("done", "error"):
+                    if data["type"] in ("done", "failed"):
                         return
             else:
                 # Timeout – send a ping to keep the connection alive.

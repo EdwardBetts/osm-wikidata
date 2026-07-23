@@ -30,13 +30,14 @@ def run_matcher_task(
         )
         try:
             job.run_in_app_context()
-        except MatcherJobFailed:
-            pass
+        except MatcherJobFailed as e:
+            job.failed(str(e))
         except Exception as e:
             error_str = f"{type(e).__name__}: {e}"
             print(error_str)
             traceback.print_exc()
             job.send("error", msg=error_str)
+            job.failed(error_str)
             mail.send_traceback("matcher task", prefix="matcher task")
         finally:
             job.close()

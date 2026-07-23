@@ -23,6 +23,9 @@ re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
 NOTIFY_MAX_BYTES = 7900  # PostgreSQL NOTIFY payload limit is 8000 bytes
 WIKIDATA_ITEMS_MAX_AGE = timedelta(hours=24)  # reuse cached items within this window
+OVERPASS_RETRY_LIMIT = 5
+OVERPASS_RETRY_BASE_SECONDS = 60
+OVERPASS_RETRY_MAX_SECONDS = 300
 
 
 class Chunk(typing.TypedDict):
@@ -204,6 +207,11 @@ class MatcherJob:
         print(f"ERROR: {msg}")
         self.send("error", msg=msg, **data)
 
+    def failed(self, msg: str) -> None:
+        """Send terminal failure message."""
+        print(f"FAILED: {msg}")
+        self.send("failed", msg=msg)
+
     def item_line(self, msg: str) -> None:
         """Send an item progress line."""
         if msg:
@@ -260,6 +268,95 @@ class MatcherJob:
         mail.send_mail("Overpass error", remark.text)
         return True
 
+    @staticmethod
+    def overpass_response_error(r: requests.models.Response) -> str | None:
+        """Classify an Overpass response body that contains an error page."""
+        content = r.text
+        if "<!DOCTYPE html" in content:
+            if "too busy" in content:
+                return "too_busy"
+            if "runtime error" in content:
+                return "runtime_error"
+            return "server_error"
+        if len(r.content) >= 2000:
+            return None
+        if "<remark> runtime error" in content:
+            return "runtime_error"
+        return None
+
+    def retry_delay(self, attempt: int) -> int:
+        """Return Overpass retry delay for a 1-based attempt number."""
+        return min(
+            OVERPASS_RETRY_BASE_SECONDS * 2 ** (attempt - 1),
+            OVERPASS_RETRY_MAX_SECONDS,
+        )
+
+    def overpass_status_wait_seconds(self) -> int | None:
+        """Return seconds until an Overpass slot opens, if status provides one."""
+        try:
+            status = overpass.get_status()
+        except (overpass.OverpassError, requests.exceptions.RequestException):
+            return None
+
+        if not status["slots"]:
+            return None
+        secs = status["slots"][0]
+        return secs if secs > 0 else None
+
+    def retry_wait(
+        self, service: str, reason: str, delay: int, attempt: int, max_attempts: int
+    ) -> None:
+        """Send structured retry wait status."""
+        self.send(
+            "retry_wait",
+            service=service,
+            reason=reason,
+            delay=delay,
+            attempt=attempt,
+            max_attempts=max_attempts,
+        )
+
+    def fetch_overpass_chunk(self, oql: str) -> requests.models.Response | None:
+        """Fetch an Overpass chunk, retrying transient busy/rate-limit responses."""
+        attempt = 1
+        while attempt <= OVERPASS_RETRY_LIMIT:
+            try:
+                r = overpass.run_query(oql)
+            except overpass.RateLimited:
+                if not self.wait_for_slot():
+                    return None
+                continue
+            except requests.exceptions.RequestException as e:
+                self.error(
+                    f"Can't access Overpass API query endpoint: {e}",
+                    stage="overpass",
+                )
+                return None
+
+            error_kind = self.overpass_response_error(r)
+            if error_kind != "too_busy":
+                return r
+
+            if attempt == OVERPASS_RETRY_LIMIT:
+                return r
+
+            delay = self.overpass_status_wait_seconds() or self.retry_delay(attempt)
+            self.status(
+                "Overpass server too busy, retrying in "
+                f"{delay} seconds ({attempt}/{OVERPASS_RETRY_LIMIT})"
+            )
+            self.retry_wait(
+                service="Overpass",
+                reason="server too busy",
+                delay=delay,
+                attempt=attempt,
+                max_attempts=OVERPASS_RETRY_LIMIT,
+            )
+            sleep(delay)
+            attempt += 1
+
+        return None
+
     def wait_for_slot(self) -> bool:
         """Wait for an Overpass API slot. Returns False if Overpass is unavailable."""
         try:
@@ -311,19 +408,9 @@ class MatcherJob:
                 if not self.wait_for_slot():
                     return False
                 self.send("get_chunk", chunk_num=num)
-                while True:
-                    try:
-                        r = overpass.run_query(oql)
-                        break
-                    except overpass.RateLimited:
-                        if not self.wait_for_slot():
-                            return False
-                    except requests.exceptions.RequestException as e:
-                        self.error(
-                            f"Can't access Overpass API query endpoint: {e}",
-                            stage="overpass",
-                        )
-                        return False
+                r = self.fetch_overpass_chunk(oql)
+                if r is None:
+                    return False
                 with open(filename, "wb") as out:
                     out.write(r.content)
                 space_alert.check_free_space(app.config)
@@ -392,6 +479,7 @@ class MatcherJob:
                 "error",
                 msg=f"geometry is not a polygon ({self.place.geometry_type}) — the boundary is not a closed ring",
             )
+            self.failed("Matcher cannot run for this geometry")
             return
 
         is_refresh = self.place.state == "refresh"
