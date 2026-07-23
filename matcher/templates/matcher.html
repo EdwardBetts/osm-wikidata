@@ -98,6 +98,18 @@ body, html {
 
 .stage.done .stage-label { color: #28a745; }
 
+.stage.failed .stage-icon {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+  animation: none;
+}
+
+.stage.failed .stage-label {
+  color: #dc3545;
+  font-weight: 600;
+}
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Activity (rolling item-level messages) ───────── */

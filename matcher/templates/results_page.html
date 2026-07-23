@@ -266,7 +266,13 @@
 <div class="container py-4">
   {% include "flash_msg.html" %}
 
-  {% if search_error %}
+  {% if login_required %}
+    <div class="no-results">
+      <div class="no-results-icon"><i class="fa fa-lock" aria-hidden="true"></i></div>
+      <p>Please log in to search for places.</p>
+      <a href="{{ url_for('login_route', next=request.full_path) }}" class="btn-run">Log in with OpenStreetMap</a>
+    </div>
+  {% elif search_error %}
     <div class="no-results">
       <div class="no-results-icon"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i></div>
       <p>Nominatim search error for <strong>{{ q }}</strong>:</p>

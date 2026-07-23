@@ -19,6 +19,10 @@
 
 <div>
   <p>{{ tb.exception }}</p>
+  {% if e.r is defined %}
+  <p>HTTP status: {{ e.r.status_code }}</p>
+  <pre>{{ e.r.text }}</pre>
+  {% endif %}
 </div>
 
 {% set body %}

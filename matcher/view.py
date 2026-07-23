@@ -239,7 +239,13 @@ def slow_crawl() -> None:
 @app.route("/robots.txt")
 def robots_txt() -> Response:
     """Serve robots.txt disallowing search endpoint."""
-    body = "User-agent: *\nDisallow: /search\nDisallow: /matcher/Q\n"
+    body = (
+        "User-agent: *\n"
+        "Disallow: /search\n"
+        "Disallow: /matcher/Q\n"
+        "Disallow: /browse/\n"
+        "Disallow: /Q\n"
+    )
     return make_response(body, 200, {"Content-Type": "text/plain"})
 
 
@@ -1514,6 +1520,10 @@ def search_results():
         return render_template("results_page.html", results=[], q=q)
 
     q = q.strip()
+
+    if not g.user.is_authenticated:
+        return render_template("results_page.html", results=[], q=q, login_required=True)
+
     url = search.check_for_search_identifier(q)
     if url:
         return redirect(url)
@@ -1628,9 +1638,14 @@ def changesets() -> str:
 
 
 @app.route("/browse/")
-def browse_index() -> str:
+@flask_login.login_required
+def browse_index() -> str | tuple[str, int]:
     """Show list of continents as top lever for browse interface."""
-    items = browse.get_continents()
+    try:
+        items = browse.get_continents()
+    except wikidata_api.QueryError as e:
+        tb = DebugTraceback(e)
+        return render_template("show_query_error.html", e=e, tb=tb), 500
 
     for item in items:
         assert item["label"] and item["qid"]
@@ -1641,6 +1656,8 @@ def browse_index() -> str:
 
 def get_continents_for_country(entity: Entity) -> list[browse.Item]:
     items: list[browse.Item] = []
+    if "P30" not in entity["claims"]:
+        return items
     has_preferred = any(
         claim["rank"] == "preferred" for claim in entity["claims"]["P30"]
     )
@@ -1700,10 +1717,19 @@ def _browse_page_data(qid: str) -> dict[str, typing.Any]:
     if "Q3624078" in p31 or "Q15634554" in p31:
         continents = get_continents_for_country(entity)
     elif up_items:
-        country_qid = up_items[0]["qid"]
+        # Prefer P17 (country) over walking the admin hierarchy, since the
+        # SPARQL traversal of P131+ returns ancestors in unspecified order so
+        # up_items[0] is not guaranteed to be the sovereign state.
+        p17 = entity["claims"].get("P17")
+        if p17:
+            country_qid = p17[0]["mainsnak"]["datavalue"]["value"]["id"]
+        else:
+            country_qid = up_items[0]["qid"]
         country_entity = wikidata_api.get_entity_with_cache(country_qid)
-        assert country_entity
-        continents = get_continents_for_country(country_entity)
+        if country_entity:
+            continents = get_continents_for_country(country_entity)
+        else:
+            continents = []
     else:
         continents = []
 
@@ -1769,6 +1795,7 @@ def _browse_page_data(qid: str) -> dict[str, typing.Any]:
 
 
 @app.route("/browse/Q<int:item_id>")
+@flask_login.login_required
 def browse_page(item_id: int) -> str:
     """Browse place."""
     qid = f"Q{item_id}"
@@ -1785,6 +1812,10 @@ def matcher_wikidata(item_id: int) -> Response:
         return browse.qid_to_search_string(qid, entity)
 
     qid = "Q{}".format(item_id)
+
+    if not g.user.is_authenticated:
+        return render_template("results_page.html", results=[], q="", login_required=True)
+
     place = Place.get_by_wikidata(qid)
     if place:  # already in the database
         if place.osm_type == "node":
@@ -1794,10 +1825,10 @@ def matcher_wikidata(item_id: int) -> Response:
         return place.redirect_to_matcher()
 
     q = get_search_string(qid)
-    place = browse.place_via_nominatim(qid, q=q)
-    # search using wikidata query and nominatim
-    if place and place.osm_type != "node":
-        return place.redirect_to_matcher()
+    if g.user.is_authenticated:
+        place = browse.place_via_nominatim(qid, q=q)
+        if place and place.osm_type != "node":
+            return place.redirect_to_matcher()
 
     # give up and redirect to search page
     session["redirect_on_single"] = True
@@ -1988,6 +2019,7 @@ def build_item_page(wikidata_id: int, item: Item | None) -> str:
 
 
 @app.route("/Q<int:wikidata_id>")
+@flask_login.login_required
 def item_page(wikidata_id: int) -> str:
     """Item page."""
     check_still_auth()

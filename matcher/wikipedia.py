@@ -7,6 +7,7 @@ import requests
 
 from . import mail, user_agent_headers
 from .utils import chunk, drop_start
+from .wikimedia_api_logging import logged_get
 
 page_size = 50
 extracts_page_size = 20
@@ -31,7 +32,7 @@ def run_query(
     p.update(params)
 
     url = f"https://{language_code}.wikipedia.org/w/api.php"
-    r = requests.get(url, params=p, headers=user_agent_headers())
+    r = logged_get(url, params=p, headers=user_agent_headers())
     expect = "application/json; charset=utf-8"
     success = True
     if r.status_code != 200:

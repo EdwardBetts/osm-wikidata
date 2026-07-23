@@ -18,6 +18,7 @@ from . import (Entity, commons, language, mail, match, matcher, overpass,
                user_agent_headers)
 from .language import get_language_label
 from .utils import cache_filename, drop_start
+from .wikimedia_api_logging import logged_post
 from .wikidata_api import (QueryError, QueryRateLimited, QueryTimeout,
                            get_entities, get_entity, get_entity_with_cache)
 
@@ -784,7 +785,7 @@ def run_query_raw(
 
     for attempt in range(attempts):
         try:  # retry if we get a ChunkedEncodingError
-            r = requests.post(
+            r = logged_post(
                 wikidata_query_api_url,
                 data={"query": query, "format": "json"},
                 timeout=timeout,
@@ -1787,6 +1788,8 @@ def located_in_admin_hierachy(qid: str) -> list[Item]:
 
 def located_in(qid: str) -> list[Item]:
     country_qid = get_country_for_item(qid)
+    if country_qid is None:
+        return []
     admin_area_types = admin_area_types_for_country(country_qid)
 
     type_list = [i["qid"] for i in admin_area_types]
@@ -1801,13 +1804,15 @@ def admin_area_types_for_country(qid: str) -> list[Item]:
     return items_from_query(admin_area_types_for_country_query, qid)
 
 
-def get_country_for_item(qid: str) -> str:
+def get_country_for_item(qid: str) -> str | None:
     """Get country for item."""
     entity = get_entity_with_cache(qid)
     assert entity
 
-    p17_qid: str = entity["claims"]["P17"][0]["mainsnak"]["datavalue"]["value"]["id"]
-    return p17_qid
+    claims = entity.get("claims", {})
+    if "P17" not in claims:
+        return None
+    return claims["P17"][0]["mainsnak"]["datavalue"]["value"]["id"]
 
 
 def first_level_subdivision(country_qid: str) -> list[Item]:

@@ -27,6 +27,7 @@ re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 # - match not found
 
 WEBSOCKET_TIMEOUT = 120.0  # seconds to wait for next notification before sending ping
+REPLAY_LOG_LINES = 50
 
 
 class VersionMismatch(Exception):
@@ -45,6 +46,28 @@ def add_wikipedia_tag(root, m) -> None:
         return
     tag = etree.Element("tag", k="wikipedia", v=value)
     root[0].append(tag)
+
+
+def recent_matcher_messages(place: Place) -> list[str]:
+    """Return recent JSON websocket messages from the latest matcher run log."""
+    matcher_run = place.matcher_runs.first()
+    if matcher_run is None or not matcher_run.log_exists():
+        return []
+
+    messages: list[str] = []
+    with open(matcher_run.log_full_filename) as f:
+        lines = f.readlines()[-REPLAY_LOG_LINES:]
+
+    for line in lines:
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if data.get("type") in {"item", "matching_progress"}:
+            continue
+        messages.append(json.dumps(data))
+
+    return messages
 
 
 @sock.route("/websocket/matcher/<osm_type>/<int:osm_id>")
@@ -81,6 +104,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         listen_conn.autocommit = True
         listen_cur = listen_conn.cursor()
         listen_cur.execute(f"LISTEN {channel}")
+        send(json.dumps({"type": "connected"}))
 
         # Defer the matcher task. Use lock+queueing_lock so at most one job
         # runs at a time and at most one more can be queued.
@@ -105,6 +129,16 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             if not isinstance(exc, AlreadyEnqueued):
                 raise
             # A job is already queued for this place – just listen for updates.
+            send(
+                json.dumps(
+                    {
+                        "type": "msg",
+                        "msg": "Matcher job already queued or running; waiting for updates",
+                    }
+                )
+            )
+            for msg in recent_matcher_messages(place):
+                send(msg)
 
         while ws_sock.connected:
             readable, _, _ = select.select([listen_conn], [], [], WEBSOCKET_TIMEOUT)

@@ -62,6 +62,14 @@ function setStageDone(id) {
   el.querySelector('.stage-icon').textContent = '\u2713';
 }
 
+function setStageFailed(id) {
+  var el = stageEl(id);
+  if (!el) return;
+  el.classList.remove('active');
+  el.classList.add('failed');
+  el.querySelector('.stage-icon').textContent = '\u00d7';
+}
+
 function isActive(id) { return stageEl(id).classList.contains('active'); }
 function isDone(id)   { return stageEl(id).classList.contains('done'); }
 
@@ -212,6 +220,7 @@ connection.onmessage = function(e) {
 
     case 'error':
       clearActivity();
+      if (data.stage) setStageFailed('stage-' + data.stage);
       logMessage(data.msg, 'log-error');
       break;
 

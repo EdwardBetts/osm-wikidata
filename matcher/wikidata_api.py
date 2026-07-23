@@ -10,6 +10,7 @@ import simplejson.errors
 
 from . import Entity, mail, user_agent_headers
 from .utils import chunk
+from .wikimedia_api_logging import logged_get
 
 wikidata_url = "https://www.wikidata.org/w/api.php"
 page_size = 50
@@ -54,7 +55,7 @@ def api_call(params: CallParams) -> requests.Response:
         **params,
     }
 
-    r = requests.get(wikidata_url, params=call_params, headers=user_agent_headers())
+    r = logged_get(wikidata_url, params=call_params, headers=user_agent_headers())
     return r
 
 

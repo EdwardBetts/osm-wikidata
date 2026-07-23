@@ -1,5 +1,6 @@
 """Job queue."""
 
+import html
 import json
 import os.path
 import re
@@ -43,6 +44,35 @@ def error_in_overpass_chunk(filename: str) -> bool:
         return False
     content = open(filename).read()
     return "<remark> runtime error" in content or "<!DOCTYPE html" in content
+
+
+def overpass_response_excerpt(text: str, max_length: int = 300) -> str:
+    """Return a compact, readable excerpt from an Overpass error response."""
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) <= max_length:
+        return text
+    return text[: max_length - 3].rstrip() + "..."
+
+
+def overpass_response_error_message(r: requests.models.Response) -> str:
+    """Build a concise user-facing message for a failed Overpass response."""
+    status = f"{r.status_code} {r.reason}".strip()
+    parts = [
+        "Can't access Overpass API.",
+        f"Status URL: {r.url}.",
+        f"HTTP status: {status}.",
+    ]
+
+    if r.headers.get("content-type"):
+        parts.append(f"Content type: {r.headers['content-type']}.")
+
+    excerpt = overpass_response_excerpt(r.text)
+    if excerpt:
+        parts.append(f"Response: {excerpt}")
+
+    return " ".join(parts)
 
 
 def build_item_list(items):
@@ -149,6 +179,7 @@ class MatcherJob:
 
         if self.log_file:
             print(json.dumps(data), file=self.log_file)
+            self.log_file.flush()
 
         if self.status_callback:
             self.status_callback(data)
@@ -168,10 +199,10 @@ class MatcherJob:
         if msg:
             self.send("msg", msg=msg)
 
-    def error(self, msg: str) -> None:
+    def error(self, msg: str, **data: typing.Any) -> None:
         """Send an error message."""
         print(f"ERROR: {msg}")
-        self.send("error", msg=msg)
+        self.send("error", msg=msg, **data)
 
     def item_line(self, msg: str) -> None:
         """Send an item progress line."""
@@ -237,19 +268,24 @@ class MatcherJob:
             r = e.r
             body = f"URL: {r.url}\n\nresponse:\n{r.text}"
             mail.send_mail("Overpass API unavailable", body)
-            msg = (
-                "Can't access Overpass API status: "
-                + self.overpass_response_summary(r)
-            )
-            self.error(msg)
+            self.error(overpass_response_error_message(r), stage="overpass")
             return False
         except requests.exceptions.Timeout:
-            mail.send_mail("Overpass API timeout", "Timeout talking to overpass API")
-            self.error("Can't access Overpass API status: request timed out")
+            url = overpass.status_url()
+            mail.send_mail("Overpass API timeout", f"Timeout talking to {url}")
+            self.error(
+                f"Can't access Overpass API. Status URL: {url}. Timed out after 10 seconds.",
+                stage="overpass",
+            )
             return False
         except requests.exceptions.RequestException as e:
-            mail.send_mail("Overpass API unavailable", str(e))
-            self.error(f"Can't access Overpass API status: {e}")
+            url = e.request.url if e.request is not None else overpass.status_url()
+            mail.send_mail("Overpass API request failed", f"{type(e).__name__}: {e}")
+            self.error(
+                "Can't access Overpass API. "
+                f"Status URL: {url}. Request failed: {type(e).__name__}: {e}",
+                stage="overpass",
+            )
             return False
 
         if not status["slots"]:
@@ -283,7 +319,10 @@ class MatcherJob:
                         if not self.wait_for_slot():
                             return False
                     except requests.exceptions.RequestException as e:
-                        self.error(f"Can't access Overpass API query endpoint: {e}")
+                        self.error(
+                            f"Can't access Overpass API query endpoint: {e}",
+                            stage="overpass",
+                        )
                         return False
                 with open(filename, "wb") as out:
                     out.write(r.content)
@@ -292,15 +331,6 @@ class MatcherJob:
 
         self.send("overpass_done")
         return True
-
-    @staticmethod
-    def overpass_response_summary(r) -> str:
-        """Return a compact summary of an Overpass response for logs/UI."""
-        text = " ".join(r.text.split())
-        if len(text) > 500:
-            text = text[:497] + "..."
-        status = f"HTTP {r.status_code}" if r.status_code else "no HTTP status"
-        return f"{status} from {r.url}: {text or '<empty response>'}"
 
     def matcher(self) -> None:
         """Run matcher."""
@@ -463,8 +493,6 @@ class MatcherJob:
 
     def get_items_bbox(self):
         assert self.place
-        ctx = app.test_request_context()
-        ctx.push()
         place = self.place
         if self.want_isa:
             size = 220

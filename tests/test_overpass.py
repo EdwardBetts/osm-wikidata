@@ -1,5 +1,8 @@
+import sys
 from matcher.overpass import oql_from_tag, oql_for_area, group_tags
 from pprint import pprint
+
+overpass = sys.modules["matcher.overpass"]
 
 tags = ['admin_level', 'amenity=arts_centre',
         'amenity=astronomical_observatory', 'amenity=bar', 'amenity=clock',
@@ -102,3 +105,41 @@ def test_group_tags():
     }
 
     assert ret == expect
+
+
+def test_get_status_uses_user_agent(monkeypatch):
+    calls = []
+
+    class MockResponse:
+        text = "\n".join([
+            "Connected as: 123",
+            "Current time: 2026-05-16T09:14:14Z",
+            "Rate limit: 4",
+            "4 slots available now.",
+            "Currently running queries (pid, space limit, time limit, start time):",
+        ])
+
+    def mock_get(url, **kwargs):
+        calls.append((url, kwargs))
+        return MockResponse()
+
+    monkeypatch.setattr(overpass.requests, "get", mock_get)
+
+    status = overpass.get_status("https://example.test/api/status")
+
+    assert status == {"rate_limit": 4, "slots": [], "running": 0}
+    assert calls == [
+        (
+            "https://example.test/api/status",
+            {
+                "headers": {
+                    "User-Agent": (
+                        "osm-wikidata/0.1 "
+                        "(https://github.com/EdwardBetts/osm-wikidata; "
+                        "edward@4angle.com)"
+                    )
+                },
+                "timeout": 10,
+            },
+        )
+    ]

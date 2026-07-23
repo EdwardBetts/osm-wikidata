@@ -5,7 +5,8 @@ from typing import Any, Iterable
 
 import requests
 
-from . import CallParams, utils
+from . import CallParams, user_agent_headers, utils
+from .wikimedia_api_logging import logged_get
 
 commons_start = "http://commons.wikimedia.org/wiki/Special:FilePath/"
 commons_url = "https://www.wikidata.org/w/api.php"
@@ -25,7 +26,9 @@ def api_call(params: CallParams) -> requests.Response:
         **params,
     }
 
-    return requests.get(commons_url, params=call_params, timeout=5)
+    return logged_get(
+        commons_url, params=call_params, headers=user_agent_headers(), timeout=5
+    )
 
 
 def image_detail_params(thumbheight: int | None, thumbwidth: int | None) -> CallParams:
