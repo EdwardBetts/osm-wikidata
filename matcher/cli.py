@@ -12,6 +12,7 @@ import click
 import sqlalchemy.exc
 from geoalchemy2 import Geography, Geometry
 from sqlalchemy import func, inspect
+from sqlalchemy import text
 from sqlalchemy.dialects.postgresql.base import CreateEnumType
 from sqlalchemy.schema import CreateIndex, CreateTable
 from sqlalchemy.types import Enum
@@ -58,6 +59,21 @@ def create_db():
     database.init_app(app)
 
     Base.metadata.create_all(database.session.get_bind())
+
+
+@app.cli.command()
+def add_wikidata_oauth_columns() -> None:
+    """Add optional Wikidata OAuth columns to the user table."""
+    app.config.from_object("config.default")
+    database.init_app(app)
+
+    sql = """
+    ALTER TABLE "user"
+      ADD COLUMN IF NOT EXISTS wikidata_username varchar,
+      ADD COLUMN IF NOT EXISTS wikidata_oauth_token varchar
+    """
+    database.session.execute(text(sql))
+    database.session.commit()
 
 
 def get_place(place_identifier):

@@ -21,6 +21,41 @@
   </ul>
   {% endif %}
 
+  <h4>Connected accounts</h4>
+
+  <div class="mb-4">
+    <p class="mb-2">
+      <strong>OpenStreetMap</strong><br>
+      Connected as {{ g.user.username }}. OWL Places uses this account to add
+      Wikidata tags to OpenStreetMap.
+    </p>
+
+    <p class="mb-2">
+      <strong>Wikidata</strong><br>
+      {% if g.user.wikidata_oauth_token %}
+        Connected as {{ g.user.wikidata_username or "Wikidata user" }}. OWL Places
+        can use this connection to add OpenStreetMap statements to Wikidata.
+      {% else %}
+        Optional. Connect Wikidata only if you want OWL Places to make matching
+        edits there as well.
+      {% endif %}
+    </p>
+
+    {% if g.user.wikidata_oauth_token %}
+      <form method="POST" action="{{ url_for('disconnect_wikidata_oauth') }}" class="mb-3">
+        {{ form.csrf_token }}
+        <input type="hidden" name="next" value="{{ request.script_root + request.full_path.rstrip('?') }}">
+        <button type="submit" class="btn btn-outline-secondary">Disconnect Wikidata</button>
+      </form>
+    {% else %}
+      <p>
+        <a class="btn btn-run" href="{{ url_for('start_wikidata_oauth', next=request.script_root + request.full_path.rstrip('?')) }}">
+          Connect Wikidata
+        </a>
+      </p>
+    {% endif %}
+  </div>
+
   <form method="POST" role="form">
 
   <h4>Change comment</h4>

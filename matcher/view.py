@@ -58,6 +58,7 @@ from . import (
     utils,
     wikidata,
     wikidata_api,
+    wikidata_oauth,
 )
 from .admin_view import admin_blueprint
 from .api_view import api_blueprint
@@ -164,6 +165,12 @@ def clear_oauth_session() -> None:
     flask.session.pop("oauth_token", None)
     flask_login.logout_user()
     g.user = flask_login.current_user._get_current_object()
+
+
+def clear_wikidata_oauth_session() -> None:
+    """Clear Wikidata OAuth session."""
+    wikidata_oauth.clear_connection()
+    database.session.commit()
 
 
 @app.before_request
@@ -300,6 +307,13 @@ def logout() -> Response:
     next_url = request.args.get("next") or url_for("index")
     flask.session.pop("oauth_state", None)
     flask.session.pop("oauth_token", None)
+    for key in (
+        "wikidata_oauth_token",
+        "wikidata_username",
+        "wikidata_after_login",
+        "wikidata_oauth_state",
+    ):
+        flask.session.pop(key, None)
     if g.user:
         g.user.osm_oauth_token = None
         database.session.commit()
@@ -317,6 +331,14 @@ def done() -> Response:
 
 auth_base_url = "https://www.openstreetmap.org/oauth2/authorize"
 access_token_url = "https://www.openstreetmap.org/oauth2/token"
+
+
+def wikidata_oauth_configured() -> bool:
+    """Return true when Wikidata OAuth credentials are configured."""
+    return bool(
+        app.config.get("WIKIDATA_CLIENT_KEY")
+        and app.config.get("WIKIDATA_CLIENT_SECRET")
+    )
 
 
 @app.route("/oauth/start")
@@ -384,6 +406,80 @@ def oauth_callback() -> Response:
     flask_login.login_user(user)
 
     next_page = session.get("next") or url_for("index")
+    return redirect(next_page)
+
+
+@app.route("/wikidata/oauth/start")
+@flask_login.login_required
+def start_wikidata_oauth() -> Response:
+    """Start Wikidata OAuth connection."""
+    if not wikidata_oauth_configured():
+        flash("Wikidata connection is not configured on this OWL Places instance.")
+        return redirect(url_for("account_settings_page"))
+
+    next_page = request.args.get("next")
+    if next_page:
+        session["wikidata_after_login"] = next_page
+
+    client_key = app.config["WIKIDATA_CLIENT_KEY"]
+    callback = url_for("wikidata_oauth_callback", _external=True)
+
+    oauth = OAuth2Session(
+        client_key,
+        redirect_uri=callback,
+        scope=app.config.get("WIKIDATA_OAUTH_SCOPE", ["basic", "editpage"]),
+    )
+    authorization_url, state = oauth.authorization_url(
+        wikidata_oauth.authorize_url,
+    )
+    session["wikidata_oauth_state"] = state
+    return redirect(authorization_url)
+
+
+@app.route("/wikidata/oauth/callback", methods=["GET"])
+@flask_login.login_required
+def wikidata_oauth_callback() -> Response:
+    """Wikidata OAuth callback."""
+    if not wikidata_oauth_configured():
+        flash("Wikidata connection is not configured on this OWL Places instance.")
+        return redirect(url_for("account_settings_page"))
+
+    if "wikidata_oauth_state" not in session:
+        return redirect(url_for("start_wikidata_oauth"))
+
+    client_key = app.config["WIKIDATA_CLIENT_KEY"]
+    client_secret = app.config["WIKIDATA_CLIENT_SECRET"]
+    callback = url_for("wikidata_oauth_callback", _external=True)
+
+    oauth = OAuth2Session(
+        client_key,
+        redirect_uri=callback,
+        state=session["wikidata_oauth_state"],
+    )
+    token = oauth.fetch_token(
+        wikidata_oauth.access_token_url,
+        client_secret=client_secret,
+        authorization_response=request.url,
+    )
+
+    wikidata_oauth.save_token(token)
+    g.user.wikidata_username = wikidata_oauth.get_username()
+    database.session.commit()
+
+    flash(f"Wikidata connected as {g.user.wikidata_username}.")
+    next_page = session.pop("wikidata_after_login", None) or url_for(
+        "account_settings_page"
+    )
+    return redirect(next_page)
+
+
+@app.route("/wikidata/oauth/disconnect", methods=["POST"])
+@flask_login.login_required
+def disconnect_wikidata_oauth() -> Response:
+    """Disconnect Wikidata OAuth from the current OWL Places account."""
+    clear_wikidata_oauth_session()
+    flash("Wikidata disconnected.")
+    next_page = request.form.get("next") or url_for("account_settings_page")
     return redirect(next_page)
 
 

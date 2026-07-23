@@ -117,6 +117,9 @@ class User(Base, UserMixin):
     osm_oauth_token = Column(String)
     osm_oauth_token_secret = Column(String)
 
+    wikidata_username = Column(String)
+    wikidata_oauth_token = Column(String)
+
     @property
     def is_active(self) -> bool:
         """Is the user account active."""

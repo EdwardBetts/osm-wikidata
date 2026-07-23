@@ -27,4 +27,10 @@ DB_HOST = "localhost"
 SMTP_HOST = "localhost"
 MAIL_FROM = "{{ mail_from }}"
 
+# Register a Wikimedia OAuth 2 consumer for optional Wikidata edits:
+# https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose
+WIKIDATA_CLIENT_KEY = ""
+WIKIDATA_CLIENT_SECRET = ""
+WIKIDATA_OAUTH_SCOPE = ["basic", "editpage"]
+
 BROWSE_CACHE_TTL = timedelta(days=1)

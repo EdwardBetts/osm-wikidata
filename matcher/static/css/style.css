@@ -128,3 +128,20 @@
   background-color: rgba(200, 151, 62, 0.12);
   color: #c8973e;
 }
+
+.btn-run {
+  display: inline-block;
+  background: #c8973e;
+  color: #1a2035;
+  border: 1px solid #c8973e;
+  font-family: "DM Mono", monospace;
+  font-weight: 500;
+}
+
+.btn-run:hover,
+.btn-run:focus {
+  background: #dba94e;
+  border-color: #dba94e;
+  color: #1a2035;
+  text-decoration: none;
+}
