@@ -5,7 +5,7 @@ import re
 import flask
 import werkzeug
 
-from . import database, mail, utils
+from . import mail, utils
 from .place import Place
 
 re_point = re.compile(r"^Point\((-?[0-9.]+) (-?[0-9.]+)\)$")
@@ -71,8 +71,8 @@ def matcher_done(osm_type: str, osm_id: int) -> werkzeug.wrappers.Response | str
         return flask.render_template("too_big.html", place=place)
 
     if place.state != "ready":
-        place.state = "ready"
-        database.session.commit()
+        flask.flash("The matcher is still running.")
+        return flask.redirect(place.matcher_progress_url())
 
     flask.flash("The matcher has finished.")
     return flask.redirect(place.candidates_url())

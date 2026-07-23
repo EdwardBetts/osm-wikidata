@@ -28,6 +28,7 @@ re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 
 WEBSOCKET_TIMEOUT = 120.0  # seconds to wait for next notification before sending ping
 REPLAY_LOG_LINES = 50
+NON_REPLAYABLE_MESSAGE_TYPES = {"done", "failed"}
 
 
 class VersionMismatch(Exception):
@@ -49,9 +50,13 @@ def add_wikipedia_tag(root, m) -> None:
 
 
 def recent_matcher_messages(place: Place) -> list[str]:
-    """Return recent JSON websocket messages from the latest matcher run log."""
+    """Return recent messages from the matcher run currently in progress."""
     matcher_run = place.matcher_runs.first()
-    if matcher_run is None or not matcher_run.log_exists():
+    if (
+        matcher_run is None
+        or matcher_run.end is not None
+        or not matcher_run.log_exists()
+    ):
         return []
 
     messages: list[str] = []
@@ -63,7 +68,11 @@ def recent_matcher_messages(place: Place) -> list[str]:
             data = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if data.get("type") in {"item", "matching_progress"}:
+        if data.get("type") in {
+            "item",
+            "matching_progress",
+            *NON_REPLAYABLE_MESSAGE_TYPES,
+        }:
             continue
         messages.append(json.dumps(data))
 
