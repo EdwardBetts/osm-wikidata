@@ -26,6 +26,7 @@ WIKIDATA_ITEMS_MAX_AGE = timedelta(hours=24)  # reuse cached items within this w
 OVERPASS_RETRY_LIMIT = 5
 OVERPASS_RETRY_BASE_SECONDS = 60
 OVERPASS_RETRY_MAX_SECONDS = 300
+SUBPROCESS_OUTPUT_MAX_CHARS = 6000
 
 
 class Chunk(typing.TypedDict):
@@ -76,6 +77,18 @@ def overpass_response_error_message(r: requests.models.Response) -> str:
         parts.append(f"Response: {excerpt}")
 
     return " ".join(parts)
+
+
+def subprocess_error_detail(
+    output: str, max_length: int = SUBPROCESS_OUTPUT_MAX_CHARS
+) -> str:
+    """Return the useful tail of subprocess output, small enough for NOTIFY."""
+    output = output.strip()
+    if not output:
+        return "(osm2pgsql produced no output)"
+    if len(output) <= max_length:
+        return output
+    return "[earlier output omitted]\n" + output[-max_length:]
 
 
 def build_item_list(items):
@@ -700,8 +713,25 @@ class MatcherJob:
         assert self.place
         self.status("running osm2pgsql")
         cmd = self.place.osm2pgsql_cmd()
-        env = {"PGPASSWORD": app.config["DB_PASS"]}
-        subprocess.run(cmd, env=env, check=True)
+        env = os.environ.copy()
+        env["PGPASSWORD"] = app.config["DB_PASS"]
+        result = subprocess.run(
+            cmd,
+            env=env,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        if result.returncode:
+            detail = subprocess_error_detail(result.stdout)
+            self.error(
+                f"osm2pgsql failed (exit status {result.returncode}):\n{detail}",
+                stage="matching",
+            )
+            raise MatcherJobFailed(
+                f"osm2pgsql failed (exit status {result.returncode})"
+            )
         print("osm2pgsql done")
         self.status("osm2pgsql done")
 

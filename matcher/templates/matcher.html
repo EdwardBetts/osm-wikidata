@@ -141,6 +141,12 @@ body, html {
   color: #495057;
 }
 
+.log-entry > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .log-time {
   color: #adb5bd;
   font-family: monospace;
@@ -206,7 +212,7 @@ body, html {
         <div class="stage" id="stage-matching">
           <div class="stage-icon"></div>
           <div class="stage-body">
-            <div class="stage-label">Find matches</div>
+            <div class="stage-label">Import OSM and find matches</div>
             <div id="matching-progress" class="d-none mt-1">
               <div class="progress mt-1" style="height: 4px;">
                 <div id="matching-progress-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
