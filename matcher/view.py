@@ -3,12 +3,14 @@
 import inspect
 import json
 import operator
+import os
 import random
 import re
 import sys
 import traceback
 import typing
 from collections import Counter
+from datetime import datetime, timezone
 from time import sleep, time
 from typing import Any
 
@@ -1636,11 +1638,25 @@ def get_continents_for_country(entity: Entity) -> list[browse.Item]:
 # P30 = continent
 # P31 = instance of
 # P150 = contains the administrative territorial entity
-@app.route("/browse/Q<int:item_id>")
-def browse_page(item_id: int) -> str:
-    """Browse place."""
+def _browse_page_data(qid: str) -> dict[str, typing.Any]:
+    """Fetch and return all data needed for browse page, with caching."""
+    cache_dir = flask.current_app.config["CACHE_DIR"]
+    page_cache_dir = os.path.join(cache_dir, "browse_pages")
+    os.makedirs(page_cache_dir, exist_ok=True)
+    cache_file = os.path.join(page_cache_dir, f"{qid}.json")
+    ttl = flask.current_app.config.get("BROWSE_CACHE_TTL")
+
+    if ttl and os.path.exists(cache_file):
+        try:
+            with open(cache_file) as f:
+                cached = json.load(f)
+            timestamp = datetime.fromisoformat(cached["timestamp"])
+            if datetime.now(timezone.utc) - timestamp < ttl:
+                return cached["data"]
+        except (json.JSONDecodeError, KeyError, ValueError):
+            pass  # Treat as cache miss.
+
     t0 = time()
-    qid = f"Q{item_id}"
     entity = wikidata_api.get_entity_with_cache(qid)
     assert entity
     p31 = [
@@ -1669,7 +1685,7 @@ def browse_page(item_id: int) -> str:
     else:
         continents = []
 
-    items = []
+    items: list[dict[str, typing.Any]] = []
     if "Q5107" in p31:  # continent
         items = wikidata.get_countries(qid)
         place["up"] = [(flask.url_for("index"), "earth")]
@@ -1705,15 +1721,38 @@ def browse_page(item_id: int) -> str:
         subject = f'browse {place["label"]} ({qid}) took {query_time:.1f} seconds'
         mail.send_mail(subject, request.url)
 
-    return flask.render_template(
-        "browse.html",
-        place=place,
-        items=items,
-        entity=entity,
-        up_items=up_items,
-        query_time=query_time,
-        continents=continents,
-    )
+    data = {
+        "place": place,
+        "items": items,
+        "up_items": up_items,
+        "query_time": query_time,
+        "continents": continents,
+    }
+
+    # Write data cache.
+    if ttl:
+        try:
+            with open(cache_file, "w") as f:
+                json.dump(
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "data": data,
+                    },
+                    f,
+                )
+        except OSError:
+            pass
+
+    return data
+
+
+@app.route("/browse/Q<int:item_id>")
+def browse_page(item_id: int) -> str:
+    """Browse place."""
+    qid = f"Q{item_id}"
+    data = _browse_page_data(qid)
+
+    return flask.render_template("browse.html", **data)
 
 
 @app.route("/matcher/Q<int:item_id>")
