@@ -129,6 +129,7 @@ var app = new Vue({
           var language_codes = new_lang.map(l => l.code);
 
           this.items.forEach(item => {
+              item.best_langauge = null;
               for (let language of language_codes) {
                   if(item.labels[language]) {
                       item.best_langauge = language;
@@ -136,6 +137,11 @@ var app = new Vue({
                       item.marker.setTooltipContent(`${label} (${item.qid})`);
                       break;
                   }
+              }
+              if (!item.best_langauge && item.labels.mul) {
+                  item.best_langauge = 'mul';
+                  var label = item.labels.mul.label;
+                  item.marker.setTooltipContent(`${label} (${item.qid})`);
               }
 
               for (let language of language_codes) {
@@ -340,5 +346,4 @@ var app = new Vue({
          });
   },
 });
-
 

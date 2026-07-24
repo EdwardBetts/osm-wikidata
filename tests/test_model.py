@@ -1,9 +1,30 @@
-from matcher.model import Item
-from matcher import matcher
 import os.path
+from types import SimpleNamespace
+
+from matcher import matcher
+from matcher.model import Item
+
 
 class MockApp:
     config = {'DATA_DIR': os.path.normpath(os.path.split(__file__)[0] + '/../data')}
+
+
+def test_label_and_description_list_includes_default_language_label():
+    item = Item(
+        entity={
+            "labels": {
+                "fr": {"language": "fr", "value": "Nom français"},
+                "mul": {"language": "mul", "value": "Default name"},
+            },
+            "descriptions": {},
+        }
+    )
+    languages = [SimpleNamespace(wikimedia_language_code="en")]
+
+    assert item.label_and_description_list(languages) == {
+        "mul": {"label": "Default name", "description": None}
+    }
+
 
 def test_item_first_paragraph():
     extract = '<p><b>Gotham Bar and Grill</b> is a New American restaurant located at 12 East 12th Street (between Fifth Avenue and University Place), in Greenwich Village in Manhattan, in New York City. It opened in 1984.</p>\n<p>It is owned by American chef Alfred Portale, one of the founders of New American cuisine, who is also its chef. He arrived at the restaurant in 1985.</p>\n<p></p>'

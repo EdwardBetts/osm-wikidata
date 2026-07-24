@@ -399,7 +399,13 @@ class Item(Base):
         return self.lang_text("descriptions", lang=lang)
 
     def label_and_description_list(self, want_languages):
-        language_codes = {lang.wikimedia_language_code for lang in want_languages}
+        # Wikidata uses "mul" for a label that is the default for all
+        # languages. Always send it to the client so it can be used when none
+        # of the user's preferred languages has a label.
+        language_codes = {
+            *(lang.wikimedia_language_code for lang in want_languages),
+            "mul",
+        }
         try:
             labels = self.entity["labels"]
         except (TypeError, KeyError):
