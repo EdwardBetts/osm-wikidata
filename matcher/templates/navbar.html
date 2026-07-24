@@ -38,25 +38,31 @@
     </ul>
     </ul>
     <ul class="navbar-nav">
-      <li class="nav-item">
-        {% if g.user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('account_page') }}">{{ g.user.username }}</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('account_settings_page') }}">settings</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('logout', next=request.script_root + request.full_path.rstrip('?')) }}">logout</a>
-          </li>
-        {% else %}
-          <li class="nav-item">
-            {% set login_url = url_for('login_route', next=request.script_root + request.full_path.rstrip('?'))
-                               if request.endpoint != 'social.complete'
-                               else url_for('login_route') %}
-            <a class="nav-link" href="{{ login_url }}">login with OSM</a>
-          </li>
-        {% endif %}
+      {% if g.user.is_authenticated %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('account_page') }}">{{ g.user.username }}</a>
+        </li>
+        <li class="nav-item">
+          {% if g.user.wikidata_oauth_token %}
+            <a class="nav-link" href="{{ url_for('account_settings_page') }}">Wikidata connected</a>
+          {% else %}
+            <a class="nav-link" href="{{ url_for('start_wikidata_oauth', next=request.script_root + request.full_path.rstrip('?')) }}">Connect Wikidata</a>
+          {% endif %}
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('account_settings_page') }}">settings</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout', next=request.script_root + request.full_path.rstrip('?')) }}">logout</a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          {% set login_url = url_for('login_route', next=request.script_root + request.full_path.rstrip('?'))
+                             if request.endpoint != 'social.complete'
+                             else url_for('login_route') %}
+          <a class="nav-link" href="{{ login_url }}">login with OSM</a>
+        </li>
+      {% endif %}
     </ul>
   </div>
 {% endmacro %}
