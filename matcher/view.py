@@ -457,6 +457,7 @@ def wikidata_oauth_callback() -> Response:
         redirect_uri=callback,
         state=session["wikidata_oauth_state"],
     )
+    oauth.headers.update(user_agent_headers())
     token = oauth.fetch_token(
         wikidata_oauth.access_token_url,
         client_secret=client_secret,
