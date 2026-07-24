@@ -119,11 +119,11 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         db_url = current_app.config["DB_URL"]
 
         # Set up LISTEN before deferring so we don't miss any notifications.
-        from .jobs import subscriber_application_name
+        from . import jobs
 
         listen_conn = psycopg2.connect(
             db_url,
-            application_name=subscriber_application_name(osm_type, osm_id),
+            application_name=jobs.subscriber_application_name(osm_type, osm_id),
         )
         listen_conn.autocommit = True
         listen_cur = listen_conn.cursor()
@@ -135,24 +135,35 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         from . import tasks
         from .procrastinate_app import procrastinate_app
 
+        job_already_exists = False
+        listen_cur.execute("SELECT pg_advisory_lock(hashtext(%s))", [channel])
         try:
-            procrastinate_app.configure_task(
-                "matcher.run_matcher",
-                lock=channel,
-                queueing_lock=channel,
-            ).defer(
-                osm_type=osm_type,
-                osm_id=osm_id,
-                user_id=user_id,
-                remote_addr=request.remote_addr,
-                user_agent=user_agent,
-            )
-        except Exception as exc:
-            from procrastinate.exceptions import AlreadyEnqueued
+            if jobs.get_queue_status(osm_type, osm_id) is None:
+                try:
+                    procrastinate_app.configure_task(
+                        "matcher.run_matcher",
+                        lock=channel,
+                        queueing_lock=channel,
+                    ).defer(
+                        osm_type=osm_type,
+                        osm_id=osm_id,
+                        user_id=user_id,
+                        remote_addr=request.remote_addr,
+                        user_agent=user_agent,
+                    )
+                except Exception as exc:
+                    from procrastinate.exceptions import AlreadyEnqueued
 
-            if not isinstance(exc, AlreadyEnqueued):
-                raise
-            # A job is already queued for this place – just listen for updates.
+                    if not isinstance(exc, AlreadyEnqueued):
+                        raise
+                    job_already_exists = True
+            else:
+                job_already_exists = True
+        finally:
+            listen_cur.execute("SELECT pg_advisory_unlock(hashtext(%s))", [channel])
+
+        if job_already_exists:
+            # A job is already queued or running – just listen for updates.
             for msg in recent_matcher_messages(place):
                 send(msg)
 
