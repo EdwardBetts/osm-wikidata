@@ -65,6 +65,38 @@
     </div>
   </div>
 
+  <div class="form-group row">
+    <div class="col-sm-10 offset-sm-2">
+      <div class="form-check">
+        <input class="form-check-input"
+               type="checkbox"
+               id="add-wikidata-osm-links"
+               {% if add_wikidata_osm_links %}checked="checked"{% endif %}
+               {% if not can_add_wikidata_osm_links %}disabled="disabled"{% endif %} />
+        <label class="form-check-label" for="add-wikidata-osm-links">
+          Add reciprocal OpenStreetMap links to Wikidata
+        </label>
+      </div>
+      {% if not can_add_wikidata_osm_links %}
+        <small class="form-text text-muted">
+          Connect Wikidata in settings to enable reciprocal Wikidata edits.
+        </small>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <label for="wikidata-osm-link-summary" class="col-sm-2 col-form-label">Wikidata edit summary</label>
+    <div class="col-sm-10">
+      <input class="form-control"
+             id="wikidata-osm-link-summary"
+             name="wikidata_osm_link_summary"
+             maxlength="255"
+             value="{{ wikidata_osm_link_summary }}"
+             {% if not can_add_wikidata_osm_links %}disabled="disabled"{% endif %} />
+    </div>
+  </div>
+
   <button id="save" class="btn btn-primary">save</button>
 
 <div class="alert alert-danger d-none" id="auth-fail" role="alert">

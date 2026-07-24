@@ -70,9 +70,13 @@ def add_wikidata_oauth_columns() -> None:
     sql = """
     ALTER TABLE "user"
       ADD COLUMN IF NOT EXISTS wikidata_username varchar,
-      ADD COLUMN IF NOT EXISTS wikidata_oauth_token varchar
+      ADD COLUMN IF NOT EXISTS wikidata_oauth_token varchar,
+      ADD COLUMN IF NOT EXISTS wikidata_osm_link boolean DEFAULT true
     """
     database.session.execute(text(sql))
+    database.session.execute(
+        text('UPDATE "user" SET wikidata_osm_link = true WHERE wikidata_osm_link IS NULL')
+    )
     database.session.commit()
 
 

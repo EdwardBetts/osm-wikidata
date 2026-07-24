@@ -13,6 +13,13 @@ function send(payload) {
     connection.send(JSON.stringify(payload));
 }
 
+function update_wikidata_summary_state() {
+    $('#wikidata-osm-link-summary').prop(
+        'disabled',
+        !$('#add-wikidata-osm-links').prop('checked')
+    );
+}
+
 function start_upload() {
     var comment = $('#comment').val();
     if (!comment) {
@@ -23,6 +30,8 @@ function start_upload() {
     $('#comment').prop('disabled', true);
     $('#source').prop('disabled', true);
     $('#hashtags').prop('disabled', true);
+    $('#add-wikidata-osm-links').prop('disabled', true);
+    $('#wikidata-osm-link-summary').prop('disabled', true);
     $('#save').prop('disabled', true);
     $('#status').text('opening changeset');
 
@@ -50,6 +59,8 @@ function start_upload() {
             'source': $('#source').val(),
             'hashtags': $('#hashtags').val(),
             'matches': to_upload,
+            'add_wikidata_osm_links': $('#add-wikidata-osm-links').prop('checked'),
+            'wikidata_osm_link_summary': $('#wikidata-osm-link-summary').val(),
         });
     };
 
@@ -119,6 +130,8 @@ function onmessage(e) {
 }
 
 $(function() {
+    update_wikidata_summary_state();
+    $('#add-wikidata-osm-links').change(update_wikidata_summary_state);
     $("#save").click(start_upload);
     $("#done").hide();
 });

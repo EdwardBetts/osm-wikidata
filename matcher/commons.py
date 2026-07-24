@@ -5,11 +5,11 @@ from typing import Any, Iterable
 
 import requests
 
-from . import CallParams, user_agent_headers, utils
-from .wikimedia_api_logging import logged_get
+from . import CallParams, user_agent_headers, utils, wikidata_oauth
+from .wikimedia_api_logging import logged_get, logged_request
 
 commons_start = "http://commons.wikimedia.org/wiki/Special:FilePath/"
-commons_url = "https://www.wikidata.org/w/api.php"
+commons_url = "https://commons.wikimedia.org/w/api.php"
 page_size = 50
 
 
@@ -25,6 +25,16 @@ def api_call(params: CallParams) -> requests.Response:
         "formatversion": 2,
         **params,
     }
+
+    oauth_session = wikidata_oauth.get_request_session()
+    if oauth_session is not None:
+        return logged_request(
+            oauth_session,
+            "GET",
+            commons_url,
+            params=call_params,
+            timeout=5,
+        )
 
     return logged_get(
         commons_url, params=call_params, headers=user_agent_headers(), timeout=5

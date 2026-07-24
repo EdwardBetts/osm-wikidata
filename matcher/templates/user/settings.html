@@ -80,11 +80,19 @@
 
   <h4>Editing</h4>
 
-  <div class="form-check">
+  <div class="form-check mb-2">
     {{ form.wikipedia_tag(class="form-check-input") }}
     {{ form.wikipedia_tag.label(class="form-check-label") }}
-  </label>
-</div>
+  </div>
+
+  <div class="form-check mb-3">
+    {{ form.wikidata_osm_link(class="form-check-input") }}
+    {{ form.wikidata_osm_link.label(class="form-check-label") }}
+    <small class="form-text text-muted">
+      Requires a connected Wikidata account. When enabled, OWL Places will add the
+      reciprocal OpenStreetMap statement to Wikidata as part of the upload.
+    </small>
+  </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
   </form>

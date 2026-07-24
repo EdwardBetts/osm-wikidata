@@ -8,6 +8,9 @@ from . import default_change_comments, distance_choices
 
 multi_help = "PLACE will be replaced by the name of the place."
 add_wikipedia_tag = "Add wikipedia tags in addition to wikidata tags"
+add_wikidata_osm_link = (
+    "Add OpenStreetMap links to Wikidata when saving wikidata tags"
+)
 
 
 class AccountSettingsForm(FlaskForm):
@@ -26,3 +29,4 @@ class AccountSettingsForm(FlaskForm):
     )
     units = SelectField("Distance units", choices=distance_choices, default="local")
     wikipedia_tag = BooleanField(add_wikipedia_tag, default=False)
+    wikidata_osm_link = BooleanField(add_wikidata_osm_link, default=True)

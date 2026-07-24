@@ -111,6 +111,7 @@ class User(Base, UserMixin):
     multi = Column(String)
     units = Column(String)
     wikipedia_tag = Column(Boolean, default=False)
+    wikidata_osm_link = Column(Boolean, default=True)
 
     osm_id = Column(Integer, index=True)
     osm_account_created = Column(DateTime)

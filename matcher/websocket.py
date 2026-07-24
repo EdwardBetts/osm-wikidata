@@ -13,7 +13,7 @@ from flask_sock import Sock
 from lxml import etree
 from sqlalchemy.orm.attributes import flag_modified
 
-from . import database, edit, mail
+from . import database, edit, mail, wikidata_api, wikidata_edit
 from .model import ChangesetEdit, ItemCandidate
 from .place import Place
 
@@ -254,7 +254,12 @@ def edit_failed(r, e, element_data):
     database.session.commit()
 
 
-def process_match(changeset_id, m):
+def process_match(
+    changeset_id,
+    m,
+    add_wikidata_osm_links=False,
+    wikidata_osm_link_summary=None,
+):
     """Upload an individual match to OSM as part of a changeset."""
     osm_type, osm_id = m["osm_type"], m["osm_id"]
 
@@ -280,16 +285,42 @@ def process_match(changeset_id, m):
     osm.tags["wikidata"] = m["qid"]
     flag_modified(osm, "tags")
     # TODO: also update wikipedia tag if appropriate
+    if add_wikidata_osm_links:
+        try:
+            entity = wikidata_api.get_entity(m["qid"])
+            wikidata_edit.add_osm_link(
+                m["qid"],
+                osm_type,
+                osm_id,
+                entity=entity,
+                summary=wikidata_osm_link_summary,
+            )
+        except Exception:
+            mail.send_traceback(
+                f"error adding Wikidata OSM link for {m['qid']} "
+                f"-> {osm_type}/{osm_id}"
+            )
     save_changeset_edit(m, changeset_id)
 
     return "saved"
 
 
-def handle_match(change, num, m):
+def handle_match(
+    change,
+    num,
+    m,
+    add_wikidata_osm_links=False,
+    wikidata_osm_link_summary=None,
+):
     """Create a changeset."""
     while True:
         try:
-            result = process_match(change.id, m)
+            result = process_match(
+                change.id,
+                m,
+                add_wikidata_osm_links,
+                wikidata_osm_link_summary,
+            )
         except VersionMismatch:  # FIXME: limit number of attempts
             continue  # retry
         else:
@@ -311,6 +342,15 @@ def add_tags(ws_sock, osm_type, osm_id):
 
     data = json.loads(ws_sock.receive())
     comment = data["comment"]
+    add_wikidata_osm_links = bool(
+        data.get("add_wikidata_osm_links")
+        and g.user.is_authenticated
+        and g.user.wikidata_oauth_token
+    )
+    wikidata_osm_link_summary = (
+        data.get("wikidata_osm_link_summary")
+        or "add OpenStreetMap link from OWL Places"
+    )
     extra_tags: dict[str, str] = {}
     for key in ("source", "hashtags"):
         if data.get(key):
@@ -345,7 +385,13 @@ def add_tags(ws_sock, osm_type, osm_id):
 
     for num, m in enumerate(data["matches"]):
         send("progress", qid=m["qid"], num=num)
-        result = handle_match(change, num, m)
+        result = handle_match(
+            change,
+            num,
+            m,
+            add_wikidata_osm_links=add_wikidata_osm_links,
+            wikidata_osm_link_summary=wikidata_osm_link_summary,
+        )
         send(result, qid=m["qid"], num=num)
 
     send("closing")

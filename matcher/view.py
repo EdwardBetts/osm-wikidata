@@ -58,6 +58,7 @@ from . import (
     utils,
     wikidata,
     wikidata_api,
+    wikidata_edit,
     wikidata_oauth,
 )
 from .admin_view import admin_blueprint
@@ -580,6 +581,29 @@ def add_wikidata_tag():
         c.tags["wikidata"] = wikidata_id
         flag_modified(c, "tags")
 
+    add_wikidata_osm_link = bool(
+        g.user.wikidata_oauth_token
+        and (
+            True
+            if g.user.wikidata_osm_link is None
+            else g.user.wikidata_osm_link
+        )
+    )
+    if add_wikidata_osm_link:
+        try:
+            entity = wikidata_api.get_entity(wikidata_id)
+            wikidata_edit.add_osm_link(
+                wikidata_id,
+                osm_type,
+                osm_id,
+                entity=entity,
+            )
+        except Exception:
+            mail.send_traceback(
+                f"error adding Wikidata OSM link for {wikidata_id} "
+                f"-> {osm_type}/{osm_id}"
+            )
+
     edit.record_changeset(
         id=changeset_id, comment=comment, item_id=wikidata_id[1:], update_count=1
     )
@@ -706,6 +730,15 @@ def add_tags(osm_type, osm_id):
 
     items = []
     add_wikipedia_tags = getattr(g.user, "wikipedia_tag", False)
+    can_add_wikidata_osm_links = bool(g.user.wikidata_oauth_token)
+    add_wikidata_osm_links_default = bool(
+        can_add_wikidata_osm_links
+        and (
+            True
+            if g.user.wikidata_osm_link is None
+            else g.user.wikidata_osm_link
+        )
+    )
     for i, c in table:
         description = "{} {}: adding wikidata={}".format(c.osm_type, c.osm_id, i.qid)
         item = {
@@ -741,6 +774,9 @@ def add_tags(osm_type, osm_id):
         table=table,
         languages=languages,
         add_wikipedia_tags=add_wikipedia_tags,
+        add_wikidata_osm_links=add_wikidata_osm_links_default,
+        can_add_wikidata_osm_links=can_add_wikidata_osm_links,
+        wikidata_osm_link_summary="add OpenStreetMap link from OWL Places",
     )
 
 
@@ -2250,6 +2286,9 @@ def account_settings_page() -> Response | str:
             form.units.data = g.user.units
 
         form.wikipedia_tag.data = g.user.wikipedia_tag
+        form.wikidata_osm_link.data = (
+            True if g.user.wikidata_osm_link is None else g.user.wikidata_osm_link
+        )
 
     if form.validate_on_submit():
         form.populate_obj(g.user)
