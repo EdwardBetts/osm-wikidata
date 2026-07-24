@@ -1,4 +1,5 @@
 import sys
+import pytest
 from matcher.overpass import oql_from_tag, oql_for_area, group_tags
 from pprint import pprint
 
@@ -143,3 +144,22 @@ def test_get_status_uses_user_agent(monkeypatch):
             },
         )
     ]
+
+
+def test_run_query_rate_limit_does_not_send_email(monkeypatch):
+    class MockResponse:
+        status_code = 429
+        text = "rate_limited"
+
+    monkeypatch.setattr(overpass, "endpoint", lambda: "https://example.test/api/interpreter")
+    monkeypatch.setattr(
+        overpass.requests, "post", lambda *args, **kwargs: MockResponse()
+    )
+
+    def unexpected_error_mail(*args, **kwargs):
+        pytest.fail("rate-limit responses should not send error email")
+
+    monkeypatch.setattr(overpass.mail, "error_mail", unexpected_error_mail)
+
+    with pytest.raises(overpass.RateLimited):
+        overpass.run_query("out;")

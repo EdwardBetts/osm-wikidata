@@ -77,7 +77,6 @@ def run_query(oql: str, error_on_rate_limit: bool = True) -> requests.models.Res
     )
 
     if error_on_rate_limit and r.status_code == 429 and "rate_limited" in r.text:
-        mail.error_mail("items_as_xml: overpass rate limit", oql, r)
         raise RateLimited
 
     return r
