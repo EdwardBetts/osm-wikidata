@@ -48,6 +48,26 @@ body, html {
   padding: 4px 10px;
 }
 
+#queue-status {
+  background: #f5f3ee;
+  border-left: 4px solid #c8973e;
+  border-radius: .25rem;
+  padding: 10px 12px;
+}
+
+.queue-status-title {
+  color: #1a2035;
+  font-family: "DM Mono", monospace;
+  font-size: .8rem;
+  font-weight: 500;
+}
+
+.queue-status-detail {
+  color: #6c6256;
+  font-size: .8rem;
+  margin-top: 3px;
+}
+
 .stage {
   display: flex;
   align-items: flex-start;
@@ -178,6 +198,11 @@ body, html {
       {% if place.name_extra_detail %}
       <p class="text-muted small mb-3">{{ place.name_extra_detail }}</p>
       {% endif %}
+
+      <div id="queue-status" class="mb-3 d-none" role="status" aria-live="polite">
+        <div id="queue-status-title" class="queue-status-title"></div>
+        <div id="queue-status-detail" class="queue-status-detail"></div>
+      </div>
 
       <!-- Pipeline stage tracker -->
       <div id="stages" class="mb-3">

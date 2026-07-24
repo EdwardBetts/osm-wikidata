@@ -111,8 +111,8 @@ def stop_job(osm_type, osm_id):
 
     if request.method == 'POST':
         name = place.name_for_changeset
-        jobs.stop_job(place)
-        flash(f'job stopping: {name}')
+        job_count = jobs.stop_job(place)
+        flash(f'{job_count} job(s) stopping: {name}')
         return redirect(url_for('.list_active_jobs'))
 
     return render_template('admin/stop_job.html', job=job, place=place)

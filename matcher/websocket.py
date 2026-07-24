@@ -26,7 +26,7 @@ re_point = re.compile(r"^Point\(([-E0-9.]+) ([-E0-9.]+)\)$")
 # - match found
 # - match not found
 
-WEBSOCKET_TIMEOUT = 120.0  # seconds to wait for next notification before sending ping
+QUEUE_STATUS_INTERVAL = 15.0
 REPLAY_LOG_LINES = 50
 NON_REPLAYABLE_MESSAGE_TYPES = {"done", "failed"}
 
@@ -79,6 +79,16 @@ def recent_matcher_messages(place: Place) -> list[str]:
     return messages
 
 
+def queue_status_message(osm_type: str, osm_id: int) -> str | None:
+    """Build a websocket queue status message for a place."""
+    from . import jobs
+
+    status = jobs.get_queue_status(osm_type, osm_id)
+    if status is None:
+        return None
+    return json.dumps({"type": "queue_status", **status})
+
+
 @sock.route("/websocket/matcher/<osm_type>/<int:osm_id>")
 def ws_matcher(ws_sock, osm_type, osm_id):
     """Run matcher for given place."""
@@ -109,7 +119,12 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         db_url = current_app.config["DB_URL"]
 
         # Set up LISTEN before deferring so we don't miss any notifications.
-        listen_conn = psycopg2.connect(db_url)
+        from .jobs import subscriber_application_name
+
+        listen_conn = psycopg2.connect(
+            db_url,
+            application_name=subscriber_application_name(osm_type, osm_id),
+        )
         listen_conn.autocommit = True
         listen_cur = listen_conn.cursor()
         listen_cur.execute(f"LISTEN {channel}")
@@ -138,19 +153,15 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             if not isinstance(exc, AlreadyEnqueued):
                 raise
             # A job is already queued for this place – just listen for updates.
-            send(
-                json.dumps(
-                    {
-                        "type": "msg",
-                        "msg": "Matcher job already queued or running; waiting for updates",
-                    }
-                )
-            )
             for msg in recent_matcher_messages(place):
                 send(msg)
 
+        queue_message = queue_status_message(osm_type, osm_id)
+        if queue_message:
+            send(queue_message)
+
         while ws_sock.connected:
-            readable, _, _ = select.select([listen_conn], [], [], WEBSOCKET_TIMEOUT)
+            readable, _, _ = select.select([listen_conn], [], [], QUEUE_STATUS_INTERVAL)
             if readable:
                 listen_conn.poll()
                 while listen_conn.notifies and ws_sock.connected:
@@ -166,8 +177,9 @@ def ws_matcher(ws_sock, osm_type, osm_id):
                     if data["type"] in ("done", "failed"):
                         return
             else:
-                # Timeout – send a ping to keep the connection alive.
-                send(json.dumps({"type": "ping"}))
+                # Keep the queue position fresh while also keeping the socket alive.
+                queue_message = queue_status_message(osm_type, osm_id)
+                send(queue_message or json.dumps({"type": "ping"}))
                 if not ws_sock.connected:
                     break
                 reply = ws_sock.receive()

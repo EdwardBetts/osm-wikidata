@@ -6,6 +6,9 @@ var connection = new WebSocket(url);
 var messageLog    = document.getElementById('message-log');
 var activityWrap  = document.getElementById('activity-wrap');
 var activityLine  = document.getElementById('activity-line');
+var queueStatus   = document.getElementById('queue-status');
+var queueTitle    = document.getElementById('queue-status-title');
+var queueDetail   = document.getElementById('queue-status-detail');
 
 var startTime     = Date.now();
 var chunksNonEmpty = Math.max(total_chunks, 1);  // at least 1 for node places
@@ -63,6 +66,29 @@ function formatSeconds(total) {
   return m + ':' + (s < 10 ? '0' + s : s);
 }
 
+function showQueueStatus(data) {
+  var ahead = data.jobs_ahead;
+
+  if (data.status === 'doing') {
+    queueTitle.textContent = 'Matcher is starting\u2026';
+    queueDetail.textContent = 'A worker has picked up this job. Progress will appear shortly.';
+  } else if (ahead === 0) {
+    queueTitle.textContent = 'Waiting in queue \u00b7 next job';
+    queueDetail.textContent = 'Waiting for a worker. This page will update automatically.';
+  } else {
+    queueTitle.textContent =
+      'Waiting in queue \u00b7 ' + ahead + ' ' +
+      plural(ahead, 'job', 'jobs') + ' ahead';
+    queueDetail.textContent = 'This page will update automatically when the queue moves.';
+  }
+
+  queueStatus.classList.remove('d-none');
+}
+
+function hideQueueStatus() {
+  queueStatus.classList.add('d-none');
+}
+
 function startRetryCountdown(data) {
   if (retryTimer) window.clearInterval(retryTimer);
 
@@ -96,6 +122,7 @@ function startRetryCountdown(data) {
 function stageEl(id) { return document.getElementById(id); }
 
 function setStageActive(id) {
+  hideQueueStatus();
   stageEl(id).classList.add('active');
 }
 
@@ -168,6 +195,10 @@ connection.onmessage = function(e) {
   switch (data.type) {
 
     case 'ping':
+      break;
+
+    case 'queue_status':
+      showQueueStatus(data);
       break;
 
     /* ── Wikidata items stage ─────────────────────── */
@@ -253,6 +284,7 @@ connection.onmessage = function(e) {
     /* ── Generic messages ─────────────────────────── */
 
     case 'msg':
+      hideQueueStatus();
       var text = data.msg;
       if (text.indexOf('using existing Wikidata items') !== -1) {
         /* cached — skip straight past both wikidata stages */

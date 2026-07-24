@@ -38,7 +38,7 @@
         {% endif %}
       </td>
       <td>{{ place.display_area }}</td>
-      <td>{{ i.subscribers }} subscriber(s)</td>
+      <td>{{ i.subscribers }} subscriber{{ '' if i.subscribers == 1 else 's' }}</td>
     </tr>
   {% endfor %}
   </table>
