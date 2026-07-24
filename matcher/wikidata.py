@@ -3,10 +3,11 @@
 import hashlib
 import json
 import os
+import random
 import re
 import typing
 from collections import defaultdict
-from time import time
+from time import sleep, time
 from typing import Literal, Required, TypedDict
 from urllib.parse import unquote
 
@@ -19,10 +20,21 @@ from . import (Entity, commons, language, mail, match, matcher, overpass,
 from .language import get_language_label
 from .utils import cache_filename, drop_start
 from .wikimedia_api_logging import logged_post
-from .wikidata_api import (QueryError, QueryRateLimited, QueryTimeout,
-                           get_entities, get_entity, get_entity_with_cache)
+from .wikidata_api import (
+    QueryError,
+    QueryRateLimited,
+    QueryServiceUnavailable,
+    QueryTimeout,
+    get_entities,
+    get_entity,
+    get_entity_with_cache,
+)
 
 report_missing_values = False
+query_retry_attempts = 5
+query_retry_base_seconds = 1
+query_retry_max_seconds = 16
+query_transient_statuses = {500, 502, 503, 504}
 wd_entity = "http://www.wikidata.org/entity/Q"
 enwiki = "https://en.wikipedia.org/wiki/"
 skip_tags = {
@@ -777,27 +789,35 @@ def run_query_raw(
     send_error_mail: bool = False,
 ) -> requests.models.Response:
     """Run query, return response."""
-    attempts = 5
-
     def error_mail(subject: str, r: requests.Response) -> None:
         if send_error_mail:
             mail.error_mail("wikidata query error", query, r)
 
-    for attempt in range(attempts):
-        try:  # retry if we get a ChunkedEncodingError
+    r: requests.Response | None = None
+    for attempt in range(query_retry_attempts):
+        try:
             r = logged_post(
                 wikidata_query_api_url,
                 data={"query": query, "format": "json"},
                 timeout=timeout,
                 headers=user_agent_headers(),
             )
-            if r.status_code != 200:
+            if r.status_code == 200:
+                return r
+            if r.status_code not in query_transient_statuses:
                 break
-            return r
         except requests.exceptions.ChunkedEncodingError:
-            if attempt == attempts - 1:
-                error_mail("wikidata query error", r)
-                raise QueryError(query, r)
+            if attempt == query_retry_attempts - 1:
+                raise
+
+        if attempt < query_retry_attempts - 1:
+            delay = min(
+                query_retry_base_seconds * 2**attempt,
+                query_retry_max_seconds,
+            )
+            sleep(random.uniform(delay / 2, delay))
+
+    assert r is not None
 
     if r.status_code == 429:
         error_mail("wikidata query rate limited", r)
@@ -807,12 +827,17 @@ def run_query_raw(
     # java.lang.RuntimeException: java.util.concurrent.ExecutionException: com.bigdata.bop.engine.QueryTimeoutException: Query deadline is expired.
     # java.util.concurrent.TimeoutException
     if (
-        r.status_code == 504 or
+        r.status_code in {502, 504}
+        or
         "Query deadline is expired." in r.text
         or "java.util.concurrent.TimeoutException" in r.text
     ):
         error_mail("wikidata query timeout", r)
         raise QueryTimeout(query, r)
+
+    if r.status_code in {500, 503}:
+        error_mail("wikidata query service unavailable", r)
+        raise QueryServiceUnavailable(query, r)
 
     error_mail("wikidata query error", r)
     raise QueryError(query, r)

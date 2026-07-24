@@ -2,10 +2,20 @@
 
 import traceback
 
+from procrastinate import RetryStrategy
+
 from .procrastinate_app import procrastinate_app
+from .wikidata_api import QueryServiceUnavailable
 
 
-@procrastinate_app.task(name="matcher.run_matcher")
+@procrastinate_app.task(
+    name="matcher.run_matcher",
+    retry=RetryStrategy(
+        max_attempts=3,
+        exponential_wait=5,
+        retry_exceptions={QueryServiceUnavailable},
+    ),
+)
 def run_matcher_task(
     osm_type: str,
     osm_id: int,
@@ -15,7 +25,7 @@ def run_matcher_task(
     want_isa: list[str] | None = None,
 ) -> None:
     """Run the matcher for a given place."""
-    from matcher import mail
+    from matcher import database, mail
     from matcher.job_queue import MatcherJob, MatcherJobFailed
     from matcher.view import app
 
@@ -30,6 +40,12 @@ def run_matcher_task(
         )
         try:
             job.run_in_app_context()
+        except QueryServiceUnavailable as e:
+            database.session.rollback()
+            msg = f"{e}; retrying matcher task later"
+            print(msg)
+            job.status(msg)
+            raise
         except MatcherJobFailed as e:
             job.failed(str(e))
         except Exception as e:

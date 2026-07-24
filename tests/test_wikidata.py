@@ -1,6 +1,68 @@
-from matcher import wikidata
+import requests
+
+from matcher import wikidata, wikidata_api
 import pytest
 import vcr
+
+
+def query_response(status_code, text=""):
+    response = requests.Response()
+    response.status_code = status_code
+    response.reason = {
+        200: "OK",
+        502: "Bad Gateway",
+        503: "Service Unavailable",
+    }.get(status_code, "Error")
+    response.url = "https://query.wikidata.org/sparql"
+    response._content = text.encode()
+    return response
+
+
+def test_run_query_raw_retries_transient_response(monkeypatch):
+    responses = [query_response(502) for _ in range(4)] + [query_response(200)]
+    sleeps = []
+    monkeypatch.setattr(wikidata, "logged_post", lambda *args, **kwargs: responses.pop(0))
+    monkeypatch.setattr(wikidata.random, "uniform", lambda low, high: high)
+    monkeypatch.setattr(wikidata, "sleep", sleeps.append)
+
+    response = wikidata.run_query_raw("SELECT * WHERE {}")
+
+    assert response.status_code == 200
+    assert sleeps == [1, 2, 4, 8]
+
+
+def test_run_query_raw_turns_repeated_bad_gateway_into_timeout(monkeypatch):
+    response = query_response(502, "upstream request timeout")
+    monkeypatch.setattr(wikidata, "logged_post", lambda *args, **kwargs: response)
+    monkeypatch.setattr(wikidata, "sleep", lambda delay: None)
+
+    with pytest.raises(wikidata_api.QueryTimeout) as exc_info:
+        wikidata.run_query_raw("SELECT * WHERE {}")
+
+    assert str(exc_info.value) == (
+        "Wikidata query failed: HTTP 502 Bad Gateway from "
+        "https://query.wikidata.org/sparql: upstream request timeout"
+    )
+
+
+def test_run_query_raw_reports_service_unavailable_after_retries(monkeypatch):
+    response = query_response(503)
+    monkeypatch.setattr(wikidata, "logged_post", lambda *args, **kwargs: response)
+    monkeypatch.setattr(wikidata, "sleep", lambda delay: None)
+
+    with pytest.raises(wikidata_api.QueryServiceUnavailable):
+        wikidata.run_query_raw("SELECT * WHERE {}")
+
+
+def test_run_query_raw_does_not_reference_missing_response(monkeypatch):
+    def raise_chunked_encoding_error(*args, **kwargs):
+        raise requests.exceptions.ChunkedEncodingError
+
+    monkeypatch.setattr(wikidata, "logged_post", raise_chunked_encoding_error)
+    monkeypatch.setattr(wikidata, "sleep", lambda delay: None)
+
+    with pytest.raises(requests.exceptions.ChunkedEncodingError):
+        wikidata.run_query_raw("SELECT * WHERE {}")
 
 test_entity = {
     'labels': {

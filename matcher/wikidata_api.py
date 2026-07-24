@@ -33,6 +33,16 @@ class QueryError(Exception):
         self.query = query
         self.r = r
 
+    def __str__(self) -> str:
+        """Return a concise description without including the full SPARQL query."""
+        status = f"{self.r.status_code} {self.r.reason}".strip()
+        url = self.r.url or "Wikidata Query Service"
+        excerpt = " ".join(self.r.text.split())
+        if len(excerpt) > 300:
+            excerpt = excerpt[:297].rstrip() + "..."
+        detail = f": {excerpt}" if excerpt else ""
+        return f"Wikidata query failed: HTTP {status} from {url}{detail}"
+
 
 class QueryTimeout(QueryError):
     """Query timeout error."""
@@ -45,6 +55,10 @@ class QueryRateLimited(QueryError):
     def retry_after(self) -> int:
         """Seconds to wait before retrying (from Retry-After header, default 60)."""
         return int(self.r.headers.get("Retry-After", 60))
+
+
+class QueryServiceUnavailable(QueryError):
+    """The Wikidata Query Service is temporarily unavailable."""
 
 
 def api_call(params: CallParams) -> requests.Response:

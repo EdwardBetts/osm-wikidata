@@ -27,6 +27,7 @@ WIKIDATA_ITEMS_MAX_AGE = timedelta(hours=24)  # reuse cached items within this w
 OVERPASS_RETRY_LIMIT = 5
 OVERPASS_RETRY_BASE_SECONDS = 60
 OVERPASS_RETRY_MAX_SECONDS = 300
+WIKIDATA_MAX_CHUNK_SPLIT_DEPTH = 4
 SUBPROCESS_OUTPUT_MAX_CHARS = 6000
 
 
@@ -570,8 +571,9 @@ class MatcherJob:
         assert self.place
         items = {}
         num = 0
-        while chunks:
-            bbox = chunks.pop()
+        chunks_with_depth = [(bbox, 0) for bbox in chunks]
+        while chunks_with_depth:
+            bbox, split_depth = chunks_with_depth.pop()
             num += 1
             self.send(
                 "wikidata_chunk",
@@ -586,7 +588,11 @@ class MatcherJob:
                     self.place.bbox_wikidata_items(bbox, want_isa=self.want_isa)
                 )
                 self.send("wikidata_chunk_done", chunk_num=num)
-            except wikidata_api.QueryTimeout:
+            except wikidata_api.QueryTimeout as e:
+                if split_depth >= WIKIDATA_MAX_CHUNK_SPLIT_DEPTH:
+                    raise wikidata_api.QueryServiceUnavailable(
+                        e.query, e.r
+                    ) from e
                 msg = f"wikidata timeout, splitting chunk {num} into four"
                 print(msg)
                 self.status(msg)
@@ -599,9 +605,13 @@ class MatcherJob:
                         for split_bbox in split_chunks
                     ],
                 )
-                chunks += split_chunks
+                chunks_with_depth += [
+                    (split_bbox, split_depth + 1) for split_bbox in split_chunks
+                ]
             except wikidata_api.QueryRateLimited as e:
-                chunks.append(bbox)  # put back to retry after waiting
+                chunks_with_depth.append(
+                    (bbox, split_depth)
+                )  # put back to retry after waiting
                 num -= 1
                 self.handle_rate_limited(e)
 
