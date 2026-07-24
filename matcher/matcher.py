@@ -739,11 +739,7 @@ def find_item_matches(
         if osm_tags.get("amenity") == "parking" and "amenity=parking" not in item.tags:
             continue  # parking garage in OSM should only match parking Wikidata item
 
-        if (
-            not matching_tags
-            and is_osm_bus_stop(osm_tags)
-            and "Q953806" not in instanceof
-        ):
+        if is_osm_bus_stop(osm_tags) and "Q953806" not in instanceof:
             continue  # nearby match OSM bus stop matching non-bus stop
 
         if (
@@ -1015,7 +1011,7 @@ def check_item_candidate(
     if (not matching_tags or building_only_match) and instanceof == {"Q34442"}:
         return {"reject": "nearby road match"}
 
-    if not matching_tags and is_osm_bus_stop(osm_tags) and "Q953806" not in instanceof:
+    if is_osm_bus_stop(osm_tags) and "Q953806" not in instanceof:
         return {"reject": "nearby match OSM bus stop matching non-bus stop"}
 
     if (

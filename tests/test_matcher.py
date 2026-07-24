@@ -1055,6 +1055,43 @@ def test_station_shouldnt_match_school(monkeypatch):
     ret = matcher.check_item_candidate(candidate)
     assert 'reject' in ret
 
+
+def test_railway_station_shouldnt_match_bus_stop_with_shared_platform_tag(
+    monkeypatch,
+):
+    """A generic public transport tag must not make a bus stop a station."""
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    osm_tags = {
+        'bus': 'yes',
+        'highway': 'bus_stop',
+        'name': 'Finchley Road Station',
+        'public_transport': 'platform',
+    }
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q55488'}}},
+            }],
+        },
+        'labels': {'en': {'value': 'Finchley Road railway station'}},
+        'aliases': {
+            'en': [{'language': 'en', 'value': 'Finchley Road Station'}],
+        },
+        'sitelinks': {},
+    }
+    item = Item(
+        item_id=5449842,
+        entity=entity,
+        tags=['public_transport=platform', 'railway=historic_station'],
+    )
+    candidate = ItemCandidate(item=item, tags=osm_tags)
+
+    ret = matcher.check_item_candidate(candidate)
+
+    assert ret['reject'] == 'nearby match OSM bus stop matching non-bus stop'
+
+
 def test_no_match_cottage(monkeypatch):
     monkeypatch.setattr(matcher, 'current_app', MockApp)
 
