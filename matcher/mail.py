@@ -1,5 +1,7 @@
 """Send email to admins to about errors or other notworthy things."""
 
+from __future__ import annotations
+
 import pprint
 import smtplib
 import sys
@@ -12,7 +14,8 @@ import flask
 import requests
 from flask import current_app, g, has_request_context, request
 
-from .place import Place
+if typing.TYPE_CHECKING:
+    from .place import Place
 
 
 def send_mail(
