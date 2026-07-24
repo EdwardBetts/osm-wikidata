@@ -60,3 +60,12 @@ def test_place_country_code(app):
                      'country_code': 'us'}
     assert place.country_code == 'us'
     assert place.get_address_key('missing key') is None
+
+
+def test_wikidata_chunk_size_uses_smaller_unchunked_area_threshold():
+    place = simple_place()
+    place.area = 999 * 1000 * 1000
+    assert place.wikidata_chunk_size() == 1
+
+    place.area = 1000 * 1000 * 1000
+    assert place.wikidata_chunk_size() == 2

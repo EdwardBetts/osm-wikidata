@@ -57,6 +57,7 @@ from .overpass import oql_from_tag
 radius_default = 1_000  # in metres, only for nodes
 
 place_chunk_size = 32
+wikidata_unchunked_area_max = 1_000  # square kilometres
 degrees = "(-?[0-9.]+)"
 re_box = re.compile(rf"^BOX\({degrees} {degrees},{degrees} {degrees}\)$")
 re_geonames_spring = re.compile(r"^\d[0-9A-Z_]{13} Spring$")
@@ -1478,7 +1479,7 @@ class Place(Base):
             return 1
 
         area = self.area_in_sq_km
-        if area < 3000 and not self.wikidata_query_timeout:
+        if area < wikidata_unchunked_area_max and not self.wikidata_query_timeout:
             return 1
         return utils.calc_chunk_size(area, size=size)
 
