@@ -206,6 +206,19 @@ def logged_get(url: str, **kwargs: typing.Any) -> requests.Response:
         return r
 
 
+def logged_request(
+    session: requests.sessions.Session,
+    method: str,
+    url: str,
+    **kwargs: typing.Any,
+) -> requests.Response:
+    """Make a Wikimedia API request with a session and log one metric line."""
+    with WikimediaRequestTimer(wikimedia_log_config, method, url) as timer:
+        r = session.request(method, url, **kwargs)
+        timer.log_response(r.status_code, r.url)
+        return r
+
+
 def logged_post(url: str, **kwargs: typing.Any) -> requests.Response:
     """Make a Wikimedia API POST request and log one JSONL metric line."""
     with WikimediaRequestTimer(wikimedia_log_config, "POST", url) as timer:

@@ -8,9 +8,9 @@ import requests
 import requests.exceptions
 import simplejson.errors
 
-from . import Entity, mail, user_agent_headers
+from . import Entity, mail, user_agent_headers, wikidata_oauth
 from .utils import chunk
-from .wikimedia_api_logging import logged_get
+from .wikimedia_api_logging import logged_get, logged_request
 
 wikidata_url = "https://www.wikidata.org/w/api.php"
 page_size = 50
@@ -54,6 +54,16 @@ def api_call(params: CallParams) -> requests.Response:
         "formatversion": 2,
         **params,
     }
+
+    oauth_session = wikidata_oauth.get_request_session()
+    if oauth_session is not None:
+        return logged_request(
+            oauth_session,
+            "GET",
+            wikidata_url,
+            params=call_params,
+            timeout=10,
+        )
 
     r = logged_get(wikidata_url, params=call_params, headers=user_agent_headers())
     return r

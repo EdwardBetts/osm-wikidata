@@ -13,6 +13,7 @@ from time import sleep, time
 import lxml.etree
 import psycopg2
 import requests.exceptions
+from flask import g
 from sqlalchemy import text
 
 from matcher import database, mail, model, overpass, space_alert, wikidata_api, wikipedia
@@ -519,6 +520,8 @@ class MatcherJob:
         is_refresh = self.place.state == "refresh"
 
         user = model.User.query.get(self.user_id) if self.user_id else None
+        if user is not None:
+            g.user = user
 
         run_obj = PlaceMatcher(
             place=self.place,

@@ -7,6 +7,7 @@ import urllib.parse
 
 import flask
 import requests
+from flask import has_app_context, has_request_context
 from requests_oauthlib import OAuth2Session
 
 from . import database
@@ -27,8 +28,7 @@ class LoginNeeded(Exception):
 
 def get_token() -> dict[str, typing.Any]:
     """Return the current user's Wikidata OAuth 2 token."""
-    token = flask.session.get("wikidata_oauth_token")
-    if token:
+    if has_request_context() and (token := flask.session.get("wikidata_oauth_token")):
         return typing.cast(dict[str, typing.Any], token)
     user = flask.g.user
     if not user.is_authenticated:
@@ -38,13 +38,15 @@ def get_token() -> dict[str, typing.Any]:
         raise LoginNeeded
 
     token = json.loads(user.wikidata_oauth_token)
-    flask.session["wikidata_oauth_token"] = token
+    if has_request_context():
+        flask.session["wikidata_oauth_token"] = token
     return typing.cast(dict[str, typing.Any], token)
 
 
 def save_token(token: dict[str, typing.Any]) -> None:
     """Persist a refreshed Wikidata OAuth 2 token."""
-    flask.session["wikidata_oauth_token"] = token
+    if has_request_context():
+        flask.session["wikidata_oauth_token"] = token
     user = flask.g.user
     if user.is_authenticated:
         user.wikidata_oauth_token = json.dumps(token)
@@ -66,6 +68,32 @@ def get_session() -> OAuth2Session:
     )
     oauth.headers.update(user_agent_headers())
     return oauth
+
+
+def get_request_session() -> OAuth2Session | None:
+    """Return the active user's OAuth session, if available."""
+    if not has_app_context():
+        return None
+
+    oauth_session = getattr(flask.g, "wikidata_oauth_session", None)
+    if oauth_session is not None:
+        return typing.cast(OAuth2Session, oauth_session)
+
+    user = getattr(flask.g, "user", None)
+    if (
+        user is None
+        or not user.is_authenticated
+        or not getattr(user, "wikidata_oauth_token", None)
+    ):
+        return None
+
+    try:
+        oauth_session = get_session()
+    except LoginNeeded:
+        return None
+
+    flask.g.wikidata_oauth_session = oauth_session
+    return oauth_session
 
 
 def raw_request(params: typing.Mapping[str, str | int]) -> requests.Response:
@@ -119,13 +147,14 @@ def get_username() -> str | None:
 
 def clear_connection() -> None:
     """Remove Wikidata OAuth data from the session and current user."""
-    for key in (
-        "wikidata_oauth_token",
-        "wikidata_username",
-        "wikidata_after_login",
-        "wikidata_oauth_state",
-    ):
-        flask.session.pop(key, None)
+    if has_request_context():
+        for key in (
+            "wikidata_oauth_token",
+            "wikidata_username",
+            "wikidata_after_login",
+            "wikidata_oauth_state",
+        ):
+            flask.session.pop(key, None)
 
     user = flask.g.user
     if user.is_authenticated:
