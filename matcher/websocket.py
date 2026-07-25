@@ -11,11 +11,13 @@ from flask import current_app, g, request
 from flask_login import current_user
 from flask_sock import Sock
 from lxml import etree
+from procrastinate.exceptions import AlreadyEnqueued
 from sqlalchemy.orm.attributes import flag_modified
 
-from . import database, edit, mail, wikidata_api, wikidata_edit
+from . import database, edit, jobs, mail, tasks, wikidata_api, wikidata_edit
 from .model import ChangesetEdit, ItemCandidate
 from .place import Place
+from .procrastinate_app import procrastinate_app
 
 sock = Sock()
 
@@ -81,7 +83,6 @@ def recent_matcher_messages(place: Place) -> list[str]:
 
 def queue_status_message(osm_type: str, osm_id: int) -> str | None:
     """Build a websocket queue status message for a place."""
-    from . import jobs
 
     status = jobs.get_queue_status(osm_type, osm_id)
     if status is None:
@@ -106,10 +107,14 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             return
 
         if place.bad_geom_type:
-            send(json.dumps({
-                "type": "error",
-                "msg": f"geometry is not a polygon ({place.geometry_type}) — the boundary is not a closed ring",
-            }))
+            send(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "msg": f"geometry is not a polygon ({place.geometry_type}) — the boundary is not a closed ring",
+                    }
+                )
+            )
             return
 
         user_agent = request.headers.get("User-Agent")
@@ -119,7 +124,6 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         db_url = current_app.config["DB_URL"]
 
         # Set up LISTEN before deferring so we don't miss any notifications.
-        from . import jobs
 
         listen_conn = psycopg2.connect(
             db_url,
@@ -132,8 +136,6 @@ def ws_matcher(ws_sock, osm_type, osm_id):
 
         # Defer the matcher task. Use lock+queueing_lock so at most one job
         # runs at a time and at most one more can be queued.
-        from . import tasks
-        from .procrastinate_app import procrastinate_app
 
         job_already_exists = False
         listen_cur.execute("SELECT pg_advisory_lock(hashtext(%s))", [channel])
@@ -152,7 +154,6 @@ def ws_matcher(ws_sock, osm_type, osm_id):
                         user_agent=user_agent,
                     )
                 except Exception as exc:
-                    from procrastinate.exceptions import AlreadyEnqueued
 
                     if not isinstance(exc, AlreadyEnqueued):
                         raise
