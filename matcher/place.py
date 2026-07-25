@@ -423,7 +423,21 @@ class Place(Base):
 
             parts = []
             country_code = address.get("country_code")
-            skip = {"country_code", "postcode"}
+            if country_code == "gb" and address.get("state"):
+                state = address["state"]
+                n = self.name if self.name == state else f"{self.name}, {state}"
+                first_part = self.name.lower()
+                return "the " + n if " of " in first_part else n
+
+            skip = {
+                "country_code",
+                "postcode",
+                *(
+                    key
+                    for key in address
+                    if key.lower().startswith("iso3166")
+                ),
+            }
             if country_code in {"us"}:
                 skip.add("county")
             if country_code in {"gb", "us"} and "state" in address:

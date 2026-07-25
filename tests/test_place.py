@@ -62,6 +62,44 @@ def test_place_country_code(app):
     assert place.get_address_key('missing key') is None
 
 
+def test_uk_name_for_change_comment_uses_place_and_constituent_country():
+    place = simple_place()
+    place.display_name = 'Cambridge'
+    place.namedetails = {'name:en': 'Cambridge'}
+    place.address = [
+        {'type': 'city', 'name': 'Cambridge'},
+        {'type': 'ISO3166-2-lvl6', 'name': 'GB-CAM'},
+        {
+            'type': 'state_district',
+            'name': 'Cambridgeshire and Peterborough',
+        },
+        {'type': 'state', 'name': 'England'},
+        {'type': 'ISO3166-2-lvl4', 'name': 'GB-ENG'},
+        {'type': 'country', 'name': 'United Kingdom'},
+        {'type': 'country_code', 'name': 'gb'},
+    ]
+
+    assert place.name_for_change_comment == 'Cambridge, England'
+
+
+def test_name_for_change_comment_omits_iso_country_codes():
+    place = simple_place()
+    place.display_name = 'Springfield'
+    place.namedetails = {'name:en': 'Springfield'}
+    place.address = [
+        {'type': 'city', 'name': 'Springfield'},
+        {'type': 'ISO3166-2-lvl4', 'name': 'XX-ABC'},
+        {'type': 'state', 'name': 'North Province'},
+        {'type': 'country', 'name': 'Exampleland'},
+        {'type': 'country_code', 'name': 'xx'},
+    ]
+
+    assert (
+        place.name_for_change_comment
+        == 'Springfield, North Province, Exampleland'
+    )
+
+
 def test_wikidata_chunk_size_uses_smaller_unchunked_area_threshold():
     place = simple_place()
     place.area = 999 * 1000 * 1000
