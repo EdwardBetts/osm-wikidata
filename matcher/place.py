@@ -1,6 +1,7 @@
 """Place model."""
 
 import json
+import math
 import os.path
 import re
 import subprocess
@@ -99,16 +100,45 @@ def drop_building_tag(tags: set[str]) -> None:
 BBox = tuple[Decimal, Decimal, Decimal, Decimal]
 
 
-def bbox_chunk(bbox: BBox, n: int) -> list[BBox]:
-    """Split bounding box into chunks."""
+def bbox_chunk_dimensions(bbox: BBox, n: int) -> tuple[int, int]:
+    """Return rows and columns for an aspect-ratio-aware chunk grid.
+
+    ``n`` is the number of chunks that would be used on each side of a
+    square bounding box.  For a non-square box, keep approximately the same
+    total number of chunks while making the chunks themselves approximately
+    square.
+    """
     n = max(1, n)
+    if n == 1:
+        return 1, 1
+
+    south, north, west, east = map(float, bbox)
+    height = abs(north - south)
+    midpoint_latitude = (south + north) / 2
+    width = abs(east - west) * math.cos(math.radians(midpoint_latitude))
+
+    if not height:
+        return (1, n * n) if width else (1, 1)
+    if not width:
+        return (n * n, 1)
+
+    aspect_ratio = width / height
+    target_count = n * n
+    columns = max(1, round(math.sqrt(target_count * aspect_ratio)))
+    rows = max(1, round(math.sqrt(target_count / aspect_ratio)))
+    return rows, columns
+
+
+def bbox_chunk(bbox: BBox, n: int) -> list[BBox]:
+    """Split bounding box into aspect-ratio-aware chunks."""
     (south, north, west, east) = bbox
-    ns = (north - south) / n
-    ew = (east - west) / n
+    rows, columns = bbox_chunk_dimensions(bbox, n)
+    ns = (north - south) / rows
+    ew = (east - west) / columns
 
     chunks = []
-    for row in range(n):
-        for col in range(n):
+    for row in range(rows):
+        for col in range(columns):
             chunk = (
                 south + ns * row,
                 south + ns * (row + 1),
@@ -1355,28 +1385,16 @@ class Place(Base):
         return add_tags
 
     def chunk_n(self, n):
-        n = max(1, n)
-        (south, north, west, east) = self.bbox
-        ns = (north - south) / n
-        ew = (east - west) / n
-
         chunks = []
-        for row in range(n):
-            for col in range(n):
-                chunk = (
-                    south + ns * row,
-                    south + ns * (row + 1),
-                    west + ew * col,
-                    west + ew * (col + 1),
-                )
-                want_chunk = func.ST_Intersects(Place.geom, envelope(chunk))
-                want = (
-                    session.query(want_chunk)
-                    .filter(Place.place_id == self.place_id)
-                    .scalar()
-                )
-                if want:
-                    chunks.append(chunk)
+        for chunk in bbox_chunk(self.bbox, n):
+            want_chunk = func.ST_Intersects(Place.geom, envelope(chunk))
+            want = (
+                session.query(want_chunk)
+                .filter(Place.place_id == self.place_id)
+                .scalar()
+            )
+            if want:
+                chunks.append(chunk)
 
         return chunks
 

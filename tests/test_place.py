@@ -1,5 +1,5 @@
 from matcher.model import Item
-from matcher.place import Place
+from matcher.place import Place, bbox_chunk, bbox_chunk_dimensions
 from matcher import database
 
 def simple_place():
@@ -69,3 +69,40 @@ def test_wikidata_chunk_size_uses_smaller_unchunked_area_threshold():
 
     place.area = 1000 * 1000 * 1000
     assert place.wikidata_chunk_size() == 2
+
+
+def test_bbox_chunk_square():
+    bbox = (0, 3, 0, 3)
+
+    assert bbox_chunk_dimensions(bbox, 3) == (3, 3)
+    assert len(bbox_chunk(bbox, 3)) == 9
+
+
+def test_bbox_chunk_wide():
+    bbox = (0, 2, 0, 4)
+    chunks = bbox_chunk(bbox, 3)
+
+    assert bbox_chunk_dimensions(bbox, 3) == (2, 4)
+    assert len(chunks) == 8
+    assert chunks[0] == (0, 1, 0, 1)
+    assert chunks[-1] == (1, 2, 3, 4)
+
+
+def test_bbox_chunk_tall():
+    bbox = (0, 4, 0, 2)
+
+    assert bbox_chunk_dimensions(bbox, 3) == (4, 2)
+    assert len(bbox_chunk(bbox, 3)) == 8
+
+
+def test_bbox_chunk_accounts_for_longitude_scale():
+    bbox = (60, 63, 0, 6)
+
+    assert bbox_chunk_dimensions(bbox, 3) == (3, 3)
+
+
+def test_bbox_chunk_minimum_size():
+    bbox = (0, 10, 0, 1)
+
+    assert bbox_chunk_dimensions(bbox, 0) == (1, 1)
+    assert bbox_chunk(bbox, 0) == [(0, 10, 0, 1)]
