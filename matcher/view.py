@@ -777,7 +777,7 @@ def add_tags(osm_type, osm_id):
         add_wikipedia_tags=add_wikipedia_tags,
         add_wikidata_osm_links=add_wikidata_osm_links_default,
         can_add_wikidata_osm_links=can_add_wikidata_osm_links,
-        wikidata_osm_link_summary="add OpenStreetMap link from OWL Places",
+        wikidata_osm_link_summary="add OpenStreetMap IDs",
     )
 
 

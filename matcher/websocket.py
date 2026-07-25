@@ -371,8 +371,7 @@ def add_tags(ws_sock, osm_type, osm_id):
         and g.user.wikidata_oauth_token
     )
     wikidata_osm_link_summary = (
-        data.get("wikidata_osm_link_summary")
-        or "add OpenStreetMap link from OWL Places"
+        data.get("wikidata_osm_link_summary") or "add OpenStreetMap IDs"
     )
     extra_tags: dict[str, str] = {}
     for key in ("source", "hashtags"):
