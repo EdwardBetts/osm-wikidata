@@ -761,6 +761,47 @@ def test_castle_station_bad_match(monkeypatch):
     candidates = matcher.find_item_matches(mock_db, item, 'prefix', debug=True)
     assert len(candidates) == 0
 
+def test_art_space_address_shouldnt_match_train_station(monkeypatch):
+    osm_tags = {
+        'addr:city': 'Basel',
+        'addr:housenumber': '200',
+        'addr:postcode': '4058',
+        'addr:street': 'Schwarzwaldallee',
+        'building': 'train_station',
+        'building:levels': '1',
+        'name': 'Badischer Bahnhof',
+        'wheelchair': 'limited',
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'Ausstellungsraum Klingental'},
+        },
+        'sitelinks': {},
+    }
+
+    item = Item(
+        entity=entity,
+        tags=['tourism=gallery'],
+        extract='The art space is at Schwarzwaldallee 200, 4058 Basel.',
+    )
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [
+            ('polygon', 1, None, osm_tags, 0),
+        ]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    candidates = matcher.find_item_matches(
+        MockDatabase(), item, 'prefix', debug=True
+    )
+    assert candidates == []
+
 def test_church_pub_bad_match(monkeypatch):
     osm_tags = {
         'amenity': 'pub',

@@ -726,6 +726,15 @@ def find_item_matches(
 
         if (
             building_only_match
+            and address_match
+            and not identifier_match
+            and "building=train_station" not in item.tags
+            and osm_tags.get("building") == "train_station"
+        ):
+            continue  # non-station shouldn't match station by address
+
+        if (
+            building_only_match
             and not address_match
             and name_match
             and not identifier_match
@@ -998,6 +1007,15 @@ def check_item_candidate(
         and "school" not in amenity
     ):
         return {"reject": "Wikidata school shouldn't match OSM restaurant"}
+
+    if (
+        building_only_match
+        and address_match
+        and not identifier_match
+        and "building=train_station" not in item.tags
+        and osm_tags.get("building") == "train_station"
+    ):
+        return {"reject": "non-station shouldn't match station by address"}
 
     if (
         building_only_match
