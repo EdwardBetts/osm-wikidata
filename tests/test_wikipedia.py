@@ -1,3 +1,6 @@
+import requests
+import pytest
+
 from matcher import wikipedia
 
 def test_name_from_html():
@@ -20,3 +23,61 @@ def test_bullet_list_html():
 
     expect = ['Shepherdstown Historic District']
     assert wikipedia.html_names(sample) == expect
+
+
+def make_response(
+    status_code=200,
+    content_type="application/json; charset=utf-8",
+    body='{"query": {"pages": []}}',
+):
+    response = requests.Response()
+    response.status_code = status_code
+    response.reason = "Too Many Requests" if status_code == 429 else "OK"
+    response.url = "https://en.wikipedia.org/w/api.php"
+    response.headers["content-type"] = content_type
+    response._content = body.encode()
+    return response
+
+
+def test_run_query_uses_oauth_session(monkeypatch):
+    response = make_response(content_type="application/json")
+
+    class OAuthSession:
+        pass
+
+    oauth_session = OAuthSession()
+    monkeypatch.setattr(
+        wikipedia.wikidata_oauth,
+        "get_request_session",
+        lambda: oauth_session,
+    )
+    calls = []
+
+    def mock_logged_request(session, method, url, **kwargs):
+        calls.append((session, method, url, kwargs))
+        return response
+
+    monkeypatch.setattr(wikipedia, "logged_request", mock_logged_request)
+
+    assert wikipedia.run_query(["Nordhausen"], {"prop": "categories"}) == []
+    assert calls[0][0:2] == (oauth_session, "GET")
+    assert calls[0][3]["timeout"] == 10
+
+
+def test_run_query_raises_descriptive_rate_limit_error(monkeypatch):
+    response = make_response(
+        status_code=429,
+        content_type="text/plain",
+        body="You are making too many requests to the API.",
+    )
+    response.headers["x-request-id"] = "38e30419-89f1"
+    monkeypatch.setattr(
+        wikipedia.wikidata_oauth, "get_request_session", lambda: None
+    )
+    monkeypatch.setattr(wikipedia, "logged_get", lambda *args, **kwargs: response)
+
+    with pytest.raises(wikipedia.WikipediaRateLimited) as exc_info:
+        wikipedia.run_query(["Nordhausen"], {"prop": "categories"})
+
+    assert "HTTP 429 Too Many Requests" in str(exc_info.value)
+    assert "request ID 38e30419-89f1" in str(exc_info.value)

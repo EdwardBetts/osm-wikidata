@@ -5,15 +5,39 @@ import lxml.etree
 import lxml.html
 import requests
 
-from . import mail, user_agent_headers
+from . import mail, user_agent_headers, wikidata_oauth
 from .utils import chunk, drop_start
-from .wikimedia_api_logging import logged_get
+from .wikimedia_api_logging import logged_get, logged_request
 
 page_size = 50
 extracts_page_size = 20
 
 
 Pages = list[dict[str, typing.Any]]
+
+
+class WikipediaQueryError(Exception):
+    """A Wikipedia API query failed."""
+
+    def __init__(self, response: requests.Response) -> None:
+        self.response = response
+
+    def __str__(self) -> str:
+        status = f"{self.response.status_code} {self.response.reason}".strip()
+        request_id = self.response.headers.get("x-request-id")
+        request_detail = f", request ID {request_id}" if request_id else ""
+        excerpt = " ".join(self.response.text.split())
+        if len(excerpt) > 300:
+            excerpt = excerpt[:297].rstrip() + "..."
+        body_detail = f": {excerpt}" if excerpt else ""
+        return (
+            f"Wikipedia API query failed: HTTP {status}{request_detail}"
+            f"{body_detail}"
+        )
+
+
+class WikipediaRateLimited(WikipediaQueryError):
+    """Wikipedia rejected a query because the client is rate limited."""
 
 
 def run_query(
@@ -32,18 +56,22 @@ def run_query(
     p.update(params)
 
     url = f"https://{language_code}.wikipedia.org/w/api.php"
-    r = logged_get(url, params=p, headers=user_agent_headers())
-    expect = "application/json; charset=utf-8"
-    success = True
-    if r.status_code != 200:
-        print(f"status code: {r.status_code}")
-        success = False
-    if r.headers["content-type"] != expect:
-        print(f"content-type: {r.headers['content-type']}")
-        success = False
-    if not success:
+    oauth_session = wikidata_oauth.get_request_session()
+    if oauth_session is not None:
+        r = logged_request(oauth_session, "GET", url, params=p, timeout=10)
+    else:
+        r = logged_get(
+            url, params=p, headers=user_agent_headers(), timeout=10
+        )
+
+    if r.status_code == 429:
+        raise WikipediaRateLimited(r)
+
+    content_type = r.headers.get("content-type", "").partition(";")[0].lower()
+    if r.status_code != 200 or content_type != "application/json":
         mail.error_mail("wikipedia error", p, r)
-    assert success
+        raise WikipediaQueryError(r)
+
     json_reply = r.json()
     return typing.cast(Pages, json_reply["query"]["pages"])
 

@@ -6,6 +6,7 @@ from procrastinate import RetryStrategy
 
 from .procrastinate_app import procrastinate_app
 from .wikidata_api import QueryServiceUnavailable
+from .wikipedia import WikipediaRateLimited
 
 
 @procrastinate_app.task(
@@ -13,7 +14,7 @@ from .wikidata_api import QueryServiceUnavailable
     retry=RetryStrategy(
         max_attempts=3,
         exponential_wait=5,
-        retry_exceptions={QueryServiceUnavailable},
+        retry_exceptions={QueryServiceUnavailable, WikipediaRateLimited},
     ),
 )
 def run_matcher_task(
@@ -40,7 +41,7 @@ def run_matcher_task(
         )
         try:
             job.run_in_app_context()
-        except QueryServiceUnavailable as e:
+        except (QueryServiceUnavailable, WikipediaRateLimited) as e:
             database.session.rollback()
             msg = f"{e}; retrying matcher task later"
             print(msg)
