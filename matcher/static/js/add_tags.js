@@ -109,6 +109,30 @@ function onmessage(e) {
       case 'saved':
         $('#' + data['qid']).removeClass('table-active');
         $('#' + data['qid']).addClass('table-success')
+        $('#' + data['qid'] + ' .osm-save-status').text('OSM saved');
+        break;
+      case 'wikidata-saved':
+        $('#' + data['qid'] + ' .wikidata-save-status')
+            .removeClass('text-muted text-danger')
+            .addClass('text-success')
+            .text('Wikidata saved');
+        break;
+      case 'wikidata-already-linked':
+        $('#' + data['qid'] + ' .wikidata-save-status')
+            .removeClass('text-danger')
+            .addClass('text-muted')
+            .text('Wikidata already linked');
+        break;
+      case 'wikidata-error':
+        $('#' + data['qid'] + ' .wikidata-save-status')
+            .removeClass('text-muted text-success')
+            .addClass('text-danger')
+            .text('Wikidata failed — reconnect in settings');
+        break;
+      case 'wikidata-skipped':
+        $('#' + data['qid'] + ' .wikidata-save-status')
+            .addClass('text-muted')
+            .text('Wikidata skipped after earlier failure');
         break;
       case 'changeset-error':
         $('#' + data['qid']).removeClass('table-active');
@@ -123,7 +147,7 @@ function onmessage(e) {
         $('#status').text('closing changeset');
         break;
       case 'done':
-        $('#status').text('upload complete');
+        $('#status').text('upload complete; check each row for OSM and Wikidata results');
         $('#done').show();
         break;
     }

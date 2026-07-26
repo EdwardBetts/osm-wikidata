@@ -131,6 +131,7 @@
         <th>OSM</th>
         <th>distance</th>
         <th>matching tags</th>
+        <th>save status</th>
       </tr>
     </thead>
     <tbody>
@@ -153,13 +154,19 @@
         <td>
           {{ ', '.join(c.matching_tags()) }}
         </td>
+        <td style="white-space:nowrap">
+          <span class="osm-save-status text-muted">OSM pending</span>
+          {% if add_wikidata_osm_links %}
+            <br><span class="wikidata-save-status text-muted">Wikidata pending</span>
+          {% endif %}
+        </td>
       </tr>
       {% if add_wikipedia_tags %}
       {% set code, sitelink = c.new_wikipedia_tag(languages) %}
       {% if code %}
       <tr>
         <td></td>
-        <td colspan="4">
+        <td colspan="5">
           Also adding <span class="osm-highlight">wikipedia</span>=<span class="osm-highlight">{{ code }}:{{ sitelink }}</span>
         </td>
       </tr>

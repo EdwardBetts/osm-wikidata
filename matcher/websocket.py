@@ -290,11 +290,11 @@ def process_match(
 
     r = edit.get_existing(osm_type, osm_id)
     if r.status_code == 410 or r.content == b"":
-        return "deleted"
+        return "deleted", None
 
     osm = get_osm_object(m)
     if check_if_already_tagged(r, osm):
-        return "already_tagged"
+        return "already_tagged", None
 
     element_data = build_updated_xml(r.content, m, changeset_id)
 
@@ -302,32 +302,37 @@ def process_match(
         success = edit.save_element(osm_type, osm_id, element_data)
     except requests.exceptions.HTTPError as e:
         edit_failed(r, e, element_data)
-        return "element-error"
+        return "element-error", None
 
     if not success:
-        return "element-error"
+        return "element-error", None
 
     osm.tags["wikidata"] = m["qid"]
     flag_modified(osm, "tags")
     # TODO: also update wikipedia tag if appropriate
+    wikidata_result = None
     if add_wikidata_osm_links:
         try:
             entity = wikidata_api.get_entity(m["qid"])
-            wikidata_edit.add_osm_link(
+            created = wikidata_edit.add_osm_link(
                 m["qid"],
                 osm_type,
                 osm_id,
                 entity=entity,
                 summary=wikidata_osm_link_summary,
             )
+            wikidata_result = (
+                "wikidata-saved" if created else "wikidata-already-linked"
+            )
         except Exception:
+            wikidata_result = "wikidata-error"
             mail.send_traceback(
                 f"error adding Wikidata OSM link for {m['qid']} "
                 f"-> {osm_type}/{osm_id}"
             )
     save_changeset_edit(m, changeset_id)
 
-    return "saved"
+    return "saved", wikidata_result
 
 
 def handle_match(
@@ -340,7 +345,7 @@ def handle_match(
     """Create a changeset."""
     while True:
         try:
-            result = process_match(
+            result, wikidata_result = process_match(
                 change.id,
                 m,
                 add_wikidata_osm_links,
@@ -353,7 +358,7 @@ def handle_match(
     if result == "saved":
         change.update_count += 1
     database.session.commit()
-    return result
+    return result, wikidata_result
 
 
 def add_tags(ws_sock, osm_type, osm_id):
@@ -407,9 +412,10 @@ def add_tags(ws_sock, osm_type, osm_id):
         update_count=0,
     )
 
+    wikidata_failed = False
     for num, m in enumerate(data["matches"]):
         send("progress", qid=m["qid"], num=num)
-        result = handle_match(
+        result, wikidata_result = handle_match(
             change,
             num,
             m,
@@ -417,6 +423,15 @@ def add_tags(ws_sock, osm_type, osm_id):
             wikidata_osm_link_summary=wikidata_osm_link_summary,
         )
         send(result, qid=m["qid"], num=num)
+        if wikidata_result:
+            send(wikidata_result, qid=m["qid"], num=num)
+        elif wikidata_failed:
+            send("wikidata-skipped", qid=m["qid"], num=num)
+        if wikidata_result == "wikidata-error":
+            # Avoid repeating the same failed OAuth request and traceback for
+            # every remaining row in this upload.
+            add_wikidata_osm_links = False
+            wikidata_failed = True
 
     send("closing")
     edit.close_changeset(changeset_id)

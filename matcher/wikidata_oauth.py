@@ -28,8 +28,12 @@ class LoginNeeded(Exception):
 
 def get_token() -> dict[str, typing.Any]:
     """Return the current user's Wikidata OAuth 2 token."""
-    if has_request_context() and (token := flask.session.get("wikidata_oauth_token")):
-        return typing.cast(dict[str, typing.Any], token)
+    if has_request_context():
+        # OAuth refresh tokens rotate. A WebSocket request cannot reliably send
+        # an updated Flask session cookie after a refresh, so a token cached in
+        # the session can become stale and cause invalid_grant on the next
+        # upload. Keep the database as the single source of truth.
+        flask.session.pop("wikidata_oauth_token", None)
     user = flask.g.user
     if not user.is_authenticated:
         raise LoginNeeded
@@ -38,15 +42,13 @@ def get_token() -> dict[str, typing.Any]:
         raise LoginNeeded
 
     token = json.loads(user.wikidata_oauth_token)
-    if has_request_context():
-        flask.session["wikidata_oauth_token"] = token
     return typing.cast(dict[str, typing.Any], token)
 
 
 def save_token(token: dict[str, typing.Any]) -> None:
     """Persist a refreshed Wikidata OAuth 2 token."""
     if has_request_context():
-        flask.session["wikidata_oauth_token"] = token
+        flask.session.pop("wikidata_oauth_token", None)
     user = flask.g.user
     if user.is_authenticated:
         user.wikidata_oauth_token = json.dumps(token)
