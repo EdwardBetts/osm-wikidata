@@ -19,7 +19,18 @@
   <p>There are {{ items | length }} active jobs.</p>
 
   {% if items %}
-  <table class="table">
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Queued</th>
+        <th>Place</th>
+        <th>Triggered by</th>
+        <th>Progress</th>
+        <th>Area</th>
+        <th>Watching</th>
+      </tr>
+    </thead>
+    <tbody>
   {% for i in items %}
     {% set url = 'https://www.openstreetmap.org/' + i.osm_type + '/' + i.osm_id|string %}
     {% set place = i.place %}
@@ -28,19 +39,47 @@
       <td>{{ i.start.strftime('%a, %d %b %Y %H:%M:%S') }}</td>
       <td>
         <a href="{{ place.matcher_progress_url() }}">{{ name }}</a>
-        |
+        <div class="small">
         <a href="{{ url }}">view on OSM</a>
-        |
+        ·
         {% if i.stopping %}
           job is stopping
         {% else %}
           <a href="{{ url_for('.stop_job', osm_type=i.osm_type, osm_id=i.osm_id) }}">stop job</a>
+        {% endif %}
+        </div>
+      </td>
+      <td>
+        {% if i.user %}
+          <a href="https://www.openstreetmap.org/user/{{ i.user.username }}">
+            {{ i.user.username }}
+          </a>
+        {% elif i.user_id %}
+          <span class="text-muted">Unknown user #{{ i.user_id }}</span>
+        {% else %}
+          <span class="text-muted">Anonymous</span>
+        {% endif %}
+        {% if i.remote_addr %}
+          <div class="small text-muted">{{ i.remote_addr }}</div>
+        {% endif %}
+      </td>
+      <td>
+        <span class="badge badge-{{ 'primary' if i.status == 'doing' else 'secondary' }}">
+          {{ i.progress.stage }}
+        </span>
+        {% if i.progress.elapsed %}
+          <span class="small text-muted">{{ i.progress.elapsed }}</span>
+        {% endif %}
+        <div class="small mt-1">{{ i.progress.detail }}</div>
+        {% if i.progress.log_url %}
+          <a class="small" href="{{ i.progress.log_url }}">view full log</a>
         {% endif %}
       </td>
       <td>{{ place.display_area }}</td>
       <td>{{ i.subscribers }} subscriber{{ '' if i.subscribers == 1 else 's' }}</td>
     </tr>
   {% endfor %}
+    </tbody>
   </table>
   {% endif %}
 

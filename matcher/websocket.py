@@ -146,6 +146,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
                         "matcher.run_matcher",
                         lock=channel,
                         queueing_lock=channel,
+                        priority=jobs.matcher_job_priority(place.area_in_sq_km),
                     ).defer(
                         osm_type=osm_type,
                         osm_id=osm_id,
