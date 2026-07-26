@@ -42,7 +42,10 @@ def do_reindex(place, force=False):
     sleep(10)
 
     tables = database.get_tables()
-    expect = [place.prefix + '_' + t for t in ('line', 'point', 'polygon')]
+    expect = [
+        place.prefix + "_" + table
+        for table in ("line", "point", "polygon", "relation")
+    ]
     if not all(t in tables for t in expect) or place.all_tags != all_tags:
         if not place.overpass_done:
             oql = place.get_oql()

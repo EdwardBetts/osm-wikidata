@@ -143,6 +143,7 @@ def test_get_osm_id_and_type():
     assert matcher.get_osm_id_and_type('line', -1) == ('relation', 1)
     assert matcher.get_osm_id_and_type('polygon', 1) == ('way', 1)
     assert matcher.get_osm_id_and_type('polygon', -1) == ('relation', 1)
+    assert matcher.get_osm_id_and_type('relation', 1) == ('relation', 1)
 
 def test_planet_table_id():
     osm = {'type': 'node', 'id': '1'}
@@ -152,13 +153,13 @@ def test_planet_table_id():
     assert matcher.planet_table_id(osm) == ('line', 1)
 
     osm = {'type': 'relation', 'id': '1', 'tags': {}}
-    assert matcher.planet_table_id(osm) == ('line', -1)
+    assert matcher.planet_table_id(osm) == ('relation', 1)
 
     osm = {'type': 'way', 'id': '1', 'tags': {'way_area': 1}}
     assert matcher.planet_table_id(osm) == ('polygon', 1)
 
     osm = {'type': 'relation', 'id': '1', 'tags': {'way_area': 1}}
-    assert matcher.planet_table_id(osm) == ('polygon', -1)
+    assert matcher.planet_table_id(osm) == ('relation', 1)
 
 def test_simplify_tags():
     tags = ['building', 'building=yes', 'amenity=pub']
@@ -169,6 +170,60 @@ def test_item_match_sql(monkeypatch):
     monkeypatch.setattr(matcher, 'current_app', MockApp)
     sql = matcher.item_match_sql(item, 'test')
     assert "(tags ? 'building')" in sql
+    assert "from test_relation" in sql
+
+
+def test_prefer_stop_area_relation():
+    relation = {
+        "osm_type": "relation",
+        "tags": {"public_transport": "stop_area"},
+    }
+    platform = {
+        "osm_type": "way",
+        "tags": {"public_transport": "platform"},
+    }
+
+    assert matcher.prefer_stop_area_relation(
+        [platform, relation], {"public_transport=stop_area"}
+    ) == [relation]
+
+
+def test_tram_stop_extra_tags_are_not_truncated():
+    tram_stop = Item(
+        entity={
+            "claims": {
+                "P31": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {"value": {"id": "Q2175765"}}
+                        }
+                    }
+                ]
+            }
+        }
+    )
+
+    assert tram_stop.get_extra_tags() == {"public_transport=stop_area"}
+
+
+def test_extra_tag_key_and_tag_prefixes_are_removed():
+    school = Item(
+        entity={
+            "claims": {
+                "P31": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {"value": {"id": "Q622425"}}
+                        }
+                    }
+                ]
+            }
+        }
+    )
+
+    assert "amenity=pub" in school.get_extra_tags()
+    assert "amenity=music_venue" in school.get_extra_tags()
+
 
 def find_item_matches(monkeypatch, osm_tags, item):
     def mock_run_sql(cur, sql, debug):

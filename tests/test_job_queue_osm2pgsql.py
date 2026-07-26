@@ -24,7 +24,10 @@ def test_run_osm2pgsql_reports_output_and_failed_stage(monkeypatch):
         osm_id=176069,
         status_callback=messages.append,
     )
-    job.place = SimpleNamespace(osm2pgsql_cmd=lambda: ["osm2pgsql", "input.xml"])
+    job.place = SimpleNamespace(
+        prefix="osm_test",
+        osm2pgsql_cmd=lambda: ["osm2pgsql", "input.xml"],
+    )
     monkeypatch.setitem(job_queue.app.config, "DB_PASS", "secret")
     monkeypatch.setattr(
         job_queue.subprocess,

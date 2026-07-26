@@ -619,7 +619,10 @@ class Place(Base):
     @property
     def gis_tables(self) -> set[str]:
         """Place OSM table names."""
-        return {f"{self.prefix}_{t}" for t in ("line", "point", "polygon")}
+        return {
+            f"{self.prefix}_{table}"
+            for table in ("line", "point", "polygon", "relation")
+        }
 
     @property
     def identifier(self) -> str:
@@ -738,7 +741,7 @@ class Place(Base):
         """Get osm2pgsql command."""
         if filename is None:
             filename = self.overpass_filename
-        style = os.path.join(current_app.config["DATA_DIR"], "matcher.style")
+        style = os.path.join(current_app.config["DATA_DIR"], "matcher.lua")
         # Strip password from the URL — PGPASSWORD is passed via the environment.
         parsed = urlparse(current_app.config["DB_URL"])
         netloc = parsed.hostname or ""
@@ -752,12 +755,10 @@ class Place(Base):
             "--create",
             "--slim",
             "--drop",
-            "--hstore-all",
-            "--hstore-add-index",
-            "--prefix=" + self.prefix,
             "--cache=500",
+            "--prefix=" + self.prefix,
+            "--output=flex",
             "--style=" + style,
-            "--multi-geometry",
             "--database=" + safe_db_url,
             filename,
         ]
@@ -773,20 +774,18 @@ class Place(Base):
             return "no data from overpass to load with osm2pgsql"
 
         cmd = self.osm2pgsql_cmd(filename)
+        env = os.environ.copy()
+        env["PGPASSWORD"] = current_app.config["DB_PASS"]
+        env["OWL_PLACES_OSM2PGSQL_PREFIX"] = self.prefix
 
         if not capture_stderr:
-            p = subprocess.run(cmd, env={"PGPASSWORD": current_app.config["DB_PASS"]})
+            subprocess.run(cmd, env=env)
             return
-        p = subprocess.run(
-            cmd,
-            stderr=subprocess.PIPE,
-            env={"PGPASSWORD": current_app.config["DB_PASS"]},
-        )
+        p = subprocess.run(cmd, stderr=subprocess.PIPE, env=env)
         if p.returncode != 0:
             if b"Out of memory" in p.stderr:
                 return "out of memory"
-            else:
-                return p.stderr.decode("utf-8")
+            return p.stderr.decode("utf-8")
 
     def save_overpass(self, content):
         with open(self.overpass_filename, "wb") as out:

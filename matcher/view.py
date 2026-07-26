@@ -2333,7 +2333,8 @@ def single_item_match(osm_type: str, osm_id: int, item_id: int) -> Response | st
 
     tables = database.get_tables()
     ready = all(
-        f"osm_{place.place_id}_{i}" in tables for i in ("line", "point", "polygon")
+        f"osm_{place.place_id}_{table}" in tables
+        for table in ("line", "point", "polygon", "relation")
     )
 
     if not ready:

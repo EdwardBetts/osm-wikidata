@@ -725,11 +725,11 @@ class MatcherJob:
         """Run osm2pgsql."""
         assert self.place
         self.status("running osm2pgsql")
-        cmd = self.place.osm2pgsql_cmd()
         env = os.environ.copy()
         env["PGPASSWORD"] = app.config["DB_PASS"]
+        env["OWL_PLACES_OSM2PGSQL_PREFIX"] = self.place.prefix
         result = subprocess.run(
-            cmd,
+            self.place.osm2pgsql_cmd(),
             env=env,
             encoding="utf-8",
             errors="replace",

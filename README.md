@@ -59,7 +59,6 @@ it will be left alone.
 - Radio stations: not mapped on OpenStreetMap
 - Streets: the matcher ignores streets to minimise the Overpass data download
 - Sites of Special Scientific Interest: not tagged as such on OSM
-- Rivers: river relations are not multipolygons so osm2pgsql ignores them
 - Things that no longer exist: Wikidata items that existed in the past
 - Organisations: Small organisations within office buildings are not in OSM
 - Events and festivals: Not part of OSM

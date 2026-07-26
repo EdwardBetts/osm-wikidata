@@ -254,7 +254,7 @@ def nearby_nodes_sql(
 def existing_sql(prefix: str) -> str:
     """Generate SQL to search for existing wikidata tags."""
     sql_list = []
-    for obj_type in "point", "line", "polygon":
+    for obj_type in "point", "line", "polygon", "relation":
         obj_sql = f"select '{obj_type}', osm_id, tags from {prefix}_{obj_type} "
         sql_list.append(obj_sql)
     return f"select * from ({' union '.join(sql_list)}) a where tags ? 'wikidata'"
@@ -292,7 +292,7 @@ def item_match_sql(
     assert hstore
 
     sql_list = []
-    for obj_type in "point", "line", "polygon":
+    for obj_type in "point", "line", "polygon", "relation":
         obj_sql = (
             f"select '{obj_type}', osm_id, name, tags, "
             f"ST_Distance({point}, way) as dist "
@@ -556,8 +556,14 @@ def get_within_names(
     cur: DbCursor, prefix: str, src_type: str, src_id: int
 ) -> set[str]:
     sql = f"""select a.tags
-from {prefix}_polygon as a, {prefix}_{src_type} as b
-where b.osm_id={src_id} and a.osm_id != b.osm_id and st_contains(a.way, b.way);
+from (
+    select 'polygon' as src_type, osm_id, tags, way from {prefix}_polygon
+    union all
+    select 'relation' as src_type, osm_id, tags, way from {prefix}_relation
+) as a, {prefix}_{src_type} as b
+where b.osm_id={src_id}
+  and (a.src_type != '{src_type}' or a.osm_id != b.osm_id)
+  and st_contains(a.way, b.way);
 """
     names: set[str] = set()
     for (osm_tags,) in run_sql(cur, sql):
@@ -873,11 +879,31 @@ def find_item_matches(
     candidates = prefer_key_over_building(candidates, "amenity")
     candidates = prefer_tag_match_over_building_only_match(candidates)
     candidates = prefer_railway_station(candidates)
+    candidates = prefer_stop_area_relation(candidates, wikidata_tags)
     if candidates and item.is_farmhouse():
         candidates = prefer_farmhouse(candidates)
     if "man_made=bridge" in item.tags:
         candidates = filter_bridge(candidates)
     return candidates
+
+
+def prefer_stop_area_relation(
+    candidates: list[CandidateDict], wikidata_tags: set[str]
+) -> list[CandidateDict]:
+    """Prefer a stop_area relation to its stop and platform members."""
+    if (
+        len(candidates) < 2
+        or "public_transport=stop_area" not in wikidata_tags
+    ):
+        return candidates
+
+    stop_areas = [
+        candidate
+        for candidate in candidates
+        if candidate["osm_type"] == "relation"
+        and candidate["tags"].get("public_transport") == "stop_area"
+    ]
+    return stop_areas or candidates
 
 
 def prefer_tag_match_over_building_only_match(
@@ -1091,6 +1117,8 @@ def get_osm_id_and_type(source_type: str, source_id: int) -> tuple[str, int]:
     """Given database table name and src ID, return OSM type and id."""
     if source_type == "point":
         return ("node", source_id)
+    if source_type == "relation":
+        return ("relation", source_id)
     if source_id > 0:
         return ("way", source_id)
     return ("relation", -source_id)
@@ -1101,8 +1129,10 @@ def planet_table_id(osm: dict[str, typing.Any]) -> tuple[str, int]:
     osm_id = int(osm["id"])
     if osm["type"] == "node":
         return ("point", osm_id)
+    if osm["type"] == "relation":
+        return ("relation", osm_id)
     table = "polygon" if "way_area" in osm["tags"] else "line"
-    return (table, osm_id if osm["type"] == "way" else -osm_id)
+    return (table, osm_id)
 
 
 def get_biggest_polygon(item: dict[str, typing.Any]) -> int:
