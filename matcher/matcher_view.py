@@ -4,6 +4,7 @@ import re
 
 import flask
 import werkzeug
+from flask_login import login_required
 
 from . import mail, utils
 from .place import Place
@@ -39,6 +40,7 @@ area: {mail.get_area(place)}
 
 
 @matcher_blueprint.route("/matcher/<osm_type>/<int:osm_id>")
+@login_required
 def matcher_progress(osm_type: str, osm_id: int) -> werkzeug.wrappers.Response | str:
     """Matcher progress page."""
     place = Place.get_or_abort(osm_type, osm_id)

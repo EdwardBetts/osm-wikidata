@@ -1582,6 +1582,7 @@ out bb tags;
 
 
 @app.route("/refresh/<osm_type>/<int:osm_id>", methods=["GET", "POST"])
+@flask_login.login_required
 def refresh_place(osm_type: str, osm_id: int) -> Response:
     """Refresh place page."""
     place = Place.get_or_abort(osm_type, osm_id)

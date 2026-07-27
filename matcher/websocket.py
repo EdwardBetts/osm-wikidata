@@ -90,6 +90,22 @@ def queue_status_message(osm_type: str, osm_id: int) -> str | None:
     return json.dumps({"type": "queue_status", **status})
 
 
+def reject_anonymous_matcher(ws_sock) -> bool:
+    """Reject an anonymous matcher socket before it can enqueue a job."""
+    if current_user.is_authenticated:
+        return False
+
+    ws_sock.send(
+        json.dumps(
+            {
+                "type": "error",
+                "msg": "You need to be logged in to run the matcher.",
+            }
+        )
+    )
+    return True
+
+
 @sock.route("/websocket/matcher/<osm_type>/<int:osm_id>")
 def ws_matcher(ws_sock, osm_type, osm_id):
     """Run matcher for given place."""
@@ -100,6 +116,9 @@ def ws_matcher(ws_sock, osm_type, osm_id):
         return ws_sock.send(msg)
 
     try:
+        if reject_anonymous_matcher(ws_sock):
+            return
+
         place = Place.get_by_osm(osm_type, osm_id)
 
         if place.state == "ready":
@@ -118,7 +137,7 @@ def ws_matcher(ws_sock, osm_type, osm_id):
             return
 
         user_agent = request.headers.get("User-Agent")
-        user_id = current_user.id if current_user.is_authenticated else None
+        user_id = current_user.id
 
         channel = f"matcher_{osm_type}_{osm_id}"
         db_url = current_app.config["DB_URL"]

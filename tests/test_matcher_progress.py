@@ -4,6 +4,7 @@ import json
 from types import SimpleNamespace
 
 import flask
+import flask_login
 
 from matcher import matcher_view, websocket
 
@@ -16,6 +17,50 @@ class MatcherRuns:
 
     def first(self):
         return self.run
+
+
+def test_matcher_progress_requires_login(monkeypatch):
+    app = flask.Flask(__name__)
+    app.secret_key = "test"
+    app.register_blueprint(matcher_view.matcher_blueprint)
+    login_manager = flask_login.LoginManager(app)
+    login_manager.login_view = "login"
+    login_manager.user_loader(lambda user_id: None)
+
+    @app.route("/login")
+    def login():
+        return "login"
+
+    def unexpected_place_lookup(osm_type, osm_id):
+        raise AssertionError("anonymous requests must not look up or run a place")
+
+    monkeypatch.setattr(
+        matcher_view.Place, "get_or_abort", unexpected_place_lookup
+    )
+
+    response = app.test_client().get("/matcher/relation/2965156")
+
+    assert response.status_code == 302
+    assert response.location == "/login?next=%2Fmatcher%2Frelation%2F2965156"
+
+
+def test_matcher_websocket_requires_login():
+    app = flask.Flask(__name__)
+    login_manager = flask_login.LoginManager(app)
+    login_manager.user_loader(lambda user_id: None)
+    messages = []
+    ws_sock = SimpleNamespace(send=messages.append)
+
+    with app.test_request_context("/websocket/matcher/relation/2965156"):
+        rejected = websocket.reject_anonymous_matcher(ws_sock)
+
+    assert rejected
+    assert [json.loads(message) for message in messages] == [
+        {
+            "type": "error",
+            "msg": "You need to be logged in to run the matcher.",
+        }
+    ]
 
 
 def test_recent_matcher_messages_does_not_replay_completed_run(tmp_path):
