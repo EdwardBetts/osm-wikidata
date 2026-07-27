@@ -23,6 +23,7 @@ class TooManyEntities(Exception):
 
 
 CallParams = typing.Mapping[str, str | int]
+RetryCallback = typing.Callable[[int, int, int], None]
 
 
 class QueryError(Exception):
@@ -84,8 +85,12 @@ def api_call(params: CallParams) -> requests.Response:
 
 
 def entity_iter(
-    ids: set[str], debug: bool = False, attempts: int = 5
+    ids: set[str],
+    debug: bool = False,
+    attempts: int = 5,
+    retry_callback: RetryCallback | None = None,
 ) -> typing.Iterator[tuple[str, dict[str, typing.Any]]]:
+    """Yield Wikidata entities, retrying truncated and rate-limited requests."""
     for num, cur in enumerate(chunk(ids, page_size)):
         if debug:
             print(f"entity_iter: {num * page_size}/{len(ids)}")
@@ -93,11 +98,23 @@ def entity_iter(
         for attempt in range(attempts):
             try:
                 r = api_call({"action": "wbgetentities", "ids": str_ids})
-                break
             except requests.exceptions.ChunkedEncodingError:
                 if attempt == attempts - 1:
                     raise
                 time.sleep(1)
+                continue
+
+            if r.status_code != 429 or attempt == attempts - 1:
+                break
+
+            try:
+                delay = max(1, int(r.headers.get("Retry-After", "60")))
+            except ValueError:
+                delay = 60
+            if retry_callback is not None:
+                retry_callback(delay, attempt + 1, attempts)
+            time.sleep(delay)
+
         r.raise_for_status()
         json_data = r.json()
         if "entities" not in json_data:

@@ -681,7 +681,20 @@ class MatcherJob:
         print("getting wikidata item details")
         assert self.place
         self.status("getting wikidata item details")
-        for qid, entity in wikidata_api.entity_iter(db_items.keys()):
+        def report_rate_limit_retry(
+            delay: int, attempt: int, max_attempts: int
+        ) -> None:
+            self.retry_wait(
+                service="Wikidata",
+                reason="rate limited (HTTP 429)",
+                delay=delay,
+                attempt=attempt,
+                max_attempts=max_attempts,
+            )
+
+        for qid, entity in wikidata_api.entity_iter(
+            db_items.keys(), retry_callback=report_rate_limit_retry
+        ):
             item = db_items[qid]
             item.entity = entity
             msg = "load entity: " + item.label_and_qid()
