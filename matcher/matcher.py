@@ -454,11 +454,18 @@ def is_building_only_match(matching_tags: set[str]) -> bool:
 
 def is_bad_match(item: model.Item, osm_tags: dict[str, str]) -> bool:
     """Check for bad match."""
+    amenity = set(osm_tags["amenity"].split(";") if "amenity" in osm_tags else [])
+
+    if (
+        "amenity=post_office" in item.tags
+        and "place_of_worship" in amenity
+        and "post_office" not in amenity
+    ):
+        return True  # post office shouldn't match a church with a similar name
+
     for bad_match_filter in model.BadMatchFilter.query:
         if bad_match_filter.check(item.tags, osm_tags):
             return True
-
-    amenity = set(osm_tags["amenity"].split(";") if "amenity" in osm_tags else [])
 
     building = set(osm_tags["building"].split(";") if "building" in osm_tags else [])
 

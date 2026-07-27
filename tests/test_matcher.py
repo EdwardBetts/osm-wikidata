@@ -298,6 +298,35 @@ def test_church_is_not_school(monkeypatch):
     candidates = matcher.find_item_matches(mock_db, item, 'prefix')
     assert len(candidates) == 0
 
+
+def test_post_office_shouldnt_match_church(monkeypatch):
+    osm_tags = {
+        'abandoned': 'yes',
+        'amenity': 'place_of_worship',
+        'building': 'church',
+        'denomination': 'anglican',
+        'name': "Saint Andrew's",
+        'religion': 'christian',
+    }
+
+    entity = {
+        'claims': {},
+        'labels': {
+            'en': {'language': 'en', 'value': 'St Andrews Post Office'},
+        },
+        'sitelinks': {},
+    }
+
+    item = Item(
+        item_id=26673897,
+        entity=entity,
+        tags=['amenity=post_office', 'building'],
+    )
+
+    candidates = find_item_matches(monkeypatch, osm_tags, item)
+    assert candidates == []
+
+
 def test_match_operator_at_start_of_name(monkeypatch):
     osm_tags = {
         'highway': 'services',
