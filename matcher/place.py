@@ -1398,18 +1398,20 @@ class Place(Base):
         return add_tags
 
     def chunk_n(self, n):
-        chunks = []
-        for chunk in bbox_chunk(self.bbox, n):
-            want_chunk = func.ST_Intersects(Place.geom, envelope(chunk))
-            want = (
-                session.query(want_chunk)
-                .filter(Place.place_id == self.place_id)
-                .scalar()
-            )
-            if want:
-                chunks.append(chunk)
+        return [
+            chunk
+            for chunk in bbox_chunk(self.bbox, n)
+            if self.intersects_bbox(chunk)
+        ]
 
-        return chunks
+    def intersects_bbox(self, bbox: BBox) -> bool:
+        """Return whether a bounding box intersects this place's geometry."""
+        intersects = func.ST_Intersects(Place.geom, envelope(bbox))
+        return bool(
+            session.query(intersects)
+            .filter(Place.place_id == self.place_id)
+            .scalar()
+        )
 
     def get_chunks(self, chunk_size=None, skip=None):
         if chunk_size is None:
@@ -1531,7 +1533,8 @@ class Place(Base):
             chunk_size = utils.calc_chunk_size(area, size=size)
             west, south, east, north = map(float, re_box.match(box2d).groups())
             for chunk in bbox_chunk((south, north, west, east), chunk_size):
-                yield chunk
+                if self.intersects_bbox(chunk):
+                    yield chunk
 
     def latest_matcher_run(self):
         return self.matcher_runs.order_by(PlaceMatcher.start.desc()).first()

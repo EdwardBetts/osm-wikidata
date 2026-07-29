@@ -264,7 +264,12 @@ def strip_non_chars_match(osm: str, wd: str, strip_dash: bool = False) -> bool:
     wc_stripped = pattern.sub("", wd)
     osm_stripped = pattern.sub("", osm)
 
-    return bool(wc_stripped and osm_stripped and wc_stripped == osm_stripped)
+    return bool(
+        wc_stripped
+        and osm_stripped
+        and wc_stripped == osm_stripped
+        and re_digits.findall(osm) == re_digits.findall(wd)
+    )
 
 
 def prefix_name_match(osm: str, wd: str):
@@ -339,6 +344,8 @@ def split_on_upper_and_tidy(name: str) -> list[str]:
 
 
 def name_containing_initials(n1: str, n2: str) -> bool:
+    if re_digits.findall(n1) != re_digits.findall(n2):
+        return False
     if not any_upper(n1) or not any_upper(n2):
         return False
     n1_split = split_on_upper_and_tidy(n1)
@@ -738,6 +745,23 @@ def normalize_name(name: str) -> str:
     return re_strip_non_chars.sub("", name.lower())
 
 
+def normalized_name_match(name1: str, name2: str) -> bool:
+    """Compare normalized names without joining distinct numbers together."""
+    return (
+        re_digits.findall(name1) == re_digits.findall(name2)
+        and normalize_name(name1) == normalize_name(name2)
+    )
+
+
+def normalized_name_startswith(name: str, prefix: str) -> bool:
+    """Check a normalized prefix without joining distinct numbers together."""
+    prefix_digits = re_digits.findall(prefix)
+    return (
+        re_digits.findall(name)[: len(prefix_digits)] == prefix_digits
+        and normalize_name(name).startswith(normalize_name(prefix))
+    )
+
+
 def has_address(osm_tags: OsmTags) -> bool:
     """OSM tags include an address."""
     return any("addr:" + part in osm_tags for part in ("housenumber", "full"))
@@ -847,7 +871,6 @@ def check_name_matches_address(
     number_start.update(n for n in strip_comma if not n.isdigit())
 
     norm_number_start = {normalize_name(name) for name in number_start}
-    norm_number_end = {normalize_name(name) for name in number_end}
 
     postcode = osm_tags.get("addr:postcode")
     city = osm_tags.get("addr:city")
@@ -857,7 +880,7 @@ def check_name_matches_address(
     if "addr:housenumber" in osm_tags and "addr:street" in osm_tags:
         osm_address = osm_tags["addr:housenumber"] + " " + osm_tags["addr:street"]
         norm_osm_address = normalize_name(osm_address)
-        if any(name == norm_osm_address for name in norm_number_start):
+        if any(normalized_name_match(osm_address, name) for name in number_start):
             return True
 
         if "addr:city" in osm_tags:
@@ -865,19 +888,17 @@ def check_name_matches_address(
             for name in number_start:
                 if not name.endswith(street_in):
                     continue
-                if norm_osm_address == normalize_name(name[: -len(street_in)]):
+                if normalized_name_match(osm_address, name[: -len(street_in)]):
                     return True
 
         osm_address2 = osm_tags["addr:street"] + " " + osm_tags["addr:housenumber"]
-        norm_osm_address2 = normalize_name(osm_address2)
-        if any(name == norm_osm_address2 for name in norm_number_end):
+        if any(normalized_name_match(osm_address2, name) for name in number_end):
             return True
 
         if city:
             parts = ["street", "housenumber", "city"]
             osm_address3 = " ".join(osm_tags[f"addr:{part}"] for part in parts)
-            norm_osm_address3 = normalize_name(osm_address3)
-            if any(name == norm_osm_address3 for name in norm_number_end):
+            if any(normalized_name_match(osm_address3, name) for name in number_end):
                 return True
 
         for i in number_start:
@@ -905,8 +926,12 @@ def check_name_matches_address(
                 return None
 
     if "addr:full" in osm_tags:
-        osm_address = normalize_name(osm_tags["addr:full"])
-        if any(osm_address.startswith(name) for name in norm_number_start):
+        osm_full_address = osm_tags["addr:full"]
+        osm_address = normalize_name(osm_full_address)
+        if any(
+            normalized_name_startswith(osm_full_address, name)
+            for name in number_start
+        ):
             return True
 
         for i in number_start:

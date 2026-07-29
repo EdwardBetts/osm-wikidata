@@ -461,6 +461,7 @@ def test_at_symbol_match():
 
 def test_street_address():
     assert not match.name_match("17 Mill Lane", "1, Mill Lane")
+    assert not match.name_match("24 Hillhead Street", "2, 4 Hillhead Street")
 
     assert match.name_match("110 Livingston", "110 Livingston Street")
     assert not match.name_match("Livingston", "Livingston Street")
@@ -601,6 +602,9 @@ def test_check_name_matches_address():
     assert match.check_name_matches_address(tags, ["Nos 12-14 Station Road"])
 
     assert not match.check_name_matches_address(tags, ["Station Road"])
+
+    tags = {"addr:housenumber": "24", "addr:street": "Hillhead Street"}
+    assert not match.check_name_matches_address(tags, ["2, 4 Hillhead Street"])
 
     tags = {"addr:full": "12 Station Road"}
     assert match.check_name_matches_address(tags, ["12 Station Road"])
