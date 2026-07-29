@@ -13,17 +13,48 @@ function highlightFeature(e) {
 }
 
 function empty_style(chunk) {
-  chunk.setStyle({color: '#666'});
+  setOsmChunkStateByLayer(chunk, 'empty');
+}
+
+var osmChunkStates = {};
+
+function osmChunkStyle(state) {
+  var styles = {
+    active: {color: '#007bff', weight: 3, opacity: 0.95, fillColor: '#007bff', fillOpacity: 0.10, dashArray: ''},
+    done: {color: '#28a745', weight: 2, opacity: 0.85, fillColor: '#28a745', fillOpacity: 0.06, dashArray: ''},
+    empty: {color: '#666', weight: 2, opacity: 0.85, fillColor: '#666', fillOpacity: 0.04, dashArray: ''},
+    pending: {color: '#3388ff', weight: 3, opacity: 1, fillColor: '#3388ff', fillOpacity: 0.2, dashArray: ''},
+  };
+  return styles[state] || styles.pending;
+}
+
+function bindOsmChunkTooltip(chunkLayer, chunkNum, state) {
+  var label = 'OSM chunk ' + (chunkNum + 1);
+  if (state === 'active') label += ' (downloading)';
+  if (state === 'done') label += ' (complete)';
+  if (state === 'empty') label += ' (no Wikidata items)';
+  if (chunkLayer.getTooltip()) chunkLayer.unbindTooltip();
+  chunkLayer.bindTooltip(label, {sticky: true});
+}
+
+function setOsmChunkStateByLayer(chunkLayer, state) {
+  var chunkNum = layer.getLayers().indexOf(chunkLayer);
+  if (chunkNum === -1) return;
+  osmChunkStates[chunkNum] = state;
+  chunkLayer.setStyle(osmChunkStyle(state));
+  bindOsmChunkTooltip(chunkLayer, chunkNum, state);
+}
+
+function setOsmChunkState(chunkNum, state) {
+  var chunkLayer = layer.getLayers()[chunkNum];
+  if (!chunkLayer) return;
+  setOsmChunkStateByLayer(chunkLayer, state);
 }
 
 function resetHighlight(e) {
   var chunk = e.target;
-  // layer.resetStyle(chunk);
-
-  var layer_id = layer.getLayerId(chunk);
-  if(empty_layers.indexOf(layer_id) != -1) {
-      empty_style(chunk);
-  }
+  var chunkNum = layer.getLayers().indexOf(chunk);
+  chunk.setStyle(osmChunkStyle(osmChunkStates[chunkNum] || 'pending'));
 }
 
 function onEachFeature(feature, layer) {

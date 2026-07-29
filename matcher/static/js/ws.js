@@ -248,6 +248,7 @@ connection.onmessage = function(e) {
       break;
 
     case 'get_chunk':
+      setOsmChunkState(data.chunk_num, 'active');
       if (!isActive('stage-overpass') && !isDone('stage-overpass')) {
         if (!isDone('stage-details')) setStageDone('stage-details');
         clearActivity();
@@ -259,6 +260,7 @@ connection.onmessage = function(e) {
 
     case 'chunk_done':
       clearActivity();
+      setOsmChunkState(data.chunk_num, 'done');
       chunksDone++;
       updateChunkProgress();
       break;
