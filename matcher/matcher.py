@@ -403,6 +403,26 @@ def is_osm_bus_stop(tags: dict[str, str]) -> bool:
     )
 
 
+def station_house_too_far(
+    item: model.Item, osm_tags: dict[str, str], dist: float | None
+) -> bool:
+    """A station name alone is insufficient for a distant ordinary house."""
+    if not item.is_a_station() or dist is None or dist <= 50:
+        return False
+
+    building = set(osm_tags.get("building", "").split(";"))
+    if not building & {"house", "residential", "detached", "semidetached_house"}:
+        return False
+
+    railway = set(osm_tags.get("railway", "").split(";"))
+    public_transport = set(osm_tags.get("public_transport", "").split(";"))
+    return (
+        not railway & {"station", "halt", "historic_station"}
+        and not public_transport & {"station", "stop_area"}
+        and osm_tags.get("building") != "train_station"
+    )
+
+
 def is_diplomatic_mission(matching_tags: set[str], osm_tags: dict[str, str]) -> bool:
     """Match represents a diplomatic mission."""
     if "amenity=embassy" in matching_tags:
@@ -673,6 +693,9 @@ def find_item_matches(
 
         if not identifier_match:
             if any(c.startswith("Cities ") for c in cats) and admin_level == 10:
+                continue
+
+            if station_house_too_far(item, osm_tags, dist):
                 continue
 
         address_match = match.check_name_matches_address(osm_tags, wikidata_names)
@@ -998,6 +1021,9 @@ def check_item_candidate(
     if not identifier_match:
         if any(c.startswith("Cities ") for c in cats) and admin_level == 10:
             return {"reject": "bad city match"}
+
+        if station_house_too_far(item, osm_tags, candidate.dist):
+            return {"reject": "station shouldn't match a distant house"}
 
     address_match = match.check_name_matches_address(osm_tags, wikidata_names)
 

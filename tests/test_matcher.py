@@ -264,6 +264,52 @@ def test_find_item_matches_mall(monkeypatch):
     assert len(candidates) == 1
     return
 
+
+def test_station_shouldnt_match_distant_house(monkeypatch):
+    osm_tags = {
+        'addr:city': 'Bideford',
+        'addr:postcode': 'EX39 1RJ',
+        'addr:street': 'Meeting Street',
+        'addr:suburb': 'Appledore',
+        'building': 'house',
+        'name': 'Appledore House',
+    }
+
+    entity = {
+        'claims': {
+            'P31': [{
+                'mainsnak': {'datavalue': {'value': {'id': 'Q55488'}}},
+            }],
+        },
+        'labels': {
+            'en': {'language': 'en', 'value': 'Appledore railway station'},
+        },
+        'aliases': {
+            'en': [
+                {'language': 'en', 'value': 'Appledore Station'},
+            ],
+        },
+        'sitelinks': {},
+    }
+
+    item = Item(
+        item_id=4781326,
+        entity=entity,
+        tags=['railway=station', 'building=train_station', 'building'],
+    )
+
+    def mock_run_sql(cur, sql, debug):
+        if not sql.startswith('select * from'):
+            return []
+        return [('polygon', 566746255, None, osm_tags, 349.9)]
+
+    monkeypatch.setattr(matcher, 'run_sql', mock_run_sql)
+    monkeypatch.setattr(matcher, 'current_app', MockApp)
+
+    candidates = matcher.find_item_matches(MockDatabase(), item, 'prefix')
+    assert candidates == []
+
+
 def test_church_is_not_school(monkeypatch):
     test_entity = {
         'claims': {},
